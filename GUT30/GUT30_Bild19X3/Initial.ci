@@ -1,0 +1,44 @@
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//	
+// 	FILE:	Initial.ci
+//
+//	Beschreibung:
+//
+//		Enthält die für das Bildsystem nötigen Funktionen
+//		Funktionen mit Version 3. sind freigegeben
+//
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	24.07.09	/	Schneider Electrik GmbH
+//	Version				75.33.11.06
+//
+//	PUBLIC FUNCTIONS:
+//
+//			UAG_Parameter_Client12()
+
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+
+
+// Parameter für den Client. Ist als Ereignis definiert.
+
+
+FUNCTION UAG_Parameter_Client_Page()
+	
+	INT iError;
+
+	uag_start=1;
+	uag_start_text= "Parameter für Bildsystem 1920 *1200 laden";
+	SleepMS(1000);
+	ErrSet(1);
+
+	ParameterPut("Navigation" ,"MenuYPos" ,"45");
+	ParameterPut("Navigation" ,"MenuXPos" ,"1380");
+	ParameterPut("Navigation" ,"MenuBackColour",MakeCitectColour(127,127,127));
+	ParameterPut("Navigation" ,"MenuForeColour",MakeCitectColour(255,255,255));
+	ParameterPut("MultiMonitors" ,"ScreenWidth" ,"1920");
+	ParameterPut("MultiMonitors","ScreenHigh","1200");	
+	ErrSet(0);
+
+END
+
