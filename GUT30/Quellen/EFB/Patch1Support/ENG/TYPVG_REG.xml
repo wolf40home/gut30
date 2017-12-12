@@ -1,0 +1,93 @@
+﻿<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<DDTExchangeFile>
+<DDTSource DDTName="TYPVG_REG" version="11.0" dateTime="dt#2017-08-10-08:17:55">
+<attribute name="IsTypeLocked" value="TRUE">
+</attribute>
+<attribute name="IsTypeHidden" value="FALSE">
+</attribute>
+<comment>Datenstruktur: Typvorgabe Reglerpanel in PLS</comment>
+<attribute name="TypeDescriptiveForm" value="Default descriptive form TYPVG_REG_30">
+</attribute>
+<structure>
+<variables name="mit_ext" typeName="BOOL">
+<attribute name="IsVariableHidden" value="FALSE">
+</attribute>
+<comment>mit Taste Kaskade</comment>
+</variables>
+<variables name="mit_kp" typeName="BOOL">
+<attribute name="IsVariableHidden" value="FALSE">
+</attribute>
+<comment>mit Taste Kurven/Parameter</comment>
+</variables>
+<variables name="mit_d_xd" typeName="BOOL">
+<attribute name="IsVariableHidden" value="FALSE">
+</attribute>
+<comment>mit Taste D-Anteil Regeldifferenz</comment>
+</variables>
+<variables name="mit_lsp" typeName="BOOL">
+<attribute name="IsVariableHidden" value="FALSE">
+</attribute>
+<comment>mit Taste Leitsperre</comment>
+</variables>
+<variables name="mit_nf_wh" typeName="BOOL">
+<attribute name="IsVariableHidden" value="FALSE">
+</attribute>
+<comment>mit Taste Nachführung Auto</comment>
+</variables>
+<variables name="mit_nf_yh" typeName="BOOL">
+<attribute name="IsVariableHidden" value="FALSE">
+</attribute>
+<comment>mit Taste Nachführung Hand</comment>
+</variables>
+<variables name="nf_leiten" typeName="BOOL">
+<attribute name="IsVariableHidden" value="FALSE">
+</attribute>
+<comment>Nachführung leitbar</comment>
+</variables>
+<variables name="rp_leiten" typeName="BOOL">
+<attribute name="IsVariableHidden" value="FALSE">
+</attribute>
+<comment>Regelparameter  Leitbar</comment>
+</variables>
+<variables name="yao_leiten" typeName="BOOL">
+<attribute name="IsVariableHidden" value="FALSE">
+</attribute>
+<comment>Begrenz.Y oben  leitbar</comment>
+</variables>
+<variables name="yau_leiten" typeName="BOOL">
+<attribute name="IsVariableHidden" value="FALSE">
+</attribute>
+<comment>Begrenz.Y unten leitbar</comment>
+</variables>
+<variables name="mit_RMY" typeName="BOOL">
+<attribute name="IsVariableHidden" value="FALSE">
+</attribute>
+<comment>Rückmeldung für Y anzeigen</comment>
+</variables>
+<variables name="typ_bit11" typeName="BOOL">
+<attribute name="IsVariableHidden" value="FALSE">
+</attribute>
+<comment></comment>
+</variables>
+<variables name="nf_wh_ext" typeName="BOOL">
+<attribute name="IsVariableHidden" value="FALSE">
+</attribute>
+<comment>Freigabe Nachführung extern</comment>
+</variables>
+<variables name="nf_yh_ext" typeName="BOOL">
+<attribute name="IsVariableHidden" value="FALSE">
+</attribute>
+<comment>Freigabe Nachführung extern</comment>
+</variables>
+<variables name="skal_we_x" typeName="BOOL">
+<attribute name="IsVariableHidden" value="FALSE">
+</attribute>
+<comment>WE skalieren wie  X</comment>
+</variables>
+<variables name="typ_bit15" typeName="BOOL">
+<attribute name="IsVariableHidden" value="FALSE">
+</attribute>
+<comment></comment>
+</variables>
+</structure></DDTSource>
+</DDTExchangeFile>

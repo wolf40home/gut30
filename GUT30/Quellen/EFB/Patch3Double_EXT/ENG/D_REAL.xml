@@ -1,0 +1,13 @@
+﻿<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<DDTExchangeFile>
+<DDTSource DDTName="D_REAL" version="1.0" dateTime="dt#2016-10-25-09:40:03">
+<attribute name="IsTypeLocked" value="TRUE">
+</attribute>
+<attribute name="IsTypeHidden" value="FALSE">
+</attribute>
+<comment>DOUBLE REAL coded IEEE 754 on Array of 2 DWords</comment>
+<attribute name="TypeDescriptiveForm" value="Default descriptive form ArrWord_4">
+</attribute>
+<array>Array [0..1] of DWORD</array>
+</DDTSource>
+</DDTExchangeFile>

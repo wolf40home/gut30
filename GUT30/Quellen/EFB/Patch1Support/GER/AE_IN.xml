@@ -1,0 +1,43 @@
+﻿<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<DDTExchangeFile>
+<DDTSource DDTName="AE_IN" version="11.1" dateTime="dt#2017-08-10-08:16:52">
+<attribute name="IsTypeLocked" value="TRUE">
+</attribute>
+<attribute name="IsTypeHidden" value="FALSE">
+</attribute>
+<comment>Datenstruktur:  Analogeingabe</comment>
+<attribute name="TypeDescriptiveForm" value="Default descriptive form AE_IN">
+</attribute>
+<structure>
+<variables name="X" typeName="REAL">
+<attribute name="IsVariableHidden" value="FALSE">
+</attribute>
+<comment>Istwert</comment>
+</variables>
+<variables name="m" typeName="DWORD">
+<attribute name="IsVariableHidden" value="FALSE">
+</attribute>
+<comment>Statusmeldung</comment>
+</variables>
+<variables name="ska" typeName="REAL">
+<attribute name="IsVariableHidden" value="FALSE">
+</attribute>
+<comment>Skalenanfang</comment>
+</variables>
+<variables name="ske" typeName="REAL">
+<attribute name="IsVariableHidden" value="FALSE">
+</attribute>
+<comment>Skalenende</comment>
+</variables>
+<variables name="typ" typeName="WORD">
+<attribute name="IsVariableHidden" value="FALSE">
+</attribute>
+<comment>Typvorgabe PLS von Messung</comment>
+</variables>
+<variables name="typ2" typeName="WORD">
+<attribute name="IsVariableHidden" value="FALSE">
+</attribute>
+<comment>reserve zum auffüllen</comment>
+</variables>
+</structure></DDTSource>
+</DDTExchangeFile>

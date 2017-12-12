@@ -1,0 +1,48 @@
+﻿<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<DDTExchangeFile>
+<DDTSource DDTName="REG_OUT" version="11.0" dateTime="dt#2017-08-10-08:17:31">
+<attribute name="IsTypeLocked" value="TRUE">
+</attribute>
+<attribute name="IsTypeHidden" value="FALSE">
+</attribute>
+<comment>Datenstruktur:  Reglerausgabe</comment>
+<attribute name="TypeDescriptiveForm" value="Default descriptive form REG_OUT">
+</attribute>
+<structure>
+<variables name="Y" typeName="REAL">
+<attribute name="IsVariableHidden" value="FALSE">
+</attribute>
+<comment>Stellgröße</comment>
+</variables>
+<variables name="Ymin" typeName="REAL">
+<attribute name="IsVariableHidden" value="FALSE">
+</attribute>
+<comment>Stellgröße min</comment>
+</variables>
+<variables name="Ymax" typeName="REAL">
+<attribute name="IsVariableHidden" value="FALSE">
+</attribute>
+<comment>Stellgröße max</comment>
+</variables>
+<variables name="Yd" typeName="REAL">
+<attribute name="IsVariableHidden" value="FALSE">
+</attribute>
+<comment>Regeldifferenz (%)</comment>
+</variables>
+<variables name="M" typeName="WORD">
+<attribute name="IsVariableHidden" value="FALSE">
+</attribute>
+<comment>Status Regler</comment>
+</variables>
+<variables name="M1" typeName="WORD">
+<attribute name="IsVariableHidden" value="FALSE">
+</attribute>
+<comment>Word Reserve</comment>
+</variables>
+<variables name="RMY" typeName="REAL">
+<attribute name="IsVariableHidden" value="FALSE">
+</attribute>
+<comment>Stellung Regelklappe 0..100%</comment>
+</variables>
+</structure></DDTSource>
+</DDTExchangeFile>

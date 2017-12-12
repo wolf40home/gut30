@@ -1,0 +1,13 @@
+﻿<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<DDTExchangeFile>
+<DDTSource DDTName="HMI_SPS" version="11.0" dateTime="dt#2017-08-10-08:17:00">
+<attribute name="IsTypeLocked" value="TRUE">
+</attribute>
+<attribute name="IsTypeHidden" value="FALSE">
+</attribute>
+<comment>Datenstruktur: Systemstatus</comment>
+<attribute name="TypeDescriptiveForm" value="Default descriptive form HMI_SPS">
+</attribute>
+<array>Array [1..36] of INT</array>
+</DDTSource>
+</DDTExchangeFile>

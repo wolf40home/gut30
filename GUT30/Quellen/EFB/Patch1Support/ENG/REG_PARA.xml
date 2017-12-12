@@ -1,0 +1,63 @@
+﻿<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<DDTExchangeFile>
+<DDTSource DDTName="REG_PARA" version="11.0" dateTime="dt#2017-08-10-08:17:38">
+<attribute name="IsTypeLocked" value="TRUE">
+</attribute>
+<attribute name="IsTypeHidden" value="FALSE">
+</attribute>
+<comment>Datenstruktur:  Reglerzusatzparameter</comment>
+<attribute name="TypeDescriptiveForm" value="Default descriptive form REG_PARA">
+</attribute>
+<structure>
+<variables name="vyh" typeName="REAL">
+<attribute name="IsVariableHidden" value="FALSE">
+</attribute>
+<comment>Geschwindigkeit Handstellgröße</comment>
+</variables>
+<variables name="vwh" typeName="REAL">
+<attribute name="IsVariableHidden" value="FALSE">
+</attribute>
+<comment>Geschwindigkeit Handsollwert</comment>
+</variables>
+<variables name="vy" typeName="REAL">
+<attribute name="IsVariableHidden" value="FALSE">
+</attribute>
+<comment>Geschwindigkeit Stellgröße</comment>
+</variables>
+<variables name="kd" typeName="REAL">
+<attribute name="IsVariableHidden" value="FALSE">
+</attribute>
+<comment>Differenzierverstärkung</comment>
+</variables>
+<variables name="dband" typeName="REAL">
+<attribute name="IsVariableHidden" value="FALSE">
+</attribute>
+<comment>Todband</comment>
+</variables>
+<variables name="zske" typeName="REAL">
+<attribute name="IsVariableHidden" value="FALSE">
+</attribute>
+<comment>Skalenende Störgröße Z</comment>
+</variables>
+<variables name="zoska" typeName="REAL">
+<attribute name="IsVariableHidden" value="FALSE">
+</attribute>
+<comment>Skalenanfang wirksame Störgröße</comment>
+</variables>
+<variables name="zoske" typeName="REAL">
+<attribute name="IsVariableHidden" value="FALSE">
+</attribute>
+<comment>Skalenende wirksame Störgröße</comment>
+</variables>
+<variables name="yska" typeName="REAL">
+<attribute name="IsVariableHidden" value="FALSE">
+</attribute>
+<comment>Skalenanfang Stellgröße</comment>
+</variables>
+<variables name="yske" typeName="REAL">
+<attribute name="IsVariableHidden" value="FALSE">
+</attribute>
+<comment>Skalenende Stellgröße</comment>
+</variables>
+</structure></DDTSource>
+</DDTExchangeFile>

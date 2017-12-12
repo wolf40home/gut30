@@ -1,0 +1,1270 @@
+
+
+================================================================
+Schneider Automation PLink program ver 2.5 - PID 20152
+
+S T A R T                          [Fri, Sep 01, 2017  11:09:02]
+________________________________________________________________
+
+S T O P                            [Fri, Sep 01, 2017  11:09:03]
+
+Schneider Automation PLink program ver 2.5 - PID 20152
+================================================================
+
+
+
+
+================================================================
+Schneider Automation PLink program ver 2.5 - PID 18700
+
+S T A R T                          [Fri, Sep 01, 2017  11:09:03]
+________________________________________________________________
+
+S T O P                            [Fri, Sep 01, 2017  11:09:03]
+
+Schneider Automation PLink program ver 2.5 - PID 18700
+================================================================
+
+
+
+
+================================================================
+Schneider Automation PLink program ver 2.5 - PID 18372
+
+S T A R T                          [Fri, Sep 01, 2017  11:09:03]
+________________________________________________________________
+
+S T O P                            [Fri, Sep 01, 2017  11:09:03]
+
+Schneider Automation PLink program ver 2.5 - PID 18372
+================================================================
+
+
+
+
+================================================================
+Schneider Automation PLink program ver 2.5 - PID 19364
+
+S T A R T                          [Fri, Sep 01, 2017  11:09:03]
+________________________________________________________________
+XThrow                             [Fri, Sep 01, 2017  11:09:03]
+
+PID   - 19364
+File  - H:\IOB_Unity\Sdk\Schneider_Tools\share\AppBuild\iob_objmaker\OFFObjFile.cpp (1193)
+Error - E:C0650002 - 00000000
+Data  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -
+The symbol named _REAL_AS_BYTE is not in the symbol table
+________________________________________________________________
+XThrow                             [Fri, Sep 01, 2017  11:09:03]
+
+PID   - 19364
+File  - H:\IOB_Unity\Sdk\Schneider_Tools\share\AppBuild\iob_objmaker\OFFObjFile.cpp (1193)
+Error - E:C0650002 - 00000000
+Data  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -
+The symbol named _s_log_to_phy is not in the symbol table
+________________________________________________________________
+XThrow                             [Fri, Sep 01, 2017  11:09:03]
+
+PID   - 19364
+File  - H:\IOB_Unity\Sdk\Schneider_Tools\share\AppBuild\iob_objmaker\OFFObjFile.cpp (1193)
+Error - E:C0650002 - 00000000
+Data  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -
+The symbol named _$P$ptr_sys_call is not in the symbol table
+________________________________________________________________
+
+S T O P                            [Fri, Sep 01, 2017  11:09:03]
+
+Schneider Automation PLink program ver 2.5 - PID 19364
+================================================================
+
+
+
+
+================================================================
+Schneider Automation PLink program ver 2.5 - PID 6972
+
+S T A R T                          [Fri, Sep 01, 2017  11:09:03]
+________________________________________________________________
+
+S T O P                            [Fri, Sep 01, 2017  11:09:03]
+
+Schneider Automation PLink program ver 2.5 - PID 6972
+================================================================
+
+
+
+
+================================================================
+Schneider Automation PLink program ver 2.5 - PID 14668
+
+S T A R T                          [Fri, Sep 01, 2017  11:09:03]
+________________________________________________________________
+
+S T O P                            [Fri, Sep 01, 2017  11:09:03]
+
+Schneider Automation PLink program ver 2.5 - PID 14668
+================================================================
+
+
+
+
+================================================================
+Schneider Automation PLink program ver 2.5 - PID 19000
+
+S T A R T                          [Fri, Sep 01, 2017  11:09:03]
+________________________________________________________________
+
+S T O P                            [Fri, Sep 01, 2017  11:09:03]
+
+Schneider Automation PLink program ver 2.5 - PID 19000
+================================================================
+
+
+
+
+================================================================
+Schneider Automation PLink program ver 2.5 - PID 20236
+
+S T A R T                          [Fri, Sep 01, 2017  11:09:03]
+________________________________________________________________
+XThrow                             [Fri, Sep 01, 2017  11:09:03]
+
+PID   - 20236
+File  - H:\IOB_Unity\Sdk\Schneider_Tools\share\AppBuild\iob_objmaker\OFFObjFile.cpp (1193)
+Error - E:C0650002 - 00000000
+Data  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -
+The symbol named _SCAL is not in the symbol table
+________________________________________________________________
+XThrow                             [Fri, Sep 01, 2017  11:09:03]
+
+PID   - 20236
+File  - H:\IOB_Unity\Sdk\Schneider_Tools\share\AppBuild\iob_objmaker\OFFObjFile.cpp (1193)
+Error - E:C0650002 - 00000000
+Data  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -
+The symbol named __clear87 is not in the symbol table
+________________________________________________________________
+XThrow                             [Fri, Sep 01, 2017  11:09:03]
+
+PID   - 20236
+File  - H:\IOB_Unity\Sdk\Schneider_Tools\share\AppBuild\iob_objmaker\OFFObjFile.cpp (1193)
+Error - E:C0650002 - 00000000
+Data  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -
+The symbol named _$$Ocllbk_fconst_0 is not in the symbol table
+________________________________________________________________
+XThrow                             [Fri, Sep 01, 2017  11:09:03]
+
+PID   - 20236
+File  - H:\IOB_Unity\Sdk\Schneider_Tools\share\AppBuild\iob_objmaker\OFFObjFile.cpp (1193)
+Error - E:C0650002 - 00000000
+Data  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -
+The symbol named _s_code is not in the symbol table
+________________________________________________________________
+XThrow                             [Fri, Sep 01, 2017  11:09:03]
+
+PID   - 20236
+File  - H:\IOB_Unity\Sdk\Schneider_Tools\share\AppBuild\iob_objmaker\OFFObjFile.cpp (1193)
+Error - E:C0650002 - 00000000
+Data  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -
+The symbol named _s_log_to_phy is not in the symbol table
+________________________________________________________________
+XThrow                             [Fri, Sep 01, 2017  11:09:03]
+
+PID   - 20236
+File  - H:\IOB_Unity\Sdk\Schneider_Tools\share\AppBuild\iob_objmaker\OFFObjFile.cpp (1193)
+Error - E:C0650002 - 00000000
+Data  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -
+The symbol named _cllbk_fconst_0 is not in the symbol table
+________________________________________________________________
+XThrow                             [Fri, Sep 01, 2017  11:09:03]
+
+PID   - 20236
+File  - H:\IOB_Unity\Sdk\Schneider_Tools\share\AppBuild\iob_objmaker\OFFObjFile.cpp (1193)
+Error - E:C0650002 - 00000000
+Data  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -
+The symbol named _s_mask_status is not in the symbol table
+________________________________________________________________
+XThrow                             [Fri, Sep 01, 2017  11:09:03]
+
+PID   - 20236
+File  - H:\IOB_Unity\Sdk\Schneider_Tools\share\AppBuild\iob_objmaker\OFFObjFile.cpp (1193)
+Error - E:C0650002 - 00000000
+Data  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -
+The symbol named __status87 is not in the symbol table
+________________________________________________________________
+XThrow                             [Fri, Sep 01, 2017  11:09:03]
+
+PID   - 20236
+File  - H:\IOB_Unity\Sdk\Schneider_Tools\share\AppBuild\iob_objmaker\OFFObjFile.cpp (1193)
+Error - E:C0650002 - 00000000
+Data  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -
+The symbol named _$P$ptr_sys_call is not in the symbol table
+________________________________________________________________
+XThrow                             [Fri, Sep 01, 2017  11:09:03]
+
+PID   - 20236
+File  - H:\IOB_Unity\Sdk\Schneider_Tools\share\AppBuild\iob_objmaker\OFFObjFile.cpp (1193)
+Error - E:C0650002 - 00000000
+Data  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -
+The symbol named _cllbk_label is not in the symbol table
+________________________________________________________________
+XThrow                             [Fri, Sep 01, 2017  11:09:03]
+
+PID   - 20236
+File  - H:\IOB_Unity\Sdk\Schneider_Tools\share\AppBuild\iob_objmaker\OFFObjFile.cpp (1193)
+Error - E:C0650002 - 00000000
+Data  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -
+The symbol named _$$Ocllbk_label is not in the symbol table
+________________________________________________________________
+
+S T O P                            [Fri, Sep 01, 2017  11:09:03]
+
+Schneider Automation PLink program ver 2.5 - PID 20236
+================================================================
+
+
+
+
+================================================================
+Schneider Automation PLink program ver 2.5 - PID 15692
+
+S T A R T                          [Fri, Sep 01, 2017  11:09:03]
+________________________________________________________________
+XThrow                             [Fri, Sep 01, 2017  11:09:03]
+
+PID   - 15692
+File  - H:\IOB_Unity\Sdk\Schneider_Tools\share\AppBuild\iob_objmaker\OFFObjFile.cpp (1193)
+Error - E:C0650002 - 00000000
+Data  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -
+The symbol named _SCAL_label is not in the symbol table
+________________________________________________________________
+XThrow                             [Fri, Sep 01, 2017  11:09:03]
+
+PID   - 15692
+File  - H:\IOB_Unity\Sdk\Schneider_Tools\share\AppBuild\iob_objmaker\OFFObjFile.cpp (1193)
+Error - E:C0650002 - 00000000
+Data  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -
+The symbol named _SCAL_fconst_0 is not in the symbol table
+________________________________________________________________
+
+S T O P                            [Fri, Sep 01, 2017  11:09:03]
+
+Schneider Automation PLink program ver 2.5 - PID 15692
+================================================================
+
+
+
+
+================================================================
+Schneider Automation PLink program ver 2.5 - PID 16884
+
+S T A R T                          [Fri, Sep 01, 2017  11:09:03]
+________________________________________________________________
+
+S T O P                            [Fri, Sep 01, 2017  11:09:03]
+
+Schneider Automation PLink program ver 2.5 - PID 16884
+================================================================
+
+
+
+
+================================================================
+Schneider Automation PLink program ver 2.5 - PID 17652
+
+S T A R T                          [Fri, Sep 01, 2017  11:09:03]
+________________________________________________________________
+
+S T O P                            [Fri, Sep 01, 2017  11:09:04]
+
+Schneider Automation PLink program ver 2.5 - PID 17652
+================================================================
+
+
+
+
+================================================================
+Schneider Automation PLink program ver 2.5 - PID 8736
+
+S T A R T                          [Fri, Sep 01, 2017  11:09:04]
+________________________________________________________________
+XThrow                             [Fri, Sep 01, 2017  11:09:04]
+
+PID   - 8736
+File  - H:\IOB_Unity\Sdk\Schneider_Tools\share\AppBuild\iob_objmaker\OFFObjFile.cpp (1193)
+Error - E:C0650002 - 00000000
+Data  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -
+The symbol named _SCALWTOR is not in the symbol table
+________________________________________________________________
+XThrow                             [Fri, Sep 01, 2017  11:09:04]
+
+PID   - 8736
+File  - H:\IOB_Unity\Sdk\Schneider_Tools\share\AppBuild\iob_objmaker\OFFObjFile.cpp (1193)
+Error - E:C0650002 - 00000000
+Data  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -
+The symbol named _s_log_to_phy is not in the symbol table
+________________________________________________________________
+XThrow                             [Fri, Sep 01, 2017  11:09:04]
+
+PID   - 8736
+File  - H:\IOB_Unity\Sdk\Schneider_Tools\share\AppBuild\iob_objmaker\OFFObjFile.cpp (1193)
+Error - E:C0650002 - 00000000
+Data  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -
+The symbol named _$P$ptr_sys_call is not in the symbol table
+________________________________________________________________
+
+S T O P                            [Fri, Sep 01, 2017  11:09:04]
+
+Schneider Automation PLink program ver 2.5 - PID 8736
+================================================================
+
+
+
+
+================================================================
+Schneider Automation PLink program ver 2.5 - PID 16292
+
+S T A R T                          [Fri, Sep 01, 2017  11:09:04]
+________________________________________________________________
+
+S T O P                            [Fri, Sep 01, 2017  11:09:04]
+
+Schneider Automation PLink program ver 2.5 - PID 16292
+================================================================
+
+
+
+
+================================================================
+Schneider Automation PLink program ver 2.5 - PID 5308
+
+S T A R T                          [Fri, Sep 01, 2017  11:09:04]
+________________________________________________________________
+
+S T O P                            [Fri, Sep 01, 2017  11:09:04]
+
+Schneider Automation PLink program ver 2.5 - PID 5308
+================================================================
+
+
+
+
+================================================================
+Schneider Automation PLink program ver 2.5 - PID 4304
+
+S T A R T                          [Fri, Sep 01, 2017  11:09:04]
+________________________________________________________________
+
+S T O P                            [Fri, Sep 01, 2017  11:09:04]
+
+Schneider Automation PLink program ver 2.5 - PID 4304
+================================================================
+
+
+
+
+================================================================
+Schneider Automation PLink program ver 2.5 - PID 152
+
+S T A R T                          [Fri, Sep 01, 2017  11:09:04]
+________________________________________________________________
+XThrow                             [Fri, Sep 01, 2017  11:09:04]
+
+PID   - 152
+File  - H:\IOB_Unity\Sdk\Schneider_Tools\share\AppBuild\iob_objmaker\OFFObjFile.cpp (1193)
+Error - E:C0650002 - 00000000
+Data  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -
+The symbol named _SCALRTOW is not in the symbol table
+________________________________________________________________
+XThrow                             [Fri, Sep 01, 2017  11:09:04]
+
+PID   - 152
+File  - H:\IOB_Unity\Sdk\Schneider_Tools\share\AppBuild\iob_objmaker\OFFObjFile.cpp (1193)
+Error - E:C0650002 - 00000000
+Data  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -
+The symbol named _s_log_to_phy is not in the symbol table
+________________________________________________________________
+XThrow                             [Fri, Sep 01, 2017  11:09:04]
+
+PID   - 152
+File  - H:\IOB_Unity\Sdk\Schneider_Tools\share\AppBuild\iob_objmaker\OFFObjFile.cpp (1193)
+Error - E:C0650002 - 00000000
+Data  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -
+The symbol named _$P$ptr_sys_call is not in the symbol table
+________________________________________________________________
+
+S T O P                            [Fri, Sep 01, 2017  11:09:04]
+
+Schneider Automation PLink program ver 2.5 - PID 152
+================================================================
+
+
+
+
+================================================================
+Schneider Automation PLink program ver 2.5 - PID 18480
+
+S T A R T                          [Fri, Sep 01, 2017  11:09:04]
+________________________________________________________________
+
+S T O P                            [Fri, Sep 01, 2017  11:09:04]
+
+Schneider Automation PLink program ver 2.5 - PID 18480
+================================================================
+
+
+
+
+================================================================
+Schneider Automation PLink program ver 2.5 - PID 18624
+
+S T A R T                          [Fri, Sep 01, 2017  11:09:04]
+________________________________________________________________
+
+S T O P                            [Fri, Sep 01, 2017  11:09:04]
+
+Schneider Automation PLink program ver 2.5 - PID 18624
+================================================================
+
+
+
+
+================================================================
+Schneider Automation PLink program ver 2.5 - PID 15964
+
+S T A R T                          [Fri, Sep 01, 2017  11:09:04]
+________________________________________________________________
+
+S T O P                            [Fri, Sep 01, 2017  11:09:04]
+
+Schneider Automation PLink program ver 2.5 - PID 15964
+================================================================
+
+
+
+
+================================================================
+Schneider Automation PLink program ver 2.5 - PID 15524
+
+S T A R T                          [Fri, Sep 01, 2017  11:09:05]
+________________________________________________________________
+XThrow                             [Fri, Sep 01, 2017  11:09:05]
+
+PID   - 15524
+File  - H:\IOB_Unity\Sdk\Schneider_Tools\share\AppBuild\iob_objmaker\OFFObjFile.cpp (1193)
+Error - E:C0650002 - 00000000
+Data  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -
+The symbol named _STRING_AS_BYTE is not in the symbol table
+________________________________________________________________
+XThrow                             [Fri, Sep 01, 2017  11:09:05]
+
+PID   - 15524
+File  - H:\IOB_Unity\Sdk\Schneider_Tools\share\AppBuild\iob_objmaker\OFFObjFile.cpp (1193)
+Error - E:C0650002 - 00000000
+Data  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -
+The symbol named _s_log_to_phy is not in the symbol table
+________________________________________________________________
+XThrow                             [Fri, Sep 01, 2017  11:09:05]
+
+PID   - 15524
+File  - H:\IOB_Unity\Sdk\Schneider_Tools\share\AppBuild\iob_objmaker\OFFObjFile.cpp (1193)
+Error - E:C0650002 - 00000000
+Data  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -
+The symbol named _$P$ptr_sys_call is not in the symbol table
+________________________________________________________________
+
+S T O P                            [Fri, Sep 01, 2017  11:09:05]
+
+Schneider Automation PLink program ver 2.5 - PID 15524
+================================================================
+
+
+
+
+================================================================
+Schneider Automation PLink program ver 2.5 - PID 12424
+
+S T A R T                          [Fri, Sep 01, 2017  11:09:05]
+________________________________________________________________
+
+S T O P                            [Fri, Sep 01, 2017  11:09:05]
+
+Schneider Automation PLink program ver 2.5 - PID 12424
+================================================================
+
+
+
+
+================================================================
+Schneider Automation PLink program ver 2.5 - PID 8900
+
+S T A R T                          [Fri, Sep 01, 2017  11:09:05]
+________________________________________________________________
+
+S T O P                            [Fri, Sep 01, 2017  11:09:05]
+
+Schneider Automation PLink program ver 2.5 - PID 8900
+================================================================
+
+
+
+
+================================================================
+Schneider Automation PLink program ver 2.5 - PID 12664
+
+S T A R T                          [Fri, Sep 01, 2017  11:09:05]
+________________________________________________________________
+
+S T O P                            [Fri, Sep 01, 2017  11:09:05]
+
+Schneider Automation PLink program ver 2.5 - PID 12664
+================================================================
+
+
+
+
+================================================================
+Schneider Automation PLink program ver 2.5 - PID 19972
+
+S T A R T                          [Fri, Sep 01, 2017  11:09:05]
+________________________________________________________________
+XThrow                             [Fri, Sep 01, 2017  11:09:05]
+
+PID   - 19972
+File  - H:\IOB_Unity\Sdk\Schneider_Tools\share\AppBuild\iob_objmaker\OFFObjFile.cpp (1193)
+Error - E:C0650002 - 00000000
+Data  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -
+The symbol named _STRING_AS_WORD is not in the symbol table
+________________________________________________________________
+XThrow                             [Fri, Sep 01, 2017  11:09:05]
+
+PID   - 19972
+File  - H:\IOB_Unity\Sdk\Schneider_Tools\share\AppBuild\iob_objmaker\OFFObjFile.cpp (1193)
+Error - E:C0650002 - 00000000
+Data  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -
+The symbol named _s_log_to_phy is not in the symbol table
+________________________________________________________________
+XThrow                             [Fri, Sep 01, 2017  11:09:05]
+
+PID   - 19972
+File  - H:\IOB_Unity\Sdk\Schneider_Tools\share\AppBuild\iob_objmaker\OFFObjFile.cpp (1193)
+Error - E:C0650002 - 00000000
+Data  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -
+The symbol named _$P$ptr_sys_call is not in the symbol table
+________________________________________________________________
+
+S T O P                            [Fri, Sep 01, 2017  11:09:05]
+
+Schneider Automation PLink program ver 2.5 - PID 19972
+================================================================
+
+
+
+
+================================================================
+Schneider Automation PLink program ver 2.5 - PID 19772
+
+S T A R T                          [Fri, Sep 01, 2017  11:09:05]
+________________________________________________________________
+
+S T O P                            [Fri, Sep 01, 2017  11:09:05]
+
+Schneider Automation PLink program ver 2.5 - PID 19772
+================================================================
+
+
+
+
+================================================================
+Schneider Automation PLink program ver 2.5 - PID 16704
+
+S T A R T                          [Fri, Sep 01, 2017  11:09:05]
+________________________________________________________________
+
+S T O P                            [Fri, Sep 01, 2017  11:09:05]
+
+Schneider Automation PLink program ver 2.5 - PID 16704
+================================================================
+
+
+
+
+================================================================
+Schneider Automation PLink program ver 2.5 - PID 12044
+
+S T A R T                          [Fri, Sep 01, 2017  11:09:05]
+________________________________________________________________
+
+S T O P                            [Fri, Sep 01, 2017  11:09:05]
+
+Schneider Automation PLink program ver 2.5 - PID 12044
+================================================================
+
+
+
+
+================================================================
+Schneider Automation PLink program ver 2.5 - PID 15832
+
+S T A R T                          [Fri, Sep 01, 2017  11:09:06]
+________________________________________________________________
+XThrow                             [Fri, Sep 01, 2017  11:09:06]
+
+PID   - 15832
+File  - H:\IOB_Unity\Sdk\Schneider_Tools\share\AppBuild\iob_objmaker\OFFObjFile.cpp (1193)
+Error - E:C0650002 - 00000000
+Data  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -
+The symbol named _$$PROG is not in the symbol table
+________________________________________________________________
+XThrow                             [Fri, Sep 01, 2017  11:09:06]
+
+PID   - 15832
+File  - H:\IOB_Unity\Sdk\Schneider_Tools\share\AppBuild\iob_objmaker\OFFObjFile.cpp (1193)
+Error - E:C0650002 - 00000000
+Data  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -
+The symbol named _LanguageEntryPoint is not in the symbol table
+________________________________________________________________
+XThrow                             [Fri, Sep 01, 2017  11:09:06]
+
+PID   - 15832
+File  - H:\IOB_Unity\Sdk\Schneider_Tools\share\AppBuild\iob_objmaker\OFFObjFile.cpp (1193)
+Error - E:C0650002 - 00000000
+Data  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -
+The symbol named _SystemEntryPoint is not in the symbol table
+________________________________________________________________
+XThrow                             [Fri, Sep 01, 2017  11:09:06]
+
+PID   - 15832
+File  - H:\IOB_Unity\Sdk\Schneider_Tools\share\AppBuild\iob_objmaker\OFFObjFile.cpp (1193)
+Error - E:C0650002 - 00000000
+Data  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -
+The symbol named _s_log_to_phy is not in the symbol table
+________________________________________________________________
+XThrow                             [Fri, Sep 01, 2017  11:09:06]
+
+PID   - 15832
+File  - H:\IOB_Unity\Sdk\Schneider_Tools\share\AppBuild\iob_objmaker\OFFObjFile.cpp (1193)
+Error - E:C0650002 - 00000000
+Data  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -
+The symbol named _s_proc_type is not in the symbol table
+________________________________________________________________
+XThrow                             [Fri, Sep 01, 2017  11:09:06]
+
+PID   - 15832
+File  - H:\IOB_Unity\Sdk\Schneider_Tools\share\AppBuild\iob_objmaker\OFFObjFile.cpp (1193)
+Error - E:C0650002 - 00000000
+Data  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -
+The symbol named _s_obj_nbr is not in the symbol table
+________________________________________________________________
+XThrow                             [Fri, Sep 01, 2017  11:09:06]
+
+PID   - 15832
+File  - H:\IOB_Unity\Sdk\Schneider_Tools\share\AppBuild\iob_objmaker\OFFObjFile.cpp (1193)
+Error - E:C0650002 - 00000000
+Data  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -
+The symbol named _s_proc_indic is not in the symbol table
+________________________________________________________________
+XThrow                             [Fri, Sep 01, 2017  11:09:06]
+
+PID   - 15832
+File  - H:\IOB_Unity\Sdk\Schneider_Tools\share\AppBuild\iob_objmaker\OFFObjFile.cpp (1193)
+Error - E:C0650002 - 00000000
+Data  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -
+The symbol named _s_obj_to_log is not in the symbol table
+________________________________________________________________
+XThrow                             [Fri, Sep 01, 2017  11:09:06]
+
+PID   - 15832
+File  - H:\IOB_Unity\Sdk\Schneider_Tools\share\AppBuild\iob_objmaker\OFFObjFile.cpp (1193)
+Error - E:C0650002 - 00000000
+Data  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -
+The symbol named _$P$ptr_sys_call is not in the symbol table
+________________________________________________________________
+
+S T O P                            [Fri, Sep 01, 2017  11:09:06]
+
+Schneider Automation PLink program ver 2.5 - PID 15832
+================================================================
+
+
+
+
+================================================================
+Schneider Automation PLink program ver 2.5 - PID 12992
+
+S T A R T                          [Fri, Sep 01, 2017  11:09:06]
+________________________________________________________________
+XThrow                             [Fri, Sep 01, 2017  11:09:06]
+
+PID   - 12992
+File  - H:\IOB_Unity\Sdk\Schneider_Tools\share\AppBuild\iob_objmaker\OFFObjFile.cpp (1193)
+Error - E:C0650002 - 00000000
+Data  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -
+The symbol named _SYSTYPE is not in the symbol table
+________________________________________________________________
+
+S T O P                            [Fri, Sep 01, 2017  11:09:06]
+
+Schneider Automation PLink program ver 2.5 - PID 12992
+================================================================
+
+
+
+
+================================================================
+Schneider Automation PLink program ver 2.5 - PID 18532
+
+S T A R T                          [Fri, Sep 01, 2017  11:09:06]
+________________________________________________________________
+
+S T O P                            [Fri, Sep 01, 2017  11:09:06]
+
+Schneider Automation PLink program ver 2.5 - PID 18532
+================================================================
+
+
+
+
+================================================================
+Schneider Automation PLink program ver 2.5 - PID 8136
+
+S T A R T                          [Fri, Sep 01, 2017  11:09:06]
+________________________________________________________________
+
+S T O P                            [Fri, Sep 01, 2017  11:09:06]
+
+Schneider Automation PLink program ver 2.5 - PID 8136
+================================================================
+
+
+
+
+================================================================
+Schneider Automation PLink program ver 2.5 - PID 10948
+
+S T A R T                          [Fri, Sep 01, 2017  11:09:06]
+________________________________________________________________
+XThrow                             [Fri, Sep 01, 2017  11:09:06]
+
+PID   - 10948
+File  - H:\IOB_Unity\Sdk\Schneider_Tools\share\AppBuild\iob_objmaker\OFFObjFile.cpp (1193)
+Error - E:C0650002 - 00000000
+Data  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -
+The symbol named _TIME_AS_BYTE is not in the symbol table
+________________________________________________________________
+XThrow                             [Fri, Sep 01, 2017  11:09:06]
+
+PID   - 10948
+File  - H:\IOB_Unity\Sdk\Schneider_Tools\share\AppBuild\iob_objmaker\OFFObjFile.cpp (1193)
+Error - E:C0650002 - 00000000
+Data  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -
+The symbol named _s_log_to_phy is not in the symbol table
+________________________________________________________________
+XThrow                             [Fri, Sep 01, 2017  11:09:06]
+
+PID   - 10948
+File  - H:\IOB_Unity\Sdk\Schneider_Tools\share\AppBuild\iob_objmaker\OFFObjFile.cpp (1193)
+Error - E:C0650002 - 00000000
+Data  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -
+The symbol named _$P$ptr_sys_call is not in the symbol table
+________________________________________________________________
+
+S T O P                            [Fri, Sep 01, 2017  11:09:06]
+
+Schneider Automation PLink program ver 2.5 - PID 10948
+================================================================
+
+
+
+
+================================================================
+Schneider Automation PLink program ver 2.5 - PID 19320
+
+S T A R T                          [Fri, Sep 01, 2017  11:09:06]
+________________________________________________________________
+
+S T O P                            [Fri, Sep 01, 2017  11:09:06]
+
+Schneider Automation PLink program ver 2.5 - PID 19320
+================================================================
+
+
+
+
+================================================================
+Schneider Automation PLink program ver 2.5 - PID 6624
+
+S T A R T                          [Fri, Sep 01, 2017  11:09:06]
+________________________________________________________________
+
+S T O P                            [Fri, Sep 01, 2017  11:09:06]
+
+Schneider Automation PLink program ver 2.5 - PID 6624
+================================================================
+
+
+
+
+================================================================
+Schneider Automation PLink program ver 2.5 - PID 1748
+
+S T A R T                          [Fri, Sep 01, 2017  11:09:06]
+________________________________________________________________
+
+S T O P                            [Fri, Sep 01, 2017  11:09:06]
+
+Schneider Automation PLink program ver 2.5 - PID 1748
+================================================================
+
+
+
+
+================================================================
+Schneider Automation PLink program ver 2.5 - PID 15656
+
+S T A R T                          [Fri, Sep 01, 2017  11:09:06]
+________________________________________________________________
+XThrow                             [Fri, Sep 01, 2017  11:09:06]
+
+PID   - 15656
+File  - H:\IOB_Unity\Sdk\Schneider_Tools\share\AppBuild\iob_objmaker\OFFObjFile.cpp (1193)
+Error - E:C0650002 - 00000000
+Data  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -
+The symbol named _TOD_AS_BYTE is not in the symbol table
+________________________________________________________________
+XThrow                             [Fri, Sep 01, 2017  11:09:06]
+
+PID   - 15656
+File  - H:\IOB_Unity\Sdk\Schneider_Tools\share\AppBuild\iob_objmaker\OFFObjFile.cpp (1193)
+Error - E:C0650002 - 00000000
+Data  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -
+The symbol named _s_log_to_phy is not in the symbol table
+________________________________________________________________
+XThrow                             [Fri, Sep 01, 2017  11:09:06]
+
+PID   - 15656
+File  - H:\IOB_Unity\Sdk\Schneider_Tools\share\AppBuild\iob_objmaker\OFFObjFile.cpp (1193)
+Error - E:C0650002 - 00000000
+Data  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -
+The symbol named _$P$ptr_sys_call is not in the symbol table
+________________________________________________________________
+
+S T O P                            [Fri, Sep 01, 2017  11:09:06]
+
+Schneider Automation PLink program ver 2.5 - PID 15656
+================================================================
+
+
+
+
+================================================================
+Schneider Automation PLink program ver 2.5 - PID 9652
+
+S T A R T                          [Fri, Sep 01, 2017  11:09:07]
+________________________________________________________________
+
+S T O P                            [Fri, Sep 01, 2017  11:09:07]
+
+Schneider Automation PLink program ver 2.5 - PID 9652
+================================================================
+
+
+
+
+================================================================
+Schneider Automation PLink program ver 2.5 - PID 13064
+
+S T A R T                          [Fri, Sep 01, 2017  11:09:07]
+________________________________________________________________
+
+S T O P                            [Fri, Sep 01, 2017  11:09:07]
+
+Schneider Automation PLink program ver 2.5 - PID 13064
+================================================================
+
+
+
+
+================================================================
+Schneider Automation PLink program ver 2.5 - PID 16496
+
+S T A R T                          [Fri, Sep 01, 2017  11:09:07]
+________________________________________________________________
+
+S T O P                            [Fri, Sep 01, 2017  11:09:07]
+
+Schneider Automation PLink program ver 2.5 - PID 16496
+================================================================
+
+
+
+
+================================================================
+Schneider Automation PLink program ver 2.5 - PID 19084
+
+S T A R T                          [Fri, Sep 01, 2017  11:09:07]
+________________________________________________________________
+XThrow                             [Fri, Sep 01, 2017  11:09:07]
+
+PID   - 19084
+File  - H:\IOB_Unity\Sdk\Schneider_Tools\share\AppBuild\iob_objmaker\OFFObjFile.cpp (1193)
+Error - E:C0650002 - 00000000
+Data  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -
+The symbol named _TOD_AS_WORD is not in the symbol table
+________________________________________________________________
+XThrow                             [Fri, Sep 01, 2017  11:09:07]
+
+PID   - 19084
+File  - H:\IOB_Unity\Sdk\Schneider_Tools\share\AppBuild\iob_objmaker\OFFObjFile.cpp (1193)
+Error - E:C0650002 - 00000000
+Data  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -
+The symbol named _s_log_to_phy is not in the symbol table
+________________________________________________________________
+XThrow                             [Fri, Sep 01, 2017  11:09:07]
+
+PID   - 19084
+File  - H:\IOB_Unity\Sdk\Schneider_Tools\share\AppBuild\iob_objmaker\OFFObjFile.cpp (1193)
+Error - E:C0650002 - 00000000
+Data  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -
+The symbol named _$P$ptr_sys_call is not in the symbol table
+________________________________________________________________
+
+S T O P                            [Fri, Sep 01, 2017  11:09:07]
+
+Schneider Automation PLink program ver 2.5 - PID 19084
+================================================================
+
+
+
+
+================================================================
+Schneider Automation PLink program ver 2.5 - PID 18560
+
+S T A R T                          [Fri, Sep 01, 2017  11:09:07]
+________________________________________________________________
+
+S T O P                            [Fri, Sep 01, 2017  11:09:07]
+
+Schneider Automation PLink program ver 2.5 - PID 18560
+================================================================
+
+
+
+
+================================================================
+Schneider Automation PLink program ver 2.5 - PID 15256
+
+S T A R T                          [Fri, Sep 01, 2017  11:09:07]
+________________________________________________________________
+
+S T O P                            [Fri, Sep 01, 2017  11:09:07]
+
+Schneider Automation PLink program ver 2.5 - PID 15256
+================================================================
+
+
+
+
+================================================================
+Schneider Automation PLink program ver 2.5 - PID 7276
+
+S T A R T                          [Fri, Sep 01, 2017  11:09:07]
+________________________________________________________________
+
+S T O P                            [Fri, Sep 01, 2017  11:09:07]
+
+Schneider Automation PLink program ver 2.5 - PID 7276
+================================================================
+
+
+
+
+================================================================
+Schneider Automation PLink program ver 2.5 - PID 19760
+
+S T A R T                          [Fri, Sep 01, 2017  11:09:07]
+________________________________________________________________
+XThrow                             [Fri, Sep 01, 2017  11:09:07]
+
+PID   - 19760
+File  - H:\IOB_Unity\Sdk\Schneider_Tools\share\AppBuild\iob_objmaker\OFFObjFile.cpp (1193)
+Error - E:C0650002 - 00000000
+Data  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -
+The symbol named _UDINT_AS_BYTE is not in the symbol table
+________________________________________________________________
+XThrow                             [Fri, Sep 01, 2017  11:09:07]
+
+PID   - 19760
+File  - H:\IOB_Unity\Sdk\Schneider_Tools\share\AppBuild\iob_objmaker\OFFObjFile.cpp (1193)
+Error - E:C0650002 - 00000000
+Data  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -
+The symbol named _s_log_to_phy is not in the symbol table
+________________________________________________________________
+XThrow                             [Fri, Sep 01, 2017  11:09:07]
+
+PID   - 19760
+File  - H:\IOB_Unity\Sdk\Schneider_Tools\share\AppBuild\iob_objmaker\OFFObjFile.cpp (1193)
+Error - E:C0650002 - 00000000
+Data  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -
+The symbol named _$P$ptr_sys_call is not in the symbol table
+________________________________________________________________
+
+S T O P                            [Fri, Sep 01, 2017  11:09:07]
+
+Schneider Automation PLink program ver 2.5 - PID 19760
+================================================================
+
+
+
+
+================================================================
+Schneider Automation PLink program ver 2.5 - PID 19644
+
+S T A R T                          [Fri, Sep 01, 2017  11:09:07]
+________________________________________________________________
+
+S T O P                            [Fri, Sep 01, 2017  11:09:07]
+
+Schneider Automation PLink program ver 2.5 - PID 19644
+================================================================
+
+
+
+
+================================================================
+Schneider Automation PLink program ver 2.5 - PID 13736
+
+S T A R T                          [Fri, Sep 01, 2017  11:09:07]
+________________________________________________________________
+
+S T O P                            [Fri, Sep 01, 2017  11:09:07]
+
+Schneider Automation PLink program ver 2.5 - PID 13736
+================================================================
+
+
+
+
+================================================================
+Schneider Automation PLink program ver 2.5 - PID 19068
+
+S T A R T                          [Fri, Sep 01, 2017  11:09:07]
+________________________________________________________________
+
+S T O P                            [Fri, Sep 01, 2017  11:09:07]
+
+Schneider Automation PLink program ver 2.5 - PID 19068
+================================================================
+
+
+
+
+================================================================
+Schneider Automation PLink program ver 2.5 - PID 9300
+
+S T A R T                          [Fri, Sep 01, 2017  11:09:08]
+________________________________________________________________
+XThrow                             [Fri, Sep 01, 2017  11:09:08]
+
+PID   - 9300
+File  - H:\IOB_Unity\Sdk\Schneider_Tools\share\AppBuild\iob_objmaker\OFFObjFile.cpp (1193)
+Error - E:C0650002 - 00000000
+Data  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -
+The symbol named _UINT_AS_BYTE is not in the symbol table
+________________________________________________________________
+XThrow                             [Fri, Sep 01, 2017  11:09:08]
+
+PID   - 9300
+File  - H:\IOB_Unity\Sdk\Schneider_Tools\share\AppBuild\iob_objmaker\OFFObjFile.cpp (1193)
+Error - E:C0650002 - 00000000
+Data  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -
+The symbol named _s_log_to_phy is not in the symbol table
+________________________________________________________________
+XThrow                             [Fri, Sep 01, 2017  11:09:08]
+
+PID   - 9300
+File  - H:\IOB_Unity\Sdk\Schneider_Tools\share\AppBuild\iob_objmaker\OFFObjFile.cpp (1193)
+Error - E:C0650002 - 00000000
+Data  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -
+The symbol named _$P$ptr_sys_call is not in the symbol table
+________________________________________________________________
+
+S T O P                            [Fri, Sep 01, 2017  11:09:08]
+
+Schneider Automation PLink program ver 2.5 - PID 9300
+================================================================
+
+
+
+
+================================================================
+Schneider Automation PLink program ver 2.5 - PID 16608
+
+S T A R T                          [Fri, Sep 01, 2017  11:09:08]
+________________________________________________________________
+
+S T O P                            [Fri, Sep 01, 2017  11:09:08]
+
+Schneider Automation PLink program ver 2.5 - PID 16608
+================================================================
+
+
+
+
+================================================================
+Schneider Automation PLink program ver 2.5 - PID 19212
+
+S T A R T                          [Fri, Sep 01, 2017  11:09:08]
+________________________________________________________________
+
+S T O P                            [Fri, Sep 01, 2017  11:09:08]
+
+Schneider Automation PLink program ver 2.5 - PID 19212
+================================================================
+
+
+
+
+================================================================
+Schneider Automation PLink program ver 2.5 - PID 10248
+
+S T A R T                          [Fri, Sep 01, 2017  11:09:08]
+________________________________________________________________
+
+S T O P                            [Fri, Sep 01, 2017  11:09:08]
+
+Schneider Automation PLink program ver 2.5 - PID 10248
+================================================================
+
+
+
+
+================================================================
+Schneider Automation PLink program ver 2.5 - PID 5192
+
+S T A R T                          [Fri, Sep 01, 2017  11:09:08]
+________________________________________________________________
+XThrow                             [Fri, Sep 01, 2017  11:09:08]
+
+PID   - 5192
+File  - H:\IOB_Unity\Sdk\Schneider_Tools\share\AppBuild\iob_objmaker\OFFObjFile.cpp (1193)
+Error - E:C0650002 - 00000000
+Data  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -
+The symbol named _WORD_AS_DWORD is not in the symbol table
+________________________________________________________________
+XThrow                             [Fri, Sep 01, 2017  11:09:08]
+
+PID   - 5192
+File  - H:\IOB_Unity\Sdk\Schneider_Tools\share\AppBuild\iob_objmaker\OFFObjFile.cpp (1193)
+Error - E:C0650002 - 00000000
+Data  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -
+The symbol named _s_log_to_phy is not in the symbol table
+________________________________________________________________
+XThrow                             [Fri, Sep 01, 2017  11:09:08]
+
+PID   - 5192
+File  - H:\IOB_Unity\Sdk\Schneider_Tools\share\AppBuild\iob_objmaker\OFFObjFile.cpp (1193)
+Error - E:C0650002 - 00000000
+Data  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -
+The symbol named _$P$ptr_sys_call is not in the symbol table
+________________________________________________________________
+
+S T O P                            [Fri, Sep 01, 2017  11:09:08]
+
+Schneider Automation PLink program ver 2.5 - PID 5192
+================================================================
+
+
+
+
+================================================================
+Schneider Automation PLink program ver 2.5 - PID 9200
+
+S T A R T                          [Fri, Sep 01, 2017  11:09:08]
+________________________________________________________________
+
+S T O P                            [Fri, Sep 01, 2017  11:09:08]
+
+Schneider Automation PLink program ver 2.5 - PID 9200
+================================================================
+
+
+
+
+================================================================
+Schneider Automation PLink program ver 2.5 - PID 11280
+
+S T A R T                          [Fri, Sep 01, 2017  11:09:08]
+________________________________________________________________
+
+S T O P                            [Fri, Sep 01, 2017  11:09:08]
+
+Schneider Automation PLink program ver 2.5 - PID 11280
+================================================================
+
+
+
+
+================================================================
+Schneider Automation PLink program ver 2.5 - PID 16436
+
+S T A R T                          [Fri, Sep 01, 2017  11:09:08]
+________________________________________________________________
+
+S T O P                            [Fri, Sep 01, 2017  11:09:08]
+
+Schneider Automation PLink program ver 2.5 - PID 16436
+================================================================
+
+
+
+
+================================================================
+Schneider Automation PLink program ver 2.5 - PID 908
+
+S T A R T                          [Fri, Sep 01, 2017  11:09:09]
+________________________________________________________________
+XThrow                             [Fri, Sep 01, 2017  11:09:09]
+
+PID   - 908
+File  - H:\IOB_Unity\Sdk\Schneider_Tools\share\AppBuild\iob_objmaker\OFFObjFile.cpp (1193)
+Error - E:C0650002 - 00000000
+Data  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -
+The symbol named _WORD_AS_DATE is not in the symbol table
+________________________________________________________________
+XThrow                             [Fri, Sep 01, 2017  11:09:09]
+
+PID   - 908
+File  - H:\IOB_Unity\Sdk\Schneider_Tools\share\AppBuild\iob_objmaker\OFFObjFile.cpp (1193)
+Error - E:C0650002 - 00000000
+Data  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -
+The symbol named _s_log_to_phy is not in the symbol table
+________________________________________________________________
+XThrow                             [Fri, Sep 01, 2017  11:09:09]
+
+PID   - 908
+File  - H:\IOB_Unity\Sdk\Schneider_Tools\share\AppBuild\iob_objmaker\OFFObjFile.cpp (1193)
+Error - E:C0650002 - 00000000
+Data  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -
+The symbol named _$P$ptr_sys_call is not in the symbol table
+________________________________________________________________
+
+S T O P                            [Fri, Sep 01, 2017  11:09:09]
+
+Schneider Automation PLink program ver 2.5 - PID 908
+================================================================
+
+
+
+
+================================================================
+Schneider Automation PLink program ver 2.5 - PID 19100
+
+S T A R T                          [Fri, Sep 01, 2017  11:09:09]
+________________________________________________________________
+
+S T O P                            [Fri, Sep 01, 2017  11:09:09]
+
+Schneider Automation PLink program ver 2.5 - PID 19100
+================================================================
+
+

@@ -1,0 +1,93 @@
+﻿<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<DDTExchangeFile>
+<DDTSource DDTName="TYPVG_UNI" version="11.0" dateTime="dt#2017-08-10-08:18:02">
+<attribute name="IsTypeLocked" value="TRUE">
+</attribute>
+<attribute name="IsTypeHidden" value="FALSE">
+</attribute>
+<comment>Datenstruktur Typvorgabe Allgemein PLS</comment>
+<attribute name="TypeDescriptiveForm" value="Default descriptive form TYPVG_UNI">
+</attribute>
+<structure>
+<variables name="B1" typeName="BOOL">
+<attribute name="IsVariableHidden" value="FALSE">
+</attribute>
+<comment></comment>
+</variables>
+<variables name="B2" typeName="BOOL">
+<attribute name="IsVariableHidden" value="FALSE">
+</attribute>
+<comment></comment>
+</variables>
+<variables name="B3" typeName="BOOL">
+<attribute name="IsVariableHidden" value="FALSE">
+</attribute>
+<comment></comment>
+</variables>
+<variables name="B4" typeName="BOOL">
+<attribute name="IsVariableHidden" value="FALSE">
+</attribute>
+<comment></comment>
+</variables>
+<variables name="B5" typeName="BOOL">
+<attribute name="IsVariableHidden" value="FALSE">
+</attribute>
+<comment></comment>
+</variables>
+<variables name="B6" typeName="BOOL">
+<attribute name="IsVariableHidden" value="FALSE">
+</attribute>
+<comment></comment>
+</variables>
+<variables name="B7" typeName="BOOL">
+<attribute name="IsVariableHidden" value="FALSE">
+</attribute>
+<comment></comment>
+</variables>
+<variables name="B8" typeName="BOOL">
+<attribute name="IsVariableHidden" value="FALSE">
+</attribute>
+<comment></comment>
+</variables>
+<variables name="B9" typeName="BOOL">
+<attribute name="IsVariableHidden" value="FALSE">
+</attribute>
+<comment></comment>
+</variables>
+<variables name="B10" typeName="BOOL">
+<attribute name="IsVariableHidden" value="FALSE">
+</attribute>
+<comment></comment>
+</variables>
+<variables name="B11" typeName="BOOL">
+<attribute name="IsVariableHidden" value="FALSE">
+</attribute>
+<comment></comment>
+</variables>
+<variables name="B12" typeName="BOOL">
+<attribute name="IsVariableHidden" value="FALSE">
+</attribute>
+<comment></comment>
+</variables>
+<variables name="B13" typeName="BOOL">
+<attribute name="IsVariableHidden" value="FALSE">
+</attribute>
+<comment></comment>
+</variables>
+<variables name="B14" typeName="BOOL">
+<attribute name="IsVariableHidden" value="FALSE">
+</attribute>
+<comment></comment>
+</variables>
+<variables name="B15" typeName="BOOL">
+<attribute name="IsVariableHidden" value="FALSE">
+</attribute>
+<comment></comment>
+</variables>
+<variables name="B16" typeName="BOOL">
+<attribute name="IsVariableHidden" value="FALSE">
+</attribute>
+<comment></comment>
+</variables>
+</structure></DDTSource>
+</DDTExchangeFile>

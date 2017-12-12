@@ -1,0 +1,38 @@
+﻿<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<DDTExchangeFile>
+<DDTSource DDTName="PTV_OUT" version="11.0" dateTime="dt#2017-08-10-08:17:24">
+<attribute name="IsTypeLocked" value="TRUE">
+</attribute>
+<attribute name="IsTypeHidden" value="FALSE">
+</attribute>
+<comment>Datenstruktur:  Ausgang PTV</comment>
+<attribute name="TypeDescriptiveForm" value="Default descriptive form PTV_OUT">
+</attribute>
+<structure>
+<variables name="X" typeName="REAL">
+<attribute name="IsVariableHidden" value="FALSE">
+</attribute>
+<comment>Istwert</comment>
+</variables>
+<variables name="SKA" typeName="REAL">
+<attribute name="IsVariableHidden" value="FALSE">
+</attribute>
+<comment>Skalenanfang</comment>
+</variables>
+<variables name="SKE" typeName="REAL">
+<attribute name="IsVariableHidden" value="FALSE">
+</attribute>
+<comment>Skalenende</comment>
+</variables>
+<variables name="M" typeName="WORD">
+<attribute name="IsVariableHidden" value="FALSE">
+</attribute>
+<comment>Statusmeldung</comment>
+</variables>
+<variables name="M1" typeName="WORD">
+<attribute name="IsVariableHidden" value="FALSE">
+</attribute>
+<comment>Word Reserve</comment>
+</variables>
+</structure></DDTSource>
+</DDTExchangeFile>

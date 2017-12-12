@@ -1,0 +1,43 @@
+﻿<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<DDTExchangeFile>
+<DDTSource DDTName="NTP" version="11.0" dateTime="dt#2017-08-10-08:17:17">
+<attribute name="IsTypeLocked" value="TRUE">
+</attribute>
+<attribute name="IsTypeHidden" value="FALSE">
+</attribute>
+<comment>Datenstruktur: Zeit</comment>
+<attribute name="TypeDescriptiveForm" value="Default descriptive form NTP">
+</attribute>
+<structure>
+<variables name="Sec" typeName="INT">
+<attribute name="IsVariableHidden" value="FALSE">
+</attribute>
+<comment>Sekunde</comment>
+</variables>
+<variables name="Minute" typeName="INT">
+<attribute name="IsVariableHidden" value="FALSE">
+</attribute>
+<comment>Minute</comment>
+</variables>
+<variables name="Hour" typeName="INT">
+<attribute name="IsVariableHidden" value="FALSE">
+</attribute>
+<comment>Stunde</comment>
+</variables>
+<variables name="Dat" typeName="INT">
+<attribute name="IsVariableHidden" value="FALSE">
+</attribute>
+<comment>Tag</comment>
+</variables>
+<variables name="Month" typeName="INT">
+<attribute name="IsVariableHidden" value="FALSE">
+</attribute>
+<comment>Monat</comment>
+</variables>
+<variables name="Year" typeName="INT">
+<attribute name="IsVariableHidden" value="FALSE">
+</attribute>
+<comment>Jahr</comment>
+</variables>
+</structure></DDTSource>
+</DDTExchangeFile>
