@@ -1,0 +1,200 @@
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//	
+// 	FILE:	GUT_ProcessAnalyst.ci
+//
+//	Beschreibung:
+//
+//		Enthält Funktionen die für den Prozess Analyst benötigt werden.
+//		Funktionen mit Version 3. sind freigegeben
+//
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	10.10.17	/	Schneider Electrik GmbH
+
+//	Version				75.11.08
+//
+//	PUBLIC FUNCTIONS:
+//
+//			GUT_PA_Code()
+//			GUT_PA_ANA
+//			GUT_PA_DOS()
+//			GUT_PA_GWOH
+//			GUT_PA_INT()
+//			GUT_PA_REG()
+//			GUT_PA_STEP3()
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	16.04.14	Steiner		Alle Funktionen auf 7.40 Page Funktionen umgestellt
+//	29.11.16	Steiner		Farbtafel an die Geniefarben angepasst.
+
+
+//	MODULE VARIABLES
+
+// The Pane List Object
+// -------------------
+// A list is used to display a list of PA panes when the user wishes to add a trend group.
+// This list handle enables reuse of the list object for subsequent calls.
+INT		mhPaneList = -1;
+
+// Preconfigured PAV Files
+// -----------------------
+// The Example page FOR the Process Analyst will attempt to load the PAV file that
+// is most relevant to the users last action. For example, if the user was viewing
+// the Loops Page, looppage.pav is loaded. If a user is viewing any of the Alarms
+// pages, the PAV specified below by msAlarmsPav below is used. In the event that 
+// no specific PAV makes sense, the msDefaultPav below is used.
+//STRING	msDefaultPav = "example.pav";
+//STRING	msAlarmsPav = "alarms.pav";
+//
+
+// Standard Command Identifiers
+// ----------------------------
+// The PA example page piggy backs some functionality onto standard user actions. These
+// actions are identified by StandardCommand IDs which are hard coded into the PA
+// source code. These values must be kept consistent with the PA source.
+STRING	StandardCommands_LoadConfig_ID 				= "Citect_Command_LoadConfig";
+STRING	StandardCommands_ToggleCursorVisibility_ID 	= "Citect_Command_ToggleCursorVisibility";
+
+// Custom Command Identifiers
+// --------------------------
+// The PA example page adds custom buttons to the Process Analyst. These globals hold the
+// custom command identifiers for the buttons to enable the correct action to be taken when
+// one is executed by the user.
+STRING	msLoadTrendGroupID 	= "";
+STRING	msPlayDemoID 		= "";
+STRING	msStopDemoID 		= "";
+STRING	msDiffCursorsID 	= ""
+
+// State Variables
+// --------------------
+// The variable hold the current state of the demo move in the example PA page.
+INT		mbDemoRunning 		= 0;
+INT		mnCurrentPavIndex 	= 0;
+// The loaded variable blocks the processing of the events while a PAV is loading
+INT		mbPavLoading		= 0;
+
+// Difference Cursor Variables
+// ---------------------------
+// The "Difference Cursor" functionality is a custom PA command implemented entirely 
+// in CiCode. Since the name of the Cursors and the name of the custom ListView 
+// column need to be internationalized, some strings are stored here as globals and
+// initialized on page entry.
+STRING 	msDiffColumnName 	= "Difference Cursor";
+STRING 	msDiffCursor1Name;
+STRING 	msDiffCursor2Name;
+STRING	msDiffColumnText;
+//216,216,216 Grau
+//INT 	miFarbe[12] [2] = 0,0,1 ,1507980,2,16711680,3,32000,4,16724838,5,13276,6,32109,7,16724940, 8, 65535, 9, 16776960,10,16777215, 11, 16776960
+INT 	miFarbe[16] [2] = 0,10066329,1 ,0,2,255,3,2856447,4,16777215,5,16755285,6,65535,7,12566463, 8, 32000, 9, 16711680,10,65280, 11, 16776960 ,12, 128,13,16711935,14,10066329
+// Farbnummern
+// 1 = Schwarz 
+// 2 = rot 
+// 3 = orange
+// 4 = weiss 
+// 5 = blau
+// 6 = Gelb
+// 7 = grau
+// 8 = grün
+// 9 = dunkelblau
+// 10 = Hellgrün
+// 11 = Hellblau
+// 12 = dunkelrot
+// 13 = Violet
+
+
+//MODULE VARIABLES TAG Value
+REAL	mrTrendTagData[1];
+INT		miRunLoop;
+STRING	msOldPageCount = "0";
+STRING	msNewPageCount = "0";
+OBJECT	mhCommandSystem;
+OBJECT	mhCommand;
+
+//	GUT_PA_ANA()
+//	Übergabeparameter:	 Tag     
+//                       
+//	Rückgabewert:		 
+//	Beschreibung:		Anzeige von x,GW und Alarmen	
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	10.10.17	/	Schneider Electrik GmbH
+//	Version				75.11.08
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	
+//	
+
+FUNCTION GUT_PA_ANA(STRING sTag)
+	STRING sTemp;
+	sTemp =UAG_String_Replace(sTag, ".", "_",  0, 4)
+	UAG_PA_ANA(sTemp)
+
+;
+END
+
+//	GUT_PA_DOS()
+//	Übergabeparameter:	 Tag     
+//                       
+//	Rückgabewert:		 
+//	Beschreibung:		Anzeige von x,GW und Alarmen	
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	19.10.17	/	Schneider Electrik GmbH
+//	Version				75.11.08
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	
+//	
+
+FUNCTION GUT_PA_DOS(STRING sTag)
+	STRING sTemp;
+	sTemp =UAG_String_Replace(sTag, ".", "_",  0, 4)
+	UAG_PA_DOS(sTemp)
+
+END
+
+//	GUT_PA_INT()
+//	Übergabeparameter:	 Tag     
+//                       
+//	Rückgabewert:		 
+//	Beschreibung:		Anzeige von x,GW und Alarmen	
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	19.10.17	/	Schneider Electrik GmbH
+//	Version				75.11.08
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	
+//	
+
+FUNCTION GUT_PA_INT(STRING sTag)
+	STRING sTemp;
+	sTemp =UAG_String_Replace(sTag, ".", "_",  0, 4)
+	UAG_PA_INT(sTemp)
+
+END
+
+//	GUT_PA_GWOH()
+//	Übergabeparameter:	 Tag     
+//                       
+//	Rückgabewert:		 
+//	Beschreibung:		Anzeige von x,GW und Alarmen	
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	10.10.17	/	Schneider Electrik GmbH
+//	Version				75.11.08
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	
+//	
+
+FUNCTION GUT_PA_GWOH(STRING sTag)
+	STRING sTemp;
+	sTemp =UAG_String_Replace(sTag, ".", "_",  0, 4)
+	UAG_PA_GWOH(sTemp)
+
+END
