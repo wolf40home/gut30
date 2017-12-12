@@ -1,0 +1,135 @@
+﻿[config]
+name=schneider web HTML Template
+category=HTML Documentation
+extension=html
+
+[var_BaseColor]
+name=Base color
+name.fr=Couleur de base
+name.de=Grundfarbe
+description=Customize the documentation's base color.
+description.fr=Personnaliser la couleur de base de la documentation.
+description.de=Festlegen der Grundfarbe der Dokumentation.
+kind=color
+default=#EFEFEF
+
+[var_IconStyle]
+name=Base icon set
+name.fr=Ensemble d'icônes de base
+name.de=Icons
+kind=enum
+default=chm
+values=chm|folder|vista
+description=Define the style for the icons displayed in the table of contents, keywords and search trees.
+description.fr=Définir le style des icônes affichées dans la table des matières, les mots clés et la recherche.
+description.de=Legt den Stil der im Inhaltsverzeichnis, den Stichwörtern und dem Suchbaum angezeigten Icons fest.
+
+[var_TocTitle]
+name=Table of contents tab title
+name.fr=Titre de l'onglet table des matières
+name.de=Inhaltsverzeichnis-Tab Überschrift
+kind=string
+default=Contents
+description=Define the title for the table of contents tab.
+description.fr=Définir le titre de l'onglet table des matières.
+description.de=Legt den Titel für den Inhaltsverzeichnis-Tab fest.
+
+[var_TocShow]
+name=Show the table of contents tab
+name.fr=Afficher l'onglet table des matières
+name.de=Inhaltsverzeichnis-Tab anzeigen
+kind=bool
+default=1
+description=If checked, the table of contents tab will be shown. Hidden otherwise.
+description.fr=Si coché, l'onglet table des matières sera affiché. Il sera caché sinon.
+description.de=Wenn markiert, wird der Inhaltsverzeichnis-Tab angezeigt, ansonsten unsichtbar.
+
+[var_TocExpanded]
+name=Expand table of contents tree
+name.fr=Développer la table des matières
+name.de=Inhaltsverzeichnis-Baum expandieren
+kind=bool
+default=1
+description=If checked, the table of contents tree will be fully expanded. Collapsed otherwise.
+description.fr=Si coché, l'arbre de la table des matières est complètement développé. Il sera compacté sinon.
+description.de=Wenn markiert, wird der Inhaltsverzeichnis-Baum komplett expandiert, ansonsten komprimiert.
+
+[var_TocWidth]
+name=Table of contents width
+name.fr=Largeur de la table des matières
+name.de=Breite des Inhaltsverzeichnisses
+kind=int
+default=300
+description=Indicates the width of the table of contents panel.
+description.fr=Indiquer la largeur du panneau de la table des matières.
+description.de=Zeigt die Breite des Inhaltsverzeichnis-Panels an.
+
+[var_TocKeywordsTitle]
+name=Keywords tab title
+name.fr=Titre de l'onglet mots clés
+name.de=Schlüßelwörter Tab Überschrift
+kind=string
+default=Index
+description=Define the title for the keywords tab.
+description.fr=Définir le titre de l'onglet mots clés.
+description.de=Definiert die Überschrift für den Stichwörter-Tab.
+
+[var_TocKeywordsShow]
+name=Show the keywords tab
+name.fr=Afficher l'onglet mots clés
+name.de=Stichwörter-Tab anzeigen
+kind=bool
+default=1
+description=If checked, the keywords tab will be shown. Hidden otherwise.
+description.fr=Si coché, l'onglet mots clés sera affiché. Il sera caché sinon.
+description.de=Wenn markiert, wird der Stichwörter-Tab angezeigt, ansonsten unsichtbar.
+
+[var_TocKeywordsExpanded]
+name=Expand keywords tree
+name.fr=Développer les mots clés
+nae.de=Stichwörter-Baum expandieren
+kind=bool
+default=1
+description=If checked, the keywords tree will be fully expanded. Collapsed otherwise.
+description.fr=Si coché, l'arbre des mots clés sera complètement développé. Il sera compacté sinon.
+description.de=Wenn markiert, wird der Stichwörter-Baum komplett expandiert, ansonsten komprimiert.
+
+[var_TocSearchTitle]
+name=Search tab title
+name.fr=Titre de l'onglet recherche
+name.de=Titel des Suchen-Tabs
+kind=string
+default=Search
+description=Define the title for the search tab.
+description.fr=Définir le titre de l'onglet recherche.
+description.de=Definiert die Überschrift für den Suchen-Tab.
+
+[var_TocSearchShow]
+name=Show the search tab
+name.fr=Afficher l'onglet recherche
+name.de=Suchen-Tab anzeigen
+kind=bool
+default=1
+description=If checked, the search tab will be shown. Hidden otherwise.
+description.fr=Si coché, l'onglet recherche sera affiché. Il sera caché sinon.
+description.de=Wenn markiert, wird der Suchen-Tab angezeigt, ansonsten unsichtbar.
+
+[var_ShowBreadCrumbs]
+name=Show BreadCrumbs
+name.fr=Afficher le cheminement
+name.de=Brotkrümelnavigation
+description=Show the breadcrumbs at the top of each topic bellow the topic title.
+description.fr=Afficher le cheminement au haut de chaque chapitre en dessous du titre du chapitre.
+description.de=Brotkrümelnavigation über jedem Kapitel/Thema unterhalb des Titels anzeigen.
+kind=bool
+default=1
+
+[var_ShowNavigation]
+name=Show navigation arrows
+name.fr=Afficher les flèches de navigation
+name.de=Navigationspfeile anzeigen
+description=Show the navigation arrows at the top of each topic right of the topic title.
+description.fr=Afficher les flèches de navigation en haut de chaque chapitre à droite du titre du chapitre.
+description.de=Navigationspfeile über jedem Kapitel/Thema auf der rechten Seite des Titels anzeigen.
+kind=bool
+default=1

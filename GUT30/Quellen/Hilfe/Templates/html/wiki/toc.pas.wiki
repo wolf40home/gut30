@@ -1,0 +1,48 @@
+<%
+var
+	aTopicList: THndTopicsInfoArray;
+	aKeywordList: THndKeywordsInfoArray;
+	nBlocLevel,ntemp: integer = 0;
+	nCurTopic, nTopicKind, nCurTopicLevel, nDif, nClose, nCurTopicChildrenCnt: integer;
+	nCurKeyword, nCurKeywordLevel, nCurKeywordChildrenCnt, nCurKeywordTopic: integer;
+	sTopicUrl, sCurrentKeyword, sTopicClass, sKeywordClass, sKeywordLink, sKeywordOnClick: string;
+	aAssociatedTopics: array of string;
+
+begin
+	// Need BOM for UTF8 files
+	HndGeneratorInfo.BOMOutput := True;
+
+println('<g:plusone size="medium"></g:plusone>');
+					nBlocLevel := 0;
+					aTopicList := HndTopics.GetTopicList(False);
+					for nCurTopic := 0 to length(aTopicList) - 1 do
+					begin
+						HndGeneratorInfo.CurrentTopic := aTopicList[nCurTopic].id;
+						nTopicKind := aTopicList[nCurTopic].Kind;
+						nCurTopicLevel := HndTopics.GetTopicLevel(HndGeneratorInfo.CurrentTopic);
+						nCurTopicChildrenCnt := HNDTopics.GetTopicDirectChildrenCount(HndGeneratorInfo.CurrentTopic);
+						// Topic URL
+						if nTopicKind = 2 then sTopicUrl := HndTopics.GetTopicUrlLink(HndGeneratorInfo.CurrentTopic)  // Link to URL
+						else if nTopicKind = 1 then sTopicUrl := '#" onclick="return false;'  // Empty
+						else sTopicUrl := format('%s', [aTopicList[nCurTopic].HelpId]);  // Normal topic
+						// Close the previous topics
+						if ((nCurTopic > 0) and (nCurTopicLevel < HndTopics.GetTopicLevel(aTopicList[nCurTopic - 1].id))) then
+						begin
+							nDif := HndTopics.GetTopicLevel(aTopicList[nCurTopic - 1].id) - nCurTopicLevel;
+							for nClose := 0 to nDif - 1 do
+							begin
+								nBlocLevel := nBlocLevel - 1;
+							end;
+						end;
+						
+						// Topic class
+						if nCurTopicChildrenCnt > 0 then sTopicClass := 'folder'
+						else sTopicClass := 'file';
+						for ntemp := 0 to nCurTopicLevel do
+							begin
+								print(' ');
+							end;
+					print('* ['); print(sTopicUrl); print(' ');  print(HTMLEncode(aTopicList[nCurTopic].caption));println(']'); 
+					end;
+end.
+%>

@@ -15,3 +15,7 @@ GUT30_P4
 Muster Projekt:
 GUT30_Demo_Unity_OFS für Citect 7.50
 GUT30_Demo_Unity_OFS_P4 für Citect 2015
+
+Optional für Citect 7.50
+GUT30_Bild19P3		Auflösung 1920*1200
+GUT30_Bild19X3		Auflösung 1920*1200

@@ -1,0 +1,80 @@
+<%
+var
+	aTopicList: THndTopicsInfoArray;
+	nCurTopic, nCurParent, nTopicKind, nHeaderKind, nFooterKind: integer;
+	sTopicHeader, sTopicFooter, sRelativeTopic: string;
+	oEditor: TObject;
+	aBreadCrumb: array of String;
+
+begin
+	// Need BOM for UTF8 files
+	HndGeneratorInfo.BOMOutput := True;
+
+
+	
+	// Clear search data
+	HndJsSearchEngine.ClearSearchData();
+	
+	// Create the temp editor
+	oEditor := HndEditor.CreateTemporaryEditor();
+	
+	// Each individual topics...
+	aTopicList := HndTopics.GetTopicList(False);
+	for nCurTopic := 0 to length(aTopicList) - 1 do
+	begin
+		// Notify about the topic being generated
+		HndGeneratorInfo.CurrentTopic := aTopicList[nCurTopic].id;
+		// Topic kind
+		nTopicKind := HndTopics.GetTopicKind(HndGeneratorInfo.CurrentTopic);
+		if (nTopicKind = 1) then continue;  // Empty topic: do not generate anything
+		// Setup the file name
+		HndGeneratorInfo.CurrentFile := aTopicList[nCurTopic].HelpId + '.wiki';
+		// Topic header
+		nHeaderKind := HndTopics.GetTopicHeaderKind(HndGeneratorInfo.CurrentTopic);
+		sTopicHeader := HndTopics.GetTopicHeaderTextCalculated(HndGeneratorInfo.CurrentTopic);
+		// Add Search data
+		HndEditor.Clear(oEditor);
+		HndEditor.InsertTopicContent(oEditor, HndGeneratorInfo.CurrentTopic);
+		HndEditor.ReplaceLibraryItems(oEditor);
+		HndJsSearchEngine.AddSearchData(sTopicHeader, HndGeneratorInfo.CurrentTopic);
+		HndJsSearchEngine.AddSearchData(HndEditor.GetContentAsText(oEditor), HndGeneratorInfo.CurrentTopic);
+		HndJsSearchEngine.AddSearchData(sTopicFooter, HndGeneratorInfo.CurrentTopic);
+		
+		// Create the breadcrumb
+		SetLength(aBreadCrumb, 0);
+		sRelativeTopic := HndTopics.GetTopicParent(HndGeneratorInfo.CurrentTopic);
+
+ if nHeaderKind <> 2 then begin %>
+
+				<%
+					sRelativeTopic := HndTopics.GetTopicParent(HndGeneratorInfo.CurrentTopic);
+					if (sRelativeTopic <> '') and (sRelativeTopic <> HndTopics.GetProjectTopic()) then
+					begin
+				
+					end;
+					sRelativeTopic := HndTopics.GetTopicPrevious(HndGeneratorInfo.CurrentTopic);
+
+					sRelativeTopic := HndTopics.GetTopicNext(HndGeneratorInfo.CurrentTopic);
+
+				%>
+
+	<% end;
+	println('#labels Phase-Implementation'); 
+	//HndLibraryItems.SetItemUrlLink(const anItemId, anUrlLink: string)
+	print(HndTopics.GetTopicContentAsHtml(HndGeneratorInfo.CurrentTopic)); %>
+
+
+<%
+	end;
+	
+	// Output JS Search engine data
+	HndGeneratorInfo.CurrentFile := 'js\searchdata.js';
+	print(HndJsSearchEngine.GetJsData());
+	
+	// Free the editor
+	HndEditor.DestroyTemporaryEditor(oEditor);
+	// Clear the search engine
+	HndJsSearchEngine.ClearSearchData();
+	
+end.
+%>

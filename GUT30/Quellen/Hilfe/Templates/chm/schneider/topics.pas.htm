@@ -1,0 +1,148 @@
+<%
+var
+	aTopicList: THndTopicsInfoArray;
+	nCurTopic, nCurParent, nTopicKind, nHeaderKind, nFooterKind: integer;
+	sTopicHeader, sTopicFooter, sRelativeTopic: string;
+	aBreadCrumb: array of String;
+
+begin
+	// Need BOM for UTF8 files
+	HndGeneratorInfo.BOMOutput := True;
+
+	// Output global CSS content
+	HndGeneratorInfo.CurrentFile := 'css\hnd.css';
+	print(HndProjects.GetProjectCssContent());
+	
+	// Each individual topics...
+	aTopicList := HndTopicsEx.GetTopicListGenerated(False, False);
+	for nCurTopic := 0 to length(aTopicList) - 1 do
+	begin
+		// Notify about the topic being generated
+		HndGeneratorInfo.CurrentTopic := aTopicList[nCurTopic].id;
+		// Topic kind
+		nTopicKind := aTopicList[nCurTopic].Kind;
+		if (nTopicKind = 1) then continue;  // Empty topic: do not generate anything
+		// Setup the file name
+		HndGeneratorInfo.CurrentFile := HndTopics.GetTopicHelpId(HndGeneratorInfo.CurrentTopic) + '.htm';
+		// Topic header
+		nHeaderKind := HndTopics.GetTopicHeaderKind(HndGeneratorInfo.CurrentTopic);
+		sTopicHeader := HndTopics.GetTopicHeaderTextCalculated(HndGeneratorInfo.CurrentTopic);
+		// Topic footer
+		nFooterKind := HndTopics.GetTopicFooterKind(HndGeneratorInfo.CurrentTopic);
+		sTopicFooter := HndTopics.GetTopicFooterTextCalculated(HndGeneratorInfo.CurrentTopic);
+		// Create the breadcrumb
+		SetLength(aBreadCrumb, 0);
+		if HndGeneratorInfo.GetCustomSettingValue('ShowBreadCrumbs') then
+		begin
+			sRelativeTopic := HndTopics.GetTopicParent(HndGeneratorInfo.CurrentTopic);
+			while (sRelativeTopic <> '') and (sRelativeTopic <> HndTopics.GetProjectTopic()) do
+			begin
+				SetLength(aBreadCrumb, Length(aBreadCrumb) + 1);
+				aBreadCrumb[Length(aBreadCrumb) - 1] := sRelativeTopic;
+				sRelativeTopic := HndTopics.GetTopicParent(sRelativeTopic);
+			end;
+		end;
+
+%>
+
+<html>
+	
+<head>
+	<title><% print(HTMLEncode(HndTopics.GetTopicCaption(HndGeneratorInfo.CurrentTopic))); %></title>
+	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta name="generator" content="<% print(HTMLEncode(HndGeneratorInfo.HelpNDocVersion)); %>">
+	<link type="text/css" rel="stylesheet" media="all" href="css/reset.css" />
+	<link type="text/css" rel="stylesheet" media="all" href="css/base.css" />
+	<link type="text/css" rel="stylesheet" media="all" href="css/hnd.css" />
+	<!--[if lte IE 8]>
+		<link type="text/css" rel="stylesheet" media="all" href="css/ielte8.css" />
+	<![endif]-->
+	<script type="text/javascript" src="js/chmRelative.js"></script>
+	<script src='metahelp.js'></script>
+</head>
+
+<body>
+	<script language="javascript" type="text/javascript" src="js/wz_tooltip.js"></script>
+	<script language="javascript" type="text/javascript" src="js/tip_balloon.js "></script>
+	<% if nHeaderKind <> 2 then begin %>
+		<div id="topic_header">
+			<div id="topic_header_content">
+				<h1><% print(HTMLEncode(sTopicHeader)); %></h1>
+				
+				<%
+					if Length(aBreadCrumb) > 0 then
+					begin
+				%>
+				<div id="topic_breadcrumb">
+					<%
+						for nCurParent := Length(aBreadCrumb) - 1 downto 0 do
+							printf('<a href="%s.htm">%s</a> &rsaquo;&rsaquo; ', [HndTopics.GetTopicHelpId(aBreadCrumb[nCurParent]), HTMLEncode(HndTopics.GetTopicCaption(aBreadCrumb[nCurParent]))]);
+					%>
+				</div>
+				<%
+					end;
+				%>
+			</div>
+			<%
+				if HndGeneratorInfo.GetCustomSettingValue('ShowNavigation') then
+				begin
+			%>
+			<div id="topic_header_nav">
+				<%
+					sRelativeTopic := HndTopics.GetTopicParent(HndGeneratorInfo.CurrentTopic);
+					if (sRelativeTopic <> '') and (sRelativeTopic <> HndTopics.GetProjectTopic()) then
+					begin
+				%>
+				
+				
+				<%
+					end;
+					sRelativeTopic := HndTopicsEx.GetTopicPreviousGenerated(HndGeneratorInfo.CurrentTopic, True);
+					if (sRelativeTopic <> '') and (sRelativeTopic <> HndTopics.GetProjectTopic()) then
+					begin
+				%>
+				
+				<a href="<% printf('%s.htm', [HndTopics.GetTopicHelpId(sRelativeTopic)]); %>"><img src="img/arrow_left.gif" alt="Previous"/></a>
+				
+				<%
+					end;
+					sRelativeTopic := HndTopicsEx.GetTopicNextGenerated(HndGeneratorInfo.CurrentTopic, True);
+					if (sRelativeTopic <> '') and (sRelativeTopic <> HndTopics.GetProjectTopic()) then
+					begin
+				%>
+				
+				<a href="<% printf('%s.htm', [HndTopics.GetTopicHelpId(sRelativeTopic)]); %>"><img src="img/arrow_right.gif" alt="Next"/></a>
+				
+				<%
+					end;
+				%>
+			</div>
+			<%
+				end;
+			%>
+			<div class="clear"></div>
+		</div>
+	<% end; %>
+	
+	<div id="topic_content">
+		<% print(HndTopics.GetTopicContentAsHtml(HndGeneratorInfo.CurrentTopic)); %>
+	</div>
+	
+	<% if nFooterKind <> 2 then begin %>
+		<div id="topic_footer">
+
+			<div id="topic_footer_content">
+				<% print(HTMLEncode(sTopicFooter)); %>
+			</div>
+		</div>
+	<% end; %>
+	
+</body>
+	
+</html>
+
+<%
+	end;  // for nCurTopic
+	
+end.
+%>

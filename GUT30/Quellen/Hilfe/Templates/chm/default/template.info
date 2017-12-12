@@ -1,0 +1,46 @@
+﻿[config]
+name=Default CHM Template
+category=CHM Documentation
+extension=chm
+linkformattopic=%helpid%.htm
+linkformatanchor=%helpid%.htm#%anchorname%
+
+[var_BaseColor]
+name=Base color
+name.fr=Couleur de base
+name.de=Grundfarbe
+description=Customize the documentation's base color.
+description.fr=Personnaliser la couleur de base de la documentation.
+description.de=Festlegen der Grundfarbe der Dokumentation.
+kind=color
+default=#EFEFEF
+
+[var_ShowBreadCrumbs]
+name=Show BreadCrumbs
+name.fr=Afficher le cheminement
+name.de=Brotkrümelnavigation
+description=Show the breadcrumbs at the top of each topic bellow the topic title.
+description.fr=Afficher le cheminement au haut de chaque chapitre en dessous du titre du chapitre.
+description.de=Brotkrümelnavigation über jedem Kapitel/Thema unterhalb des Titels anzeigen.
+kind=bool
+default=1
+
+[var_ShowNavigation]
+name=Show navigation arrows
+name.fr=Afficher les flèches de navigation
+name.de=Navigationspfeile anzeigen
+description=Show the navigation arrows at the top of each topic right of the topic title.
+description.fr=Afficher les flèches de navigation en haut de chaque chapitre à droite du titre du chapitre.
+description.de=Navigationspfeile über jedem Kapitel/Thema auf der rechten Seite des Titels anzeigen.
+kind=bool
+default=1
+
+[var_UseCharsetForTopics]
+name=Use project charset for topics
+name.fr=Utiliser le charset du projet
+name.de=Benutzen Sie den Projektzeichensatz für Kapitel/Themen
+description=Use the project encoding to generate topics instead of UTF-8. Useful when some characters appear broken in the CHM search result list.
+description.fr=Utiliser l'encodage du projet pour générer les chapitres au lieu de l'UTF-8. Utile lorsque certains caractère apparaissent cassés dans les résultats de recherche CHM.
+description.de=Benutzen Sie den Projektzeichensatz an Stelle von UTF-8. Dies ist nützlich, wenn einige Zeichen in der CHM-Suchergebnisliste defekt erscheinen.
+kind=bool
+default=0

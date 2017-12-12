@@ -1,0 +1,18 @@
+[config]
+name=Schneider CHM Template
+category=CHM Documentation
+extension=chm
+linkformattopic=%helpid%.htm
+linkformatanchor=%helpid%.htm#%anchorname%
+
+[var_ShowBreadCrumbs]
+name=Show BreadCrumbs
+kind=bool
+default=1
+description=Show the breadcrumbs at the top of each topic bellow the topic title.
+
+[var_ShowNavigation]
+name=Show navigation arrows
+kind=bool
+default=1
+description=Show the navigation arrows at the top of each topic right of the topic title.

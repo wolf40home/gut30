@@ -1,0 +1,6 @@
+[config]
+name=wiki HTML Template
+category=HTML Documentation
+extension=wiki
+linkformattopic=[%helpid%]
+linkformatanchor=[%helpid%#%anchorname%]

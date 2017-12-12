@@ -1,0 +1,34 @@
+﻿[config]
+name=Default EPub Template
+category=eBook
+extension=epub
+
+[var_CoverInline]
+name=Inline cover page
+name.fr=Page de couverture incluse
+name.de=Inline cover page
+kind=bool
+default=0
+description=Include an inline cover page.
+description.fr=Inclure une page de couverture.
+description.de=Include an inline cover page.
+
+[var_TocTitle]
+name=Table of contents title
+name.fr=Titre de la table des matières
+name.de=Inhaltsverzeichnis Überschrift
+kind=string
+default=Table of Contents
+description=Define the title for the table of contents.
+description.fr=Définir le titre de la table des matières.
+description.de=Legt den Titel für den Inhaltsverzeichnis fest.
+
+[var_TocInline]
+name=Inline table of contents
+name.fr=Table des matières incluse
+name.de=Inline table of contents
+kind=bool
+default=0
+description=Include an inline table of contents after the cover page.
+description.fr=Inclure une table des matières après la page de couverture.
+description.de=Include an inline table of contents after the cover page.
