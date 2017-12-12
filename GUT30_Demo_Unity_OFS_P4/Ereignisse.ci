@@ -1,0 +1,613 @@
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//	
+// 	FILE:	Ereignisse.ci
+//
+//	Beschreibung:
+//
+//		Enthält alle Funktionen die Projektvariablen enthalten.
+//		Funktionen mit Version 3. sind freigegeben
+//
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	14.11.08	/	Schneider Electrik GmbH
+//	Version				75.33.11.06
+//
+//	PUBLIC FUNCTIONS:
+//
+//			UAG_TAG_Event()
+//			UAG_SPS_TESTRUN ()
+//			UAG_SPS_WDOG()
+//			UAG_SPS_RUN()
+
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	16.04.14	Steiner		Alle Funktionen auf 7.40 Page Funktionen umgestellt
+
+	
+ // nur als Beispiel wie man eigene Events anlegen kann.
+ // Alternativ kann dies auch in UAG erfolgen oder durch eintrag in der Datenbank UEREIGNI.DBF für den Client ist der Mtask "C"
+ // Achtung diese Funktion muss vom Clientstart aufgerufen werden.
+FUNCTION UAG_TAG_Event()
+	INT iHandle;
+	ErrSet(1);
+//		iHandle =TagSubscribe("TAnla_MU001_INFO16EA_DIAG1" ,500 );
+//		SubscriptionAddCallback(iHandle, "ANALYSE01")
+//		iHandle =TagSubscribe("TAnla_MU001_INFO02_DIAG1" ,500);
+//		SubscriptionAddCallback(iHandle, "Sprache")
+	ErrSet(0);
+END
+
+ // nur als Beispiel wie man eigene Events Verarbeiten kann.
+FUNCTION ANALYSE01(INT subsHandle)
+
+	ErrSet(1);
+	SELECT CASE SubscriptionGetAttribute(subsHandle, "Value")
+		CASE "2"
+			Str1="Analyse Verteiler 1";					// Überschrift
+			Str2="Analysemessung Verteiler 1 aktiv";	// Meldetext
+		CASE "4"
+			Str1="Analyse Verteiler 2";					// Überschrift
+			Str2="Analysemessung Verteiler 2 aktiv";	// Meldetext
+		CASE "8"
+			Str1="Analyse Verteiler 3";					// Überschrift
+			Str2="Analysemessung Verteiler 3 aktiv";	// Meldetext
+		CASE "16"
+			Str1="Analyse Vorratsbehälter";					// Überschrift
+			Str2="Analysemessung Vorratsbehälter aktiv";	// Meldetext
+		CASE "32"
+			Str1="Analyse Sender West";					// Überschrift
+			Str2="Analysemessung Sender West aktiv";	// Meldetext
+		CASE "64"
+			Str1="Analyse Sender Ost";					// Überschrift
+			Str2="Analysemessung Sender Ost aktiv";	// Meldetext
+		CASE "128"
+			Str1="Analyse Container 1";					// Überschrift
+			Str2="Magnesiumbrand Container 1";	// Meldetext
+		CASE "256"
+			Str1="Analyse Container 3";					// Überschrift
+			Str2="Magnesiumbrand Container 3";	// Meldetext
+			
+	END SELECT
+
+	IF StrToInt (SubscriptionGetAttribute(subsHandle, "Value")) > 0 THEN
+		UAG_EreigAktiv(1);
+		
+		TaskNew("UAG_MM_WinNewAt","^"!p_ereignis^",450,350,2027",0)	// 2027 = Addition der gmode
+	ErrSet(0);		
+	END
+
+
+END 
+
+
+
+FUNCTION Sprache(INT subsHandle)
+	ErrSet(1);
+	IF StrToInt (SubscriptionGetAttribute(subsHandle, "Value")) > 0 THEN
+		UAG_Speak_TD("TAnla_MU001_ADU116GW_M","TAnla_MU001_INFO02_");
+	END
+	ErrSet(0);	
+END
+
+// Hier die WDOG für die einzelnen Steuerungen eintragen	
+INT FUNCTION UAG_SPS_WDOG (INT i)
+
+	SELECT CASE  i 
+	CASE 1 
+		RETURN DEMO_IO_WDOG
+//	CASE 2 
+//		RETURN PS02_WDOG
+//	CASE 3 
+//		RETURN PS03_WDOG
+//	CASE 4 
+//		RETURN PS04_WDOG
+//	CASE ELSE
+		RETURN 0	
+	END SELECT
+END
+FUNCTION UAG_SPS_RUN(INT irun, INT i)
+	SELECT CASE  i 
+	CASE 1 
+		DEMO_IO_RUN =irun;
+//	CASE 2
+//		PS02_RUN =irun;
+//	CASE 3
+//		PS03_RUN =irun;
+//	CASE 4
+//		PS04_RUN =irun;
+		
+	END SELECT
+END
+
+// hier die Steurungen eintragen die den System_xxx_30 Baustein nutzen
+FUNCTION UAG_SPS_Time()
+		UAG_PLC_DateTime("DEMO_IO_WDOG")
+
+END
+
+INT FUNCTION
+UAG_EreigAktiv(INT iBit=-1)
+
+	SELECT CASE iBit 
+	CASE -1
+		RETURN Server1_EreigAktiv
+	CASE 1	
+		Server1_EreigAktiv =1
+	CASE 0
+		Server1_EreigAktiv = 0
+	END	SELECT	
+	RETURN Server1_EreigAktiv
+END
+
+
+// Parameter für den Client.
+
+
+FUNCTION UAG_Parameter_Client()
+	//**** Parameter aus den Systemseiten
+		INT iError;
+		SleepMS(1000);
+		UAG_Parameter_Client_Page();
+		UAG_Parameter_Client_Page_pcs()
+	//END **** Parameter aus den Systemseiten
+
+	uag_start=2;
+	uag_start_text= "Parameter laden";
+	SleepMS(500);
+	//*** P2 Parameter
+		giMODE =2027; 							//für P2 hier eintragen für P0 die Funktion UAG_Parameter() eintragen
+		giP2 =1;
+		gITrendPopup = 1;						//alte Trend Popup Anzeigen =1
+	//END *** P2 Parameter
+	
+	//*** Globale Variablen und INI einträge
+		UAG_AllClient();
+		ErrSet(1);
+		Login("kernel","kernel");
+		gsUAGHelpPath = ParameterGet(gsUAG_LIB_NAME,"HELPPfad","[RUN]:");
+		ParameterPut("Page" ,"AnlagenName" ,"Demoanlage");	// Anlagenname
+		ParameterPut("Page" ,"OriginAdjust" ,"0");
+		ParameterPut("Page" ,"EnableQualityToolTip" ,"0");		// Normale ToolTip
+		ParameterPut("CtExplore" ,"DefaultTemplateStyle" ,"uag_p3_style");
+		ParameterPut("CtExplore" ,"DefaultTemplateResolution" ,"WUXGA");
+		ParameterPut("CtExplore" ,"DefaultTemplateTitleBar" ,"0");
+		ParameterPut("Path" ,"DATA2P" ,"[RUN]:\DATA2P");  		//Achtung der Pfad muss von allen Rechnern ereichbar sein
+		ParameterPut("Path" ,"DATA2S" ,"[RUN]:\DATA2S");  		//Achtung der Pfad muss von allen Rechnern ereichbar sein
+		ParameterPut("Path" ,"UI_P" ,"[RUN]:");  		//Achtung der Pfad muss von allen Rechnern ereichbar sein
+		ParameterPut("Path" ,"UI_S" ,"[RUN]:");  		//Achtung der Pfad muss von allen Rechnern ereichbar sein
+		ParameterPut("Path","LIBPfad","[USER]:" + gsUAG_LIB_NAME);
+		ParameterPut("Privilege" ,"AckAlarms" ,"1");
+		ParameterPut("Privilege" ,"DisableAlarms" ,"8");
+		ParameterPut("Privilege" ,"EngTools" ,"8");
+		ParameterPut("Alarm" ,"SummaryTimeout" ,"6000");
+		ParameterPut("Alarm" ,"SummaryLength" ,"10000");
+		ParameterPut("ALARM" ,"Sound4" ,gsUAGLibPath + "\NonUrgent.WAV");	//Ton für Alarm Warnung
+		ParameterPut("ALARM" ,"Sound3" ,gsUAGLibPath + "\Alarm2.WAV");		//Ton für Alarm Störung
+		ParameterPut("ALARM" ,"Sound2" ,gsUAGLibPath + "\Alarm.WAV");		//Ton für Alarm Grenzwerte
+		ParameterPut("ALARM" ,"Sound1" ,gsUAGLibPath + "\Urgent.WAV");		//Ton für Alarm Hardware Alarm
+		ParameterPut("ALARM" ,"Sound255" ,gsUAGLibPath + "\Info.WAV");		//Ton für Alarm Systemmeldungen
+		ParameterPut("Format" ,"Alarm" ,"{Date,95}{Time,80}{Tag,254}{Desc,654}{State,61}{Custom1,178}{Type,210}{Help,187}");		//Spalten für Alarm_Tab
+		ParameterPut("Format" ,"DefSumFmt" ,"{Ondate,85}{Ontime,69}{Offtime,69}{DeltaTime,69}{Tag,213}{SumDesc,863}{Custom1,61}{SumType,155}{Sumstate,61}");		//Spalten für Sumary_Tab
+		ParameterPut("Format" ,"DefAllFmt" ,"{Tag,282}{Name,327}{Desc,494}{Custom1,131}");		//Spalten für Pager_Tab
+		ParameterPut(gsUAG_LIB_NAME,"UIwrite","0");		! Schreiben in DBF 0= aus 1= Ein
+
+		ParameterPut(gsUAG_LIB_NAME,"DMv","0");								// Verhalten bei Doppelmonitor	1 Kopf wird auf Beide Verteilt. 0 Beide sind gleich.
+		ParameterPut(gsUAG_LIB_NAME,"Pointer","1");								// Pointer anzeige	1 = wird Angezeigt. 0 = kein Pointer
+		ParameterPut("Trend","defaultSpan","0 2 0");						// Spanne für Trend in Tage Stunden Minuten
+		gsUAGBildProjektPath = PathToStr ("[RUN]:");
+		MainUser = "Bediener";
+		MainUserPW = "";
+	//END *** Globale Variablen und INI einträge
+	IF gbUAGClientMode=true THEN
+//		Server1_PingIp\1 = UAG_String_StrToReg("192.168.0.21",16);			! hier kann die Liste der IP Adressen angegeben werden.
+//		Server1_PingIp\2 = UAG_String_StrToReg("192.168.0.26",16);
+//		Server1_PingIp\3 = UAG_String_StrToReg("192.168.0.14",16);
+		uag_InsertClient("Wolfgang-PC",2)								! mit der Funktion werden die Client Registriert. Es wird Auch ein Parameterput für Client.Names gemacht.
+	END
+//	UAG_SystemInfo("Parameter", "System",ErrMsg(IsError()),"-","-","-",TaskCluster(),_UAG_Fehler)
+	uag_start=3;
+	SleepMS(500);
+
+	uag_start_text= "Seitennavigation Einrichten";
+	UAG_NAV_Init();	
+	iError=IsError();													! Initialise Navigation buttons
+	uag_start=4;
+	SleepMS(500);
+
+	uag_start_text= "Servermonitor starten";
+	UAG_Alarms_Start_Servermon();
+	uag_start=5;
+	SleepMS(500);
+
+	uag_start_text= "Prozess für Alarm Töne starten";
+//	UAG_Alarms_Sound();													! nicht für P3 jeder Alarmpriorität muss ein Sound zugeordnet werden
+	UAG_Alarms_Sound_PLC()
+	uag_start=6;
+	SleepMS(500);
+
+	uag_start_text= "HMI Initialwerte laden";
+//	IF gbUAGClientMode=true THEN
+		UAG_HMIInitial_Load();
+//	END;													! HMI Variablen Initialisieren
+	uag_start=7;
+	SleepMS(500);
+
+	uag_start_text= "Initialwerte laden";
+	giUI_Write=1;											! Initalwerte Speichern =1
+	UAG_Initial_Load();													! SPS-HMI Variablen Initialisieren
+	uag_start=8;
+	SleepMS(500);
+
+	uag_start_text= "Test Werte laden";
+//	UAG_Initial_Load_Demo();
+	uag_start=9;
+	SleepMS(500);
+
+	uag_start_text= "Variablen überwachung starten";
+	UAG_Ereignisse_Load();												! Funktion für Eigene Variablen und z.B. MSGBOX
+	GUT_SNMP_List()
+	uag_start=10;
+	SleepMS(2000);
+
+	uag_start_text= "Bildsystem starten"
+//	TaskNew("Tab_Style_Startup","",0); 
+	WinGoto(WinNumber("SplashWin")); // "SplashWin" needs to match the name defined in [Page]SplashWinName 
+	UAG_WinFree();
+	MultiMonitorStart();   
+	iError=IsError();
+	IF iError <>0 THEN 
+		UAG_SystemInfo("UAG_Parameter_Client", "System",ErrMsg(ierror),"-","-","-",TaskCluster(),_UAG_Fehler)
+		ErrLog(ErrMsg(ierror));
+    END
+	UAG_SystemInfo("UAG_Parameter_Client","System","Client Start fertig" ,"-","-","-",TaskCluster());
+	ErrSet(0);
+	IF gbUAGClientMode=true THEN	
+//		TaskNew( "UAG_PID", "^"SIMUM^",^"SIMUR^"", 0 );	!Start PID Simulations
+//	UAG_TAG_Event(); 								!nur bei Bedarf scharf schalten.
+		Login(MainUser,MainUserPW);
+		TaskNew("UAG_Start_Test_NE107","",0);			!nur bei Bedarf scharf schalten.
+	ELSE
+		Logout()
+	END		
+	WinGoto(1);
+	SleepMS(2000);
+	PageGoto(ParameterGet("Page" ,"HomePage" ,"System_Start"));
+	WinGoto(0);
+	UAG_WinFree();
+	UAGUhr = 0;															// Vorbelegung für die Uhr  0 = Analog, 1= Digital
+
+END
+
+FUNCTION uag_hupe_schreiben(INT iPrio)
+	ErrSet(1);
+	IF (iPrio <> -1) AND (iPrio <17) THEN
+		Server1_Hupe =Pow (2,iPrio-1);
+	ELSE
+		Server1_Hupe =0	;
+	END	
+	ErrSet(0);
+END
+
+// wird vom Start des Trendservers aufgerufen
+
+//FUNCTION _OEM_Trend_Server
+//INT iHandle;
+//	iHandle =TagSubscribe("TAnla_MU001_TrendE_ME" );
+//	SubscriptionAddCallback(iHandle, "Trendwerte") 
+//
+//END
+
+
+//INT iTime[60],iTimeMs[60];
+//REAL rValue[60];
+//FUNCTION Trendwerte(INT subsHandle)
+//INT I,ix,zaehler,iTimeTemp,iTimeMsTemp;
+//REAL rtemp;
+//
+//	IF StrToInt (SubscriptionGetAttribute(subsHandle, "Value")) > 0 THEN
+//		zaehler=0;
+//		iTimeTemp=TimeCurrent();
+//
+//
+//		FOR i=0 TO 9 DO
+//			
+//			FOR ix=0 TO 5 DO
+//				rtemp=TagRead("TAnla_MU001_TrendE_A\" +IntToStr(zaehler+1))
+//				iTimeMsTemp=ix*166
+//				rValue[zaehler]= rtemp;
+//				iTime[zaehler]=iTimeTemp;
+//				iTimeMs[zaehler]=iTimeMsTemp;
+//				zaehler=zaehler+1;
+//			END
+//			iTimeTemp=iTimeTemp+1;	
+//		END
+//		TrnEventSetTableMS("TAnla_MU001_TrendE_SCAL",0,0,60,rValue[0],iTime[0],iTimeMs[0]);
+//		TAnla_MU001_TrendE_LW=1;	
+//	END
+//
+//END
+
+// Arrays for trend data
+REAL garSingleValue[1];
+INT ganSingleTime[1];
+INT ganSingleMS[1];
+// Push the data in the trend system
+INT FUNCTION LogTrend(STRING sTagName, REAL rValue, INT nDateTime, INT nMS)
+    INT nSamplesWritten;    
+    garSingleValue[0] = rValue;    
+    ganSingleTime[0] = nDateTime;
+    ganSingleMS[0] = nMS;    
+    nSamplesWritten    = TrnEventSetTableMS(sTagname, 0, 0, 1, garSingleValue[0], ganSingleTime[0], ganSingleMS[0]);    
+    RETURN nSamplesWritten;
+END
+
+
+// Beispiele für Eigene Funktionen auf dem Trend und Report Server
+//
+FUNCTION _OEM_Report_Server()
+
+	INT TimeOut = 1000;
+	INT starttime;
+	
+	STRING  sIP;
+	ErrSet(1);
+	starttime =SysTime();
+	WHILE TRUE DO
+		IF UAG_Server_Is_Report(0)=1 THEN
+
+				SleepMS(1000);
+		END	
+		SleepMS(2000);
+	END 
+	ErrSet(0);
+END
+
+FUNCTION _OEM_Trend_Server()
+
+	INT TimeOut = 1000;
+	INT starttime;
+	
+	STRING  sIP;
+	ErrSet(1);
+	starttime =SysTime();
+	WHILE TRUE DO
+		IF UAG_Server_Is_Trend(0)=1 THEN
+
+				SleepMS(1000);
+		END	
+		SleepMS(2000);
+	END 
+	ErrSet(0);
+END
+
+FUNCTION UAG_Parameter_Client_Page_pcs()
+	
+
+	// HMI,Bildgruppe und Hauptbild für Kopf
+//	gsUAG_Alarm_HMI[1][0]= "UAGBasis7233Page";  gsUAG_Alarm_HMI[1][1]= "Allgemein";	gsUAG_Alarm_HMI[1][2]= "Allgemein_Muster19sg2";
+//	gsUAG_Alarm_HMI[2][0]= "UAGBasis7233Page";  gsUAG_Alarm_HMI[2][1]= "Stahl";		gsUAG_Alarm_HMI[2][2]= "Stahl_BILD003";
+//	gsUAG_Alarm_HMI[3][0]= "UAGBasis7233Page";  gsUAG_Alarm_HMI[3][1]= "V107BA04";		gsUAG_Alarm_HMI[3][2]= "V107BA04_Silierung";
+//	gsUAG_Alarm_HMI[4][0]= "UAGBasis7233Page";  gsUAG_Alarm_HMI[4][1]= "Zulauf";		gsUAG_Alarm_HMI[4][2]= "Zulauf_Sandfang";
+//	gsUAG_Alarm_HMI[5][0]= "UAGBasis7233Page";  gsUAG_Alarm_HMI[5][1]= "Muster";		gsUAG_Alarm_HMI[5][2]= "System_Start";
+//	gsUAG_Alarm_HMI[6][0]= "UAGBasis7233Page";  gsUAG_Alarm_HMI[6][1]= "";		gsUAG_Alarm_HMI[6][2]= "System_Start";
+//	gsUAG_Alarm_HMI[7][0]= "UAGBasis7233Page";  gsUAG_Alarm_HMI[7][1]= "";		gsUAG_Alarm_HMI[7][2]= "System_Start";
+//	gsUAG_Alarm_HMI[8][0]= "UAGBasis7233Page";  gsUAG_Alarm_HMI[8][1]= "";		gsUAG_Alarm_HMI[8][2]= "System_Start";
+//	gsUAG_Alarm_HMI[9][0]= "UAGBasis7233Page";  gsUAG_Alarm_HMI[9][1]= "";		gsUAG_Alarm_HMI[9][2]= "System_Start";
+//	gsUAG_Alarm_HMI[10][0]= "UAGBasis7233Page";  gsUAG_Alarm_HMI[10][1]= "";		gsUAG_Alarm_HMI[10][2]= "System_Start";
+//	gsUAG_Alarm_HMI[11][0]= "UAGBasis7233Page";  gsUAG_Alarm_HMI[11][1]= "";	gsUAG_Alarm_HMI[11][2]= "System_Start";
+//	gsUAG_Alarm_HMI[12][0]= "UAGBasis7233Page";  gsUAG_Alarm_HMI[12][1]= "";		gsUAG_Alarm_HMI[12][2]= "System_Start";
+//	gsUAG_Alarm_HMI[13][0]= "UAGBasis7233Page";  gsUAG_Alarm_HMI[13][1]= "";		gsUAG_Alarm_HMI[13][2]= "System_Start";
+//	gsUAG_Alarm_HMI[14][0]= "UAGBasis7233Page";  gsUAG_Alarm_HMI[14][1]= "";		gsUAG_Alarm_HMI[14][2]= "System_Start";
+//	gsUAG_Alarm_HMI[15][0]= "UAGBasis7233Page";  gsUAG_Alarm_HMI[15][1]= "";		gsUAG_Alarm_HMI[15][2]= "System_Start";
+//	gsUAG_Alarm_HMI[16][0]= "UAGBasis7233Page";  gsUAG_Alarm_HMI[16][1]= "";		gsUAG_Alarm_HMI[16][2]= "System_Start";
+//	gsUAG_Alarm_HMI[17][0]= "UAGBasis7233Page";  gsUAG_Alarm_HMI[17][1]= "";		gsUAG_Alarm_HMI[17][2]= "System_Start";
+//	gsUAG_Alarm_HMI[18][0]= "UAGBasis7233Page";  gsUAG_Alarm_HMI[18][1]= "System";		gsUAG_Alarm_HMI[18][2]= "System_Kopplung19";
+	
+	
+	//Berechtigung  für Kopf
+	
+//	gsUAG_Alarm_Pos[1][2]=1;
+//	gsUAG_Alarm_Pos[2][2]=1;
+//	gsUAG_Alarm_Pos[3][2]=1;
+//	gsUAG_Alarm_Pos[4][2]=1;
+//	gsUAG_Alarm_Pos[5][2]=0;
+//	gsUAG_Alarm_Pos[6][2]=0;
+//	gsUAG_Alarm_Pos[7][2]=0;
+//	gsUAG_Alarm_Pos[8][2]=0;
+//	gsUAG_Alarm_Pos[9][2]=0;
+//	gsUAG_Alarm_Pos[10][2]=0;
+//	gsUAG_Alarm_Pos[11][2]=0;
+//	gsUAG_Alarm_Pos[12][2]=0;
+//	gsUAG_Alarm_Pos[13][2]=0;
+//	gsUAG_Alarm_Pos[14][2]=0;
+//	gsUAG_Alarm_Pos[15][2]=0;
+//	gsUAG_Alarm_Pos[16][2]=0;
+//	gsUAG_Alarm_Pos[17][2]=0;
+//	gsUAG_Alarm_Pos[18][2]=1;
+//
+	//Kategorie als INT für Kopf
+//	gsUAG_Alarm_Cat[1][0]=Alarm0002 ;gsUAG_Alarm_Cat[1][1]=Alarm0003; gsUAG_Alarm_Cat[1][2]=Alarm0004 ;gsUAG_Alarm_Cat[1][3]=Alarm0001;
+//	gsUAG_Alarm_Cat[2][0]=Stahl0202 ;gsUAG_Alarm_Cat[2][1]=Stahl0203; gsUAG_Alarm_Cat[2][2]=Stahl0204 ;gsUAG_Alarm_Cat[2][3]=Stahl0201;
+//	gsUAG_Alarm_Cat[3][0]=Chemie0403 ;gsUAG_Alarm_Cat[3][1]=Chemie0401; gsUAG_Alarm_Cat[3][2]=Chemie0402 ;gsUAG_Alarm_Cat[3][3]=Chemie0404;
+//	gsUAG_Alarm_Cat[4][0]=Zulauf0302 ;gsUAG_Alarm_Cat[4][1]=Zulauf0303; gsUAG_Alarm_Cat[4][2]=Zulauf0304 ;gsUAG_Alarm_Cat[4][3]=Zulauf0301;
+//	gsUAG_Alarm_Cat[5][0]=Muster0102 ;gsUAG_Alarm_Cat[5][1]=Muster0103; gsUAG_Alarm_Cat[5][2]=Muster0104 ;gsUAG_Alarm_Cat[5][3]=Muster0101;
+//	gsUAG_Alarm_Cat[6][0]=Leer0003 ;gsUAG_Alarm_Cat[6][1]=Leer0001; gsUAG_Alarm_Cat[6][2]=Leer0002 ;gsUAG_Alarm_Cat[6][3]=Leer0004;
+//	gsUAG_Alarm_Cat[7][0]=Leer0003 ;gsUAG_Alarm_Cat[7][1]=Leer0001; gsUAG_Alarm_Cat[7][2]=Leer0002 ;gsUAG_Alarm_Cat[7][3]=Leer0004;
+//	gsUAG_Alarm_Cat[8][0]=Leer0003 ;gsUAG_Alarm_Cat[8][1]=Leer0001; gsUAG_Alarm_Cat[8][2]=Leer0002 ;gsUAG_Alarm_Cat[8][3]=Leer0004;
+//	gsUAG_Alarm_Cat[9][0]=Leer0003 ;gsUAG_Alarm_Cat[9][1]=Leer0001; gsUAG_Alarm_Cat[9][2]=Leer0002 ;gsUAG_Alarm_Cat[9][3]=Leer0004;
+//	gsUAG_Alarm_Cat[10][0]=Leer0003 ;gsUAG_Alarm_Cat[10][1]=Leer0001; gsUAG_Alarm_Cat[10][2]=Leer0002 ;gsUAG_Alarm_Cat[10][3]=Leer0004;
+//	gsUAG_Alarm_Cat[11][0]=Leer0003 ;gsUAG_Alarm_Cat[11][1]=Leer0001; gsUAG_Alarm_Cat[11][2]=Leer0002 ;gsUAG_Alarm_Cat[11][3]=Leer0004;
+//	gsUAG_Alarm_Cat[12][0]=Leer0003 ;gsUAG_Alarm_Cat[12][1]=Leer0001; gsUAG_Alarm_Cat[12][2]=Leer0002 ;gsUAG_Alarm_Cat[12][3]=Leer0004;
+//	gsUAG_Alarm_Cat[13][0]=Leer0003 ;gsUAG_Alarm_Cat[13][1]=Leer0001; gsUAG_Alarm_Cat[13][2]=Leer0002 ;gsUAG_Alarm_Cat[13][3]=Leer0004;
+//	gsUAG_Alarm_Cat[14][0]=Leer0003 ;gsUAG_Alarm_Cat[14][1]=Leer0001; gsUAG_Alarm_Cat[14][2]=Leer0002 ;gsUAG_Alarm_Cat[14][3]=Leer0004;
+//	gsUAG_Alarm_Cat[15][0]=Leer0003 ;gsUAG_Alarm_Cat[15][1]=Leer0001; gsUAG_Alarm_Cat[15][2]=Leer0002 ;gsUAG_Alarm_Cat[15][3]=Leer0004;
+//	gsUAG_Alarm_Cat[16][0]=Leer0003 ;gsUAG_Alarm_Cat[16][1]=Leer0001; gsUAG_Alarm_Cat[16][2]=Leer0002 ;gsUAG_Alarm_Cat[16][3]=Leer0004;
+//	gsUAG_Alarm_Cat[17][0]=Leer0003 ;gsUAG_Alarm_Cat[17][1]=Leer0001; gsUAG_Alarm_Cat[17][2]=Leer0002 ;gsUAG_Alarm_Cat[17][3]=Leer0004;
+//	gsUAG_Alarm_Cat[18][0]=Alarm0003 ;gsUAG_Alarm_Cat[18][1]=Alarm0001; gsUAG_Alarm_Cat[18][2]=Alarm0002 ;gsUAG_Alarm_Cat[18][3]=Alarm0004;
+	
+	//Kategorie als String für Kopf			
+//	gsUAG_Alarm_CatT[1][0]="Muster0102"; gsUAG_Alarm_CatT[1][1]="Muster0103";  gsUAG_Alarm_CatT[1][2]="Muster0104"; gsUAG_Alarm_CatT[1][3]="Muster0101"; 
+//	gsUAG_Alarm_CatT[2][0]="Stahl0103"; gsUAG_Alarm_CatT[2][1]="Stahl0101"; gsUAG_Alarm_CatT[2][2]="Stahl0102"; gsUAG_Alarm_CatT[2][3]="Stahl0104"; 
+//	gsUAG_Alarm_CatT[3][0]="Chemie0403"; gsUAG_Alarm_CatT[3][1]="Chemie0401"; gsUAG_Alarm_CatT[3][2]="Chemie0402"; gsUAG_Alarm_CatT[3][3]="Chemie0404"; 
+//	gsUAG_Alarm_CatT[4][0]="Leer0003"; gsUAG_Alarm_CatT[4][1]="Leer0001"; gsUAG_Alarm_CatT[4][2]="Leer0002"; gsUAG_Alarm_CatT[4][3]="Leer0004"; 
+//	gsUAG_Alarm_CatT[5][0]="Leer0003"; gsUAG_Alarm_CatT[5][1]="Leer0001"; gsUAG_Alarm_CatT[5][2]="Leer0002"; gsUAG_Alarm_CatT[5][3]="Leer0004"; 
+//	gsUAG_Alarm_CatT[6][0]="Leer0003"; gsUAG_Alarm_CatT[6][1]="Leer0001"; gsUAG_Alarm_CatT[6][2]="Leer0002"; gsUAG_Alarm_CatT[6][3]="Leer0004"; 
+//	gsUAG_Alarm_CatT[7][0]="Leer0003"; gsUAG_Alarm_CatT[7][1]="Leer0001"; gsUAG_Alarm_CatT[7][2]="Leer0002"; gsUAG_Alarm_CatT[7][3]="Leer0004"; 
+//	gsUAG_Alarm_CatT[8][0]="Leer0003"; gsUAG_Alarm_CatT[8][1]="Leer0001"; gsUAG_Alarm_CatT[8][2]="Leer0002"; gsUAG_Alarm_CatT[8][3]="Leer0004"; 
+//	gsUAG_Alarm_CatT[9][0]="Leer0003"; gsUAG_Alarm_CatT[9][1]="Leer0001"; gsUAG_Alarm_CatT[9][2]="Leer0002"; gsUAG_Alarm_CatT[9][3]="Leer0004"; 
+//	gsUAG_Alarm_CatT[10][0]="Leer0003"; gsUAG_Alarm_CatT[10][1]="Leer0001"; gsUAG_Alarm_CatT[10][2]="Leer0002"; gsUAG_Alarm_CatT[10][3]="Leer0004"; 
+//	gsUAG_Alarm_CatT[11][0]="Leer0003"; gsUAG_Alarm_CatT[11][1]="Leer0001";  gsUAG_Alarm_CatT[11][2]="Leer0002"; gsUAG_Alarm_CatT[11][3]="Leer0004"; 
+//	gsUAG_Alarm_CatT[12][0]="Leer0003"; gsUAG_Alarm_CatT[12][1]="Leer0001"; gsUAG_Alarm_CatT[12][2]="Leer0002"; gsUAG_Alarm_CatT[12][3]="Leer0004"; 
+//	gsUAG_Alarm_CatT[13][0]="Leer0003"; gsUAG_Alarm_CatT[13][1]="Leer0001"; gsUAG_Alarm_CatT[13][2]="Leer0002"; gsUAG_Alarm_CatT[13][3]="Leer0004"; 
+//	gsUAG_Alarm_CatT[14][0]="Leer0003"; gsUAG_Alarm_CatT[14][1]="Leer0001"; gsUAG_Alarm_CatT[14][2]="Leer0002"; gsUAG_Alarm_CatT[14][3]="Leer0004"; 
+//	gsUAG_Alarm_CatT[15][0]="Leer0003"; gsUAG_Alarm_CatT[15][1]="Leer0001"; gsUAG_Alarm_CatT[15][2]="Leer0002"; gsUAG_Alarm_CatT[15][3]="Leer0004"; 
+//	gsUAG_Alarm_CatT[16][0]="Leer0003"; gsUAG_Alarm_CatT[16][1]="Leer0001"; gsUAG_Alarm_CatT[16][2]="Leer0002"; gsUAG_Alarm_CatT[16][3]="Leer0004"; 
+//	gsUAG_Alarm_CatT[17][0]="Leer0003"; gsUAG_Alarm_CatT[17][1]="Leer0001"; gsUAG_Alarm_CatT[17][2]="Leer0002"; gsUAG_Alarm_CatT[17][3]="Leer0004"; 
+//	gsUAG_Alarm_CatT[18][0]="Alarm0003"; gsUAG_Alarm_CatT[18][1]="Alarm0001"; gsUAG_Alarm_CatT[18][2]="Alarm0002"; gsUAG_Alarm_CatT[18][3]="Alarm0004"; 
+
+
+END
+STRING stemp
+FUNCTION UAG_Alarm_Report()
+	INT		hDev,hFile,iDate;
+	STRING sFile,sPath,sdate;	
+	ErrSet(1);
+	sPath=PathToStr("[data2P]:")		!Ablagepfad
+	
+//	Alarmlog Primär
+	sFile=sPath+"Alarmlog_P.csv"
+	hFile=FileOpen(sFile,"w");
+	IF hFile <> -1 THEN
+		hDev = UAG_DevOpen_UIDATA("ALARMLOG.dbf","{DATE,11} {TIME,10} {TAG,30} {NAME,30} {DESC,80} {LOGSTATE,12} {ERRPAGE,30}")
+		IF hDev = -1 THEN
+			UAG_SystemInfo("UAG_Alarm_Report", "System","Fehler beim öffnen von Alarm_Report","-","-","-",TaskCluster(),_UAG_Fehler)
+			ErrSet(0);
+		ELSE
+			FileWriteLn(hFile, "DATE;TIME;TAG;NAME;DESC;LOGSTATE;ERRPAGE")
+			WHILE (NOT DevEOF(hDev)) DO
+				iDate =DateSub(StrToDate(Date(2)),StrToDate(DevGetField(hDev, "DATE")))
+//				iDate =DateSub(StrToDate("10.03.14"),StrToDate(DevGetField(hDev, "Date")))
+				IF iDate < 604801 THEN
+					stemp =DevGetField(hDev, "DATE" ) +";"+
+					DevGetField(hDev, "TIME") +";"+
+					DevGetField(hDev, "TAG" )+";"+
+					DevGetField(hDev, "NAME" )+";"+
+					DevGetField(hDev, "DESC" )+";"+
+					DevGetField(hDev, "LOGSTATE" )+";"+
+					DevGetField(hDev, "ERRPAGE" );
+					FileWriteLn(hFile, stemp);
+				END	
+				DevNext(hDev)
+				Sleep(0);
+			END	
+			DevClose(hDev);
+			hDev = UAG_DevOpen_UIDATA("ALARMLOG.001","{DATE,11} {TIME,10} {TAG,30} {NAME,30} {DESC,80} {LOGSTATE,12} {ERRPAGE,30}")
+			WHILE (NOT DevEOF(hDev)) DO
+				iDate =DateSub(StrToDate(Date(2)),StrToDate(DevGetField(hDev, "DATE")))
+				IF iDate < 604801 THEN
+					stemp =DevGetField(hDev, "DATE" ) +";"+
+					DevGetField(hDev, "TIME") +";"+
+					DevGetField(hDev, "TAG" )+";"+
+					DevGetField(hDev, "NAME" )+";"+
+					DevGetField(hDev, "DESC" )+";"+
+					DevGetField(hDev, "LOGSTATE" )+";"+
+					DevGetField(hDev, "ERRPAGE" );
+					FileWriteLn(hFile, stemp);
+				END	
+				DevNext(hDev)
+				Sleep(0);
+			END	
+			DevClose(hDev);
+			hDev = UAG_DevOpen_UIDATA("ALARMLOG.002","{DATE,11} {TIME,10} {TAG,30} {NAME,30} {DESC,80} {LOGSTATE,12} {ERRPAGE,30}")
+			WHILE (NOT DevEOF(hDev)) DO
+				iDate =DateSub(StrToDate(Date(2)),StrToDate(DevGetField(hDev, "DATE")))
+				IF iDate < 604801 THEN
+					stemp =DevGetField(hDev, "DATE" ) +";"+
+					DevGetField(hDev, "TIME") +";"+
+					DevGetField(hDev, "TAG" )+";"+
+					DevGetField(hDev, "NAME" )+";"+
+					DevGetField(hDev, "DESC" )+";"+
+					DevGetField(hDev, "LOGSTATE" )+";"+
+					DevGetField(hDev, "ERRPAGE" );
+					FileWriteLn(hFile, stemp);
+				END	
+				DevNext(hDev)
+				Sleep(0);
+			END	
+			DevClose(hDev);
+		END	
+	END	
+	FileClose(hFile) 
+//	Operlog Primär
+	sFile=sPath+"Operlog_P.csv"
+	hFile=FileOpen(sFile,"w");
+	IF hFile <> -1 THEN
+		hDev = UAG_DevOpen_UIDATA("OPERLOG.dbf","{ZEIT,20}{BENUTZER,20}{WER,22}{Meldung,48}{TAGNAME,32}{ALTERWERT,20}{WERT,20}{EVNTYPE,12}{CLUSTER,20}")
+		IF hDev = -1 THEN
+			UAG_SystemInfo("UAG_Alarm_Report", "System","Fehler beim öffnen von Alarm_Report","-","-","-",TaskCluster(),_UAG_Fehler)
+			ErrSet(0);
+		ELSE
+			FileWriteLn(hFile, "ZEIT;BENUTZER;WER;Meldung;TAGNAME;ALTERWERT;WERT;EVNTYPE;Rechner")
+			WHILE (NOT DevEOF(hDev)) DO
+
+				iDate =DateSub(StrToDate(Date(2)),StrToDate(DevGetField(hDev, "ZEIT")))
+//				iDate =DateSub(StrToDate("19.05.14"),StrToDate(DevGetField(hDev, "ZEIT")))
+				IF iDate < 604801 THEN
+					stemp =DevGetField(hDev, "ZEIT" ) +";"+
+					DevGetField(hDev, "BENUTZER") +";"+
+					DevGetField(hDev, "WER" )+";"+
+					DevGetField(hDev, "Meldung" )+";"+
+					DevGetField(hDev, "TAGNAME" )+";"+
+					DevGetField(hDev, "ALTERWERT" )+";"+
+					DevGetField(hDev, "WERT" )+";"+
+					DevGetField(hDev, "EVNTYPE" )+";"+
+					DevGetField(hDev, "CLUSTER" );
+					FileWriteLn(hFile, stemp);
+				END	
+				DevNext(hDev)
+				Sleep(0);
+			END	
+			DevClose(hDev);
+			hDev = UAG_DevOpen_UIDATA("OPERLOG.001","{ZEIT,20}{BENUTZER,20}{WER,22}{Meldung,48}{TAGNAME,32}{ALTERWERT,20}{WERT,20}{EVNTYPE,12}{CLUSTER,20}")
+			WHILE (NOT DevEOF(hDev)) DO
+				iDate =DateSub(StrToDate(Date(2)),StrToDate(DevGetField(hDev, "ZEIT")))
+				IF iDate < 604801 THEN
+					stemp =DevGetField(hDev, "ZEIT" ) +";"+
+					DevGetField(hDev, "BENUTZER") +";"+
+					DevGetField(hDev, "WER" )+";"+
+					DevGetField(hDev, "Meldung" )+";"+
+					DevGetField(hDev, "TAGNAME" )+";"+
+					DevGetField(hDev, "ALTERWERT" )+";"+
+					DevGetField(hDev, "WERT" )+";"+
+					DevGetField(hDev, "EVNTYPE" )+";"+
+					DevGetField(hDev, "CLUSTER" );
+					FileWriteLn(hFile, stemp);
+				END	
+				DevNext(hDev)
+				Sleep(0);
+			END	
+			DevClose(hDev);
+			hDev = UAG_DevOpen_UIDATA("OPERLOG.002","{ZEIT,20}{BENUTZER,20}{WER,22}{Meldung,48}{TAGNAME,32}{ALTERWERT,20}{WERT,20}{EVNTYPE,12}{CLUSTER,20}")
+			WHILE (NOT DevEOF(hDev)) DO
+				iDate =DateSub(StrToDate(Date(2)),StrToDate(DevGetField(hDev, "ZEIT")))
+				IF iDate < 604801 THEN
+					stemp =DevGetField(hDev, "ZEIT" ) +";"+
+					DevGetField(hDev, "BENUTZER") +";"+
+					DevGetField(hDev, "WER" )+";"+
+					DevGetField(hDev, "Meldung" )+";"+
+					DevGetField(hDev, "TAGNAME" )+";"+
+					DevGetField(hDev, "ALTERWERT" )+";"+
+					DevGetField(hDev, "WERT" )+";"+
+					DevGetField(hDev, "EVNTYPE" )+";"+
+					DevGetField(hDev, "CLUSTER" );
+					FileWriteLn(hFile, stemp);
+				END	
+				DevNext(hDev)
+				Sleep(0);
+			END	
+			DevClose(hDev);
+		END	
+	END	
+	FileClose(hFile) 
+	ErrSet(0);
+END

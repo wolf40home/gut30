@@ -1,0 +1,309 @@
+<?xml version="1.0" encoding="utf-8"?>
+<template desc="Equipment template">
+  <param name="type" desc="equipment type parameters">
+    <string name="name">GUT_HND_ABSP</string>
+    <string name="ref">GUT_HND_ABSP</string>
+ </param>
+  <input name="equipment" file="equip.dbf" desc="Equipment Database">
+    <field name="name"></field>
+    <array name="name_list">{Split('{name}','.')}</array>
+    <field name="cluster"></field>
+    <field name="type"></field>
+    <field name="iodevice"></field>
+    <string name="tagprefix">{name_list[0]}_{name_list[1]}_{name_list[2]}</string>
+    <field name="area"></field>
+    <field name="page"></field>
+    <array name="page_list">{Split('{page}',',')}</array>
+    <field name="help"></field>
+    <field name="location"></field>
+    <field name="comment"></field>
+    <field name="scheduled"></field>
+    <field name="defstate"></field>
+    <field name="param"></field>
+    <array name="param_list">{ToProperty('{param}','=',';')}</array>
+    <field name="custom1"></field>
+    <field name="custom2"></field>
+    <field name="custom3"></field>
+    <field name="custom4"></field>
+    <field name="custom5"></field>
+    <field name="custom6"></field>
+    <field name="custom7"></field>
+    <field name="custom8"></field>
+
+  </input>
+  <output name="VAR.LW" file="variable.dbf" filter=" ( '{equipment.type}={type.name}'">
+    <field name="taggenlink" load="true">GUT_HND_ABSP.LW</field>
+    <field name="linked">1</field>
+    <field name="editcode">16777215</field>
+    <field name="equip">{equipment.name}</field>
+    <field name="item">LW</field>
+    <field name="historian">FALSE</field>
+    <field name="name" key="true">{equipment.tagprefix}_LW</field>
+    <field name="type">UINT</field>
+    <field name="unit">{equipment.iodevice}</field>
+    <field name="addr">{equipment.tagprefix}_LW</field>
+	<field name="comment">Leitwort {equipment.comment}</field>
+    <field name="cluster">{equipment.cluster}</field>
+ </output>
+  <output name="VAR.TYP" file="variable.dbf" filter=" ( '{equipment.type}={type.name}'">
+    <field name="taggenlink" load="true">GUT_HND_ABSP.TYP</field>
+    <field name="linked">1</field>
+    <field name="editcode">16777215</field>
+    <field name="equip">{equipment.name}</field>
+    <field name="item">TYP</field>
+    <field name="historian">FALSE</field>
+    <field name="name" key="true">{equipment.tagprefix}_TYP</field>
+    <field name="type">UINT</field>
+    <field name="unit">{equipment.iodevice}</field>
+    <field name="addr">{equipment.tagprefix}_TYP</field>
+	<field name="comment">Typangabe {equipment.comment}</field>
+    <field name="cluster">{equipment.cluster}</field>
+ </output>
+  <output name="VAR.M" file="variable.dbf" filter=" ( '{equipment.type}={type.name}'">
+    <field name="taggenlink" load="true">GUT_HND_ABSP.M</field>
+    <field name="linked">1</field>
+    <field name="editcode">16777215</field>
+    <field name="equip">{equipment.name}</field>
+    <field name="item">M</field>
+    <field name="historian">FALSE</field>
+    <field name="name" key="true">{equipment.tagprefix}_M</field>
+    <field name="type">LONG</field>
+    <field name="unit">{equipment.iodevice}</field>
+    <field name="addr">{equipment.tagprefix}_M</field>
+	<field name="comment">Meldewort {equipment.comment}</field>
+    <field name="cluster">{equipment.cluster}</field>
+  </output>
+  <output name="VAR.KT" file="variable.dbf" filter=" ( '{equipment.type}={type.name}'">
+    <field name="taggenlink" load="true">GUT_HND_ABSP.KT</field>
+    <field name="linked">1</field>
+    <field name="editcode">16777215</field>
+    <field name="equip">{equipment.name}</field>
+    <field name="item">KT</field>
+    <field name="historian">FALSE</field>
+     <field name="name" key="true">{equipment.tagprefix}_KT</field>
+    <field name="type">STRING</field>
+    <field name="unit">{equipment.iodevice}_DISK</field>
+    <field name="addr">{equipment.tagprefix}_KT</field>
+	<field name="comment">Kurztext {equipment.comment}</field>
+    <field name="cluster">{equipment.cluster}</field>
+ </output>
+  <output name="VAR.ZT" file="variable.dbf" filter=" ( '{equipment.type}={type.name}'">
+    <field name="taggenlink" load="true">GUT_HND_ABSP.ZT</field>
+    <field name="linked">1</field>
+    <field name="editcode">16777215</field>
+    <field name="equip">{equipment.name}</field>
+    <field name="item">ZT</field>
+     <field name="name" key="true">{equipment.tagprefix}_ZT</field>
+    <field name="type">STRING</field>
+    <field name="unit">{equipment.iodevice}_DISK</field>
+    <field name="addr">{equipment.tagprefix}_ZT</field>
+	<field name="comment">Langtext {equipment.comment}</field>
+    <field name="cluster">{equipment.cluster}</field>
+  </output>
+   <output name="VAR.SOE" file="variable.dbf" filter=" ( '{equipment.type}={type.name}'">
+    <field name="taggenlink" load="true">GUT_HND_ABSP.SOE</field>
+    <field name="linked">1</field>
+    <field name="editcode">16777215</field>
+    <field name="equip">{equipment.name}</field>
+    <field name="item">SOE</field>
+    <field name="historian">FALSE</field>
+    <field name="name" key="true">{equipment.tagprefix}_SOE</field>
+    <field name="type">INT</field>
+    <field name="unit">{equipment.iodevice}_DISK</field>
+    <field name="addr">{equipment.tagprefix}_SOE</field>
+	<field name="comment">für SOE Einträge {equipment.comment}</field>
+    <field name="cluster">{equipment.cluster}</field>
+  </output>
+  <output name=" AdAlm.SOE" file="advalm.DBF" filter="'{equipment.type}={type.name}'">
+    <field name="taggenlink" load="true">GUT_HND_ABSP.SOE</field>
+    <field name="linked">1</field>
+    <field name="editcode">536350655</field>
+    <field name="equip">{equipment.name}</field>
+    <field name="item">SOE</field>
+    <field name="historian">FALSE</field>
+    <field name="tag" key="true">{equipment.tagprefix}_SOE_1</field>
+    <field name="name" >{equipment.tagprefix}</field>
+    <field name="desc">Leitsperre {equipment.comment}</field>
+    <field name="expr">{equipment.tagprefix}_SOE = 1</field> 
+    <field name="category">Alarm21</field>
+    <field name="help">{equipment.page_list[0]}</field>
+    <field name="custom1">{equipment.area}</field>
+    <field name="comment">{equipment.tagprefix}_SOE</field>
+    <field name="cluster">{equipment.cluster}</field>
+    <field name="area">{equipment.area}</field>
+ </output>
+  <output name=" AdAlm.M_b00" file="advalm.DBF" filter="'{equipment.type}={type.name}'">
+    <field name="taggenlink" load="true">GUT_HND_ABSP.M_b00</field>
+    <field name="linked">1</field>
+    <field name="editcode">536350655</field>
+    <field name="equip">{equipment.name}</field>
+    <field name="item">M00</field>
+    <field name="historian">TRUE</field>
+    <field name="tag" key="true">{equipment.tagprefix}_M_b00</field>
+    <field name="name" >{equipment.tagprefix}</field>
+    <field name="desc">Endschalter Richtung 1 {equipment.comment}</field>
+    <field name="expr">UAG_Alarms_BitMask( {equipment.tagprefix}_M,0 )</field> 
+    <field name="category">Alarm21</field>
+    <field name="help">{equipment.page_list[0]}</field>
+    <field name="custom1">{equipment.area}</field>
+    <field name="comment">{equipment.tagprefix}_M</field>
+    <field name="cluster">{equipment.cluster}</field>
+    <field name="area">{equipment.area}</field>
+ </output>
+  <output name=" AdAlm.M_b01" file="advalm.DBF" filter="'{equipment.type}={type.name}'">
+    <field name="taggenlink" load="true">GUT_HND_ABSP.M_b01</field>
+    <field name="linked">1</field>
+    <field name="editcode">536350655</field>
+    <field name="equip">{equipment.name}</field>
+    <field name="item">M01</field>
+    <field name="historian">TRUE</field>
+    <field name="tag" key="true">{equipment.tagprefix}_M_b01</field>
+    <field name="name" >{equipment.tagprefix}</field>
+    <field name="desc">Endschalter Richtung 2 {equipment.comment}</field>
+    <field name="expr">UAG_Alarms_BitMask( {equipment.tagprefix}_M,1 )</field> 
+    <field name="category">Alarm21</field>
+    <field name="help">{equipment.page_list[0]}</field>
+    <field name="custom1">{equipment.area}</field>
+    <field name="comment">{equipment.tagprefix}_M</field>
+    <field name="cluster">{equipment.cluster}</field>
+    <field name="area">{equipment.area}</field>
+ </output>
+  <output name=" AdAlm.M_b16" file="advalm.DBF" filter="'{equipment.type}={type.name}'">
+    <field name="taggenlink" load="true">GUT_HND_ABSP.M_b16</field>
+    <field name="linked">1</field>
+    <field name="editcode">536350655</field>
+    <field name="equip">{equipment.name}</field>
+    <field name="item">M16</field>
+    <field name="historian">TRUE</field>
+    <field name="tag" key="true">{equipment.tagprefix}_M_b16</field>
+    <field name="name" >{equipment.tagprefix}</field>
+    <field name="desc">Automatenfall {equipment.comment}</field>
+    <field name="expr">UAG_Alarms_BitMask( {equipment.tagprefix}_M,16 )</field> 
+    <field name="category">Alarm01</field>
+    <field name="help">{equipment.page_list[0]}</field>
+    <field name="custom1">{equipment.area}</field>
+    <field name="comment">{equipment.tagprefix}_M</field>
+    <field name="cluster">{equipment.cluster}</field>
+    <field name="area">{equipment.area}</field>
+ </output>
+  <output name=" AdAlm.M_b17" file="advalm.DBF" filter="'{equipment.type}={type.name}'">
+    <field name="taggenlink" load="true">GUT_HND_ABSP.M_b17</field>
+    <field name="linked">1</field>
+    <field name="editcode">536350655</field>
+    <field name="equip">{equipment.name}</field>
+    <field name="item">M17</field>
+    <field name="historian">TRUE</field>
+    <field name="tag" key="true">{equipment.tagprefix}_M_b17</field>
+    <field name="name" >{equipment.tagprefix}</field>
+    <field name="desc">Antivalenz {equipment.comment}</field>
+    <field name="expr">UAG_Alarms_BitMask( {equipment.tagprefix}_M,17 )</field> 
+    <field name="category">Alarm03</field>
+    <field name="help">{equipment.page_list[0]}</field>
+    <field name="custom1">{equipment.area}</field>
+    <field name="comment">{equipment.tagprefix}_M</field>
+    <field name="cluster">{equipment.cluster}</field>
+    <field name="area">{equipment.area}</field>
+ </output>
+  <output name=" AdAlm.M_b18" file="advalm.DBF" filter="'{equipment.type}={type.name}'">
+    <field name="taggenlink" load="true">GUT_HND_ABSP.M_b18</field>
+    <field name="linked">1</field>
+    <field name="editcode">536350655</field>
+    <field name="equip">{equipment.name}</field>
+    <field name="item">M18</field>
+    <field name="historian">TRUE</field>
+    <field name="tag" key="true">{equipment.tagprefix}_M_b18</field>
+    <field name="name" >{equipment.tagprefix}</field>
+    <field name="desc">Alarm RWE 1 {equipment.comment}</field>
+    <field name="expr">UAG_Alarms_BitMask( {equipment.tagprefix}_M,18 )</field> 
+    <field name="category">Alarm03</field>
+    <field name="help">{equipment.page_list[0]}</field>
+    <field name="custom1">{equipment.area}</field>
+    <field name="comment">{equipment.tagprefix}_M</field>
+    <field name="cluster">{equipment.cluster}</field>
+    <field name="area">{equipment.area}</field>
+ </output>
+  <output name=" AdAlm.M_b19" file="advalm.DBF" filter="'{equipment.type}={type.name}'">
+    <field name="taggenlink" load="true">GUT_HND_ABSP.M_b19</field>
+    <field name="linked">1</field>
+    <field name="editcode">536350655</field>
+    <field name="equip">{equipment.name}</field>
+    <field name="item">M19</field>
+    <field name="historian">TRUE</field>
+    <field name="tag" key="true">{equipment.tagprefix}_M_b19</field>
+    <field name="name" >{equipment.tagprefix}</field>
+    <field name="desc">Alarm RWE 2 {equipment.comment}</field>
+    <field name="expr">UAG_Alarms_BitMask( {equipment.tagprefix}_M,19 )</field> 
+    <field name="category">Alarm03</field>
+    <field name="help">{equipment.page_list[0]}</field>
+    <field name="custom1">{equipment.area}</field>
+    <field name="comment">{equipment.tagprefix}_M</field>
+    <field name="cluster">{equipment.cluster}</field>
+    <field name="area">{equipment.area}</field>
+ </output>
+  <output name=" AdAlm.M_b20" file="advalm.DBF" filter="'{equipment.type}={type.name}'">
+    <field name="taggenlink" load="true">GUT_HND_ABSP.M_b20</field>
+    <field name="linked">1</field>
+    <field name="editcode">536350655</field>
+    <field name="equip">{equipment.name}</field>
+    <field name="item">M20</field>
+    <field name="historian">TRUE</field>
+   <field name="tag" key="true">{equipment.tagprefix}_M_b20</field>
+    <field name="name" >{equipment.tagprefix}</field>
+    <field name="desc">Alarmsperre {equipment.comment}</field>
+    <field name="expr">UAG_Alarms_BitMask( {equipment.tagprefix}_M,20 )</field> 
+    <field name="category">Alarm21</field>
+    <field name="help">{equipment.page_list[0]}</field>
+    <field name="custom1">{equipment.area}</field>
+    <field name="comment">{equipment.tagprefix}_M</field>
+    <field name="cluster">{equipment.cluster}</field>
+    <field name="area">{equipment.area}</field>
+ </output>
+  <output name=" AdAlm.M_b30" file="advalm.DBF" filter="'{equipment.type}={type.name}'">
+    <field name="taggenlink" load="true">GUT_HND_ABSP.M_b30</field>
+    <field name="linked">1</field>
+    <field name="editcode">536350655</field>
+    <field name="equip">{equipment.name}</field>
+    <field name="item">M30</field>
+    <field name="historian">TRUE</field>
+    <field name="tag" key="true">{equipment.tagprefix}_M_b30</field>
+    <field name="name" >{equipment.tagprefix}</field>
+    <field name="desc">Simulation {equipment.comment}</field>
+    <field name="expr">UAG_Alarms_BitMask( {equipment.tagprefix}_M,30 )</field> 
+    <field name="category">Alarm21</field>
+    <field name="help">{equipment.page_list[0]}</field>
+    <field name="custom1">{equipment.area}</field>
+    <field name="comment">{equipment.tagprefix}_M</field>
+    <field name="cluster">{equipment.cluster}</field>
+    <field name="area">{equipment.area}</field>
+ </output>
+  <output name="UI.KT" file="UIMESSAG.dbf" filter=" ( '{equipment.type}={type.name}'">
+     <field name="NAME" key="true">{equipment.name}.KT</field>
+    <field name="taggenlink" load="true">GUT_HND_ABSP.KT</field>
+    <field name="SPS">{equipment.iodevice}</field>
+    <field name="AREA">{equipment.AREA}</field>
+    <field name="BILD">{equipment.page}</field>
+    <field name="ORT">{equipment.location}</field>
+ </output>
+  <output name="UI.M" file="UNE107.dbf" filter=" ( '{equipment.type}={type.name}'">
+    <field name="NAME" key="true">{equipment.tagprefix}_M</field>
+    <field name="SPS">{equipment.iodevice}</field>
+    <field name="MCODE">1</field>
+    <field name="taggenlink" load="true">GUT_HND_ABSP.M</field>
+  </output>
+  <output name="HI.ZT" file="UHMIINIT.dbf" filter=" ( '{equipment.type}={type.name}'">
+    <field name="NAME" key="true">{equipment.tagprefix}_ZT</field>
+    <field name="MCODE">{equipment.custom1}</field>
+    <field name="taggenlink" load="true">GUT_HND_ABSP.ZT</field>
+  </output>
+  <output name="UI.ZT" file="UITASTEN.dbf" filter=" ( '{equipment.type}={type.name}'">
+    <field name="NAME" key="true">{equipment.name}.ZT</field>
+    <field name="T1">{equipment.custom1}</field>
+    <field name="T2">{equipment.custom2}</field>
+    <field name="taggenlink" load="true">GUT_HND_ABSP.ZT</field>
+  </output>
+  <output name="HI.KT" file="UHMIINIT.dbf" filter=" ( '{equipment.type}={type.name}'">
+    <field name="NAME" key="true">{equipment.tagprefix}_KT</field>
+    <field name="MCODE">{equipment.tagprefix}</field>
+    <field name="taggenlink" load="true">GUT_HND_ABSP.KT</field>
+  </output>
+</template>

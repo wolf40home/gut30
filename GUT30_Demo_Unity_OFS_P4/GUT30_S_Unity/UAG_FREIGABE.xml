@@ -1,0 +1,240 @@
+<?xml version="1.0" encoding="utf-8"?>
+<template desc="Equipment template">
+  <param name="type" desc="equipment type parameters">
+    <string name="name">UAG_FREIGABE</string>
+    <string name="ref">UAG_FREIGABE</string>
+ </param>
+  <input name="equipment" file="equip.dbf" desc="Equipment Database">
+    <field name="name"></field>
+    <array name="name_list">{Split('{name}','.')}</array>
+    <field name="cluster"></field>
+    <field name="type"></field>
+    <field name="iodevice"></field>
+    <string name="tagprefix">{name_list[0]}_{name_list[1]}_{name_list[2]}</string>
+    <field name="area"></field>
+    <field name="page"></field>
+    <array name="page_list">{Split('{page}',',')}</array>
+    <field name="help"></field>
+    <field name="location"></field>
+    <field name="comment"></field>
+    <field name="scheduled"></field>
+    <field name="defstate"></field>
+    <field name="param"></field>
+    <array name="param_list">{ToProperty('{param}','=',';')}</array>
+    <field name="custom1"></field>
+    <field name="custom2"></field>
+    <field name="custom3"></field>
+    <field name="custom4"></field>
+    <field name="custom5"></field>
+    <field name="custom6"></field>
+    <field name="custom7"></field>
+    <field name="custom8"></field>
+    <array name="Text_list1">{Split('{custom1}',';')}</array>
+    <array name="Text_list2">{Split('{custom2}',';')}</array>
+    <array name="Text_list3">{Split('{custom3}',';')}</array>
+    <array name="Text_list4">{Split('{custom4}',';')}</array>
+    <array name="Text_list5">{Split('{custom5}',';')}</array>
+  </input>
+  <output name="VAR.LW" file="variable.dbf" filter=" ( '{equipment.type}={type.name}'">
+    <field name="taggenlink" load="true">UAG_FREIGABE.LW</field>
+    <field name="linked">1</field>
+    <field name="editcode">16777215</field>
+    <field name="equip">{equipment.name}</field>
+    <field name="item">LW</field>
+    <field name="historian">FALSE</field>
+    <field name="name" key="true">{equipment.tagprefix}_LW</field>
+    <field name="type">LONG</field>
+    <field name="unit">{equipment.iodevice}</field>
+    <field name="addr">{equipment.tagprefix}_LW</field>
+	<field name="comment">Leitwort {equipment.comment}</field>
+    <field name="cluster">{equipment.cluster}</field>
+ </output>
+  <output name="VAR.MI" file="variable.dbf" filter=" ( '{equipment.type}={type.name}'">
+    <field name="taggenlink" load="true">UAG_FREIGABE.MI</field>
+    <field name="linked">1</field>
+    <field name="editcode">16777215</field>
+    <field name="equip">{equipment.name}</field>
+    <field name="item">MI</field>
+    <field name="historian">FALSE</field>
+    <field name="name" key="true">{equipment.tagprefix}_MI</field>
+    <field name="type">LONG</field>
+    <field name="unit">{equipment.iodevice}</field>
+    <field name="addr">{equipment.tagprefix}_MI</field>
+	<field name="comment">Meldewort {equipment.comment}</field>
+    <field name="cluster">{equipment.cluster}</field>
+  </output>
+  <output name="VAR.KT" file="variable.dbf" filter=" ( '{equipment.type}={type.name}'">
+    <field name="taggenlink" load="true">UAG_FREIGABE.KT</field>
+    <field name="linked">1</field>
+    <field name="editcode">16777215</field>
+    <field name="equip">{equipment.name}</field>
+    <field name="item">KT</field>
+    <field name="historian">FALSE</field>
+     <field name="name" key="true">{equipment.tagprefix}_KT</field>
+    <field name="type">STRING</field>
+    <field name="unit">{equipment.iodevice}_DISK</field>
+    <field name="addr">{equipment.tagprefix}_KT</field>
+	<field name="comment">Kurztext {equipment.comment}</field>
+    <field name="cluster">{equipment.cluster}</field>
+ </output>
+  <output name="VAR.LT" file="variable.dbf" filter=" ( '{equipment.type}={type.name}'">
+    <field name="taggenlink" load="true">UAG_FREIGABE.LT</field>
+    <field name="linked">1</field>
+    <field name="editcode">16777215</field>
+    <field name="equip">{equipment.name}</field>
+    <field name="item">LT</field>
+    <field name="historian">FALSE</field>
+    <field name="name" key="true">{equipment.tagprefix}_LT</field>
+    <field name="type">STRING</field>
+    <field name="unit">{equipment.iodevice}_DISK</field>
+    <field name="addr">{equipment.tagprefix}_LT</field>
+	<field name="comment">Langtext {equipment.comment}</field>
+    <field name="cluster">{equipment.cluster}</field>
+  </output>
+    <output name="VAR.SOE" file="variable.dbf" filter=" ( '{equipment.type}={type.name}'">
+    <field name="taggenlink" load="true">UAG_FREIGABE.SOE</field>
+    <field name="linked">1</field>
+    <field name="editcode">16777215</field>
+    <field name="equip">{equipment.name}</field>
+    <field name="item">SOE</field>
+    <field name="historian">FALSE</field>
+    <field name="name" key="true">{equipment.tagprefix}_SOE</field>
+    <field name="type">INT</field>
+    <field name="unit">{equipment.iodevice}_DISK</field>
+    <field name="addr">{equipment.tagprefix}_SOE</field>
+	<field name="comment">für SOE Einträge {equipment.comment}</field>
+    <field name="cluster">{equipment.cluster}</field>
+  </output>
+  <output name=" AdAlm.SOE" file="advalm.DBF" filter="'{equipment.type}={type.name}'">
+    <field name="taggenlink" load="true">UAG_FREIGABE.SOE</field>
+    <field name="linked">1</field>
+    <field name="editcode">536350655</field>
+    <field name="equip">{equipment.name}</field>
+    <field name="item">SOE</field>
+    <field name="historian">FALSE</field>
+    <field name="tag" key="true">{equipment.tagprefix}_SOE_1</field>
+    <field name="name" >{equipment.tagprefix}</field>
+    <field name="desc">Leitsperre {equipment.comment}</field>
+    <field name="expr">{equipment.tagprefix}_SOE = 1</field> 
+    <field name="category">Alarm21</field>
+    <field name="help">{equipment.page_list[0]}</field>
+    <field name="custom1">{equipment.area}</field>
+    <field name="comment">{equipment.tagprefix}_SOE</field>
+    <field name="cluster">{equipment.cluster}</field>
+    <field name="area">{equipment.area}</field>
+ </output>
+   <output name="UI.KT" file="UIMESSAG.dbf" filter=" ( '{equipment.type}={type.name}'">
+    <field name="NAME" key="true">{equipment.tagprefix}_KT</field>
+   <field name="taggenlink" load="true">UAG_FREIGABE.KT</field>
+     <field name="SPS">{equipment.iodevice}</field>
+    <field name="AREA">{equipment.AREA}</field>
+    <field name="BILD">{equipment.page}</field>
+    <field name="ORT">{equipment.location}</field>
+ </output>
+  <output name="UI.MI1" file="UINTERLO.dbf" filter=" ( '{equipment.type}={type.name}'">
+    <field name="NAME" key="true">{equipment.tagprefix}_MI</field>
+   <field name="taggenlink" load="true">UAG_FREIGABE.MI1</field>
+     <field name="MCODE">1</field>
+    <field name="BESCHR">{equipment.Text_list1[0]}</field>
+ </output>
+  <output name="UI.MI2" file="UINTERLO.dbf" filter=" ( '{equipment.type}={type.name}'">
+    <field name="NAME" key="true">{equipment.tagprefix}_MI</field>
+   <field name="taggenlink" load="true">UAG_FREIGABE.MI2</field>
+     <field name="MCODE">2</field>
+    <field name="BESCHR">{equipment.Text_list1[1]}</field>
+ </output>
+  <output name="UI.MI3" file="UINTERLO.dbf" filter=" ( '{equipment.type}={type.name}'">
+    <field name="NAME" key="true">{equipment.tagprefix}_MI</field>
+   <field name="taggenlink" load="true">UAG_FREIGABE.MI3</field>
+     <field name="MCODE">3</field>
+    <field name="BESCHR">{equipment.Text_list1[2]}</field>
+ </output>
+  <output name="UI.MI4" file="UINTERLO.dbf" filter=" ( '{equipment.type}={type.name}'">
+    <field name="NAME" key="true">{equipment.tagprefix}_MI</field>
+   <field name="taggenlink" load="true">UAG_FREIGABE.MI4</field>
+     <field name="MCODE">4</field>
+    <field name="BESCHR">{equipment.Text_list2[0]}</field>
+ </output>
+  <output name="UI.MI5" file="UINTERLO.dbf" filter=" ( '{equipment.type}={type.name}'">
+    <field name="NAME" key="true">{equipment.tagprefix}_MI</field>
+   <field name="taggenlink" load="true">UAG_FREIGABE.MI5</field>
+     <field name="MCODE">5</field>
+    <field name="BESCHR">{equipment.Text_list2[1]}</field>
+ </output>
+  <output name="UI.MI6" file="UINTERLO.dbf" filter=" ( '{equipment.type}={type.name}'">
+    <field name="NAME" key="true">{equipment.tagprefix}_MI</field>
+   <field name="taggenlink" load="true">UAG_FREIGABE.MI6</field>
+     <field name="MCODE">6</field>
+    <field name="BESCHR">{equipment.Text_list2[2]}</field>
+ </output>
+  <output name="UI.MI7" file="UINTERLO.dbf" filter=" ( '{equipment.type}={type.name}'">
+    <field name="NAME" key="true">{equipment.tagprefix}_MI</field>
+   <field name="taggenlink" load="true">UAG_FREIGABE.MI7</field>
+     <field name="MCODE">7</field>
+    <field name="BESCHR">{equipment.Text_list3[0]}</field>
+ </output>
+  <output name="UI.MI8" file="UINTERLO.dbf" filter=" ( '{equipment.type}={type.name}'">
+    <field name="NAME" key="true">{equipment.tagprefix}_MI</field>
+   <field name="taggenlink" load="true">UAG_FREIGABE.MI8</field>
+     <field name="MCODE">8</field>
+    <field name="BESCHR">{equipment.Text_list3[1]}</field>
+ </output>
+  <output name="UI.MI9" file="UINTERLO.dbf" filter=" ( '{equipment.type}={type.name}'">
+    <field name="NAME" key="true">{equipment.tagprefix}_MI</field>
+   <field name="taggenlink" load="true">UAG_FREIGABE.MI9</field>
+     <field name="MCODE">9</field>
+    <field name="BESCHR">{equipment.Text_list3[2]}</field>
+ </output>
+  <output name="UI.MI10" file="UINTERLO.dbf" filter=" ( '{equipment.type}={type.name}'">
+    <field name="NAME" key="true">{equipment.tagprefix}_MI</field>
+   <field name="taggenlink" load="true">UAG_FREIGABE.MI10</field>
+     <field name="MCODE">10</field>
+    <field name="BESCHR">{equipment.Text_list4[0]}</field>
+ </output>
+  <output name="UI.MI11" file="UINTERLO.dbf" filter=" ( '{equipment.type}={type.name}'">
+    <field name="NAME" key="true">{equipment.tagprefix}_MI</field>
+   <field name="taggenlink" load="true">UAG_FREIGABE.MI11</field>
+     <field name="MCODE">11</field>
+    <field name="BESCHR">{equipment.Text_list4[1]}</field>
+ </output>
+  <output name="UI.MI12" file="UINTERLO.dbf" filter=" ( '{equipment.type}={type.name}'">
+    <field name="NAME" key="true">{equipment.tagprefix}_MI</field>
+   <field name="taggenlink" load="true">UAG_FREIGABE.MI12</field>
+     <field name="MCODE">12</field>
+    <field name="BESCHR">{equipment.Text_list4[2]}</field>
+ </output>
+  <output name="UI.MI13" file="UINTERLO.dbf" filter=" ( '{equipment.type}={type.name}'">
+    <field name="NAME" key="true">{equipment.tagprefix}_MI</field>
+   <field name="taggenlink" load="true">UAG_FREIGABE.MI13</field>
+     <field name="MCODE">13</field>
+    <field name="BESCHR">{equipment.Text_list5[0]}</field>
+ </output>
+  <output name="UI.MI14" file="UINTERLO.dbf" filter=" ( '{equipment.type}={type.name}'">
+    <field name="NAME" key="true">{equipment.tagprefix}_MI</field>
+   <field name="taggenlink" load="true">UAG_FREIGABE.MI14</field>
+     <field name="MCODE">14</field>
+    <field name="BESCHR">{equipment.Text_list5[1]}</field>
+ </output>
+  <output name="UI.MI15" file="UINTERLO.dbf" filter=" ( '{equipment.type}={type.name}'">
+    <field name="NAME" key="true">{equipment.tagprefix}_MI</field>
+   <field name="taggenlink" load="true">UAG_FREIGABE.MI15</field>
+     <field name="MCODE">15</field>
+    <field name="BESCHR">{equipment.Text_list5[2]}</field>
+ </output>
+  <output name="HI.LT" file="UHMIINIT.dbf" filter=" ( '{equipment.type}={type.name}'">
+    <field name="NAME" key="true">{equipment.tagprefix}_LT</field>
+    <field name="MCODE">{equipment.comment}</field>
+    <field name="taggenlink" load="true">UAG_FREIGABE.LT</field>
+  </output>
+  <output name="HI.KT" file="UHMIINIT.dbf" filter=" ( '{equipment.type}={type.name}'">
+    <field name="NAME" key="true">{equipment.tagprefix}_KT</field>
+    <field name="MCODE">{equipment.tagprefix}</field>
+    <field name="taggenlink" load="true">UAG_FREIGABE.KT</field>
+  </output>
+  <output name="II.LW" file="UInitial.dbf" filter=" ( '{equipment.type}={type.name}'">
+    <field name="NAME" key="true">{equipment.tagprefix}_LW</field>
+    <field name="MCODE">0</field>
+    <field name="PLC">{equipment.iodevice}</field>
+    <field name="taggenlink" load="true">UAG_FREIGABE.LW</field>
+  </output>
+</template>

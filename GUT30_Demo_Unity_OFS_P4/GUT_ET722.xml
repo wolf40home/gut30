@@ -1,0 +1,246 @@
+<?xml version="1.0" encoding="utf-8"?>
+<template desc="Equipment template">
+  <param name="type" desc="equipment type parameters">
+    <string name="name">GUT_ET722</string>
+    <string name="ref">GUT_ET722</string>
+     <string name="ka">"("</string>
+ </param>
+  <input name="equipment" file="equip.dbf" desc="Equipment Database">
+    <field name="name"></field>
+    <array name="name_list">{Split('{name}','.')}</array>
+    <field name="cluster"></field>
+    <field name="type"></field>
+    <field name="iodevice"></field>
+    <string name="tagprefix">{name_list[0]}_{name_list[1]}</string>
+    <field name="area"></field>
+    <field name="page"></field>
+    <array name="page_list">{Split('{page}',',')}</array>
+    <field name="help"></field>
+    <field name="location"></field>
+    <field name="comment"></field>
+    <field name="scheduled"></field>
+    <field name="defstate"></field>
+    <field name="param"></field>
+    <array name="param_list">{ToProperty('{param}','=',';')}</array>
+    <field name="custom1"></field>
+    <field name="custom2"></field>
+    <field name="custom3"></field>
+    <field name="custom4"></field>
+    <field name="custom5"></field>
+    <field name="custom6"></field>
+    <field name="custom7"></field>
+    <field name="custom8"></field>
+
+  </input>
+  <output name="VAR.FX" file="variable.dbf" filter=" ( '{equipment.type}={type.name}'">
+    <field name="taggenlink" load="true">GUT_ET722.FX</field>
+    <field name="linked">1</field>
+    <field name="editcode">12337151</field>
+    <field name="equip">{equipment.name}</field>
+    <field name="item">FX</field>
+    <field name="historian">FALSE</field>
+    <field name="name" key="true">{equipment.tagprefix}_FX</field>
+    <field name="type">INT</field>
+    <field name="unit">{equipment.iodevice}</field>
+    <field name="addr">{equipment.tagprefix}_FX</field>
+    <field name="eng_zero">0</field>
+    <field name="eng_full">5000</field>
+    <field name="raw_zero">0</field>
+    <field name="raw_full">10000</field>
+    <field name="eng_units">l</field>
+    <field name="format">####EU</field>
+	<field name="comment">Füllstand {equipment.comment}</field>
+    <field name="cluster">{equipment.cluster}</field>
+  </output>
+   <output name="TRN.FX" file="trend.dbf" filter="'{equipment.type}={type.name}'">
+    <field name="taggenlink" load="true">GUT_ET722.FX</field>
+    <field name="equip">{equipment.name}</field>
+    <field name="item">FX</field>
+    <field name="linked">1</field>
+    <field name="eng_units"></field>
+    <field name="eng_zero"></field>
+    <field name="eng_full"></field>
+    <field name="format"></field>
+    <field name="filename">[DATA]:{equipment.tagprefix}\FX</field>
+    <field name="historian">TRUE</field>
+    <field name="editcode">3690459623</field>
+    <field name="name" key="true">{equipment.tagprefix}_FX</field>
+    <field name="expr">{equipment.tagprefix}_FX</field>
+    <field name="sampleper">1</field>
+    <field name="files">5</field>
+    <field name="period">Monday</field>
+    <field name="type">TRN_EVENT</field>
+    <field name="comment">Istwert {equipment.comment}</field>
+    <field name="cluster">{equipment.cluster}</field>
+    <field name="area">{equipment.area}</field>
+    <field name="stormethod">Floating Point (8-byte samples)</field>
+ </output>
+ 
+  <output name="VAR.TX" file="variable.dbf" filter=" ( '{equipment.type}={type.name}'">
+    <field name="taggenlink" load="true">GUT_ET722.TX</field>
+    <field name="linked">1</field>
+    <field name="editcode">12337151</field>
+    <field name="equip">{equipment.name}</field>
+    <field name="item">TX</field>
+    <field name="historian">FALSE</field>
+    <field name="name" key="true">{equipment.tagprefix}_TX</field>
+    <field name="type">INT</field>
+    <field name="unit">{equipment.iodevice}</field>
+    <field name="addr">{equipment.tagprefix}_TX</field>
+    <field name="eng_zero">0</field>
+    <field name="eng_full">120</field>
+    <field name="raw_zero">0</field>
+    <field name="raw_full">10000</field>
+    <field name="eng_units">C°</field>
+    <field name="format">###.#EU</field>
+	<field name="comment">Temperatur  {equipment.comment}</field>
+    <field name="cluster">{equipment.cluster}</field>
+  </output>
+  <output name="VAR.RMY1" file="variable.dbf" filter=" ( '{equipment.type}={type.name}'">
+    <field name="taggenlink" load="true">GUT_ET722.RMY1</field>
+    <field name="linked">1</field>
+    <field name="editcode">12337151</field>
+    <field name="equip">{equipment.name}</field>
+    <field name="item">RMY1</field>
+    <field name="historian">FALSE</field>
+    <field name="name" key="true">{equipment.tagprefix}_RMY1</field>
+    <field name="type">REAL</field>
+    <field name="unit">{equipment.iodevice}</field>
+    <field name="addr">{equipment.tagprefix}_RMY1</field>
+    <field name="eng_zero">0</field>
+    <field name="eng_full">100</field>
+    <field name="raw_zero">0</field>
+    <field name="raw_full">16000</field>
+    <field name="eng_units"></field>
+    <field name="format">###.#EU</field>
+	<field name="comment">Ansteuerung Bodenablauf {equipment.comment}</field>
+    <field name="cluster">{equipment.cluster}</field>
+  </output>
+  <output name="VAR.RMY2" file="variable.dbf" filter=" ( '{equipment.type}={type.name}'">
+    <field name="taggenlink" load="true">GUT_ET722.RMY2</field>
+    <field name="linked">1</field>
+    <field name="editcode">12337151</field>
+    <field name="equip">{equipment.name}</field>
+    <field name="item">RMY2</field>
+    <field name="historian">FALSE</field>
+    <field name="name" key="true">{equipment.tagprefix}_RMY2</field>
+    <field name="type">REAL</field>
+    <field name="unit">{equipment.iodevice}</field>
+    <field name="addr">{equipment.tagprefix}_RMY2</field>
+    <field name="eng_zero">0</field>
+    <field name="eng_full">100</field>
+    <field name="raw_zero">0</field>
+    <field name="raw_full">16000</field>
+    <field name="eng_units"></field>
+    <field name="format">###.#EU</field>
+	<field name="comment">Ansteuerung Bodenablauf {equipment.comment}</field>
+    <field name="cluster">{equipment.cluster}</field>
+  </output>
+  <output name="VAR.W01" file="variable.dbf" filter=" ( '{equipment.type}={type.name}'">
+    <field name="taggenlink" load="true">GUT_ET722.W01</field>
+    <field name="linked">1</field>
+    <field name="editcode">12337151</field>
+    <field name="equip">{equipment.name}</field>
+    <field name="item">W01</field>
+    <field name="historian">FALSE</field>
+   <field name="name" key="true">{equipment.tagprefix}_W01</field>
+    <field name="type">REAL</field>
+    <field name="unit">{equipment.iodevice}</field>
+    <field name="addr">{equipment.tagprefix}_W01</field>
+    <field name="eng_zero">0</field>
+    <field name="eng_full">5000.0</field>
+    <field name="raw_zero">0</field>
+    <field name="raw_full">5000.0</field>
+    <field name="format">#####.#</field>
+    <field name="comment">Poti 1 {equipment.comment}</field>
+    <field name="cluster">{equipment.cluster}</field>
+  </output>
+  <output name="VAR.W02" file="variable.dbf" filter=" ( '{equipment.type}={type.name}'">
+    <field name="taggenlink" load="true">GUT_ET722.W02</field>
+    <field name="linked">1</field>
+    <field name="editcode">12337151</field>
+    <field name="equip">{equipment.name}</field>
+    <field name="item">W02</field>
+    <field name="historian">FALSE</field>
+    <field name="name" key="true">{equipment.tagprefix}_W02</field>
+    <field name="type">REAL</field>
+    <field name="unit">{equipment.iodevice}</field>
+    <field name="addr">{equipment.tagprefix}_W02</field>
+    <field name="eng_zero">0</field>
+    <field name="eng_full">120.0</field>
+    <field name="raw_zero">0</field>
+    <field name="raw_full">120.0</field>
+    <field name="format">#####.#</field>
+    <field name="comment">Poti 2 {equipment.comment}</field>
+    <field name="cluster">{equipment.cluster}</field>
+  </output>
+  <output name="VAR.LW" file="variable.dbf" filter=" ( '{equipment.type}={type.name}'">
+    <field name="taggenlink" load="true">GUT_ET722.LW</field>
+    <field name="linked">1</field>
+    <field name="editcode">16777215</field>
+    <field name="equip">{equipment.name}</field>
+    <field name="item">LW</field>
+    <field name="historian">FALSE</field>
+    <field name="name" key="true">{equipment.tagprefix}_LW</field>
+    <field name="type">UINT</field>
+    <field name="unit">{equipment.iodevice}</field>
+    <field name="addr">{equipment.tagprefix}_LW</field>
+	<field name="comment">Leitwort {equipment.comment}</field>
+    <field name="cluster">{equipment.cluster}</field>
+ </output>
+  <output name="VAR.KT" file="variable.dbf" filter=" ( '{equipment.type}={type.name}'">
+    <field name="taggenlink" load="true">GUT_ET722.KT</field>
+    <field name="linked">1</field>
+     <field name="editcode">16777215</field>
+    <field name="equip">{equipment.name}</field>
+    <field name="item">KT</field>
+    <field name="historian">FALSE</field>
+    <field name="name" key="true">{equipment.tagprefix}_KT</field>
+    <field name="type">STRING</field>
+    <field name="unit">{equipment.iodevice}_DISK</field>
+    <field name="addr">{equipment.tagprefix}_KT</field>
+	<field name="comment">Kurztext {equipment.comment}</field>
+    <field name="cluster">{equipment.cluster}</field>
+ </output>
+  <output name="VAR.M" file="variable.dbf" filter=" ( '{equipment.type}={type.name}'">
+    <field name="taggenlink" load="true">GUT_ET722.M</field>
+    <field name="linked">1</field>
+    <field name="editcode">16777215</field>
+    <field name="equip">{equipment.name}</field>
+    <field name="item">M</field>
+    <field name="historian">FALSE</field>
+    <field name="name" key="true">{equipment.tagprefix}_M</field>
+    <field name="type">LONG</field>
+    <field name="unit">{equipment.iodevice}</field>
+    <field name="addr">{equipment.tagprefix}_M</field>
+	<field name="comment">Meldewort {equipment.comment}</field>
+    <field name="cluster">{equipment.cluster}</field>
+  </output>
+ <output name="UI.KT" file="UIMESSAG.dbf" filter=" ( '{equipment.type}={type.name}'">
+     <field name="NAME" key="true">{equipment.name}.KT</field>
+     <field name="taggenlink" load="true">GUT_ET722.KT</field>
+   <field name="SPS">{equipment.iodevice}</field>
+    <field name="AREA">{equipment.AREA}</field>
+    <field name="BILD">{equipment.page}</field>
+    <field name="ORT">{equipment.location}</field>
+ </output>
+  <output name="HI.KT" file="UHMIINIT.dbf" filter=" ( '{equipment.type}={type.name}'">
+    <field name="NAME" key="true">{equipment.tagprefix}_KT</field>
+    <field name="MCODE">{equipment.tagprefix}</field>
+    <field name="taggenlink" load="true">GUT_ET722.KT</field>
+  </output>
+  <output name="II.W01" file="UInitial.dbf" filter=" ( '{equipment.type}={type.name}'">
+    <field name="NAME" key="true">{equipment.tagprefix}_W01</field>
+    <field name="MCODE">0,0</field>
+    <field name="PLC">{equipment.iodevice}</field>
+    <field name="taggenlink" load="true">GUT_ET722.W01</field>
+  </output>
+
+  <output name="II.W02" file="UInitial.dbf" filter=" ( '{equipment.type}={type.name}'">
+    <field name="NAME" key="true">{equipment.tagprefix}_W02</field>
+    <field name="MCODE">{equipment.custom2}</field>
+    <field name="PLC">{equipment.iodevice}</field>
+    <field name="taggenlink" load="true">GUT_ET722.W02</field>
+  </output>
+
+</template>

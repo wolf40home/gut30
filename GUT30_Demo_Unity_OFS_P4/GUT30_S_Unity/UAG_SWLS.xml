@@ -1,0 +1,272 @@
+<?xml version="1.0" encoding="utf-8"?>
+<template desc="Equipment template">
+  <param name="type" desc="equipment type parameters">
+    <string name="name">UAG_SWLS</string>
+    <string name="ref">UAG_SWLS</string>
+ </param>
+  <input name="equipment" file="equip.dbf" desc="Equipment Database">
+    <field name="name"></field>
+    <array name="name_list">{Split('{name}','.')}</array>
+    <field name="cluster"></field>
+    <field name="type"></field>
+    <field name="iodevice"></field>
+    <string name="tagprefix">{name_list[0]}_{name_list[1]}_{name_list[2]}</string>
+    <field name="area"></field>
+    <field name="page"></field>
+    <array name="page_list">{Split('{page}',',')}</array>
+    <field name="help"></field>
+    <field name="location"></field>
+    <field name="comment"></field>
+    <field name="scheduled"></field>
+    <field name="defstate"></field>
+    <field name="param"></field>
+    <array name="param_list">{ToProperty('{param}','=',';')}</array>
+    <field name="custom1"></field>
+    <field name="custom2"></field>
+    <field name="custom3"></field>
+    <field name="custom4"></field>
+    <field name="custom5"></field>
+    <field name="custom6"></field>
+    <field name="custom7"></field>
+    <field name="custom8"></field>
+
+  </input>
+  <output name="VAR.W" file="variable.dbf" filter=" ( '{equipment.type}={type.name}'">
+    <field name="taggenlink" load="true">UAG_SWLS.W</field>
+    <field name="linked">1</field>
+    <field name="editcode">12337151</field>
+    <field name="equip">{equipment.name}</field>
+    <field name="item">W</field>
+    <field name="historian">FALSE</field>
+     <field name="name" key="true">{equipment.tagprefix}_W</field>
+    <field name="type">REAL</field>
+    <field name="unit">{equipment.iodevice}</field>
+    <field name="addr">{equipment.tagprefix}_W</field>
+    <field name="eng_zero">{equipment.custom1}</field>
+    <field name="eng_full">{equipment.custom2}</field>
+    <field name="raw_zero">{equipment.custom1}</field>
+    <field name="raw_full">{equipment.custom2}</field>
+    <field name="eng_units">{equipment.custom3}</field>
+    <field name="format">{equipment.custom4}</field>
+	<field name="comment">wirksamer Sollwert {equipment.comment}</field>
+    <field name="cluster">{equipment.cluster}</field>
+  </output>
+  <output name="VAR.WH" file="variable.dbf" filter=" ( '{equipment.type}={type.name}'">
+    <field name="taggenlink" load="true">UAG_SWLS.WH</field>
+    <field name="linked">1</field>
+    <field name="editcode">12337151</field>
+    <field name="equip">{equipment.name}</field>
+    <field name="item">WH</field>
+    <field name="historian">FALSE</field>
+     <field name="name" key="true">{equipment.tagprefix}_WH</field>
+    <field name="type">REAL</field>
+    <field name="unit">{equipment.iodevice}</field>
+    <field name="addr">{equipment.tagprefix}_WH</field>
+    <field name="eng_zero">{equipment.custom1}</field>
+    <field name="eng_full">{equipment.custom2}</field>
+    <field name="raw_zero">{equipment.custom1}</field>
+    <field name="raw_full">{equipment.custom2}</field>
+    <field name="eng_units">{equipment.custom3}</field>
+    <field name="format">{equipment.custom4}</field>
+	<field name="comment">Sollwert Hand {equipment.comment}</field>
+    <field name="cluster">{equipment.cluster}</field>
+  </output>
+  <output name="VAR.WE" file="variable.dbf" filter=" ( '{equipment.type}={type.name}'">
+    <field name="taggenlink" load="true">UAG_SWLS.WE</field>
+    <field name="linked">1</field>
+    <field name="editcode">12337151</field>
+    <field name="equip">{equipment.name}</field>
+    <field name="item">WE</field>
+    <field name="historian">FALSE</field>
+     <field name="name" key="true">{equipment.tagprefix}_WE</field>
+    <field name="type">REAL</field>
+    <field name="unit">{equipment.iodevice}</field>
+    <field name="addr">{equipment.tagprefix}_WE</field>
+    <field name="eng_zero">{equipment.custom1}</field>
+    <field name="eng_full">{equipment.custom2}</field>
+    <field name="raw_zero">{equipment.custom1}</field>
+    <field name="raw_full">{equipment.custom2}</field>
+    <field name="eng_units">{equipment.custom3}</field>
+    <field name="format">{equipment.custom4}</field>
+	<field name="comment">Sollwert Hand {equipment.comment}</field>
+    <field name="cluster">{equipment.cluster}</field>
+  </output>
+  <output name="VAR.WHO" file="variable.dbf" filter=" ( '{equipment.type}={type.name}'">
+    <field name="taggenlink" load="true">UAG_SWLS.WHO</field>
+    <field name="linked">1</field>
+    <field name="editcode">12337151</field>
+    <field name="equip">{equipment.name}</field>
+    <field name="item">WHO</field>
+    <field name="historian">FALSE</field>
+     <field name="name" key="true">{equipment.tagprefix}_WHO</field>
+    <field name="type">REAL</field>
+    <field name="unit">{equipment.iodevice}</field>
+    <field name="addr">{equipment.tagprefix}_WHO</field>
+    <field name="eng_zero">{equipment.custom1}</field>
+    <field name="eng_full">{equipment.custom2}</field>
+    <field name="raw_zero">{equipment.custom1}</field>
+    <field name="raw_full">{equipment.custom2}</field>
+    <field name="eng_units">{equipment.custom3}</field>
+    <field name="format">{equipment.custom4}</field>
+	<field name="comment">Begrenzung WH oben {equipment.comment}</field>
+    <field name="cluster">{equipment.cluster}</field>
+  </output>
+  <output name="VAR.WHU" file="variable.dbf" filter=" ( '{equipment.type}={type.name}'">
+    <field name="taggenlink" load="true">UAG_SWLS.WHU</field>
+    <field name="linked">1</field>
+    <field name="editcode">12337151</field>
+    <field name="equip">{equipment.name}</field>
+    <field name="item">WHU</field>
+    <field name="historian">FALSE</field>
+    <field name="name" key="true">{equipment.tagprefix}_WHU</field>
+    <field name="type">REAL</field>
+    <field name="unit">{equipment.iodevice}</field>
+    <field name="addr">{equipment.tagprefix}_WHU</field>
+    <field name="eng_zero">{equipment.custom1}</field>
+    <field name="eng_full">{equipment.custom2}</field>
+    <field name="raw_zero">{equipment.custom1}</field>
+    <field name="raw_full">{equipment.custom2}</field>
+    <field name="eng_units">{equipment.custom3}</field>
+    <field name="format">{equipment.custom4}</field>
+	<field name="comment">Begrenzung WH unten {equipment.comment}</field>
+    <field name="cluster">{equipment.cluster}</field>
+  </output>
+  <output name="VAR.TYP" file="variable.dbf" filter=" ( '{equipment.type}={type.name}'">
+    <field name="taggenlink" load="true">UAG_SWLS.TYP</field>
+    <field name="linked">1</field>
+    <field name="editcode">16777215</field>
+    <field name="equip">{equipment.name}</field>
+    <field name="item">TYP</field>
+    <field name="historian">FALSE</field>
+	<field name="name" key="true">{equipment.tagprefix}_TYP</field>
+    <field name="type">UINT</field>
+    <field name="unit">{equipment.iodevice}</field>
+    <field name="addr">{equipment.tagprefix}_TYP</field>
+	<field name="comment">Typangabe {equipment.comment}</field>
+     <field name="cluster">{equipment.cluster}</field>
+ </output>
+  <output name="VAR.LW" file="variable.dbf" filter=" ( '{equipment.type}={type.name}'">
+    <field name="taggenlink" load="true">UAG_SWLS.LW</field>
+    <field name="linked">1</field>
+    <field name="editcode">16777215</field>
+    <field name="equip">{equipment.name}</field>
+    <field name="item">LW</field>
+    <field name="historian">FALSE</field>
+    <field name="name" key="true">{equipment.tagprefix}_LW</field>
+    <field name="type">UINT</field>
+    <field name="unit">{equipment.iodevice}</field>
+    <field name="addr">{equipment.tagprefix}_LW</field>
+	<field name="comment">Leitwort {equipment.comment}</field>
+    <field name="cluster">{equipment.cluster}</field>
+ </output>
+  <output name="VAR.M" file="variable.dbf" filter=" ( '{equipment.type}={type.name}'">
+    <field name="taggenlink" load="true">UAG_SWLS.M</field>
+    <field name="linked">1</field>
+    <field name="editcode">16777215</field>
+    <field name="equip">{equipment.name}</field>
+    <field name="item">M</field>
+    <field name="historian">FALSE</field>
+    <field name="name" key="true">{equipment.tagprefix}_M</field>
+    <field name="type">UINT</field>
+    <field name="unit">{equipment.iodevice}</field>
+    <field name="addr">{equipment.tagprefix}_M</field>
+	<field name="comment">Meldewort {equipment.comment}</field>
+    <field name="cluster">{equipment.cluster}</field>
+  </output>
+  <output name="VAR.KT" file="variable.dbf" filter=" ( '{equipment.type}={type.name}'">
+    <field name="taggenlink" load="true">UAG_SWLS.KT</field>
+    <field name="linked">1</field>
+    <field name="editcode">16777215</field>
+    <field name="equip">{equipment.name}</field>
+    <field name="item">KT</field>
+    <field name="historian">FALSE</field>
+     <field name="name" key="true">{equipment.tagprefix}_KT</field>
+    <field name="type">STRING</field>
+    <field name="unit">{equipment.iodevice}_DISK</field>
+    <field name="addr">{equipment.tagprefix}_KT</field>
+  <field name="comment">Kurztext {equipment.comment}</field>
+     <field name="cluster">{equipment.cluster}</field>
+ </output>
+  <output name="VAR.LT" file="variable.dbf" filter=" ( '{equipment.type}={type.name}'">
+    <field name="taggenlink" load="true">UAG_SWLS.LT</field>
+    <field name="linked">1</field>
+    <field name="editcode">16777215</field>
+    <field name="equip">{equipment.name}</field>
+    <field name="item">LT</field>
+    <field name="historian">FALSE</field>
+    <field name="name" key="true">{equipment.tagprefix}_LT</field>
+    <field name="type">STRING</field>
+    <field name="unit">{equipment.iodevice}_DISK</field>
+    <field name="addr">{equipment.tagprefix}_LT</field>
+	<field name="comment">Langtext {equipment.comment}</field>
+    <field name="cluster">{equipment.cluster}</field>
+  </output>
+    <output name="VAR.SOE" file="variable.dbf" filter=" ( '{equipment.type}={type.name}'">
+    <field name="taggenlink" load="true">UAG_SWLS.SOE</field>
+    <field name="linked">1</field>
+    <field name="editcode">16777215</field>
+    <field name="equip">{equipment.name}</field>
+    <field name="item">SOE</field>
+    <field name="historian">FALSE</field>
+   <field name="name" key="true">{equipment.tagprefix}_SOE</field>
+    <field name="type">INT</field>
+    <field name="unit">{equipment.iodevice}_DISK</field>
+    <field name="addr">{equipment.tagprefix}_SOE</field>
+	<field name="comment">für SOE Einträge {equipment.comment}</field>
+    <field name="cluster">{equipment.cluster}</field>
+  </output>
+  <output name=" AdAlm.SOE" file="advalm.DBF" filter="'{equipment.type}={type.name}'">
+    <field name="taggenlink" load="true">UAG_SWLS.SOE</field>
+    <field name="linked">1</field>
+    <field name="editcode">536350655</field>
+    <field name="equip">{equipment.name}</field>
+    <field name="item">SOE</field>
+    <field name="historian">FALSE</field>
+    <field name="tag" key="true">{equipment.tagprefix}_SOE_1</field>
+    <field name="name" >{equipment.tagprefix}</field>
+    <field name="desc">Leitsperre {equipment.comment}</field>
+    <field name="expr">{equipment.tagprefix}_SOE = 1</field> 
+    <field name="category">Alarm21</field>
+    <field name="help">{equipment.page_list[0]}</field>
+    <field name="custom1">{equipment.area}</field>
+    <field name="comment">{equipment.tagprefix}_SOE</field>
+    <field name="cluster">{equipment.cluster}</field>
+    <field name="area">{equipment.area}</field>
+ </output>
+  <output name="UI.KT" file="UIMESSAG.dbf" filter=" ( '{equipment.type}={type.name}'">
+     <field name="taggenlink" load="true">UAG_SWLS.KT</field>
+   <field name="NAME" key="true">{equipment.tagprefix}_KT</field>
+    <field name="SPS">{equipment.iodevice}</field>
+    <field name="AREA">{equipment.AREA}</field>
+    <field name="BILD">{equipment.page}</field>
+    <field name="ORT">{equipment.location}</field>
+ </output>
+  <output name="UI.LT" file="UHMIINIT.dbf" filter=" ( '{equipment.type}={type.name}'">
+    <field name="NAME" key="true">{equipment.tagprefix}_LT</field>
+    <field name="MCODE">{equipment.comment}</field>
+    <field name="taggenlink" load="true">UAG_SWLS.LT</field>
+  </output>
+  <output name="HI.KT" file="UHMIINIT.dbf" filter=" ( '{equipment.type}={type.name}'">
+    <field name="NAME" key="true">{equipment.tagprefix}_KT</field>
+    <field name="MCODE">{equipment.tagprefix}</field>
+    <field name="taggenlink" load="true">UAG_SWLS.KT</field>
+  </output>
+  <output name="II.WH" file="UInitial.dbf" filter=" ( '{equipment.type}={type.name}'">
+    <field name="NAME" key="true">{equipment.tagprefix}_WH</field>
+    <field name="MCODE">0,0</field>
+    <field name="PLC">{equipment.iodevice}</field>
+    <field name="taggenlink" load="true">UAG_SWLS.WH</field>
+  </output>
+  <output name="II.WHO" file="UInitial.dbf" filter=" ( '{equipment.type}={type.name}'">
+    <field name="NAME" key="true">{equipment.tagprefix}_WHO</field>
+    <field name="MCODE">{equipment.custom2}</field>
+    <field name="PLC">{equipment.iodevice}</field>
+    <field name="taggenlink" load="true">UAG_SWLS.WHO</field>
+  </output>
+  <output name="II.WHU" file="UInitial.dbf" filter=" ( '{equipment.type}={type.name}'">
+    <field name="NAME" key="true">{equipment.tagprefix}_WHU</field>
+    <field name="MCODE">{equipment.custom1}</field>
+    <field name="PLC">{equipment.iodevice}</field>
+    <field name="taggenlink" load="true">UAG_SWLS.WHU</field>
+  </output>
+</template>
