@@ -1,0 +1,46 @@
+//INT FUNCTION UAG_Page_Forward()
+//	INT iret
+//	iret = PageForward(1)
+//	UAG_FontDefault()
+//	RETURN iret
+//END
+
+//	FUNCTION UAG_Page_File(STRING sFile)
+//	Übergabeparameter:	MAP ID die aufgrufen werden soll
+//						Kennung ob es eine Seite aus der LIB ist.        
+//                         
+//	Rückgabewert:		---
+//	Beschreibung:		Damit kann eine Beschreibung zu einem Bild gemacht werden.
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	31.08.2016	/	Schneider Electrik GmbH
+//	Version				75.33.11.02
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	
+
+
+
+FUNCTION UAG_Page_File(STRING sFile)
+
+	INT		iError;
+	
+	ErrSet(gbUAGDebugOn);
+	sFile=StrTrim(sFile);
+	msTag= sFile;
+	Ass(-2,1,"'" + sFile+ "'",0);
+
+	iError = UAG_MM_WinNewAt("!p_file_dsp_20",200,200,giMODE )
+	
+
+	IF  iError <>-1 THEN
+
+	
+		DspAnCreateControlObject(4, msObjectClass, 593, - 359);
+		IF iLIB = TRUE THEN 
+			_WinTitle("@(Versions Info Lib):  " + sFile);
+		ELSE
+			_WinTitle("@(Versions Info Projekt):  " + sFile);
+		END	
+	END

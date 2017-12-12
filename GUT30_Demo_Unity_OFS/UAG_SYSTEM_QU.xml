@@ -1,0 +1,902 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<template desc="Equipment template">
+  <param name="type" desc="equipment type parameters">
+    <string name="name">UAG_SYSTEM_QU</string>
+    <string name="ref">UAG_SYSTEM_QU</string>
+ </param>
+  <input name="equipment" file="equip.dbf" desc="Equipment Database">
+    <field name="name"></field>
+    <array name="name_list">{Split('{name}','.')}</array>
+    <field name="cluster"></field>
+    <field name="type"></field>
+    <field name="iodevice"></field>
+    <string name="tagprefix">{name_list[0]}</string>
+    <field name="area"></field>
+    <field name="page"></field>
+    <array name="page_list">{Split('{page}',',')}</array>
+    <field name="help"></field>
+    <field name="location"></field>
+    <field name="comment"></field>
+    <field name="scheduled"></field>
+    <field name="defstate"></field>
+    <field name="param"></field>
+    <array name="param_list">{ToProperty('{param}','=',';')}</array>
+    <field name="custom1"></field>
+    <field name="custom2"></field>
+    <field name="custom3"></field>
+    <field name="custom4"></field>
+    <field name="custom5"></field>
+    <field name="custom6"></field>
+    <field name="custom7"></field>
+    <field name="custom8"></field>
+
+  </input>
+  <output name="VAR.LW" file="variable.dbf" filter=" ( '{equipment.type}={type.name}'" desc="Insert text here">
+    <field name="taggenlink" load="true">UAG_SYSTEM_QU.LW</field>
+    <field name="linked">1</field>
+    <field name="editcode">16777215</field>
+    <field name="equip">{equipment.name}</field>
+    <field name="item">LW</field>
+    <field name="historian">FALSE</field>
+    <field name="name" key="true">{equipment.tagprefix}_LW</field>
+    <field name="type">UINT</field>
+    <field name="unit">{equipment.iodevice}</field>
+    <field name="addr">{name}</field>
+	<field name="comment">Leitwort {equipment.comment}</field>
+    <field name="cluster">{equipment.cluster}</field>
+ </output>
+  <output name="VAR.M" file="variable.dbf" filter=" ( '{equipment.type}={type.name}'">
+    <field name="taggenlink" load="true">UAG_SYSTEM_QU.M</field>
+    <field name="linked">1</field>
+    <field name="editcode">16777215</field>
+    <field name="equip">{equipment.name}</field>
+    <field name="item">M</field>
+    <field name="historian">FALSE</field>
+    <field name="name" key="true">{equipment.tagprefix}_M</field>
+    <field name="type">LONG</field>
+    <field name="unit">{equipment.iodevice}</field>
+    <field name="addr">{name}</field>
+	<field name="comment">Meldewort {equipment.comment}</field>
+    <field name="cluster">{equipment.cluster}</field>
+  </output>
+  <output name="VAR.WDOG" file="variable.dbf" filter=" ( '{equipment.type}={type.name}'">
+    <field name="taggenlink" load="true">UAG_SYSTEM_QU.WDOG</field>
+    <field name="linked">1</field>
+    <field name="editcode">12337151</field>
+    <field name="equip">{equipment.name}</field>
+    <field name="item">WDOG</field>
+    <field name="historian">FALSE</field>
+     <field name="name" key="true">{equipment.tagprefix}_WDOG</field>
+    <field name="type">REAL</field>
+    <field name="unit">{equipment.iodevice}</field>
+    <field name="addr">{name}</field>
+	<field name="comment">Laufzeit in Sekunden {equipment.comment}</field>
+    <field name="cluster">{equipment.cluster}</field>
+ </output>
+  <output name="VAR.LZSPS" file="variable.dbf" filter=" ( '{equipment.type}={type.name}'">
+    <field name="taggenlink" load="true">UAG_SYSTEM_QU.LZSPS</field>
+    <field name="linked">1</field>
+    <field name="editcode">12337151</field>
+    <field name="equip">{equipment.name}</field>
+    <field name="item">LZSPS</field>
+    <field name="historian">FALSE</field>
+     <field name="name" key="true">{equipment.tagprefix}_LZSPS</field>
+    <field name="type">REAL</field>
+    <field name="unit">{equipment.iodevice}</field>
+    <field name="addr">{name}</field>
+	<field name="comment">Laufzeit in Stunden {equipment.comment}</field>
+    <field name="cluster">{equipment.cluster}</field>
+ </output>
+  <output name="VAR.HMISW\1" file="variable.dbf" filter=" ( '{equipment.type}={type.name}'">
+    <field name="taggenlink" load="true">UAG_SYSTEM_QU.HMISW1</field>
+    <field name="linked">1</field>
+    <field name="editcode">12337151</field>
+    <field name="equip">{equipment.name}</field>
+    <field name="item">HMISW1</field>
+    <field name="historian">FALSE</field>
+     <field name="name" key="true">{equipment.tagprefix}_HMISW\1</field>
+    <field name="type">INT</field>
+    <field name="unit">{equipment.iodevice}</field>
+    <field name="addr">{equipment.tagprefix}_HMISW[1]</field>
+	<field name="comment">Systemworte {equipment.comment}</field>
+    <field name="cluster">{equipment.cluster}</field>
+ </output>
+  <output name="VAR.HMISW\2" file="variable.dbf" filter=" ( '{equipment.type}={type.name}'">
+    <field name="taggenlink" load="true">UAG_SYSTEM_QU.HMISW2</field>
+    <field name="linked">1</field>
+    <field name="editcode">12337151</field>
+    <field name="equip">{equipment.name}</field>
+    <field name="item">HMISW2</field>
+    <field name="historian">FALSE</field>
+     <field name="name" key="true">{equipment.tagprefix}_HMISW\2</field>
+    <field name="type">INT</field>
+    <field name="unit">{equipment.iodevice}</field>
+    <field name="addr">{equipment.tagprefix}_HMISW[2]</field>
+	<field name="comment">Systemworte {equipment.comment}</field>
+    <field name="cluster">{equipment.cluster}</field>
+ </output>
+  <output name="VAR.HMISW\3" file="variable.dbf" filter=" ( '{equipment.type}={type.name}'">
+    <field name="taggenlink" load="true">UAG_SYSTEM_QU.HMISW3</field>
+    <field name="linked">1</field>
+    <field name="editcode">12337151</field>
+    <field name="equip">{equipment.name}</field>
+    <field name="item">HMISW3</field>
+    <field name="historian">FALSE</field>
+     <field name="name" key="true">{equipment.tagprefix}_HMISW\3</field>
+    <field name="type">INT</field>
+    <field name="unit">{equipment.iodevice}</field>
+    <field name="addr">{equipment.tagprefix}_HMISW[3]</field>
+	<field name="comment">Systemworte {equipment.comment}</field>
+    <field name="cluster">{equipment.cluster}</field>
+ </output>
+  <output name="VAR.HMISW\4" file="variable.dbf" filter=" ( '{equipment.type}={type.name}'">
+    <field name="taggenlink" load="true">UAG_SYSTEM_QU.HMISW4</field>
+    <field name="linked">1</field>
+    <field name="editcode">12337151</field>
+    <field name="equip">{equipment.name}</field>
+    <field name="item">HMISW4</field>
+    <field name="historian">FALSE</field>
+     <field name="name" key="true">{equipment.tagprefix}_HMISW\4</field>
+    <field name="type">INT</field>
+    <field name="unit">{equipment.iodevice}</field>
+    <field name="addr">{equipment.tagprefix}_HMISW[4]</field>
+	<field name="comment">Systemworte {equipment.comment}</field>
+    <field name="cluster">{equipment.cluster}</field>
+ </output>
+  <output name="VAR.HMISW\5" file="variable.dbf" filter=" ( '{equipment.type}={type.name}'">
+    <field name="taggenlink" load="true">UAG_SYSTEM_QU.HMISW5</field>
+    <field name="linked">1</field>
+    <field name="editcode">12337151</field>
+    <field name="equip">{equipment.name}</field>
+    <field name="item">HMISW5</field>
+    <field name="historian">FALSE</field>
+     <field name="name" key="true">{equipment.tagprefix}_HMISW\5</field>
+    <field name="type">INT</field>
+    <field name="unit">{equipment.iodevice}</field>
+    <field name="addr">{equipment.tagprefix}_HMISW[5]</field>
+	<field name="comment">Systemworte {equipment.comment}</field>
+    <field name="cluster">{equipment.cluster}</field>
+ </output>
+  <output name="VAR.HMISW\6" file="variable.dbf" filter=" ( '{equipment.type}={type.name}'">
+    <field name="taggenlink" load="true">UAG_SYSTEM_QU.HMISW6</field>
+    <field name="linked">1</field>
+    <field name="editcode">12337151</field>
+    <field name="equip">{equipment.name}</field>
+    <field name="item">HMISW6</field>
+    <field name="historian">FALSE</field>
+    <field name="name" key="true">{equipment.tagprefix}_HMISW\6</field>
+    <field name="type">INT</field>
+    <field name="unit">{equipment.iodevice}</field>
+    <field name="addr">{equipment.tagprefix}_HMISW[6]</field>
+	<field name="comment">Systemworte {equipment.comment}</field>
+    <field name="cluster">{equipment.cluster}</field>
+ </output>
+  <output name="VAR.HMISW\7" file="variable.dbf" filter=" ( '{equipment.type}={type.name}'">
+    <field name="taggenlink" load="true">UAG_SYSTEM_QU.HMISW7</field>
+    <field name="linked">1</field>
+    <field name="editcode">12337151</field>
+    <field name="equip">{equipment.name}</field>
+    <field name="item">HMISW7</field>
+    <field name="historian">FALSE</field>
+     <field name="name" key="true">{equipment.tagprefix}_HMISW\7</field>
+    <field name="type">INT</field>
+    <field name="unit">{equipment.iodevice}</field>
+    <field name="addr">{equipment.tagprefix}_HMISW[7]</field>
+	<field name="comment">Systemworte {equipment.comment}</field>
+    <field name="cluster">{equipment.cluster}</field>
+ </output>
+  <output name="VAR.HMISW\8" file="variable.dbf" filter=" ( '{equipment.type}={type.name}'">
+    <field name="taggenlink" load="true">UAG_SYSTEM_QU.HMISW8</field>
+    <field name="linked">1</field>
+    <field name="editcode">12337151</field>
+    <field name="equip">{equipment.name}</field>
+    <field name="item">HMISW8</field>
+    <field name="historian">FALSE</field>
+     <field name="name" key="true">{equipment.tagprefix}_HMISW\8</field>
+    <field name="type">INT</field>
+    <field name="unit">{equipment.iodevice}</field>
+    <field name="addr">{equipment.tagprefix}_HMISW[8]</field>
+	<field name="comment">Systemworte {equipment.comment}</field>
+    <field name="cluster">{equipment.cluster}</field>
+ </output>
+  <output name="VAR.HMISW\9" file="variable.dbf" filter=" ( '{equipment.type}={type.name}'">
+    <field name="taggenlink" load="true">UAG_SYSTEM_QU.HMISW9</field>
+    <field name="linked">1</field>
+    <field name="editcode">12337151</field>
+    <field name="equip">{equipment.name}</field>
+    <field name="item">HMISW9</field>
+    <field name="historian">FALSE</field>
+    <field name="name" key="true">{equipment.tagprefix}_HMISW\9</field>
+    <field name="type">INT</field>
+    <field name="unit">{equipment.iodevice}</field>
+    <field name="addr">{equipment.tagprefix}_HMISW[9]</field>
+	<field name="comment">Systemworte {equipment.comment}</field>
+    <field name="cluster">{equipment.cluster}</field>
+ </output>
+  <output name="VAR.HMISW\10" file="variable.dbf" filter=" ( '{equipment.type}={type.name}'">
+    <field name="taggenlink" load="true">UAG_SYSTEM_QU.HMISW10</field>
+    <field name="linked">1</field>
+    <field name="editcode">12337151</field>
+    <field name="equip">{equipment.name}</field>
+    <field name="item">HMISW10</field>
+    <field name="historian">FALSE</field>
+     <field name="name" key="true">{equipment.tagprefix}_HMISW\10</field>
+    <field name="type">INT</field>
+    <field name="unit">{equipment.iodevice}</field>
+    <field name="addr">{equipment.tagprefix}_HMISW[10]</field>
+	<field name="comment">Systemworte {equipment.comment}</field>
+    <field name="cluster">{equipment.cluster}</field>
+ </output>
+  <output name="VAR.HMISW\11" file="variable.dbf" filter=" ( '{equipment.type}={type.name}'">
+    <field name="taggenlink" load="true">UAG_SYSTEM_QU.HMISW11</field>
+    <field name="linked">1</field>
+    <field name="editcode">12337151</field>
+    <field name="equip">{equipment.name}</field>
+    <field name="item">HMISW11</field>
+    <field name="historian">FALSE</field>
+     <field name="name" key="true">{equipment.tagprefix}_HMISW\11</field>
+    <field name="type">INT</field>
+    <field name="unit">{equipment.iodevice}</field>
+    <field name="addr">{equipment.tagprefix}_HMISW[11]</field>
+	<field name="comment">Systemworte {equipment.comment}</field>
+    <field name="cluster">{equipment.cluster}</field>
+ </output>
+  <output name="VAR.HMISW\12" file="variable.dbf" filter=" ( '{equipment.type}={type.name}'">
+    <field name="taggenlink" load="true">UAG_SYSTEM_QU.HMISW12</field>
+    <field name="linked">1</field>
+    <field name="editcode">12337151</field>
+    <field name="equip">{equipment.name}</field>
+    <field name="item">HMISW12</field>
+    <field name="historian">FALSE</field>
+     <field name="name" key="true">{equipment.tagprefix}_HMISW\12</field>
+    <field name="type">INT</field>
+    <field name="unit">{equipment.iodevice}</field>
+    <field name="addr">{equipment.tagprefix}_HMISW[12]</field>
+	<field name="comment">Systemworte {equipment.comment}</field>
+    <field name="cluster">{equipment.cluster}</field>
+ </output>
+  <output name="VAR.HMISW\13" file="variable.dbf" filter=" ( '{equipment.type}={type.name}'">
+    <field name="taggenlink" load="true">UAG_SYSTEM_QU.HMISW13</field>
+    <field name="linked">1</field>
+    <field name="editcode">12337151</field>
+    <field name="equip">{equipment.name}</field>
+    <field name="item">HMISW13</field>
+    <field name="historian">FALSE</field>
+     <field name="name" key="true">{equipment.tagprefix}_HMISW\13</field>
+    <field name="type">INT</field>
+    <field name="unit">{equipment.iodevice}</field>
+    <field name="addr">{equipment.tagprefix}_HMISW[13]</field>
+	<field name="comment">Systemworte {equipment.comment}</field>
+    <field name="cluster">{equipment.cluster}</field>
+ </output>
+  <output name="VAR.HMISW\14" file="variable.dbf" filter=" ( '{equipment.type}={type.name}'">
+    <field name="taggenlink" load="true">UAG_SYSTEM_QU.HMISW14</field>
+    <field name="linked">1</field>
+    <field name="editcode">12337151</field>
+    <field name="equip">{equipment.name}</field>
+    <field name="item">HMISW14</field>
+    <field name="historian">FALSE</field>
+     <field name="name" key="true">{equipment.tagprefix}_HMISW\14</field>
+    <field name="type">INT</field>
+    <field name="unit">{equipment.iodevice}</field>
+    <field name="addr">{equipment.tagprefix}_HMISW[14]</field>
+	<field name="comment">Systemworte {equipment.comment}</field>
+    <field name="cluster">{equipment.cluster}</field>
+ </output>
+  <output name="VAR.HMISW\15" file="variable.dbf" filter=" ( '{equipment.type}={type.name}'">
+    <field name="taggenlink" load="true">UAG_SYSTEM_QU.HMISW15</field>
+    <field name="linked">1</field>
+    <field name="editcode">12337151</field>
+    <field name="equip">{equipment.name}</field>
+    <field name="item">HMISW15</field>
+    <field name="historian">FALSE</field>
+     <field name="name" key="true">{equipment.tagprefix}_HMISW\15</field>
+    <field name="type">INT</field>
+    <field name="unit">{equipment.iodevice}</field>
+    <field name="addr">{equipment.tagprefix}_HMISW[15]</field>
+	<field name="comment">Systemworte {equipment.comment}</field>
+    <field name="cluster">{equipment.cluster}</field>
+ </output>
+  <output name="VAR.HMISW\16" file="variable.dbf" filter=" ( '{equipment.type}={type.name}'">
+    <field name="taggenlink" load="true">UAG_SYSTEM_QU.HMISW16</field>
+    <field name="linked">1</field>
+    <field name="editcode">12337151</field>
+    <field name="equip">{equipment.name}</field>
+    <field name="item">HMISW16</field>
+    <field name="historian">FALSE</field>
+     <field name="name" key="true">{equipment.tagprefix}_HMISW\16</field>
+    <field name="type">INT</field>
+    <field name="unit">{equipment.iodevice}</field>
+    <field name="addr">{equipment.tagprefix}_HMISW[16]</field>
+	<field name="comment">Systemworte {equipment.comment}</field>
+    <field name="cluster">{equipment.cluster}</field>
+ </output>
+  <output name="VAR.HMISW\17" file="variable.dbf" filter=" ( '{equipment.type}={type.name}'">
+    <field name="taggenlink" load="true">UAG_SYSTEM_QU.HMISW17</field>
+    <field name="linked">1</field>
+    <field name="editcode">12337151</field>
+    <field name="equip">{equipment.name}</field>
+    <field name="item">HMISW17</field>
+    <field name="historian">FALSE</field>
+     <field name="name" key="true">{equipment.tagprefix}_HMISW\17</field>
+    <field name="type">INT</field>
+    <field name="unit">{equipment.iodevice}</field>
+    <field name="addr">{equipment.tagprefix}_HMISW[17]</field>
+	<field name="comment">Systemworte {equipment.comment}</field>
+    <field name="cluster">{equipment.cluster}</field>
+ </output>
+  <output name="VAR.HMISW\18" file="variable.dbf" filter=" ( '{equipment.type}={type.name}'">
+    <field name="taggenlink" load="true">UAG_SYSTEM_QU.HMISW18</field>
+    <field name="linked">1</field>
+    <field name="editcode">12337151</field>
+    <field name="equip">{equipment.name}</field>
+    <field name="item">HMISW18</field>
+    <field name="historian">FALSE</field>
+     <field name="name" key="true">{equipment.tagprefix}_HMISW\18</field>
+    <field name="type">INT</field>
+    <field name="unit">{equipment.iodevice}</field>
+    <field name="addr">{equipment.tagprefix}_HMISW[18]</field>
+	<field name="comment">Systemworte {equipment.comment}</field>
+    <field name="cluster">{equipment.cluster}</field>
+ </output>
+  <output name="VAR.HMISW\19" file="variable.dbf" filter=" ( '{equipment.type}={type.name}'">
+    <field name="taggenlink" load="true">UAG_SYSTEM_QU.HMISW19</field>
+    <field name="linked">1</field>
+    <field name="editcode">12337151</field>
+    <field name="equip">{equipment.name}</field>
+    <field name="item">HMISW19</field>
+    <field name="historian">FALSE</field>
+     <field name="name" key="true">{equipment.tagprefix}_HMISW\19</field>
+    <field name="type">INT</field>
+    <field name="unit">{equipment.iodevice}</field>
+    <field name="addr">{equipment.tagprefix}_HMISW[19]</field>
+	<field name="comment">Systemworte {equipment.comment}</field>
+    <field name="cluster">{equipment.cluster}</field>
+ </output>
+  <output name="VAR.HMISW\20" file="variable.dbf" filter=" ( '{equipment.type}={type.name}'">
+    <field name="taggenlink" load="true">UAG_SYSTEM_QU.HMISW20</field>
+    <field name="linked">1</field>
+    <field name="editcode">12337151</field>
+    <field name="equip">{equipment.name}</field>
+    <field name="item">HMISW20</field>
+    <field name="historian">FALSE</field>
+     <field name="name" key="true">{equipment.tagprefix}_HMISW\20</field>
+    <field name="type">INT</field>
+    <field name="unit">{equipment.iodevice}</field>
+    <field name="addr">{equipment.tagprefix}_HMISW[20]</field>
+	<field name="comment">Systemworte {equipment.comment}</field>
+    <field name="cluster">{equipment.cluster}</field>
+ </output>
+  <output name="VAR.HMISW\21" file="variable.dbf" filter=" ( '{equipment.type}={type.name}'">
+    <field name="taggenlink" load="true">UAG_SYSTEM_QU.HMISW21</field>
+    <field name="linked">1</field>
+    <field name="editcode">12337151</field>
+    <field name="equip">{equipment.name}</field>
+    <field name="item">HMISW21</field>
+    <field name="historian">FALSE</field>
+     <field name="name" key="true">{equipment.tagprefix}_HMISW\21</field>
+    <field name="type">INT</field>
+    <field name="unit">{equipment.iodevice}</field>
+    <field name="addr">{equipment.tagprefix}_HMISW[21]</field>
+	<field name="comment">Systemworte {equipment.comment}</field>
+    <field name="cluster">{equipment.cluster}</field>
+ </output>
+  <output name="VAR.HMISW\22" file="variable.dbf" filter=" ( '{equipment.type}={type.name}'">
+    <field name="taggenlink" load="true">UAG_SYSTEM_QU.HMISW22</field>
+    <field name="linked">1</field>
+    <field name="editcode">12337151</field>
+    <field name="equip">{equipment.name}</field>
+    <field name="item">HMISW22</field>
+    <field name="historian">FALSE</field>
+     <field name="name" key="true">{equipment.tagprefix}_HMISW\22</field>
+    <field name="type">INT</field>
+    <field name="unit">{equipment.iodevice}</field>
+    <field name="addr">{equipment.tagprefix}_HMISW[22]</field>
+	<field name="comment">Systemworte {equipment.comment}</field>
+    <field name="cluster">{equipment.cluster}</field>
+ </output>
+  <output name="VAR.HMISW\23" file="variable.dbf" filter=" ( '{equipment.type}={type.name}'">
+    <field name="taggenlink" load="true">UAG_SYSTEM_QU.HMISW23</field>
+    <field name="linked">1</field>
+    <field name="editcode">12337151</field>
+    <field name="equip">{equipment.name}</field>
+    <field name="item">HMISW23</field>
+    <field name="historian">FALSE</field>
+    <field name="name" key="true">{equipment.tagprefix}_HMISW\23</field>
+    <field name="type">INT</field>
+    <field name="unit">{equipment.iodevice}</field>
+    <field name="addr">{equipment.tagprefix}_HMISW[23]</field>
+	<field name="comment">Systemworte {equipment.comment}</field>
+    <field name="cluster">{equipment.cluster}</field>
+ </output>
+  <output name="VAR.HMISW\24" file="variable.dbf" filter=" ( '{equipment.type}={type.name}'">
+    <field name="taggenlink" load="true">UAG_SYSTEM_QU.HMISW24</field>
+    <field name="linked">1</field>
+    <field name="editcode">12337151</field>
+    <field name="equip">{equipment.name}</field>
+    <field name="item">HMISW24</field>
+    <field name="historian">FALSE</field>
+     <field name="name" key="true">{equipment.tagprefix}_HMISW\24</field>
+    <field name="type">INT</field>
+    <field name="unit">{equipment.iodevice}</field>
+    <field name="addr">{equipment.tagprefix}_HMISW[24]</field>
+	<field name="comment">Systemworte {equipment.comment}</field>
+    <field name="cluster">{equipment.cluster}</field>
+ </output>
+  <output name="VAR.HMISW\25" file="variable.dbf" filter=" ( '{equipment.type}={type.name}'">
+    <field name="taggenlink" load="true">UAG_SYSTEM_QU.HMISW25</field>
+    <field name="linked">1</field>
+    <field name="editcode">12337151</field>
+    <field name="equip">{equipment.name}</field>
+    <field name="item">HMISW25</field>
+    <field name="historian">FALSE</field>
+     <field name="name" key="true">{equipment.tagprefix}_HMISW\25</field>
+    <field name="type">INT</field>
+    <field name="unit">{equipment.iodevice}</field>
+    <field name="addr">{equipment.tagprefix}_HMISW[25]</field>
+	<field name="comment">Systemworte {equipment.comment}</field>
+    <field name="cluster">{equipment.cluster}</field>
+ </output>
+  <output name="VAR.HMISW\26" file="variable.dbf" filter=" ( '{equipment.type}={type.name}'">
+    <field name="taggenlink" load="true">UAG_SYSTEM_QU.HMISW26</field>
+    <field name="linked">1</field>
+    <field name="editcode">12337151</field>
+    <field name="equip">{equipment.name}</field>
+    <field name="item">HMISW26</field>
+    <field name="historian">FALSE</field>
+    <field name="name" key="true">{equipment.tagprefix}_HMISW\26</field>
+    <field name="type">INT</field>
+    <field name="unit">{equipment.iodevice}</field>
+    <field name="addr">{equipment.tagprefix}_HMISW[26]</field>
+	<field name="comment">Systemworte {equipment.comment}</field>
+    <field name="cluster">{equipment.cluster}</field>
+ </output>
+  <output name="VAR.HMISW\27" file="variable.dbf" filter=" ( '{equipment.type}={type.name}'">
+    <field name="taggenlink" load="true">UAG_SYSTEM_QU.HMISW27</field>
+    <field name="linked">1</field>
+    <field name="editcode">12337151</field>
+    <field name="equip">{equipment.name}</field>
+    <field name="item">HMISW27</field>
+    <field name="historian">FALSE</field>
+     <field name="name" key="true">{equipment.tagprefix}_HMISW\27</field>
+    <field name="type">INT</field>
+    <field name="unit">{equipment.iodevice}</field>
+    <field name="addr">{equipment.tagprefix}_HMISW[27]</field>
+	<field name="comment">Systemworte {equipment.comment}</field>
+    <field name="cluster">{equipment.cluster}</field>
+ </output>
+  <output name="VAR.HMISW\28" file="variable.dbf" filter=" ( '{equipment.type}={type.name}'">
+    <field name="taggenlink" load="true">UAG_SYSTEM_QU.HMISW28</field>
+    <field name="linked">1</field>
+    <field name="editcode">12337151</field>
+    <field name="equip">{equipment.name}</field>
+    <field name="item">HMISW28</field>
+    <field name="historian">FALSE</field>
+     <field name="name" key="true">{equipment.tagprefix}_HMISW\28</field>
+    <field name="type">INT</field>
+    <field name="unit">{equipment.iodevice}</field>
+    <field name="addr">{equipment.tagprefix}_HMISW[28]</field>
+	<field name="comment">Systemworte {equipment.comment}</field>
+    <field name="cluster">{equipment.cluster}</field>
+ </output>
+  <output name="VAR.HMISW\29" file="variable.dbf" filter=" ( '{equipment.type}={type.name}'">
+    <field name="taggenlink" load="true">UAG_SYSTEM_QU.HMISW29</field>
+    <field name="linked">1</field>
+    <field name="editcode">12337151</field>
+    <field name="equip">{equipment.name}</field>
+    <field name="item">HMISW29</field>
+    <field name="historian">FALSE</field>
+     <field name="name" key="true">{equipment.tagprefix}_HMISW\29</field>
+    <field name="type">INT</field>
+    <field name="unit">{equipment.iodevice}</field>
+    <field name="addr">{equipment.tagprefix}_HMISW[29]</field>
+	<field name="comment">Systemworte {equipment.comment}</field>
+    <field name="cluster">{equipment.cluster}</field>
+ </output>
+  <output name="VAR.HMISW\30" file="variable.dbf" filter=" ( '{equipment.type}={type.name}'">
+    <field name="taggenlink" load="true">UAG_SYSTEM_QU.HMISW30</field>
+    <field name="linked">1</field>
+    <field name="editcode">12337151</field>
+    <field name="equip">{equipment.name}</field>
+    <field name="item">HMISW30</field>
+    <field name="historian">FALSE</field>
+     <field name="name" key="true">{equipment.tagprefix}_HMISW\30</field>
+    <field name="type">INT</field>
+    <field name="unit">{equipment.iodevice}</field>
+    <field name="addr">{equipment.tagprefix}_HMISW[30]</field>
+	<field name="comment">Systemworte {equipment.comment}</field>
+    <field name="cluster">{equipment.cluster}</field>
+ </output>
+  <output name="VAR.HMISW\31" file="variable.dbf" filter=" ( '{equipment.type}={type.name}'">
+    <field name="taggenlink" load="true">UAG_SYSTEM_QU.HMISW31</field>
+    <field name="linked">1</field>
+    <field name="editcode">12337151</field>
+    <field name="equip">{equipment.name}</field>
+    <field name="item">HMISW31</field>
+    <field name="historian">FALSE</field>
+     <field name="name" key="true">{equipment.tagprefix}_HMISW\31</field>
+    <field name="type">INT</field>
+    <field name="unit">{equipment.iodevice}</field>
+    <field name="addr">{equipment.tagprefix}_HMISW[31]</field>
+	<field name="comment">Systemworte {equipment.comment}</field>
+    <field name="cluster">{equipment.cluster}</field>
+ </output>
+  <output name="VAR.HMISW\32" file="variable.dbf" filter=" ( '{equipment.type}={type.name}'">
+    <field name="taggenlink" load="true">UAG_SYSTEM_QU.HMISW32</field>
+    <field name="linked">1</field>
+    <field name="editcode">12337151</field>
+    <field name="equip">{equipment.name}</field>
+    <field name="item">HMISW32</field>
+    <field name="historian">FALSE</field>
+     <field name="name" key="true">{equipment.tagprefix}_HMISW\32</field>
+    <field name="type">INT</field>
+    <field name="unit">{equipment.iodevice}</field>
+    <field name="addr">{equipment.tagprefix}_HMISW[32]</field>
+	<field name="comment">Systemworte {equipment.comment}</field>
+    <field name="cluster">{equipment.cluster}</field>
+ </output>
+  <output name="VAR.HMISW\33" file="variable.dbf" filter=" ( '{equipment.type}={type.name}'">
+    <field name="taggenlink" load="true">UAG_SYSTEM_QU.HMISW33</field>
+    <field name="linked">1</field>
+    <field name="editcode">12337151</field>
+    <field name="equip">{equipment.name}</field>
+    <field name="item">HMISW33</field>
+    <field name="historian">FALSE</field>
+    <field name="name" key="true">{equipment.tagprefix}_HMISW\33</field>
+    <field name="type">INT</field>
+    <field name="unit">{equipment.iodevice}</field>
+    <field name="addr">{equipment.tagprefix}_HMISW[33]</field>
+	<field name="comment">Systemworte {equipment.comment}</field>
+    <field name="cluster">{equipment.cluster}</field>
+ </output>
+  <output name="VAR.HMISW\34" file="variable.dbf" filter=" ( '{equipment.type}={type.name}'">
+    <field name="taggenlink" load="true">UAG_SYSTEM_QU.HMISW34</field>
+    <field name="linked">1</field>
+    <field name="editcode">12337151</field>
+    <field name="equip">{equipment.name}</field>
+    <field name="item">HMISW34</field>
+    <field name="historian">FALSE</field>
+     <field name="name" key="true">{equipment.tagprefix}_HMISW\34</field>
+    <field name="type">INT</field>
+    <field name="unit">{equipment.iodevice}</field>
+    <field name="addr">{equipment.tagprefix}_HMISW[34]</field>
+	<field name="comment">Systemworte {equipment.comment}</field>
+    <field name="cluster">{equipment.cluster}</field>
+ </output>
+  <output name="VAR.HMISW\35" file="variable.dbf" filter=" ( '{equipment.type}={type.name}'">
+    <field name="taggenlink" load="true">UAG_SYSTEM_QU.HMISW35</field>
+    <field name="linked">1</field>
+    <field name="editcode">12337151</field>
+    <field name="equip">{equipment.name}</field>
+    <field name="item">HMISW35</field>
+    <field name="historian">FALSE</field>
+     <field name="name" key="true">{equipment.tagprefix}_HMISW\35</field>
+    <field name="type">INT</field>
+    <field name="unit">{equipment.iodevice}</field>
+    <field name="addr">{equipment.tagprefix}_HMISW[35]</field>
+	<field name="comment">Systemworte {equipment.comment}</field>
+    <field name="cluster">{equipment.cluster}</field>
+ </output>
+  <output name="VAR.HMISW\36" file="variable.dbf" filter=" ( '{equipment.type}={type.name}'">
+    <field name="taggenlink" load="true">UAG_SYSTEM_QU.HMISW36</field>
+    <field name="linked">1</field>
+    <field name="editcode">12337151</field>
+    <field name="equip">{equipment.name}</field>
+    <field name="item">HMISW36</field>
+    <field name="historian">FALSE</field>
+     <field name="name" key="true">{equipment.tagprefix}_HMISW\36</field>
+    <field name="type">INT</field>
+    <field name="unit">{equipment.iodevice}</field>
+    <field name="addr">{equipment.tagprefix}_HMISW[36]</field>
+	<field name="comment">Systemworte {equipment.comment}</field>
+    <field name="cluster">{equipment.cluster}</field>
+ </output>
+  <output name="VAR.NTP\Sec" file="variable.dbf" filter=" ( '{equipment.type}={type.name}'">
+    <field name="taggenlink" load="true">UAG_SYSTEM_QU.NTPSec</field>
+    <field name="linked">1</field>
+    <field name="editcode">12337151</field>
+    <field name="equip">{equipment.name}</field>
+    <field name="item">NTP1</field>
+    <field name="historian">FALSE</field>
+     <field name="name" key="true">{equipment.tagprefix}_NTP\Sec</field>
+    <field name="type">INT</field>
+    <field name="unit">{equipment.iodevice}</field>
+    <field name="addr">{equipment.tagprefix}_NTP.Sec</field>
+	<field name="comment">Systemworte {equipment.comment}</field>
+    <field name="cluster">{equipment.cluster}</field>
+ </output>
+  <output name="VAR.NTP\Minute" file="variable.dbf" filter=" ( '{equipment.type}={type.name}'">
+    <field name="taggenlink" load="true">UAG_SYSTEM_QU.NTPMinute</field>
+    <field name="linked">1</field>
+    <field name="editcode">12337151</field>
+    <field name="equip">{equipment.name}</field>
+    <field name="item">NTP2</field>
+    <field name="historian">FALSE</field>
+    <field name="name" key="true">{equipment.tagprefix}_NTP\Minute</field>
+    <field name="type">INT</field>
+    <field name="unit">{equipment.iodevice}</field>
+    <field name="addr">{equipment.tagprefix}_NTP.Minute</field>
+	<field name="comment">Systemworte {equipment.comment}</field>
+    <field name="cluster">{equipment.cluster}</field>
+ </output>
+  <output name="VAR.NTP\Hour" file="variable.dbf" filter=" ( '{equipment.type}={type.name}'">
+    <field name="taggenlink" load="true">UAG_SYSTEM_QU.NTPHour</field>
+    <field name="linked">1</field>
+    <field name="editcode">12337151</field>
+    <field name="equip">{equipment.name}</field>
+    <field name="item">NTP3</field>
+    <field name="historian">FALSE</field>
+   <field name="name" key="true">{equipment.tagprefix}_NTP\Hour</field>
+    <field name="type">INT</field>
+    <field name="unit">{equipment.iodevice}</field>
+    <field name="addr">{equipment.tagprefix}_NTP.Hour</field>
+	<field name="comment">Systemworte {equipment.comment}</field>
+    <field name="cluster">{equipment.cluster}</field>
+ </output>
+  <output name="VAR.NTP\Dat" file="variable.dbf" filter=" ( '{equipment.type}={type.name}'">
+    <field name="taggenlink" load="true">UAG_SYSTEM_QU.NTPDat</field>
+    <field name="linked">1</field>
+    <field name="editcode">12337151</field>
+    <field name="equip">{equipment.name}</field>
+    <field name="item">NTP4</field>
+    <field name="historian">FALSE</field>
+    <field name="name" key="true">{equipment.tagprefix}_NTP\Dat</field>
+    <field name="type">INT</field>
+    <field name="unit">{equipment.iodevice}</field>
+    <field name="addr">{equipment.tagprefix}_NTP.Dat</field>
+	<field name="comment">Systemworte {equipment.comment}</field>
+    <field name="cluster">{equipment.cluster}</field>
+ </output>
+  <output name="VAR.NTP\Month" file="variable.dbf" filter=" ( '{equipment.type}={type.name}'">
+    <field name="taggenlink" load="true">UAG_SYSTEM_QU.NTPMonth</field>
+    <field name="linked">1</field>
+    <field name="editcode">12337151</field>
+    <field name="equip">{equipment.name}</field>
+    <field name="item">NTP5</field>
+    <field name="historian">FALSE</field>
+    <field name="name" key="true">{equipment.tagprefix}_NTP\Month</field>
+    <field name="type">INT</field>
+    <field name="unit">{equipment.iodevice}</field>
+    <field name="addr">{equipment.tagprefix}_NTP.Month</field>
+	<field name="comment">Systemworte {equipment.comment}</field>
+    <field name="cluster">{equipment.cluster}</field>
+ </output>
+  <output name="VAR.NTP\Year" file="variable.dbf" filter=" ( '{equipment.type}={type.name}'">
+    <field name="taggenlink" load="true">UAG_SYSTEM_QU.NTPYear</field>
+    <field name="linked">1</field>
+    <field name="editcode">12337151</field>
+    <field name="equip">{equipment.name}</field>
+    <field name="item">NTP6</field>
+    <field name="historian">FALSE</field>
+    <field name="name" key="true">{equipment.tagprefix}_NTP\Year</field>
+    <field name="type">INT</field>
+    <field name="unit">{equipment.iodevice}</field>
+    <field name="addr">{equipment.tagprefix}_NTP.Year</field>
+	<field name="comment">Systemworte {equipment.comment}</field>
+    <field name="cluster">{equipment.cluster}</field>
+ </output>
+<output name="VAR.KT" file="variable.dbf" filter=" ( '{equipment.type}={type.name}'">
+    <field name="taggenlink" load="true">UAG_SYSTEM_QU.KT</field>
+    <field name="linked">1</field>
+    <field name="editcode">16777215</field>
+    <field name="equip">{equipment.name}</field>
+    <field name="item">KT</field>
+    <field name="historian">FALSE</field>
+     <field name="name" key="true">{equipment.tagprefix}_KT</field>
+    <field name="type">STRING</field>
+    <field name="unit">{equipment.iodevice}_DISK</field>
+    <field name="addr">{name}</field>
+	<field name="comment">Kurztext {equipment.comment}</field>
+    <field name="cluster">{equipment.cluster}</field>
+ </output>
+  <output name="VAR.LT" file="variable.dbf" filter=" ( '{equipment.type}={type.name}'">
+    <field name="taggenlink" load="true">UAG_SYSTEM_QU.LT</field>
+    <field name="linked">1</field>
+    <field name="editcode">16777215</field>
+    <field name="equip">{equipment.name}</field>
+    <field name="item">LT</field>
+    <field name="historian">FALSE</field>
+    <field name="name" key="true">{equipment.tagprefix}_LT</field>
+    <field name="type">STRING</field>
+    <field name="unit">{equipment.iodevice}_DISK</field>
+    <field name="addr">{name}</field>
+	<field name="comment">Langtext {equipment.comment}</field>
+    <field name="cluster">{equipment.cluster}</field>
+  </output>
+    <output name="VAR.SOE" file="variable.dbf" filter=" ( '{equipment.type}={type.name}'">
+    <field name="taggenlink" load="true">UAG_SYSTEM_QU.SOE</field>
+    <field name="linked">1</field>
+    <field name="editcode">16777215</field>
+    <field name="equip">{equipment.name}</field>
+    <field name="item">SOE</field>
+    <field name="historian">FALSE</field>
+    <field name="name" key="true">{equipment.tagprefix}_SOE</field>
+    <field name="type">INT</field>
+    <field name="unit">{equipment.iodevice}_DISK</field>
+    <field name="addr">{equipment.tagprefix}_SOE</field>
+	<field name="comment">für SOE Einträge {equipment.comment}</field>
+    <field name="cluster">{equipment.cluster}</field>
+  </output>
+  <output name=" AdAlm.SOE" file="advalm.DBF" filter="'{equipment.type}={type.name}'">
+    <field name="taggenlink" load="true">UAG_SYSTEM_QU.SOE</field>
+    <field name="linked">1</field>
+    <field name="editcode">536350655</field>
+    <field name="equip">{equipment.name}</field>
+    <field name="item">SOE</field>
+    <field name="historian">FALSE</field>
+    <field name="tag" key="true">{equipment.tagprefix}_SOE_1</field>
+    <field name="name" >{equipment.tagprefix}</field>
+    <field name="desc">Leitsperre {equipment.comment}</field>
+    <field name="expr">{equipment.tagprefix}_SOE = 1</field> 
+    <field name="category">Alarm21</field>
+    <field name="help">{equipment.page_list[0]}</field>
+    <field name="custom1">{equipment.area}</field>
+    <field name="comment">{equipment.tagprefix}_SOE</field>
+    <field name="cluster">{equipment.cluster}</field>
+    <field name="area">{equipment.area}</field>
+ </output>
+  <output name="VAR.RUN" file="variable.dbf" filter=" ( '{equipment.type}={type.name}'">
+    <field name="taggenlink" load="true">UAG_SYSTEM_QU.RUN</field>
+    <field name="linked">1</field>
+    <field name="editcode">12337151</field>
+    <field name="equip">{equipment.name}</field>
+    <field name="item">RUN</field>
+    <field name="historian">FALSE</field>
+    <field name="name" key="true">{equipment.tagprefix}_RUN</field>
+    <field name="type">INT</field>
+    <field name="unit">{equipment.iodevice}_DISK</field>
+    <field name="addr">{name}</field>
+	<field name="comment">SPS Run {equipment.comment}</field>
+    <field name="cluster">{equipment.cluster}</field>
+  </output>
+  <output name=" AdAlm.RUN" file="advalm.DBF" filter="'{equipment.type}={type.name}'">
+    <field name="taggenlink" load="true">UAG_SYSTEM_QU.RUN</field>
+    <field name="linked">1</field>
+    <field name="editcode">536350655</field>
+    <field name="equip">{equipment.name}</field>
+    <field name="item">RUN</field>
+    <field name="historian">TRUE</field>
+    <field name="tag" key="true">{equipment.tagprefix}_RUN</field>
+    <field name="name" >{equipment.tagprefix}</field>
+    <field name="desc">SPS Run {equipment.comment}</field>
+    <field name="expr">{equipment.tagprefix}_RUN = 0</field> 
+    <field name="category">Alarm01</field>
+    <field name="help">{equipment.page_list[0]}</field>
+    <field name="custom1">{equipment.area}</field>
+    <field name="comment">{equipment.tagprefix}</field>
+    <field name="cluster">{equipment.cluster}</field>
+    <field name="area">{equipment.area}</field>
+ </output>
+  <output name="UI.KT" file="UIMESSAG.dbf" filter=" ( '{equipment.type}={type.name}'">
+    <field name="NAME" key="true">{equipment.tagprefix}_KT</field>
+    <field name="SPS">{equipment.iodevice}</field>
+    <field name="AREA">{equipment.AREA}</field>
+    <field name="BILD">{equipment.page}</field>
+    <field name="ORT">{equipment.location}</field>
+    <field name="taggenlink" load="true">UAG_SYSTEM_QU.KT</field>
+ </output>
+  <output name="UI.M" file="UNE107.dbf" filter=" ( '{equipment.type}={type.name}'">
+    <field name="NAME" key="true">{equipment.tagprefix}_M</field>
+    <field name="SPS">{equipment.iodevice}</field>
+    <field name="MCODE">1</field>
+    <field name="taggenlink" load="true">UAG_SYSTEM_QU.M</field>
+ </output>
+  <output name="HI.LT" file="UHMIINIT.dbf" filter=" ( '{equipment.type}={type.name}'">
+    <field name="NAME" key="true">{equipment.tagprefix}_LT</field>
+    <field name="MCODE">{equipment.comment}</field>
+    <field name="taggenlink" load="true">UAG_SYSTEM_QU.LT</field>
+  </output>
+  <output name="HI.KT" file="UHMIINIT.dbf" filter=" ( '{equipment.type}={type.name}'">
+    <field name="NAME" key="true">{equipment.tagprefix}_KT</field>
+    <field name="MCODE">{equipment.tagprefix}</field>
+    <field name="taggenlink" load="true">UAG_SYSTEM_QU.KT</field>
+  </output>
+  <output name=" AdAlm.M_b00" file="advalm.DBF" filter="'{equipment.type}={type.name}'">
+    <field name="taggenlink" load="true">UAG_SYSTEM_QU.M_b00</field>
+    <field name="linked">1</field>
+    <field name="editcode">536350655</field>
+    <field name="equip">{equipment.name}</field>
+    <field name="item">M00</field>
+    <field name="historian">TRUE</field>
+    <field name="tag" key="true">{equipment.tagprefix}_M_b00</field>
+    <field name="name" >{equipment.tagprefix}</field>
+    <field name="desc">Hardware Fehler {equipment.comment}</field>
+    <field name="expr">UAG_Alarms_BitMask( {equipment.tagprefix}_M,0 )</field> 
+    <field name="category">Alarm01</field>
+    <field name="help">{equipment.page_list[0]}</field>
+    <field name="custom1">{equipment.area}</field>
+    <field name="comment">{equipment.tagprefix}_M</field>
+    <field name="cluster">{equipment.cluster}</field>
+    <field name="area">{equipment.area}</field>
+ </output>
+  <output name=" AdAlm.M_b09" file="advalm.DBF" filter="'{equipment.type}={type.name}'">
+    <field name="taggenlink" load="true">UAG_SYSTEM_QU.M_b09</field>
+    <field name="linked">1</field>
+    <field name="editcode">536350655</field>
+    <field name="equip">{equipment.name}</field>
+    <field name="item">M09</field>
+    <field name="historian">TRUE</field>
+    <field name="tag" key="true">{equipment.tagprefix}_M_b09</field>
+    <field name="name" >{equipment.tagprefix}</field>
+    <field name="desc">Fehler software ({equipment.comment}</field>
+    <field name="expr">UAG_Alarms_BitMask( {equipment.tagprefix}_M,9 )</field> 
+    <field name="category">Alarm01</field>
+    <field name="help">{equipment.page_list[0]}</field>
+    <field name="custom1">{equipment.area}</field>
+    <field name="comment">{equipment.tagprefix}_M</field>
+    <field name="cluster">{equipment.cluster}</field>
+    <field name="area">{equipment.area}</field>
+ </output>
+  <output name=" AdAlm.M_b15" file="advalm.DBF" filter="'{equipment.type}={type.name}'">
+    <field name="taggenlink" load="true">UAG_SYSTEM_QU.M_b15</field>
+    <field name="linked">1</field>
+    <field name="editcode">536350655</field>
+    <field name="equip">{equipment.name}</field>
+    <field name="item">M15</field>
+    <field name="historian">TRUE</field>
+    <field name="tag" key="true">{equipment.tagprefix}_M_b15</field>
+    <field name="name" >{equipment.tagprefix}</field>
+    <field name="desc">Meldesperre  {equipment.comment}</field>
+    <field name="expr">UAG_Alarms_BitMask( {equipment.tagprefix}_M,15 )</field> 
+    <field name="category">Alarm21</field>
+    <field name="help">{equipment.page_list[0]}</field>
+    <field name="custom1">{equipment.area}</field>
+    <field name="comment">{equipment.tagprefix}_M</field>
+    <field name="cluster">{equipment.cluster}</field>
+    <field name="area">{equipment.area}</field>
+ </output>
+  <output name=" AdAlm.M_b16" file="advalm.DBF" filter="'{equipment.type}={type.name}'">
+    <field name="taggenlink" load="true">UAG_SYSTEM_QU.M_b16</field>
+    <field name="linked">1</field>
+    <field name="editcode">536350655</field>
+    <field name="equip">{equipment.name}</field>
+    <field name="item">M16</field>
+    <field name="historian">TRUE</field>
+    <field name="tag" key="true">{equipment.tagprefix}_M_b16</field>
+    <field name="name" >{equipment.tagprefix}</field>
+    <field name="desc">Initalwerte speichern {equipment.comment}</field>
+    <field name="expr">UAG_Alarms_BitMask( {equipment.tagprefix}_M,16 )</field> 
+    <field name="category">Alarm21</field>
+    <field name="help">{equipment.page_list[0]}</field>
+    <field name="custom1">{equipment.area}</field>
+    <field name="comment">{equipment.tagprefix}_M</field>
+    <field name="cluster">{equipment.cluster}</field>
+    <field name="area">{equipment.area}</field>
+ </output>
+  <output name=" AdAlm.M_b21" file="advalm.DBF" filter="'{equipment.type}={type.name}'">
+    <field name="taggenlink" load="true">UAG_SYSTEM_QU.M_b21</field>
+    <field name="linked">1</field>
+    <field name="editcode">536350655</field>
+    <field name="equip">{equipment.name}</field>
+    <field name="item">M21</field>
+    <field name="historian">TRUE</field>
+    <field name="tag" key="true">{equipment.tagprefix}_M_b21</field>
+    <field name="name" >{equipment.tagprefix}</field>
+    <field name="desc">Alarmsperre {equipment.comment}</field>
+    <field name="expr">UAG_Alarms_BitMask( {equipment.tagprefix}_M,21 )</field> 
+    <field name="category">Alarm21</field>
+    <field name="help">{equipment.page_list[0]}</field>
+    <field name="custom1">{equipment.area}</field>
+    <field name="comment">{equipment.tagprefix}_M</field>
+    <field name="cluster">{equipment.cluster}</field>
+    <field name="area">{equipment.area}</field>
+ </output>
+  <output name=" AdAlm.M_b30" file="advalm.DBF" filter="'{equipment.type}={type.name}'">
+    <field name="taggenlink" load="true">UAG_SYSTEM_QU.M_b30</field>
+    <field name="linked">1</field>
+    <field name="editcode">536350655</field>
+    <field name="equip">{equipment.name}</field>
+    <field name="item">M30</field>
+    <field name="historian">TRUE</field>
+    <field name="tag" key="true">{equipment.tagprefix}_M_b30</field>
+    <field name="name" >{equipment.tagprefix}</field>
+    <field name="desc">Simulation  {equipment.comment}</field>
+    <field name="expr">UAG_Alarms_BitMask( {equipment.tagprefix}_M,30 )</field> 
+    <field name="category">Alarm21</field>
+    <field name="help">{equipment.page_list[0]}</field>
+    <field name="custom1">{equipment.area}</field>
+    <field name="comment">{equipment.tagprefix}_M</field>
+    <field name="cluster">{equipment.cluster}</field>
+    <field name="area">{equipment.area}</field>
+ </output>
+</template>
