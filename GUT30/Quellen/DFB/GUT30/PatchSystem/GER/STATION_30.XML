@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<FBDExchangeFile>
+	<FBSource nameOfFBType="STATION_30" version="8.00" dateTime="dt#2014-04-10-11:17:10">
+		<attribute name="TypeCodeCheckSumString" value="272B"></attribute>
+		<attribute name="TypeSignatureCheckSumString" value="38B2"></attribute>
+		<inputParameters>
+			<variables name="IMP_QUITT" typeName="TIME">
+				<attribute name="PositionPin" value="2"></attribute>
+			</variables>
+			<variables name="IMP_AUS" typeName="TIME">
+				<attribute name="PositionPin" value="3"></attribute>
+			</variables>
+		</inputParameters>
+		<inOutParameters>
+			<variables name="LW" typeName="DWORD">
+				<attribute name="PositionPin" value="1"></attribute>
+			</variables>
+		</inOutParameters>
+	</FBSource>
+</FBDExchangeFile>

@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<FBDExchangeFile>
+	<FBSource nameOfFBType="AA_PWM_30" version="11.10" dateTime="dt#2017-08-10-11:26:10">
+		<comment>Baustein : Analogausgabe PWM1</comment>
+		<attribute name="TypeProtectionLevel" value="2#0000_0000"></attribute>
+		<attribute name="TypeCodeCheckSumString" value="3BF2"></attribute>
+		<attribute name="TypeSignatureCheckSumString" value="31A2"></attribute>
+		<inputParameters>
+			<variables name="IN" typeName="REG_OUT">
+				<comment>von Regler</comment>
+				<attribute name="PositionPin" value="1"></attribute>
+			</variables>
+			<variables name="T_PER" typeName="TIME">
+				<comment>Periodenzeit</comment>
+				<attribute name="PositionPin" value="3"></attribute>
+			</variables>
+			<variables name="T_MIN" typeName="TIME">
+				<comment>Mindestzeit</comment>
+				<attribute name="PositionPin" value="4"></attribute>
+			</variables>
+		</inputParameters>
+		<outputParameters>
+			<variables name="AN" typeName="BOOL">
+				<comment>Negativer Ausgang</comment>
+				<attribute name="PositionPin" value="5"></attribute>
+			</variables>
+			<variables name="AP" typeName="BOOL">
+				<comment>Positiver Ausgang</comment>
+				<attribute name="PositionPin" value="3"></attribute>
+			</variables>
+			<variables name="Y" typeName="REAL">
+				<comment>Stellgröße</comment>
+				<attribute name="PositionPin" value="1"></attribute>
+			</variables>
+		</outputParameters>
+		<privateLocalVariables>
+			<variables name="PWM1_1" typeName="PWM1"></variables>
+			<variables name="PARA" typeName="Para_PWM1"></variables>
+		</privateLocalVariables>
+		<FBProgram name="AA_PWM">
+			<FBDSource nbRows="24" nbColumns="36">
+				<networkFBD>
+					<FFBBlock instanceName="PWM1_1" typeName="PWM1" additionnalPinNumber="0" enEnO="false" width="10" height="7">
+						<objPosition posX="11" posY="21"></objPosition>
+						<descriptionFFB execAfter="">
+							<inputVariable invertedPin="false" formalParameter="EN"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN" effectiveParameter="IN.Y"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="RST"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="PARA" effectiveParameter="PARA"></inputVariable>
+							<outputVariable invertedPin="false" formalParameter="ENO"></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="OUT_NEG" effectiveParameter="AN"></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="OUT_POS" effectiveParameter="AP"></outputVariable>
+						</descriptionFFB>
+					</FFBBlock>
+					<FFBBlock instanceName=".2" typeName="MOVE" additionnalPinNumber="0" enEnO="false" width="7" height="5">
+						<objPosition posX="13" posY="3"></objPosition>
+						<descriptionFFB execAfter="">
+							<inputVariable invertedPin="false" formalParameter="EN"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN" effectiveParameter="T_PER"></inputVariable>
+							<outputVariable invertedPin="false" formalParameter="ENO"></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="OUT" effectiveParameter="PARA.t_period"></outputVariable>
+						</descriptionFFB>
+					</FFBBlock>
+					<FFBBlock instanceName=".3" typeName="MOVE" additionnalPinNumber="0" enEnO="false" width="7" height="5">
+						<objPosition posX="13" posY="9"></objPosition>
+						<descriptionFFB execAfter="">
+							<inputVariable invertedPin="false" formalParameter="EN"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN" effectiveParameter="T_MIN"></inputVariable>
+							<outputVariable invertedPin="false" formalParameter="ENO"></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="OUT" effectiveParameter="PARA.t_min"></outputVariable>
+						</descriptionFFB>
+					</FFBBlock>
+					<FFBBlock instanceName=".4" typeName="MOVE" additionnalPinNumber="0" enEnO="false" width="7" height="5">
+						<objPosition posX="13" posY="14"></objPosition>
+						<descriptionFFB execAfter="">
+							<inputVariable invertedPin="false" formalParameter="EN"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN" effectiveParameter="IN.Ymax"></inputVariable>
+							<outputVariable invertedPin="false" formalParameter="ENO"></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="OUT" effectiveParameter="PARA.in_max"></outputVariable>
+						</descriptionFFB>
+					</FFBBlock>
+					<FFBBlock instanceName=".6" typeName="MOVE" additionnalPinNumber="0" enEnO="false" width="7" height="5">
+						<objPosition posX="12" posY="36"></objPosition>
+						<descriptionFFB execAfter="">
+							<inputVariable invertedPin="false" formalParameter="EN"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN" effectiveParameter="IN.Y"></inputVariable>
+							<outputVariable invertedPin="false" formalParameter="ENO"></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="OUT" effectiveParameter="Y"></outputVariable>
+						</descriptionFFB>
+					</FFBBlock>
+				</networkFBD>
+			</FBDSource>
+		</FBProgram>
+	</FBSource>
+</FBDExchangeFile>

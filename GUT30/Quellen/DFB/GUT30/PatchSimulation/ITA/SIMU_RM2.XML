@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<FBDExchangeFile>
+	<FBSource nameOfFBType="SIMU_RM2" version="11.02" dateTime="dt#2017-05-09-11:55:37">
+		<comment>Baustein: Simulation Rückmeldung 2 Ansteuerungen</comment>
+		<attribute name="TypeCodeCheckSumString" value="335A"></attribute>
+		<attribute name="TypeSignatureCheckSumString" value="457C"></attribute>
+		<inputParameters>
+			<variables name="BA_R1" typeName="BOOL">
+				<comment>Ansteuerung R1</comment>
+				<attribute name="PositionPin" value="1"></attribute>
+			</variables>
+			<variables name="T" typeName="TIME">
+				<comment>Wartezeit</comment>
+				<attribute name="PositionPin" value="3"></attribute>
+				<variableInit value="2s"></variableInit>
+			</variables>
+			<variables name="BA_R2" typeName="BOOL">
+				<comment>Ansteuerung R2</comment>
+				<attribute name="PositionPin" value="2"></attribute>
+			</variables>
+		</inputParameters>
+		<outputParameters>
+			<variables name="RM_R1" typeName="BOOL">
+				<comment>Rückmeldung 1</comment>
+				<attribute name="PositionPin" value="1"></attribute>
+			</variables>
+			<variables name="RM_R2" typeName="BOOL">
+				<comment>Rückmeldung 0</comment>
+				<attribute name="PositionPin" value="2"></attribute>
+			</variables>
+		</outputParameters>
+		<privateLocalVariables>
+			<variables name="Verz_Auf" typeName="TON"></variables>
+			<variables name="TON_1" typeName="TON"></variables>
+		</privateLocalVariables>
+		<FBProgram name="PROG">
+			<FBDSource nbRows="24" nbColumns="36">
+				<networkFBD>
+					<FFBBlock instanceName="Verz_Auf" typeName="TON" additionnalPinNumber="0" enEnO="false" width="7" height="6">
+						<objPosition posX="25" posY="9"></objPosition>
+						<descriptionFFB execAfter="">
+							<inputVariable invertedPin="false" formalParameter="EN"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN" effectiveParameter="BA_R1"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="PT" effectiveParameter="T"></inputVariable>
+							<outputVariable invertedPin="false" formalParameter="ENO"></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="Q" effectiveParameter="RM_R1"></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="ET"></outputVariable>
+						</descriptionFFB>
+					</FFBBlock>
+					<FFBBlock instanceName="TON_1" typeName="TON" additionnalPinNumber="0" enEnO="false" width="7" height="6">
+						<objPosition posX="25" posY="16"></objPosition>
+						<descriptionFFB execAfter="">
+							<inputVariable invertedPin="false" formalParameter="EN"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN" effectiveParameter="BA_R2"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="PT" effectiveParameter="T"></inputVariable>
+							<outputVariable invertedPin="false" formalParameter="ENO"></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="Q" effectiveParameter="RM_R2"></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="ET"></outputVariable>
+						</descriptionFFB>
+					</FFBBlock>
+				</networkFBD>
+			</FBDSource>
+		</FBProgram>
+	</FBSource>
+</FBDExchangeFile>

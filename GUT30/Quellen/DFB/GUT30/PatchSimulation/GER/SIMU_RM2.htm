@@ -1,0 +1,168 @@
+﻿<html>
+	
+<head>
+	<title>SIMU_RM2</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta name="generator" content="HelpNDoc Personal Edition 4.9.2.132">
+	<meta name="keywords" content="">
+	
+	<link type="text/css" rel="stylesheet" media="all" href="../HELP/reset.css" />
+	<link type="text/css" rel="stylesheet" media="all" href="../HELP/base.css" />
+	<link type="text/css" rel="stylesheet" media="all" href="../HELP/hnd.css" />
+	<!--[if lte IE 8]>
+		<link type="text/css" rel="stylesheet" media="all" href="../HELP/ielte8.css" />
+	<![endif]-->
+	<style type="text/css">
+		#topic_header
+		{
+			background-color: #EFEFEF;
+		}
+	</style>
+	<script type="text/javascript">
+		$(document).ready(function()
+		{
+			if (top.frames.length == 0)
+			{
+				var sTopicUrl = top.location.href.substring(top.location.href.lastIndexOf("/") + 1, top.location.href.length);
+				top.location.href = "German UAG Toolbox 30.htm?" + sTopicUrl;
+			}
+			else
+			{
+				var bTocSelected = false;
+				(function waitForTOC()
+				{
+					if (top && top.FrameTOC && top.FrameTOC.SelectTocItem)
+					{
+						top.FrameTOC.SelectTocItem("SIMU_RM2");
+						bTocSelected = true;
+					}
+					if (!bTocSelected) setTimeout(function() { waitForTOC(); }, 300);
+				})();
+			}
+		});
+	</script>
+	
+	</head>
+
+<body>
+
+<div id="topic_header">
+			<div id="topic_header_content">
+				<h1 id="topic_header_text">SIMU_RM2</h1>
+				
+				</div>
+			<div class="clear"></div>
+		</div>
+	<div id="topic_content">
+		
+<p></p>
+<p class="rvps6"><a name="bodytext"></a>
+<span class="rvts30">Allgemein</span></p>
+<p class="rvps15"><span class="rvts34">Der abgeleitete Funktionsbaustein &nbsp;SIMU_RM2 bilde 2 Rückmeldungen aus zwei Ansteuerungen</span></p>
+<p class="rvps15"><span class="rvts34">Der DFB ist wie folgt implementiert:</span></p>
+<div class="rvps2"><table width="98%" border="1" cellpadding="2" cellspacing="-1" style="border-width: 0px; border-collapse: collapse;">
+<tr valign="top">
+<td width="43%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; background-color: #f0f0f0;"><p class="rvps15"><span class="rvts35">Software</span></p>
+</td>
+<td width="57%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-left: none; background-color: #f0f0f0;"><p class="rvps15"><span class="rvts35">Implementiert als</span></p>
+</td>
+</tr>
+<tr valign="top">
+<td width="43%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-top: none;"><p class="rvps15"><span class="rvts34">Unity Pro</span></p>
+</td>
+<td width="57%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps15"><span class="rvts34">DFB SIMU_RM2</span></p>
+<p class="rvps15"><span class="rvts34"><br/></span></p>
+</td>
+</tr>
+</table>
+</div>
+<h5 class="rvps8"><a name="D-SG-0025894.2"></a>
+<span class="rvts0"><span class="rvts13">Funktionsbeschreibung</span></span></h5>
+<p class="rvps2"><span class="rvts6"><br/></span></p>
+<p class="rvps2"><span class="rvts6">der Signalwechsel am Eingang wird durch die Zeit T verzögert an den beiden Ausgängen abgebildet.</span></p>
+<p class="rvps6"><a name="D-SG-0025894.7"></a>
+<span class="rvts30">Fehler Management</span></p>
+<p class="rvps6"><a name="D-SG-0025894.62"></a>
+<span class="rvts30">Darstellung in FBD</span></p>
+<p class="rvps15"><span class="rvts34">Die Abbildung unten zeigt die Darstellung desDFB in FBD:</span></p>
+<p class="rvps15"><img alt="" style="padding : 1px;" src="../HELP/NeuesElement465.png"></p>
+<p class="rvps15"><span class="rvts34">Als zusätzliche Parameter können </span><span class="rvts34"> <A onmouseover="Tip('EN bedeutet ENable (aktivieren); es handelt sich um einen optionalen<br>Bausteineingang. Wenn der Eingang EN aktiviert ist, wird automatisch ein<br>Ausgang ENO bereitgestellt.<br>Wenn EN = 0 ist, ist der Baustein nicht aktiviert, sein internes Programm wird<br>nicht ausgef�hrt, und f�r ENO ist 0 festgelegt.<br>Wenn EN = 1 ist, wird das interne Programm des Bausteins ausgef�hrt und f?<br>ENO 1 festgelegt. Wenn ein Fehler auftritt, wird f�r ENO 0 festgelegt.<br>Wenn der Eingang EN nicht angeschlossen ist, wird er automatisch auf 1 festgelegt.', TITLE, 'EN', BGCOLOR, '#ffffff', FONTCOLOR, '#000000', FONTSIZE, '9pt', TITLEFONTSIZE, '10pt', FONTFACE, 'Courier New, Courier, mono', BORDERCOLOR, '#000000',TITLEBGCOLOR, '#f0f0f0',TITLEFONTCOLOR, '#000000')" onmouseout="UnTip()" href="javascript:void(0);">EN</A></span><span class="rvts34"> und </span><span class="rvts34">           <A onmouseover="Tip('ENO bedeutet Error NOtification (Fehlerbenachrichtigung); es handelt<br>sich um einen Ausgang, der einem optionalen EN-Eingang zugeordnet ist.<br>Wenn f�r ENO 0 festgelegt ist (weil EN = 0 oder im Fall eines Fehlers<br>bei der Ausf�hrung):<br>bleiben die Ausg�nge der Funktionsbausteine in dem Status, in<br>dem sie sich w�hrend des letzten fehlerfrei ausgef�hrten<br>Abtastzyklus befunden haben;<br>wird f�r den Ausgang bzw. die Ausg�nge sowie die Prozeduren 0<br>festgelegt. ', TITLE, 'ENO', BGCOLOR, '#ffffff', FONTCOLOR, '#000000', FONTSIZE, '9pt', TITLEFONTSIZE, '10pt', FONTFACE, 'Courier New, Courier, mono', BORDERCOLOR, '#000000',TITLEBGCOLOR, '#f0f0f0',TITLEFONTCOLOR, '#000000')" onmouseout="UnTip()" href="javascript:void(0);">ENO</A></span><span class="rvts34"> &nbsp;konfiguriert werden.</span></p>
+<p class="rvps6"><span class="rvts30">Parameterbeschreibung</span></p>
+<p class="rvps15"><span class="rvts34">In der folgenden Tabelle sind die Eingangsparameter aufgeführt:</span></p>
+<div class="rvps7"><table width="98%" border="1" cellpadding="2" cellspacing="-1" style="border-width: 0px; border-collapse: collapse;">
+<tr valign="top">
+<td width="17%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; background-color: #f0f0f0;"><p class="rvps7"><span class="rvts42">Parameter</span></p>
+</td>
+<td width="24%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-left: none; background-color: #f0f0f0;"><p class="rvps7"><span class="rvts42">Typ</span></p>
+</td>
+<td width="59%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-left: none; background-color: #f0f0f0;"><p class="rvps7"><span class="rvts42">Kommentar</span></p>
+</td>
+</tr>
+<tr valign="top">
+<td width="17%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-top: none;"><p class="rvps7"><span class="rvts20">BA_R1</span></p>
+</td>
+<td width="24%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts20">BOOL</span></p>
+</td>
+<td width="59%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts20">Ansteuerung Richtung 1</span></p>
+</td>
+</tr>
+<tr valign="top">
+<td width="17%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-top: none;"><p class="rvps7"><span class="rvts20">BA_R2</span></p>
+</td>
+<td width="24%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts20">BOOL</span></p>
+</td>
+<td width="59%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts20">Ansteuerung Richtung 2</span></p>
+</td>
+</tr>
+<tr valign="top">
+<td width="17%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-top: none;"><p class="rvps7"><span class="rvts20">T</span></p>
+</td>
+<td width="24%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts20">TIME</span></p>
+</td>
+<td width="59%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts20">Verzögerungs Zeit</span></p>
+</td>
+</tr>
+</table>
+</div>
+<p class="rvps15"><span class="rvts34"><br/></span></p>
+<p class="rvps15"><span class="rvts34">Die folgende Tabelle beschreibt die Ausgangsparameter:</span></p>
+<div class="rvps7"><table width="98%" border="1" cellpadding="2" cellspacing="-1" style="border-width: 0px; border-collapse: collapse;">
+<tr valign="top">
+<td width="17%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; background-color: #f0f0f0;"><p class="rvps7"><span class="rvts42">Parameter</span></p>
+</td>
+<td width="24%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-left: none; background-color: #f0f0f0;"><p class="rvps7"><span class="rvts42">Typ</span></p>
+</td>
+<td width="59%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-left: none; background-color: #f0f0f0;"><p class="rvps7"><span class="rvts42">Kommentar</span></p>
+</td>
+</tr>
+<tr valign="top">
+<td width="17%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-top: none;"><p class="rvps7"><span class="rvts20">RM_R1</span></p>
+</td>
+<td width="24%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts20">BOOL</span></p>
+</td>
+<td width="59%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts20">Ausgang Richtung 1</span></p>
+</td>
+</tr>
+<tr valign="top">
+<td width="17%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-top: none;"><p class="rvps7"><span class="rvts20">RM_R2</span></p>
+</td>
+<td width="24%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts20">BOOL</span></p>
+</td>
+<td width="59%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts20">Ausgang Richtung 2</span></p>
+</td>
+</tr>
+</table>
+</div>
+<p></p>
+
+</div>
+	
+	<div id="topic_footer">
+
+			<div id="topic_footer_content">
+				Copyright &copy; 2010 -2017, Schneider Electric. Alle Rechte vorbehalten.</div>
+		</div>
+	</body>
+	
+</html>
+

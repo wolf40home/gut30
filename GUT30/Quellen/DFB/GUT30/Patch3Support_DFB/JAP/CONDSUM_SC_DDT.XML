@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<DDTExchangeFile>
+	<DDTSource DDTName="CONDSUM_SC_DDT" version="8.00" dateTime="dt#2008-05-28-08:40:37">
+		<attribute name="TypeSignatureCheckSumString" value="14CE"></attribute>
+		<structure>
+			<variables name="RESULT" typeName="BOOL">
+				<comment>Result</comment>
+			</variables>
+		</structure>
+	</DDTSource>
+</DDTExchangeFile>

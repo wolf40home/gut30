@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<FBDExchangeFile>
+	<FBSource nameOfFBType="BMXAMO0410_30" version="11.00" dateTime="dt#2017-02-10-13:42:15">
+		<comment>Baustein: ERIO AMO0410</comment>
+		<attribute name="TypeProtectionLevel" value="2#0000_0000"></attribute>
+		<attribute name="TypeCodeCheckSumString" value="01FB"></attribute>
+		<attribute name="TypeSignatureCheckSumString" value="29BE"></attribute>
+		<inputParameters>
+			<variables name="A1" typeName="INT">
+				<attribute name="PositionPin" value="3"></attribute>
+			</variables>
+			<variables name="A2" typeName="INT">
+				<attribute name="PositionPin" value="4"></attribute>
+			</variables>
+			<variables name="A3" typeName="INT">
+				<attribute name="PositionPin" value="5"></attribute>
+			</variables>
+			<variables name="A4" typeName="INT">
+				<attribute name="PositionPin" value="6"></attribute>
+			</variables>
+		</inputParameters>
+		<inOutParameters>
+			<variables name="OUT" typeName="T_U_ANA_STD_OUT_4">
+				<attribute name="PositionPin" value="1"></attribute>
+			</variables>
+		</inOutParameters>
+		<outputParameters>
+			<variables name="HEALT" typeName="BOOL">
+				<attribute name="PositionPin" value="5"></attribute>
+			</variables>
+			<variables name="FLT" typeName="BYTE">
+				<attribute name="PositionPin" value="6"></attribute>
+			</variables>
+		</outputParameters>
+		<privateLocalVariables></privateLocalVariables>
+		<FBProgram name="PROG">
+			<FBDSource nbRows="24" nbColumns="36">
+				<networkFBD>
+					<FFBBlock instanceName=".2" typeName="MOVE" additionnalPinNumber="0" enEnO="false" width="7" height="5">
+						<objPosition posX="20" posY="6"></objPosition>
+						<descriptionFFB execAfter="">
+							<inputVariable invertedPin="false" formalParameter="EN"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN" effectiveParameter="A1"></inputVariable>
+							<outputVariable invertedPin="false" formalParameter="ENO"></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="OUT" effectiveParameter="OUT.ANA_CH_OUT[0].ANA.VALUE"></outputVariable>
+						</descriptionFFB>
+					</FFBBlock>
+					<FFBBlock instanceName=".1" typeName="MOVE" additionnalPinNumber="0" enEnO="false" width="7" height="5">
+						<objPosition posX="20" posY="11"></objPosition>
+						<descriptionFFB execAfter="">
+							<inputVariable invertedPin="false" formalParameter="EN"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN" effectiveParameter="A2"></inputVariable>
+							<outputVariable invertedPin="false" formalParameter="ENO"></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="OUT" effectiveParameter="OUT.ANA_CH_OUT[1].ANA.VALUE"></outputVariable>
+						</descriptionFFB>
+					</FFBBlock>
+					<FFBBlock instanceName=".4" typeName="MOVE" additionnalPinNumber="0" enEnO="false" width="7" height="5">
+						<objPosition posX="20" posY="16"></objPosition>
+						<descriptionFFB execAfter="">
+							<inputVariable invertedPin="false" formalParameter="EN"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN" effectiveParameter="A3"></inputVariable>
+							<outputVariable invertedPin="false" formalParameter="ENO"></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="OUT" effectiveParameter="OUT.ANA_CH_OUT[2].ANA.VALUE"></outputVariable>
+						</descriptionFFB>
+					</FFBBlock>
+					<FFBBlock instanceName=".3" typeName="MOVE" additionnalPinNumber="0" enEnO="false" width="7" height="5">
+						<objPosition posX="20" posY="21"></objPosition>
+						<descriptionFFB execAfter="">
+							<inputVariable invertedPin="false" formalParameter="EN"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN" effectiveParameter="A4"></inputVariable>
+							<outputVariable invertedPin="false" formalParameter="ENO"></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="OUT" effectiveParameter="OUT.ANA_CH_OUT[3].ANA.VALUE"></outputVariable>
+						</descriptionFFB>
+					</FFBBlock>
+					<FFBBlock instanceName=".9" typeName="MOVE" additionnalPinNumber="0" enEnO="false" width="7" height="5">
+						<objPosition posX="53" posY="5"></objPosition>
+						<descriptionFFB execAfter="">
+							<inputVariable invertedPin="false" formalParameter="EN"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN" effectiveParameter="OUT.MOD_HEALTH"></inputVariable>
+							<outputVariable invertedPin="false" formalParameter="ENO"></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="OUT" effectiveParameter="HEALT"></outputVariable>
+						</descriptionFFB>
+					</FFBBlock>
+					<FFBBlock instanceName=".10" typeName="MOVE" additionnalPinNumber="0" enEnO="false" width="7" height="5">
+						<objPosition posX="53" posY="14"></objPosition>
+						<descriptionFFB execAfter="">
+							<inputVariable invertedPin="false" formalParameter="EN"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN" effectiveParameter="OUT.MOD_FLT"></inputVariable>
+							<outputVariable invertedPin="false" formalParameter="ENO"></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="OUT" effectiveParameter="FLT"></outputVariable>
+						</descriptionFFB>
+					</FFBBlock>
+				</networkFBD>
+			</FBDSource>
+		</FBProgram>
+	</FBSource>
+</FBDExchangeFile>

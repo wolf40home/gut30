@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<DDTExchangeFile>
+	<DDTSource DDTName="T_SCAIME_COMMAND_SETTING_30" version="0.41" dateTime="dt#2016-06-13-14:59:06">
+		<attribute name="TypeSignatureCheckSumString" value="D14A"></attribute>
+		<structure>
+			<variables name="Explicit_Command_Register_Code" typeName="WORD">
+				<comment>Code sending to device command register field when using explicit request to perform functionals commands </comment>
+			</variables>
+			<variables name="Device_Reset" typeName="BOOL">
+				<comment>To perform software reseting of weighing board (Warning : Device will lose its runtime configuration data if not saving in flash memory) </comment>
+			</variables>
+			<variables name="Tare" typeName="BOOL">
+				<comment>Allow to set Net measurement to 0 (if stability reaching in 5s)</comment>
+			</variables>
+			<variables name="Cancel_Tare" typeName="BOOL">
+				<comment>To cancel previous tare process effect</comment>
+			</variables>
+			<variables name="Preset_Tare" typeName="BOOL">
+				<comment>Allow user to manually set previous tare value (with preset tare value parameter) if needed</comment>
+			</variables>
+			<variables name="Zero" typeName="BOOL">
+				<comment>Allow to set both Net and Gross  measurements to 0 (if stability reaching in 5s)</comment>
+			</variables>
+			<variables name="Tare_In_Specified_Time" typeName="BOOL">
+				<comment>Allow to set Net measurement to 0 (even if not stability in specified time ms)</comment>
+			</variables>
+			<variables name="Zero_In_Specified_Time" typeName="BOOL">
+				<comment>Allow to set both Net and Gross measurements to 0 (even if not stability in specified time ms)</comment>
+			</variables>
+			<variables name="Clearing_functional_registers" typeName="BOOL">
+				<comment>Reset command and response register to 0 (means ready for next command)</comment>
+			</variables>
+			<variables name="Start_Dosing_Cycle" typeName="BOOL">
+				<comment>Allow to start a new dosing cycle</comment>
+			</variables>
+			<variables name="Stop_Dosing_Cycle" typeName="BOOL">
+				<comment>Allow to stop dosing cycle in progress</comment>
+			</variables>
+			<variables name="Start_Physical_Calibration" typeName="BOOL">
+				<comment>To put the device into physical calibration mode </comment>
+			</variables>
+			<variables name="Start_Theoretical_scaling" typeName="BOOL">
+				<comment>Device theoretical calibration with known sensitivity value at max capacity</comment>
+			</variables>
+			<variables name="Zero_adjustment" typeName="BOOL">
+				<comment>Set current load as device zero reference</comment>
+			</variables>
+			<variables name="Calibration_Steps_Validation" typeName="BOOL">
+				<comment>Allow user to validate calibration step with differents loads</comment>
+			</variables>
+			<variables name="Cancel_Current_Command" typeName="BOOL">
+				<comment>Cancel and exit the current command execution (example: Exit calibration mode)</comment>
+			</variables>
+			<variables name="Saving_Calibration_in_flash" typeName="BOOL">
+				<comment>If calibration sequences are successfully done this flag allows to save in device internal flash the user calibration</comment>
+			</variables>
+			<variables name="Saving_in_flash_memory" typeName="BOOL">
+				<comment>Save all configuration in device internal flash memory</comment>
+			</variables>
+			<variables name="Restore_Factory_Settings" typeName="BOOL">
+				<comment>Restore device configuration to factory setting</comment>
+			</variables>
+			<variables name="Execute_Explicit_Request" typeName="BOOL">
+				<comment>Toggle to Send (on each rising edge) Explicit request to weighing module </comment>
+			</variables>
+			<variables name="Explicit_Request_Service" typeName="BOOL">
+				<comment>Parameter access service (0 = Read and 1= Write) </comment>
+			</variables>
+			<variables name="Number_Of_Parameters" typeName="BYTE">
+				<comment>Number of parameters requested (Read or Write) in explicit request (See parameters in user manual chapiter 7.2)</comment>
+			</variables>
+			<variables name="Configuration_Parameters_IDs" typeName="ARRAY[0..70] OF INT">
+				<comment>Contents Parameters IDs list in explicit request (see parameter comment field or in user manual for ID)</comment>
+			</variables>
+		</structure>
+	</DDTSource>
+</DDTExchangeFile>

@@ -1,0 +1,149 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<FBDExchangeFile>
+	<FBSource nameOfFBType="SIMU_SINUS" version="11.05" dateTime="dt#2017-08-08-13:05:22">
+		<comment>Baustein: Sinus Simulation</comment>
+		<attribute name="TypeCodeCheckSumString" value="EBAE"></attribute>
+		<attribute name="TypeSignatureCheckSumString" value="6794"></attribute>
+		<inputParameters>
+			<variables name="PT" typeName="TIME">
+				<comment>Periodenzeit</comment>
+				<attribute name="PositionPin" value="3"></attribute>
+			</variables>
+			<variables name="OUT_MAX" typeName="REAL">
+				<comment>Out Maximum</comment>
+				<attribute name="PositionPin" value="2"></attribute>
+				<variableInit value="1.0"></variableInit>
+			</variables>
+			<variables name="OS" typeName="REAL">
+				<comment>Offset</comment>
+				<attribute name="PositionPin" value="4"></attribute>
+			</variables>
+			<variables name="DL" typeName="REAL">
+				<comment>Delay</comment>
+				<attribute name="PositionPin" value="5"></attribute>
+			</variables>
+			<variables name="OUT_MIN" typeName="REAL">
+				<comment>Out Minimum</comment>
+				<attribute name="PositionPin" value="1"></attribute>
+			</variables>
+		</inputParameters>
+		<outputParameters>
+			<variables name="Q" typeName="BOOL">
+				<attribute name="PositionPin" value="1"></attribute>
+			</variables>
+			<variables name="OUT" typeName="REAL">
+				<attribute name="PositionPin" value="2"></attribute>
+			</variables>
+			<variables name="OUT_INT" typeName="INT">
+				<attribute name="PositionPin" value="3"></attribute>
+			</variables>
+		</outputParameters>
+		<privateLocalVariables>
+			<variables name="PI2" typeName="REAL">
+				<variableInit value="6.28318530717958647692528676655900576"></variableInit>
+			</variables>
+			<variables name="tx" typeName="TIME"></variables>
+			<variables name="last" typeName="TIME"></variables>
+			<variables name="init" typeName="BOOL"></variables>
+			<variables name="temp" typeName="REAL"></variables>
+			<variables name="out_temp" typeName="REAL"></variables>
+		</privateLocalVariables>
+		<FBProgram name="PROG">
+			<STSource>(*FUNCTION_BLOCK GEN_SIN
+
+//
+//this signal generator generates a sine wave output. The sine wave signal is defined by period time (PT), 
+//amplitude (OUT_MAX), offset (OS) and a specific delay for the output signal (DL).
+//The Output waveform will have its max peak at OUT_MAX/2 + OS and its minimum peak at -OUT_MAX/2 + OS. 
+//The delay input can delay a signal up to PT, this can be useful to synchronize different generators 
+//and generate interleaving signals. A Cos wave can be generated accordingly.
+//in addition to a analog output Out there is a second boolean output Q with the corresponding binary signal.
+// 
+
+
+(* read system time and prepare input data *)
+tx := DINT_TO_TIME(%SD20) - last;
+  
+(* init section *)
+IF NOT init THEN
+    init := TRUE;
+    last := tx;
+    tx := t#0s;
+END_IF;
+  
+(* add last if one cycle is finished *)
+IF tx &gt;= pt THEN
+    last := last + pt;
+    tx := tx - pt;
+END_IF;
+  
+(* generate sine wave *)
+IF pt &gt; t#0s THEN temp := SIN(PI2 * DINT_TO_REAL(TIME_TO_DINT(tx + multime(IN1:=pt,IN2:=DL))) / DINT_TO_REAL(TIME_TO_DINT(pt))); END_IF;
+out_temp := OUT_MAX * 0.95 *  temp + os;
+
+(* boolean output Q *)
+q := NOT SIGN(temp);
+  
+
+
+</STSource>
+		</FBProgram>
+		<FBProgram name="Scal">
+			<FBDSource nbRows="24" nbColumns="36">
+				<networkFBD>
+					<FFBBlock instanceName=".1" typeName="MUL" additionnalPinNumber="0" enEnO="false" width="7" height="6">
+						<objPosition posX="14" posY="21"></objPosition>
+						<descriptionFFB execAfter="">
+							<inputVariable invertedPin="false" formalParameter="EN"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN1" effectiveParameter="OUT_MAX"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN2" effectiveParameter="-1.0"></inputVariable>
+							<outputVariable invertedPin="false" formalParameter="ENO"></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="OUT"></outputVariable>
+						</descriptionFFB>
+					</FFBBlock>
+					<FFBBlock instanceName=".3" typeName="REAL_TO_INT" additionnalPinNumber="0" enEnO="false" width="9" height="5">
+						<objPosition posX="48" posY="15"></objPosition>
+						<descriptionFFB execAfter="">
+							<inputVariable invertedPin="false" formalParameter="EN"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN"></inputVariable>
+							<outputVariable invertedPin="false" formalParameter="ENO"></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="OUT" effectiveParameter="OUT_INT"></outputVariable>
+						</descriptionFFB>
+					</FFBBlock>
+					<FFBBlock instanceName=".2" typeName="SCAL" additionnalPinNumber="0" enEnO="false" width="9" height="10">
+						<objPosition posX="30" posY="15"></objPosition>
+						<descriptionFFB execAfter="">
+							<inputVariable invertedPin="false" formalParameter="EN"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN" effectiveParameter="out_temp"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="SKA" effectiveParameter="OUT_MIN"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="SKE" effectiveParameter="OUT_MAX"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN_MIN"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN_MAX" effectiveParameter="OUT_MAX"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="CLIP" effectiveParameter="1"></inputVariable>
+							<outputVariable invertedPin="false" formalParameter="ENO"></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="OUT" effectiveParameter="OUT"></outputVariable>
+						</descriptionFFB>
+					</FFBBlock>
+					<linkFB>
+						<linkSource parentObjectName=".2" pinName="OUT">
+							<objPosition posX="38" posY="19"></objPosition>
+						</linkSource>
+						<linkDestination parentObjectName=".3" pinName="IN">
+							<objPosition posX="48" posY="19"></objPosition>
+						</linkDestination>
+					</linkFB>
+					<linkFB>
+						<linkSource parentObjectName=".1" pinName="OUT">
+							<objPosition posX="20" posY="25"></objPosition>
+						</linkSource>
+						<linkDestination parentObjectName=".2" pinName="IN_MIN">
+							<objPosition posX="30" posY="22"></objPosition>
+						</linkDestination>
+						<gridObjPosition posX="26" posY="25"></gridObjPosition>
+						<gridObjPosition posX="26" posY="22"></gridObjPosition>
+					</linkFB>
+				</networkFBD>
+			</FBDSource>
+		</FBProgram>
+	</FBSource>
+</FBDExchangeFile>

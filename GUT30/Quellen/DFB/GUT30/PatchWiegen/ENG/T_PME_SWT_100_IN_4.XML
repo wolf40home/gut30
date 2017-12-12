@@ -1,0 +1,218 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<DDTExchangeFile>
+	<DDTSource DDTName="T_PME_SWT_100_IN_4" version="1.00" dateTime="dt#2016-10-28-11:19:11">
+		<attribute name="IsTypeLocked" value="TRUE"></attribute>
+		<attribute name="TypeSignatureCheckSumString" value="ED7D"></attribute>
+		<attribute name="IsTypeHiddenButExported" value="TRUE"></attribute>
+		<structure>
+			<variables name="DEVICE_NAME" typeName="string[64]">
+				<attribute name="RequestAccessRight" value="1"></attribute>
+				<attribute name="InstancesProgramAccessRight" value="1"></attribute>
+			</variables>
+			<variables name="DEVICE_STATUS" typeName="UINT">
+				<attribute name="RequestAccessRight" value="1"></attribute>
+				<attribute name="InstancesProgramAccessRight" value="1"></attribute>
+			</variables>
+			<variables name="DEVICE_STATE" typeName="BOOL">
+				<attribute name="ExtractBit" value="0"></attribute>
+				<attribute name="RequestAccessRight" value="1"></attribute>
+				<attribute name="InstancesProgramAccessRight" value="1"></attribute>
+			</variables>
+			<variables name="DEVICE_HEALTH" typeName="BOOL">
+				<attribute name="ExtractBit" value="1"></attribute>
+				<attribute name="RequestAccessRight" value="1"></attribute>
+				<attribute name="InstancesProgramAccessRight" value="1"></attribute>
+			</variables>
+			<variables name="SPI_ERROR" typeName="BOOL">
+				<attribute name="ExtractBit" value="2"></attribute>
+				<attribute name="RequestAccessRight" value="1"></attribute>
+				<attribute name="InstancesProgramAccessRight" value="1"></attribute>
+			</variables>
+			<variables name="INIT_PARAM_CORRUPTED_ERROR" typeName="BOOL">
+				<attribute name="ExtractBit" value="3"></attribute>
+				<attribute name="RequestAccessRight" value="1"></attribute>
+				<attribute name="InstancesProgramAccessRight" value="1"></attribute>
+			</variables>
+			<variables name="RUNTIME_CONFIGURATION_ERROR" typeName="BOOL">
+				<attribute name="ExtractBit" value="4"></attribute>
+				<attribute name="RequestAccessRight" value="1"></attribute>
+				<attribute name="InstancesProgramAccessRight" value="1"></attribute>
+			</variables>
+			<variables name="CONTROL_FW_MISSING_OR_CORRUPTED" typeName="BOOL">
+				<attribute name="ExtractBit" value="5"></attribute>
+				<attribute name="RequestAccessRight" value="1"></attribute>
+				<attribute name="InstancesProgramAccessRight" value="1"></attribute>
+			</variables>
+			<variables name="CONTROL_FW_DOWNLOAD_IN_PROGRESS" typeName="BOOL">
+				<attribute name="ExtractBit" value="6"></attribute>
+				<attribute name="RequestAccessRight" value="1"></attribute>
+				<attribute name="InstancesProgramAccessRight" value="1"></attribute>
+			</variables>
+			<variables name="Free0" typeName="BYTE">
+				<comment>Unused Variable</comment>
+				<attribute name="RequestAccessRight" value="1"></attribute>
+				<attribute name="InstancesProgramAccessRight" value="1"></attribute>
+			</variables>
+			<variables name="Free1" typeName="BYTE">
+				<comment>Unused Variable</comment>
+				<attribute name="RequestAccessRight" value="1"></attribute>
+				<attribute name="InstancesProgramAccessRight" value="1"></attribute>
+			</variables>
+			<variables name="ETH_STATUS" typeName="BYTE">
+				<attribute name="RequestAccessRight" value="1"></attribute>
+				<attribute name="InstancesProgramAccessRight" value="1"></attribute>
+			</variables>
+			<variables name="PORT1_LINK" typeName="BOOL">
+				<attribute name="ExtractBit" value="0"></attribute>
+				<attribute name="RequestAccessRight" value="1"></attribute>
+				<attribute name="InstancesProgramAccessRight" value="1"></attribute>
+			</variables>
+			<variables name="CCOTF_IN_PROGRESS" typeName="BOOL">
+				<attribute name="ExtractBit" value="4"></attribute>
+				<attribute name="RequestAccessRight" value="1"></attribute>
+				<attribute name="InstancesProgramAccessRight" value="1"></attribute>
+			</variables>
+			<variables name="REDUNDANCY_OWNER" typeName="BOOL">
+				<attribute name="ExtractBit" value="6"></attribute>
+				<attribute name="RequestAccessRight" value="1"></attribute>
+				<attribute name="InstancesProgramAccessRight" value="1"></attribute>
+			</variables>
+			<variables name="GLOBAL_STATUS" typeName="BOOL">
+				<attribute name="ExtractBit" value="7"></attribute>
+				<attribute name="RequestAccessRight" value="1"></attribute>
+				<attribute name="InstancesProgramAccessRight" value="1"></attribute>
+			</variables>
+			<variables name="SERVICE_STATUS" typeName="BYTE">
+				<attribute name="RequestAccessRight" value="1"></attribute>
+				<attribute name="InstancesProgramAccessRight" value="1"></attribute>
+			</variables>
+			<variables name="SNTP_SERVICE" typeName="BOOL">
+				<attribute name="ExtractBit" value="1"></attribute>
+				<attribute name="RequestAccessRight" value="1"></attribute>
+				<attribute name="InstancesProgramAccessRight" value="1"></attribute>
+			</variables>
+			<variables name="SNMP_SERVICE" typeName="BOOL">
+				<attribute name="ExtractBit" value="3"></attribute>
+				<attribute name="RequestAccessRight" value="1"></attribute>
+				<attribute name="InstancesProgramAccessRight" value="1"></attribute>
+			</variables>
+			<variables name="FDR_SERVICE_B1" typeName="BOOL">
+				<attribute name="ExtractBit" value="4"></attribute>
+				<attribute name="RequestAccessRight" value="1"></attribute>
+				<attribute name="InstancesProgramAccessRight" value="1"></attribute>
+			</variables>
+			<variables name="FDR_SERVICE_B2" typeName="BOOL">
+				<attribute name="ExtractBit" value="5"></attribute>
+				<attribute name="RequestAccessRight" value="1"></attribute>
+				<attribute name="InstancesProgramAccessRight" value="1"></attribute>
+			</variables>
+			<variables name="FDR_SERVICE_B3" typeName="BOOL">
+				<attribute name="ExtractBit" value="6"></attribute>
+				<attribute name="RequestAccessRight" value="1"></attribute>
+				<attribute name="InstancesProgramAccessRight" value="1"></attribute>
+			</variables>
+			<variables name="FDR_SERVICE_B4" typeName="BOOL">
+				<attribute name="ExtractBit" value="7"></attribute>
+				<attribute name="RequestAccessRight" value="1"></attribute>
+				<attribute name="InstancesProgramAccessRight" value="1"></attribute>
+			</variables>
+			<variables name="ETH_PORT1_INFO" typeName="BYTE">
+				<attribute name="RequestAccessRight" value="1"></attribute>
+				<attribute name="InstancesProgramAccessRight" value="1"></attribute>
+			</variables>
+			<variables name="ETH_PORT1_FUNCTION_B1" typeName="BOOL">
+				<attribute name="ExtractBit" value="0"></attribute>
+				<attribute name="RequestAccessRight" value="1"></attribute>
+				<attribute name="InstancesProgramAccessRight" value="1"></attribute>
+			</variables>
+			<variables name="ETH_PORT1_FUNCTION_B2" typeName="BOOL">
+				<attribute name="ExtractBit" value="1"></attribute>
+				<attribute name="RequestAccessRight" value="1"></attribute>
+				<attribute name="InstancesProgramAccessRight" value="1"></attribute>
+			</variables>
+			<variables name="Free2" typeName="BYTE">
+				<comment>Unused Variable</comment>
+				<attribute name="RequestAccessRight" value="1"></attribute>
+				<attribute name="InstancesProgramAccessRight" value="1"></attribute>
+			</variables>
+			<variables name="GrossMeasurement" typeName="DINT">
+				<comment>Device Gross measurement value (Net + Tare)</comment>
+				<attribute name="RequestAccessRight" value="1"></attribute>
+				<attribute name="InstancesProgramAccessRight" value="1"></attribute>
+			</variables>
+			<variables name="NetMeasurement" typeName="DINT">
+				<comment>Device Net measuremment value (Brut - Tare)</comment>
+				<attribute name="RequestAccessRight" value="1"></attribute>
+				<attribute name="InstancesProgramAccessRight" value="1"></attribute>
+			</variables>
+			<variables name="FactMeasurement" typeName="DINT">
+				<comment>Device  factory measurement value</comment>
+				<attribute name="RequestAccessRight" value="1"></attribute>
+				<attribute name="InstancesProgramAccessRight" value="1"></attribute>
+			</variables>
+			<variables name="TareValue" typeName="DINT">
+				<comment>Device Tare value</comment>
+				<attribute name="RequestAccessRight" value="1"></attribute>
+				<attribute name="InstancesProgramAccessRight" value="1"></attribute>
+			</variables>
+			<variables name="FlowRate" typeName="REAL">
+				<comment>Filtered Flow rate</comment>
+				<attribute name="RequestAccessRight" value="1"></attribute>
+				<attribute name="InstancesProgramAccessRight" value="1"></attribute>
+			</variables>
+			<variables name="Reserved_3" typeName="DINT">
+				<comment>Reserved 3</comment>
+				<attribute name="RequestAccessRight" value="1"></attribute>
+				<attribute name="InstancesProgramAccessRight" value="1"></attribute>
+			</variables>
+			<variables name="LegalForTradeCount" typeName="UINT">
+				<attribute name="RequestAccessRight" value="1"></attribute>
+				<attribute name="InstancesProgramAccessRight" value="1"></attribute>
+			</variables>
+			<variables name="LegalForTradeCRC" typeName="UINT">
+				<attribute name="RequestAccessRight" value="1"></attribute>
+				<attribute name="InstancesProgramAccessRight" value="1"></attribute>
+			</variables>
+			<variables name="RespRegister" typeName="UINT">
+				<comment>Device aknowlegdes to functional command received through that register (eg. 1 =&gt; running, 2=&gt; finished with success or 3 =&gt; error)</comment>
+				<attribute name="RequestAccessRight" value="1"></attribute>
+				<attribute name="InstancesProgramAccessRight" value="1"></attribute>
+			</variables>
+			<variables name="Reserved_0" typeName="UINT">
+				<comment>Reserved 0</comment>
+				<attribute name="RequestAccessRight" value="1"></attribute>
+				<attribute name="InstancesProgramAccessRight" value="1"></attribute>
+			</variables>
+			<variables name="PresetTareValue_OP" typeName="UDINT">
+				<comment>Value of user preset tare</comment>
+				<attribute name="RequestAccessRight" value="1"></attribute>
+				<attribute name="InstancesProgramAccessRight" value="1"></attribute>
+			</variables>
+			<variables name="Reserved_1" typeName="DINT">
+				<comment>Reserved 1</comment>
+				<attribute name="RequestAccessRight" value="1"></attribute>
+				<attribute name="InstancesProgramAccessRight" value="1"></attribute>
+			</variables>
+			<variables name="Measurement_Status" typeName="UINT">
+				<comment>Measurement Status</comment>
+				<attribute name="RequestAccessRight" value="1"></attribute>
+				<attribute name="InstancesProgramAccessRight" value="1"></attribute>
+			</variables>
+			<variables name="DeviceStatus" typeName="UINT">
+				<comment>Device Status</comment>
+				<attribute name="RequestAccessRight" value="1"></attribute>
+				<attribute name="InstancesProgramAccessRight" value="1"></attribute>
+			</variables>
+			<variables name="Reserved_2" typeName="UINT">
+				<comment>Reserved 2</comment>
+				<attribute name="RequestAccessRight" value="1"></attribute>
+				<attribute name="InstancesProgramAccessRight" value="1"></attribute>
+			</variables>
+			<variables name="Free3" typeName="ARRAY[0..1] OF BYTE">
+				<comment>Unused Variable</comment>
+				<attribute name="RequestAccessRight" value="1"></attribute>
+				<attribute name="InstancesProgramAccessRight" value="1"></attribute>
+			</variables>
+		</structure>
+	</DDTSource>
+</DDTExchangeFile>

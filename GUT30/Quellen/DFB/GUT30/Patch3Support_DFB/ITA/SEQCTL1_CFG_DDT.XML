@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<DDTExchangeFile>
+	<DDTSource DDTName="SEQCTL1_CFG_DDT" version="8.00" dateTime="dt#2008-05-28-10:38:15">
+		<attribute name="TypeSignatureCheckSumString" value="4D88"></attribute>
+		<structure>
+			<variables name="NSTEP" typeName="INT">
+				<comment>New sequential step (MANUAL mode)</comment>
+			</variables>
+			<variables name="STEPD" typeName="string[122]">
+				<comment>Steps descriptions (6 steps  x (3 characters for step number+17 characters for description)</comment>
+			</variables>
+			<variables name="TRANSD" typeName="string[122]">
+				<comment>Transitions descriptions (6 transitions x 20 characters)</comment>
+			</variables>
+		</structure>
+	</DDTSource>
+</DDTExchangeFile>

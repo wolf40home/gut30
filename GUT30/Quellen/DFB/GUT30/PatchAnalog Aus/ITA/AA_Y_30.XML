@@ -1,0 +1,245 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<FBDExchangeFile>
+	<FBSource nameOfFBType="AA_Y_30" version="11.10" dateTime="dt#2015-11-20-12:30:03">
+		<comment>Baustein : Analogausgabe universell</comment>
+		<attribute name="TypeDescriptiveForm" value="&lt;pre&gt;	&#xA;Allgemein&#xA;Der abgeleitete Funktionsbaustein AA wird genutzt, um die Ausgangs Skalierung für alle Module durchzuführen.&#xA;Der DFB ist wie folgt implementiert:&#xA;Software	Implementiert als	&#xA;Unity Pro	DFB AA	&#xA;Funktionsbeschreibung&#xA;Der Baustein Skaliert einen Ausgangswert in einen Int Wert. &#xA;Fehler Management&#xA;-&#xA;Als zusätzliche Parameter können EN und ENO konfiguriert werden.&#xA;Parameterbeschreibung&#xA;In der folgenden Tabelle sind die Eingangsparameter aufgeführt:&#xA;Parameter	Typ	Kommentar	&#xA;Y	REAL	Stellgröße	&#xA;SKA	REAL	Skalenanfang	&#xA;SKE	REAL	Skalenende	&#xA;RW_A	REAL	Rohwert Anfang	&#xA;RW_E	REAL	Rohwert Ende	&#xA;RW_4mA	BOOL	Min auf 4 mA	&#xA;SV	BOOL	umkehrung der Wirkrichtung	&#xA;&#xA;Die folgende Tabelle beschreibt die Ausgangsparameter:&#xA;Parameter	Typ	Kommentar	&#xA;RW	INT	Rohwert Ausgang	&#xA;STA	WORD	Status Meldung  	&#xA;&#xA;&lt;/pre&gt;"></attribute>
+		<attribute name="TypeProtectionLevel" value="2#0000_0000"></attribute>
+		<attribute name="TypeCodeCheckSumString" value="886F"></attribute>
+		<attribute name="TypeSignatureCheckSumString" value="B089"></attribute>
+		<inputParameters>
+			<variables name="Y" typeName="REAL">
+				<comment>Stellgröße extern</comment>
+				<attribute name="PositionPin" value="1"></attribute>
+			</variables>
+			<variables name="SKA" typeName="REAL">
+				<comment>Skalenanfang von Y</comment>
+				<attribute name="PositionPin" value="3"></attribute>
+				<variableInit value="0"></variableInit>
+			</variables>
+			<variables name="SKE" typeName="REAL">
+				<comment>Skalenende von Y</comment>
+				<attribute name="PositionPin" value="4"></attribute>
+				<variableInit value="100"></variableInit>
+			</variables>
+			<variables name="SV" typeName="BOOL">
+				<comment>Umkehrung AO 1= SV</comment>
+				<attribute name="PositionPin" value="10"></attribute>
+				<variableInit value="0"></variableInit>
+			</variables>
+			<variables name="RW_4mA" typeName="BOOL">
+				<comment>4mA Umschaltung intern</comment>
+				<attribute name="PositionPin" value="8"></attribute>
+				<variableInit value="0"></variableInit>
+			</variables>
+			<variables name="RW_A" typeName="REAL">
+				<comment>Rohwert Skalenanfang</comment>
+				<attribute name="PositionPin" value="6"></attribute>
+				<variableInit value="0"></variableInit>
+			</variables>
+			<variables name="RW_E" typeName="REAL">
+				<comment>Rohwert Skalenende</comment>
+				<attribute name="PositionPin" value="7"></attribute>
+				<variableInit value="16000"></variableInit>
+			</variables>
+		</inputParameters>
+		<outputParameters>
+			<variables name="RW" typeName="INT">
+				<comment>Rohwert</comment>
+				<attribute name="PositionPin" value="6"></attribute>
+			</variables>
+			<variables name="STA" typeName="WORD">
+				<comment>Status</comment>
+				<attribute name="PositionPin" value="9"></attribute>
+			</variables>
+			<variables name="STOER" typeName="BOOL">
+				<comment>Sammelstörung</comment>
+				<attribute name="PositionPin" value="10"></attribute>
+			</variables>
+		</outputParameters>
+		<privateLocalVariables>
+			<variables name="AO_Skalierung" typeName="SCALING"></variables>
+			<variables name="Para" typeName="Para_SCALING"></variables>
+		</privateLocalVariables>
+		<FBProgram name="AA_Universell">
+			<FBDSource nbRows="24" nbColumns="36">
+				<networkFBD>
+					<FFBBlock instanceName="AO_Skalierung" typeName="SCALING" additionnalPinNumber="0" enEnO="false" width="9" height="6">
+						<objPosition posX="7" posY="61"></objPosition>
+						<descriptionFFB execAfter="">
+							<inputVariable invertedPin="false" formalParameter="EN"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN" effectiveParameter="Y"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="PARA" effectiveParameter="Para"></inputVariable>
+							<outputVariable invertedPin="false" formalParameter="ENO"></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="OUT"></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="STATUS" effectiveParameter="STA"></outputVariable>
+						</descriptionFFB>
+					</FFBBlock>
+					<FFBBlock instanceName=".1" typeName="REAL_TO_INT" additionnalPinNumber="0" enEnO="false" width="9" height="5">
+						<objPosition posX="20" posY="61"></objPosition>
+						<descriptionFFB execAfter="">
+							<inputVariable invertedPin="false" formalParameter="EN"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN"></inputVariable>
+							<outputVariable invertedPin="false" formalParameter="ENO"></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="OUT" effectiveParameter="RW"></outputVariable>
+						</descriptionFFB>
+					</FFBBlock>
+					<FFBBlock instanceName=".2" typeName="MOVE" additionnalPinNumber="0" enEnO="false" width="7" height="5">
+						<objPosition posX="14" posY="41"></objPosition>
+						<descriptionFFB execAfter="">
+							<inputVariable invertedPin="false" formalParameter="EN"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN" effectiveParameter="SKA"></inputVariable>
+							<outputVariable invertedPin="false" formalParameter="ENO"></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="OUT" effectiveParameter="para.in_min"></outputVariable>
+						</descriptionFFB>
+					</FFBBlock>
+					<FFBBlock instanceName=".4" typeName="MOVE" additionnalPinNumber="0" enEnO="false" width="7" height="5">
+						<objPosition posX="14" posY="46"></objPosition>
+						<descriptionFFB execAfter="">
+							<inputVariable invertedPin="false" formalParameter="EN"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN" effectiveParameter="SKE"></inputVariable>
+							<outputVariable invertedPin="false" formalParameter="ENO"></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="OUT" effectiveParameter="para.in_max"></outputVariable>
+						</descriptionFFB>
+					</FFBBlock>
+					<FFBBlock instanceName=".5" typeName="MOVE" additionnalPinNumber="0" enEnO="true" width="7" height="5">
+						<objPosition posX="42" posY="27"></objPosition>
+						<descriptionFFB execAfter="">
+							<inputVariable invertedPin="true" formalParameter="EN" effectiveParameter="SV"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN"></inputVariable>
+							<outputVariable invertedPin="false" formalParameter="ENO"></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="OUT" effectiveParameter="para.out_min"></outputVariable>
+						</descriptionFFB>
+					</FFBBlock>
+					<FFBBlock instanceName=".6" typeName="MOVE" additionnalPinNumber="0" enEnO="true" width="7" height="5">
+						<objPosition posX="42" posY="32"></objPosition>
+						<descriptionFFB execAfter="">
+							<inputVariable invertedPin="true" formalParameter="EN" effectiveParameter="SV"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN" effectiveParameter="RW_E"></inputVariable>
+							<outputVariable invertedPin="false" formalParameter="ENO"></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="OUT" effectiveParameter="para.out_max"></outputVariable>
+						</descriptionFFB>
+					</FFBBlock>
+					<FFBBlock instanceName=".7" typeName="MOVE" additionnalPinNumber="0" enEnO="false" width="7" height="5">
+						<objPosition posX="14" posY="54"></objPosition>
+						<descriptionFFB execAfter="">
+							<inputVariable invertedPin="false" formalParameter="EN"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN" effectiveParameter="1"></inputVariable>
+							<outputVariable invertedPin="false" formalParameter="ENO"></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="OUT" effectiveParameter="para.clip"></outputVariable>
+						</descriptionFFB>
+					</FFBBlock>
+					<FFBBlock instanceName=".3" typeName="MOVE" additionnalPinNumber="0" enEnO="true" width="7" height="5">
+						<objPosition posX="42" posY="41"></objPosition>
+						<descriptionFFB execAfter="">
+							<inputVariable invertedPin="false" formalParameter="EN" effectiveParameter="SV"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN" effectiveParameter="RW_E"></inputVariable>
+							<outputVariable invertedPin="false" formalParameter="ENO"></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="OUT" effectiveParameter="para.out_min"></outputVariable>
+						</descriptionFFB>
+					</FFBBlock>
+					<FFBBlock instanceName=".8" typeName="MOVE" additionnalPinNumber="0" enEnO="true" width="7" height="5">
+						<objPosition posX="42" posY="46"></objPosition>
+						<descriptionFFB execAfter="">
+							<inputVariable invertedPin="false" formalParameter="EN" effectiveParameter="SV"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN"></inputVariable>
+							<outputVariable invertedPin="false" formalParameter="ENO"></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="OUT" effectiveParameter="para.out_max"></outputVariable>
+						</descriptionFFB>
+					</FFBBlock>
+					<FFBBlock instanceName=".9" typeName="SEL" additionnalPinNumber="0" enEnO="false" width="7" height="7">
+						<objPosition posX="18" posY="27"></objPosition>
+						<descriptionFFB execAfter="">
+							<inputVariable invertedPin="false" formalParameter="EN"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="G" effectiveParameter="RW_4mA"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN0" effectiveParameter="RW_A"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN1"></inputVariable>
+							<outputVariable invertedPin="false" formalParameter="ENO"></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="OUT"></outputVariable>
+						</descriptionFFB>
+					</FFBBlock>
+					<FFBBlock instanceName=".10" typeName="DIV_REAL" additionnalPinNumber="0" enEnO="false" width="7" height="6">
+						<objPosition posX="6" posY="29"></objPosition>
+						<descriptionFFB execAfter="">
+							<inputVariable invertedPin="false" formalParameter="EN"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN1" effectiveParameter="RW_E"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN2" effectiveParameter="5.0"></inputVariable>
+							<outputVariable invertedPin="false" formalParameter="ENO"></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="OUT"></outputVariable>
+						</descriptionFFB>
+					</FFBBlock>
+					<FFBBlock instanceName=".12" typeName="NE_WORD" additionnalPinNumber="0" enEnO="false" width="7" height="6">
+						<objPosition posX="10" posY="8"></objPosition>
+						<descriptionFFB execAfter="">
+							<inputVariable invertedPin="false" formalParameter="EN"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN1" effectiveParameter="STA"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN2" effectiveParameter="0"></inputVariable>
+							<outputVariable invertedPin="false" formalParameter="ENO"></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="OUT" effectiveParameter="STOER"></outputVariable>
+						</descriptionFFB>
+					</FFBBlock>
+					<linkFB>
+						<linkSource parentObjectName=".9" pinName="OUT">
+							<objPosition posX="24" posY="31"></objPosition>
+						</linkSource>
+						<linkDestination parentObjectName=".8" pinName="IN">
+							<objPosition posX="42" posY="50"></objPosition>
+						</linkDestination>
+						<gridObjPosition posX="34" posY="31"></gridObjPosition>
+						<gridObjPosition posX="34" posY="50"></gridObjPosition>
+					</linkFB>
+					<linkFB>
+						<linkSource parentObjectName=".10" pinName="OUT">
+							<objPosition posX="12" posY="33"></objPosition>
+						</linkSource>
+						<linkDestination parentObjectName=".9" pinName="IN1">
+							<objPosition posX="18" posY="33"></objPosition>
+						</linkDestination>
+					</linkFB>
+					<linkFB>
+						<linkSource parentObjectName="AO_Skalierung" pinName="OUT">
+							<objPosition posX="15" posY="65"></objPosition>
+						</linkSource>
+						<linkDestination parentObjectName=".1" pinName="IN">
+							<objPosition posX="20" posY="65"></objPosition>
+						</linkDestination>
+					</linkFB>
+					<linkFB>
+						<linkSource parentObjectName=".9" pinName="OUT">
+							<objPosition posX="24" posY="31"></objPosition>
+						</linkSource>
+						<linkDestination parentObjectName=".5" pinName="IN">
+							<objPosition posX="42" posY="31"></objPosition>
+						</linkDestination>
+					</linkFB>
+					<textBox width="29" height="14">Eingangsskalierung<objPosition posX="1" posY="38"></objPosition>
+					</textBox>
+					<textBox width="21" height="14">Ausgangsskalierung
+Umkehrung Ausgabe für SV Ventile       
+ VSUM = 1 steigendes Y schliesst<objPosition posX="36" posY="38"></objPosition>
+					</textBox>
+					<textBox width="57" height="2">Universielle Analogausgabe über Integerausgabe , Rohwertausgabe skalierbar , 0-20mA / 4-20mA intern umschaltbar<objPosition posX="0" posY="0"></objPosition>
+					</textBox>
+					<textBox width="29" height="9">Nachbildung Rohwert 4mA.<objPosition posX="1" posY="27"></objPosition>
+					</textBox>
+					<textBox width="35" height="8">Ausgabe  Stellgröße Y  für Analogausgabegruppe ACO....<objPosition posX="1" posY="60"></objPosition>
+					</textBox>
+					<textBox width="21" height="15">Ausgangsskalierung
+Ausgabe für ÖV Ventile       
+VSUM = 0  steigendes Y öffnet<objPosition posX="36" posY="23"></objPosition>
+					</textBox>
+					<textBox width="48" height="10">Bit Wert in Dez. Wert in Hex. ENO-Status Bedeutung 
+Bit 0 = 1 1 0x0001 False Fehler in einer Berechnung mit Gleitkommawerten 
+Bit 1 = 1 2 0x0002 False Erfassung eines unzulässigen Wertes an einem der Gleitkommawerteingänge 
+Bit 2 = 1 4 0x0004 False Division durch Null bei einer Berechnung mit Gleitkommawerten 
+Bit 3 = 1 8 0x0008 False Kapazitätsüberlauf bei einer Berechnung mit Gleitkommawerten 
+Bit 4 = 1 16 0x0010 True Der Clip-Parameter ist auf 1 eingestellt und der Eingang IN liegt außerhalb des Bereichs 
+.                               [in_min, in_max]: zur Berechnung benötigt der Funktionsbaustein den Wert in_min bzw. in_max. 
+Bit 7 = 1 128 0x0080 True Der Parameter in_min ist gleich in_max<objPosition posX="1" posY="68"></objPosition>
+					</textBox>
+					<textBox width="35" height="7">"1": der Wert des Ausgangs OUT ist begrenzt zwischen out_min und out_max.<objPosition posX="1" posY="53"></objPosition>
+					</textBox>
+				</networkFBD>
+			</FBDSource>
+		</FBProgram>
+	</FBSource>
+</FBDExchangeFile>

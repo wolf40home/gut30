@@ -1,0 +1,195 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<FBDExchangeFile>
+	<FBSource nameOfFBType="NS_MESS_30" version="11.10" dateTime="dt#2017-08-08-13:57:59">
+		<comment>Baustein : Strom und Spannung für Abgang</comment>
+		<attribute name="TypeProtectionLevel" value="2#0000_0000"></attribute>
+		<attribute name="TypeCodeCheckSumString" value="FFC3"></attribute>
+		<attribute name="TypeSignatureCheckSumString" value="7C3A"></attribute>
+		<inputParameters>
+			<variables name="E_V1" typeName="INT">
+				<comment>Spannung L1-L2</comment>
+				<attribute name="PositionPin" value="1"></attribute>
+			</variables>
+			<variables name="E_V2" typeName="INT">
+				<comment>Spannung L2-L3</comment>
+				<attribute name="PositionPin" value="2"></attribute>
+			</variables>
+			<variables name="E_V3" typeName="INT">
+				<comment>Spannung L1-L3</comment>
+				<attribute name="PositionPin" value="3"></attribute>
+			</variables>
+			<variables name="E_SL1" typeName="INT">
+				<comment>Strom L1</comment>
+				<attribute name="PositionPin" value="9"></attribute>
+			</variables>
+			<variables name="E_SL2" typeName="INT">
+				<comment>Strom L2</comment>
+				<attribute name="PositionPin" value="10"></attribute>
+			</variables>
+			<variables name="E_SL3" typeName="INT">
+				<comment>Strom L3</comment>
+				<attribute name="PositionPin" value="11"></attribute>
+			</variables>
+			<variables name="E_SKA2" typeName="REAL">
+				<attribute name="PositionPin" value="14"></attribute>
+			</variables>
+			<variables name="E_SKE2" typeName="REAL">
+				<attribute name="PositionPin" value="15"></attribute>
+			</variables>
+			<variables name="E_HZ" typeName="INT">
+				<attribute name="PositionPin" value="17"></attribute>
+			</variables>
+			<variables name="INH_MIN" typeName="WORD">
+				<attribute name="PositionPin" value="18"></attribute>
+			</variables>
+			<variables name="INH_MAX" typeName="WORD">
+				<attribute name="PositionPin" value="19"></attribute>
+			</variables>
+			<variables name="E_SKA3" typeName="REAL">
+				<attribute name="PositionPin" value="20"></attribute>
+			</variables>
+			<variables name="E_SKE3" typeName="REAL">
+				<attribute name="PositionPin" value="21"></attribute>
+			</variables>
+			<variables name="INV_MIN" typeName="WORD">
+				<attribute name="PositionPin" value="4"></attribute>
+			</variables>
+			<variables name="INV_MAX" typeName="WORD">
+				<attribute name="PositionPin" value="5"></attribute>
+			</variables>
+			<variables name="INS_MIN" typeName="WORD">
+				<attribute name="PositionPin" value="12"></attribute>
+			</variables>
+			<variables name="INS_MAX" typeName="WORD">
+				<attribute name="PositionPin" value="13"></attribute>
+			</variables>
+			<variables name="E_SKA1" typeName="REAL">
+				<attribute name="PositionPin" value="6"></attribute>
+			</variables>
+			<variables name="E_SKE1" typeName="REAL">
+				<attribute name="PositionPin" value="7"></attribute>
+			</variables>
+		</inputParameters>
+		<outputParameters>
+			<variables name="V1" typeName="REAL">
+				<attribute name="PositionPin" value="1"></attribute>
+			</variables>
+			<variables name="V2" typeName="REAL">
+				<attribute name="PositionPin" value="2"></attribute>
+			</variables>
+			<variables name="V3" typeName="REAL">
+				<attribute name="PositionPin" value="3"></attribute>
+			</variables>
+			<variables name="S1" typeName="REAL">
+				<attribute name="PositionPin" value="9"></attribute>
+			</variables>
+			<variables name="S2" typeName="REAL">
+				<attribute name="PositionPin" value="10"></attribute>
+			</variables>
+			<variables name="S3" typeName="REAL">
+				<attribute name="PositionPin" value="11"></attribute>
+			</variables>
+			<variables name="HZ" typeName="REAL">
+				<attribute name="PositionPin" value="17"></attribute>
+			</variables>
+		</outputParameters>
+		<privateLocalVariables></privateLocalVariables>
+		<FBProgram name="Mess">
+			<FBDSource nbRows="24" nbColumns="36">
+				<networkFBD>
+					<FFBBlock instanceName=".1" typeName="SCALWTOR" additionnalPinNumber="0" enEnO="false" width="12" height="11">
+						<objPosition posX="21" posY="4"></objPosition>
+						<descriptionFFB execAfter="">
+							<inputVariable invertedPin="false" formalParameter="EN"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="VALUE" effectiveParameter="INT_TO_WORD(E_V1)"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN_MAX" effectiveParameter="INV_MAX"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN_MIN" effectiveParameter="INV_MIN"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="SCALEMAX" effectiveParameter="E_SKE1"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="SCALEMIN" effectiveParameter="E_SKA1"></inputVariable>
+							<outputVariable invertedPin="false" formalParameter="ENO"></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="VALOUT" effectiveParameter="V1"></outputVariable>
+						</descriptionFFB>
+					</FFBBlock>
+					<FFBBlock instanceName=".2" typeName="SCALWTOR" additionnalPinNumber="0" enEnO="false" width="12" height="11">
+						<objPosition posX="21" posY="17"></objPosition>
+						<descriptionFFB execAfter="">
+							<inputVariable invertedPin="false" formalParameter="EN"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="VALUE" effectiveParameter="INT_TO_WORD(E_V2)"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN_MAX" effectiveParameter="INV_MAX"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN_MIN" effectiveParameter="INV_MIN"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="SCALEMAX" effectiveParameter="E_SKE1"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="SCALEMIN" effectiveParameter="E_SKA1"></inputVariable>
+							<outputVariable invertedPin="false" formalParameter="ENO"></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="VALOUT" effectiveParameter="V2"></outputVariable>
+						</descriptionFFB>
+					</FFBBlock>
+					<FFBBlock instanceName=".3" typeName="SCALWTOR" additionnalPinNumber="0" enEnO="false" width="12" height="11">
+						<objPosition posX="21" posY="30"></objPosition>
+						<descriptionFFB execAfter="">
+							<inputVariable invertedPin="false" formalParameter="EN"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="VALUE" effectiveParameter="INT_TO_WORD(E_V3)"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN_MAX" effectiveParameter="INV_MAX"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN_MIN" effectiveParameter="INV_MIN"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="SCALEMAX" effectiveParameter="E_SKE1"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="SCALEMIN" effectiveParameter="E_SKA1"></inputVariable>
+							<outputVariable invertedPin="false" formalParameter="ENO"></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="VALOUT" effectiveParameter="V3"></outputVariable>
+						</descriptionFFB>
+					</FFBBlock>
+					<FFBBlock instanceName=".4" typeName="SCALWTOR" additionnalPinNumber="0" enEnO="false" width="12" height="11">
+						<objPosition posX="21" posY="44"></objPosition>
+						<descriptionFFB execAfter="">
+							<inputVariable invertedPin="false" formalParameter="EN"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="VALUE" effectiveParameter="INT_TO_WORD(E_HZ)"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN_MAX" effectiveParameter="INH_MAX"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN_MIN" effectiveParameter="INH_MIN"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="SCALEMAX" effectiveParameter="E_SKE3"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="SCALEMIN" effectiveParameter="E_SKA3"></inputVariable>
+							<outputVariable invertedPin="false" formalParameter="ENO"></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="VALOUT" effectiveParameter="HZ"></outputVariable>
+						</descriptionFFB>
+					</FFBBlock>
+					<FFBBlock instanceName=".5" typeName="SCALWTOR" additionnalPinNumber="0" enEnO="false" width="12" height="11">
+						<objPosition posX="52" posY="4"></objPosition>
+						<descriptionFFB execAfter="">
+							<inputVariable invertedPin="false" formalParameter="EN"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="VALUE" effectiveParameter="INT_TO_WORD(E_SL1)"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN_MAX" effectiveParameter="INS_MAX"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN_MIN" effectiveParameter="INS_MIN"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="SCALEMAX" effectiveParameter="E_SKE2"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="SCALEMIN" effectiveParameter="E_SKA2"></inputVariable>
+							<outputVariable invertedPin="false" formalParameter="ENO"></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="VALOUT" effectiveParameter="S1"></outputVariable>
+						</descriptionFFB>
+					</FFBBlock>
+					<FFBBlock instanceName=".6" typeName="SCALWTOR" additionnalPinNumber="0" enEnO="false" width="12" height="11">
+						<objPosition posX="52" posY="17"></objPosition>
+						<descriptionFFB execAfter="">
+							<inputVariable invertedPin="false" formalParameter="EN"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="VALUE" effectiveParameter="INT_TO_WORD(E_SL2)"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN_MAX" effectiveParameter="INS_MAX"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN_MIN" effectiveParameter="INS_MIN"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="SCALEMAX" effectiveParameter="E_SKE2"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="SCALEMIN" effectiveParameter="E_SKA2"></inputVariable>
+							<outputVariable invertedPin="false" formalParameter="ENO"></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="VALOUT" effectiveParameter="S2"></outputVariable>
+						</descriptionFFB>
+					</FFBBlock>
+					<FFBBlock instanceName=".7" typeName="SCALWTOR" additionnalPinNumber="0" enEnO="false" width="12" height="11">
+						<objPosition posX="52" posY="31"></objPosition>
+						<descriptionFFB execAfter="">
+							<inputVariable invertedPin="false" formalParameter="EN"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="VALUE" effectiveParameter="INT_TO_WORD(E_SL3)"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN_MAX" effectiveParameter="INS_MAX"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN_MIN" effectiveParameter="INS_MIN"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="SCALEMAX" effectiveParameter="E_SKE2"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="SCALEMIN" effectiveParameter="E_SKA2"></inputVariable>
+							<outputVariable invertedPin="false" formalParameter="ENO"></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="VALOUT" effectiveParameter="S3"></outputVariable>
+						</descriptionFFB>
+					</FFBBlock>
+				</networkFBD>
+			</FBDSource>
+		</FBProgram>
+	</FBSource>
+</FBDExchangeFile>

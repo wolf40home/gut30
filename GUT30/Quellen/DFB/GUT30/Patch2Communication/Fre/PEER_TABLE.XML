@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<DDTExchangeFile xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="DDTExchangeFile.xsd">
+	<DDTSource DDTName="peer_Table" version="1.01" dateTime="dt#2003-07-16-14:30:49">
+		<structure>
+			<variables name="life" typeName="INT"></variables>
+			<variables name="table" typeName="ARRAY[1..31] OF WORD"></variables>
+		</structure>
+	</DDTSource>
+</DDTExchangeFile>

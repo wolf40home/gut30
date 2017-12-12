@@ -1,0 +1,254 @@
+﻿<html>
+	
+<head>
+	<title>AA_PWM_30</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta name="generator" content="HelpNDoc Personal Edition 4.9.2.132">
+	<meta name="keywords" content="">
+	
+	<link type="text/css" rel="stylesheet" media="all" href="../HELP/reset.css" />
+	<link type="text/css" rel="stylesheet" media="all" href="../HELP/base.css" />
+	<link type="text/css" rel="stylesheet" media="all" href="../HELP/hnd.css" />
+	<!--[if lte IE 8]>
+		<link type="text/css" rel="stylesheet" media="all" href="../HELP/ielte8.css" />
+	<![endif]-->
+	<style type="text/css">
+		#topic_header
+		{
+			background-color: #EFEFEF;
+		}
+	</style>
+	<script type="text/javascript">
+		$(document).ready(function()
+		{
+			if (top.frames.length == 0)
+			{
+				var sTopicUrl = top.location.href.substring(top.location.href.lastIndexOf("/") + 1, top.location.href.length);
+				top.location.href = "German UAG Toolbox 30?" + sTopicUrl;
+			}
+			else
+			{
+				var bTocSelected = false;
+				(function waitForTOC()
+				{
+					if (top && top.FrameTOC && top.FrameTOC.SelectTocItem)
+					{
+						top.FrameTOC.SelectTocItem("AA_PWM_30");
+						bTocSelected = true;
+					}
+					if (!bTocSelected) setTimeout(function() { waitForTOC(); }, 300);
+				})();
+			}
+		});
+	</script>
+	
+	</head>
+
+<body>
+
+<div id="topic_header">
+			<div id="topic_header_content">
+				<h1 id="topic_header_text">AA_PWM_30</h1>
+				
+				</div>
+			<div class="clear"></div>
+		</div>
+	<div id="topic_content">
+		
+<p></p>
+<h5 class="rvps8"><a name="bodytext"></a>
+<span class="rvts0"><span class="rvts14">Allgemein</span></span></h5>
+<p class="rvps10"><span class="rvts28">Der abgeleitete Funktionsbaustein AA_PWM_30 wird genutzt, um einen Analogwert in Stellausgänge umzusetzen.</span></p>
+<p class="rvps10"><span class="rvts28">Der DFB ist wie folgt implementiert:</span></p>
+<div class="rvps2"><table width="98%" border="1" cellpadding="2" cellspacing="-1" style="border-width: 0px; border-collapse: collapse;">
+<tr valign="top">
+<td width="43%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; background-color: #f0f0f0;"><p class="rvps10"><span class="rvts29">Software</span></p>
+</td>
+<td width="57%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-left: none; background-color: #f0f0f0;"><p class="rvps10"><span class="rvts29">Implementiert als</span></p>
+</td>
+</tr>
+<tr valign="top">
+<td width="43%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-top: none;"><p class="rvps10"><span class="rvts28">Unity Pro</span></p>
+</td>
+<td width="57%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps10"><span class="rvts28">DFB AA</span></p>
+</td>
+</tr>
+</table>
+</div>
+<h5 class="rvps8"><a name="D-SG-0025894.2"></a>
+<span class="rvts0"><span class="rvts14">Funktionsbeschreibung</span></span></h5>
+<p class="rvps2"><span class="rvts6">Der Funktionsbaustein &nbsp;dient zur Umsetzung von analogen Werten in digitale Ausgangssignale. </span></p>
+<p class="rvps2"><span class="rvts6">Bei der Pulsbreitenmodulation (QPWM) wird bei konstanter Taktperiode ein in seiner Dauer vom Analogwert abhängiges 1-Signal ausgegeben. Die mittlere eingestellte Energie entspricht dem Quotienten aus der Einschaltdauer T_on und der Taktzeit t_period. </span></p>
+<p class="rvps2"><span class="rvts6">Damit die mittlere eingestellte Energie auch der analogen Eingangsgröße IN entspricht, muss folgendes gelten: </span></p>
+<p class="rvps2"><span class="rvts6">T_on ~ IN</span></p>
+<h5 class="rvps8"><span class="rvts0"><span class="rvts14">Allgemeines zur Stellgliedansteuerung </span></span></h5>
+<p class="rvps2"><span class="rvts6">Im Allgemeinen wird die binäre Stellgliedansteuerung durch zwei binäre Signale AP und AN vorgenommen. Bei einem Motor entspricht der Ausgang AP beispielsweise dem Signal "Rechtslauf" und der Ausgang AN dem Signal "Linkslauf". Bei einem Ofen können die Ausgänge AP und AN entsprechend als "Heizen" und "Kühlen" interpretiert werden. </span></p>
+<p class="rvps2"><span class="rvts6"><br/></span></p>
+<h5 class="rvps8"><a name="D-SG-0011302.5"></a>
+<span class="rvts0"><span class="rvts14">Formeln zur Impulslänge für AP und AN </span></span></h5>
+<p class="rvps2"><span class="rvts6">Die Impulslänge T_on für die Ausgänge AP und AN wird nach folgenden Gleichungen bestimmt: </span></p>
+<p class="rvps2"><span class="rvts28"><br/></span></p>
+<div class="rvps2"><table width="98%" border="1" cellpadding="2" cellspacing="-1" style="border-width: 0px; border-collapse: collapse;">
+<tr valign="top">
+<td width="43%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; background-color: #f0f0f0;"><p class="rvps2"><span class="rvts21">Ausgang </span></p>
+</td>
+<td width="57%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-left: none; background-color: #f0f0f0;"><p class="rvps2"><span class="rvts21">Formel</span></p>
+</td>
+<td width="57%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-left: none; background-color: #f0f0f0;"><p class="rvps2"><span class="rvts21">Bedingung </span></p>
+</td>
+</tr>
+<tr valign="top">
+<td width="43%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-top: none;"><p class="rvps10"><span class="rvts28">AP</span></p>
+</td>
+<td width="57%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps10"><img alt="" style="padding : 1px;" src="../HELP/daum_equation_1394819379885.png"></p>
+</td>
+<td width="57%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps10"><span class="rvts28">0&lt;=IN &lt;= IN.Ymax</span></p>
+</td>
+</tr>
+<tr valign="top">
+<td width="43%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-top: none;"><p class="rvps10"><span class="rvts28">AN</span></p>
+</td>
+<td width="57%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps10"><img alt="" style="padding : 1px;" src="../HELP/daum_equation_1394819580620.png"></p>
+</td>
+<td width="57%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps10"><span class="rvts28">0&lt;=IN &lt;= IN.Ymax</span></p>
+</td>
+</tr>
+</table>
+</div>
+<div class="rvps2"><table border="0" cellpadding="0" cellspacing="0" style="border-width: 0px; border-spacing: 0px;">
+<tr valign="top">
+<td width="204" valign="top" style="padding: 0px;"><br/>
+</td>
+<td width="191" valign="top" style="padding: 0px;"><p class="rvps2"><span class="rvts6"> </span></p>
+</td>
+<td width="229" valign="top" style="padding: 0px;"><br/>
+</td>
+</tr>
+<tr valign="top">
+<td width="204" valign="top" style="padding: 0px;"><br/>
+</td>
+<td width="191" valign="top" style="padding: 0px;"><br/>
+</td>
+<td width="229" valign="top" style="padding: 0px;"><br/>
+</td>
+</tr>
+<tr valign="top">
+<td width="204" valign="top" style="padding: 0px;"><br/>
+</td>
+<td width="191" valign="top" style="padding: 0px;"><br/>
+</td>
+<td width="229" valign="top" style="padding: 0px;"><br/>
+</td>
+</tr>
+</table>
+</div>
+<h5 class="rvps8"><a name="D-SG-0011302.9"></a>
+<span class="rvts0"><span class="rvts14">Regeln zur Parametrierung </span></span></h5>
+<p class="rvps2"><span class="rvts6">Für einen ordnungsgemäßen Betrieb ist bei der Parametrierung folgende Regel zu beachten: </span></p>
+<p class="rvps2"><span class="rvts6">t_min ≤ t_period </span></p>
+<p class="rvps2"><span class="rvts6"><br/></span></p>
+<h5 class="rvps8"><a name="D-SG-0025894.7"></a>
+<span class="rvts0"><span class="rvts14">Fehler Management</span></span></h5>
+<h5 class="rvps8"><a name="D-SG-0025894.62"></a>
+<span class="rvts0"><span class="rvts14">Darstellung in FBD</span></span></h5>
+<p class="rvps10"><span class="rvts28">Die Abbildung unten zeigt die Darstellung des DFBs AA in FBD:</span></p>
+<p class="rvps10"><img alt="" style="padding : 1px;" src="../HELP/NeuesElement273.png"></p>
+<p class="rvps10"><span class="rvts28">Als zusätzliche Parameter können EN und ENO &nbsp;konfiguriert werden.</span></p>
+<h5 class="rvps8"><span class="rvts0"><span class="rvts14">Parameterbeschreibung</span></span></h5>
+<p class="rvps10"><span class="rvts28">In der folgenden Tabelle sind die Eingangsparameter aufgeführt:</span></p>
+<div class="rvps7"><table width="98%" border="1" cellpadding="2" cellspacing="-1" style="border-width: 0px; border-collapse: collapse;">
+<tr valign="top">
+<td width="17%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; background-color: #f0f0f0;"><p class="rvps7"><span class="rvts21">Parameter</span></p>
+</td>
+<td width="24%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-left: none; background-color: #f0f0f0;"><p class="rvps7"><span class="rvts21">Typ</span></p>
+</td>
+<td width="59%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-left: none; background-color: #f0f0f0;"><p class="rvps7"><span class="rvts21">Kommentar</span></p>
+</td>
+</tr>
+<tr valign="top">
+<td width="17%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-top: none;"><p class="rvps7"><span class="rvts6">IN</span></p>
+</td>
+<td width="24%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><a class="rvts20" href="REG_OUT.html">REG_OUT</a></p>
+</td>
+<td width="59%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">Stellgröße</span></p>
+</td>
+</tr>
+<tr valign="top">
+<td width="17%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-top: none;"><p class="rvps7"><span class="rvts6">T_PER</span></p>
+</td>
+<td width="24%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">TIME</span></p>
+</td>
+<td width="59%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps2"><span class="rvts6">Periodendauer</span></p>
+</td>
+</tr>
+<tr valign="top">
+<td width="17%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-top: none;"><p class="rvps7"><span class="rvts6">T_MIN</span></p>
+</td>
+<td width="24%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">TIME</span></p>
+</td>
+<td width="59%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps2"><span class="rvts6">Minimalzeit für Stellimpuls</span></p>
+</td>
+</tr>
+</table>
+</div>
+<p class="rvps10"><span class="rvts28"><br/></span></p>
+<p class="rvps10"><span class="rvts28">Die folgende Tabelle beschreibt die Ausgangsparameter:</span></p>
+<div class="rvps7"><table width="98%" border="1" cellpadding="2" cellspacing="-1" style="border-width: 0px; border-collapse: collapse;">
+<tr valign="top">
+<td width="17%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; background-color: #f0f0f0;"><p class="rvps7"><span class="rvts21">Parameter</span></p>
+</td>
+<td width="24%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-left: none; background-color: #f0f0f0;"><p class="rvps7"><span class="rvts21">Typ</span></p>
+</td>
+<td width="59%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-left: none; background-color: #f0f0f0;"><p class="rvps7"><span class="rvts21">Kommentar</span></p>
+</td>
+</tr>
+<tr valign="top">
+<td width="17%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-top: none;"><p class="rvps7"><span class="rvts6">AN und AN_N</span></p>
+</td>
+<td width="24%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">BOOL</span></p>
+</td>
+<td width="59%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">negativer Ausgang (_N Negiert)</span></p>
+</td>
+</tr>
+<tr valign="top">
+<td width="17%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-top: none;"><p class="rvps7"><span class="rvts6">AP und AP_N</span></p>
+</td>
+<td width="24%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">BOOL</span></p>
+</td>
+<td width="59%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">positiver Ausgang (_N Negiert)</span></p>
+</td>
+</tr>
+</table>
+</div>
+<h5 class="rvps8"><span class="rvts0"><span class="rvts14">Detailbeschreibung</span></span></h5>
+<h5 class="rvps8"><span class="rvts0"><span class="rvts14">Arbeitsweise des Bausteins </span></span></h5>
+<p class="rvps2"><span class="rvts6">Die Periodendauer legt die Zeit fest, in welcher die Stellimpulse (1-Signal am Ausgang AN bzw. AP) regelmäßig, d.h. im konstanten Zeitraster, ausgegeben werden. </span></p>
+<p class="rvps2"><span class="rvts6">Der Parameter t_min gibt die minimale Impulslänge an, d.h. die Zeitdauer, die der Ausgang AP bzw. der Ausgang AN minimal 1-Signal besitzen soll. Ist die nach der Gleichung im Abschnitt </span><span class="rvts6">Formeln zur Impulslänge für OUT_POS und OUT_NEG</span><span class="rvts6"> berechnete Impulsdauer kleiner als t_min, so wird für die gesamte Periode kein Impuls ausgegeben. </span></p>
+<h5 class="rvps8"><a name="D-SG-0011303.3"></a>
+<span class="rvts0"><span class="rvts14">Darstellung der Zeitverhältnisse </span></span></h5>
+<p class="rvps2"><span class="rvts6">Ein Verhältnis der Zeiten zueinander zeigt folgendes Bild: </span></p>
+<p class="rvps2"><img alt="" style="padding : 1px;" src="../HELP/NeuesElement16.png"></p>
+<p class="rvps2"><span class="rvts6">1 Variable Einschaltzeit </span></p>
+<p class="rvps2"><span class="rvts6">Der Parameter in_max kennzeichnet den Punkt der Eingangsgröße IN, bei welcher der Ausgang AP bei positiver Eingangsgröße IN ständig 1-Signal liefern würde. </span></p>
+<p class="rvps2"><a name="D-SG-0011303.4"></a>
+<span class="rvts39">Abhängigkeit der Zeitdauer</span><span class="rvts6"> </span></p>
+<p class="rvps2"><span class="rvts6">Die Abhängigkeit der Zeitdauer, in welcher der Ausgang OUT_POS (OUT_NEG) 1-Signal hat, zu der Eingangsgröße IN zeigt das folgende Bild: </span></p>
+<p class="rvps2"><img alt="" style="padding : 1px;" src="../HELP/NeuesElement17.png"></p>
+<p class="rvps2"><span class="rvts6">. </span></p>
+<p class="rvps2"><a name="D-SG-0011303.6"></a>
+<span class="rvts6">Randbedingungen </span></p>
+<p class="rvps2"><span class="rvts6">Wird der Baustein zusammen mit einem PID-Regler betrieben, so sollte die Periodendauer t_period so gewählt werden, daß sie der Abtastzeit des PID-Reglers entspricht. Dann ist nämlich gewährleistet, daß jedes neue Stellsignal vom PID-Regler innerhalb der Periodendauer vollständig bearbeitet werden kann. </span></p>
+<p class="rvps2"><span class="rvts6">Die Abtastzeit des Baustein sollte danach gewählt werden, wie fein die Impulszeit zur Periodendauer steht. Durch sie wird der minimal mögliche Stellimpuls festgelegt. </span></p>
+<p class="rvps2"><span class="rvts6"><br/></span></p>
+<p></p>
+</div>
+	
+	<div id="topic_footer">
+
+			<div id="topic_footer_content">
+				Copyright &copy; 2010 -2016, Schneider Electric. Alle Rechte vorbehalten.</div>
+		</div>
+	</body>
+	
+</html>
+

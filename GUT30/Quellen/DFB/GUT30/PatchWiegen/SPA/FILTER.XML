@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<DDTExchangeFile>
+	<DDTSource DDTName="FILTER" version="8.00" dateTime="dt#2010-05-25-09:09:42">
+		<comment>Datenstruktur: ISPY101 Filter</comment>
+		<attribute name="TypeSignatureCheckSumString" value="174B"></attribute>
+		<array>ARRAY[1..4] OF INT</array>
+	</DDTSource>
+</DDTExchangeFile>

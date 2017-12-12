@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<DDTExchangeFile>
+	<DDTSource DDTName="T_SCAIME_FILTERING_PARAMS_30" version="0.07" dateTime="dt#2014-12-10-14:46:32">
+		<attribute name="TypeSignatureCheckSumString" value="9263"></attribute>
+		<structure>
+			<variables name="AD_Converter_Settings" typeName="UINT">
+				<comment>Parameter ID: 1017 Access : R/W (see in device user manual/help file for bit fields details)</comment>
+			</variables>
+			<variables name="Low_Pass_Order" typeName="UINT">
+				<comment>Parameter ID: 1018 Access : R/W (values supported 0 : filter disable, 2 : order 2 and 3 : order 3)</comment>
+			</variables>
+			<variables name="Low_Pass_CutOff_Frequency" typeName="REAL">
+				<comment>Parameter ID: 1019 Access : R/W (values supported form 0.1Hz up to 200.0Hz)</comment>
+			</variables>
+			<variables name="Mean_Filter_Depth" typeName="UINT">
+				<comment>Parameter ID: 1020 Access : R/W (values supported see in user manual/help file)</comment>
+			</variables>
+			<variables name="Flow_Filter_Depth" typeName="UINT">
+				<comment>Parameter ID: 1021 Access : R/W (values supported see in user manual/help file)</comment>
+			</variables>
+			<variables name="Flow_Time_Unit" typeName="string[2]">
+				<comment>Parameter ID: 1022 Access : R/W (values supported s : second, mn : minutes and h : hours)</comment>
+			</variables>
+		</structure>
+	</DDTSource>
+</DDTExchangeFile>

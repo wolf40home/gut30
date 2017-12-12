@@ -1,0 +1,273 @@
+﻿<html>
+	
+<head>
+	<title>STOERMELD_30</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta name="generator" content="HelpNDoc Personal Edition 4.9.2.132">
+	<meta name="keywords" content="">
+	
+	<link type="text/css" rel="stylesheet" media="all" href="../HELP/reset.css" />
+	<link type="text/css" rel="stylesheet" media="all" href="../HELP/base.css" />
+	<link type="text/css" rel="stylesheet" media="all" href="../HELP/hnd.css" />
+	<!--[if lte IE 8]>
+		<link type="text/css" rel="stylesheet" media="all" href="../HELP/ielte8.css" />
+	<![endif]-->
+	<style type="text/css">
+		#topic_header
+		{
+			background-color: #EFEFEF;
+		}
+	</style>
+	<script type="text/javascript">
+		$(document).ready(function()
+		{
+			if (top.frames.length == 0)
+			{
+				var sTopicUrl = top.location.href.substring(top.location.href.lastIndexOf("/") + 1, top.location.href.length);
+				top.location.href = "German UAG Toolbox 30.htm?" + sTopicUrl;
+			}
+			else
+			{
+				var bTocSelected = false;
+				(function waitForTOC()
+				{
+					if (top && top.FrameTOC && top.FrameTOC.SelectTocItem)
+					{
+						top.FrameTOC.SelectTocItem("STOERMELD_30");
+						bTocSelected = true;
+					}
+					if (!bTocSelected) setTimeout(function() { waitForTOC(); }, 300);
+				})();
+			}
+		});
+	</script>
+	
+	</head>
+
+<body>
+
+<div id="topic_header">
+			<div id="topic_header_content">
+				<h1 id="topic_header_text">STOERMELD_30</h1>
+				
+				</div>
+			<div class="clear"></div>
+		</div>
+	<div id="topic_content">
+		
+<p></p>
+<h5 class="rvps8"><a name="bodytext"></a>
+<span class="rvts0"><span class="rvts14">Allgemein</span></span></h5>
+<p class="rvps2"><span class="rvts6">Der abgeleitete Funktionsbaustein &nbsp;STOERMELD_30 wird genutzt, um die Fehlermeldungen am Eingang auf ein WORD abzubilden und an Archestra zu Melden.</span><br/><span class="rvts6"><br/></span></p>
+<p class="rvps2"><span class="rvts6">Der DFB ist wie folgt implementiert:</span></p>
+<div class="rvps2"><table width="98%" border="1" cellpadding="2" cellspacing="-1" style="border-width: 0px; border-collapse: collapse;">
+<tr valign="top">
+<td width="43%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; background-color: #f0f0f0;"><p class="rvps10"><span class="rvts24">Software</span></p>
+</td>
+<td width="57%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-left: none; background-color: #f0f0f0;"><p class="rvps10"><span class="rvts24">Implementiert als</span></p>
+</td>
+</tr>
+<tr valign="top">
+<td width="43%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-top: none;"><p class="rvps10"><span class="rvts18">Unity Pro</span></p>
+</td>
+<td width="57%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps10"><span class="rvts18">DFB &nbsp;STOERMELD_30</span></p>
+</td>
+</tr>
+</table>
+</div>
+<h5 class="rvps8"><a name="D-SG-0025894.2"></a>
+<span class="rvts0"><span class="rvts14">Funktionsbeschreibung</span></span></h5>
+<p class="rvps2"><span class="rvts6">Der Baustein arbeitet wie ein BIT_TO_DINT</span></p>
+<p class="rvps2"><span class="rvts6"><br/></span></p>
+<h5 class="rvps8"><a name="D-SG-0025894.7"></a>
+<span class="rvts0"><span class="rvts14">Fehler Management</span></span></h5>
+<h5 class="rvps8"><a name="D-SG-0025894.62"></a>
+<span class="rvts0"><span class="rvts14">Darstellung in FBD</span></span></h5>
+<p class="rvps2"><span class="rvts6">Die Abbildung unten zeigt die Darstellung des DFBs &nbsp;in FBD:</span></p>
+<p class="rvps2"><img alt="" style="padding : 1px;" src="../HELP/NeuesElement56.png"></p>
+<p class="rvps2"><span class="rvts6">Als zusätzliche Parameter können EN und ENQ &nbsp;konfiguriert werden.</span></p>
+<h5 class="rvps8"><span class="rvts0"><span class="rvts14">Parameterbeschreibung</span></span></h5>
+<p class="rvps2"><span class="rvts6">In der folgenden Tabelle sind die Eingangsparameter aufgeführt:</span></p>
+<div class="rvps7"><table width="98%" border="1" cellpadding="2" cellspacing="-1" style="border-width: 0px; border-collapse: collapse;">
+<tr valign="top">
+<td width="17%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; background-color: #f0f0f0;"><p class="rvps7"><span class="rvts21">Parameter</span></p>
+</td>
+<td width="24%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-left: none; background-color: #f0f0f0;"><p class="rvps7"><span class="rvts21">Typ</span></p>
+</td>
+<td width="59%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-left: none; background-color: #f0f0f0;"><p class="rvps7"><span class="rvts21">Kommentar</span></p>
+</td>
+</tr>
+<tr valign="top">
+<td width="17%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-top: none;"><p class="rvps7"><span class="rvts6">S01 - 14</span></p>
+</td>
+<td width="24%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">BOOL</span></p>
+</td>
+<td width="59%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">Melde Eingang</span></p>
+</td>
+</tr>
+<tr valign="top">
+<td width="17%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-top: none;"><p class="rvps7"><span class="rvts6">SQ</span></p>
+</td>
+<td width="24%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">BOOL</span></p>
+</td>
+<td width="59%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">Störung Quittieren</span></p>
+</td>
+</tr>
+<tr valign="top">
+<td width="17%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-top: none;"><p class="rvps7"><span class="rvts6">ALARM_TYP</span></p>
+</td>
+<td width="24%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><a class="rvts20" href="TYPVG_UNI.htm">TYPVG_UNI</a></p>
+</td>
+<td width="59%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">Vorgabe für Alarme</span></p>
+</td>
+</tr>
+<tr valign="top">
+<td width="17%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-top: none;"><p class="rvps7"><span class="rvts6">TYPVG_W</span></p>
+</td>
+<td width="24%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><a class="rvts20" href="TYPVG_UNI.htm">TYPVG_UNI</a></p>
+</td>
+<td width="59%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">Vorgabe für Warnungen</span></p>
+</td>
+</tr>
+<tr valign="top">
+<td width="17%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-top: none;"><p class="rvps7"><span class="rvts6">NEG</span></p>
+</td>
+<td width="24%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><a class="rvts20" href="TYPVG_UNI.htm">TYPVG_UNI</a></p>
+</td>
+<td width="59%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">Negation der Eingänge</span></p>
+</td>
+</tr>
+<tr valign="top">
+<td width="17%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-top: none;"><p class="rvps7"><span class="rvts6">ASP_E</span></p>
+</td>
+<td width="24%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">BOOL</span></p>
+</td>
+<td width="59%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">Alarmsperre SPS</span></p>
+</td>
+</tr>
+<tr valign="top">
+<td width="17%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-top: none;"><p class="rvps7"><span class="rvts6">ASPA_E</span></p>
+</td>
+<td width="24%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">BOOL</span></p>
+</td>
+<td width="59%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">Alarmsperre SPS Sammelalarm</span></p>
+</td>
+</tr>
+</table>
+</div>
+<p class="rvps10"><span class="rvts18"><br/></span></p>
+<p class="rvps10"><span class="rvts18">Die folgende Tabelle beschreibt die Ausgangsparameter:</span></p>
+<div class="rvps7"><table width="98%" border="1" cellpadding="2" cellspacing="-1" style="border-width: 0px; border-collapse: collapse;">
+<tr valign="top">
+<td width="17%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; background-color: #f0f0f0;"><p class="rvps7"><span class="rvts21">Parameter</span></p>
+</td>
+<td width="24%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-left: none; background-color: #f0f0f0;"><p class="rvps7"><span class="rvts21">Typ</span></p>
+</td>
+<td width="59%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-left: none; background-color: #f0f0f0;"><p class="rvps7"><span class="rvts21">Kommentar</span></p>
+</td>
+</tr>
+<tr valign="top">
+<td width="17%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-top: none;"><p class="rvps7"><span class="rvts6">S01_A 14</span></p>
+</td>
+<td width="24%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">BOOL</span></p>
+</td>
+<td width="59%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">Ausgang Meldung</span></p>
+</td>
+</tr>
+<tr valign="top">
+<td width="17%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-top: none;"><p class="rvps7"><span class="rvts6">M</span></p>
+</td>
+<td width="24%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">WORD</span></p>
+</td>
+<td width="59%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">Meldewort</span></p>
+</td>
+</tr>
+<tr valign="top">
+<td width="17%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-top: none;"><p class="rvps7"><span class="rvts6">SQ_Akt</span></p>
+</td>
+<td width="24%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">BOOL</span></p>
+</td>
+<td width="59%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">Quittierung Aktiv</span></p>
+</td>
+</tr>
+<tr valign="top">
+<td width="17%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-top: none;"><p class="rvps7"><span class="rvts6">FMA</span></p>
+</td>
+<td width="24%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">BOOL</span></p>
+</td>
+<td width="59%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">Sammelalarm</span></p>
+</td>
+</tr>
+<tr valign="top">
+<td width="17%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-top: none;"><p class="rvps7"><span class="rvts6">FMW</span></p>
+</td>
+<td width="24%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">BOOL</span></p>
+</td>
+<td width="59%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">Sammelmeldung</span></p>
+</td>
+</tr>
+<tr valign="top">
+<td width="17%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-top: none;"><p class="rvps7"><span class="rvts6">ASP</span></p>
+</td>
+<td width="24%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">BOOL</span></p>
+</td>
+<td width="59%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">Alarmsperre</span></p>
+</td>
+</tr>
+</table>
+</div>
+<p class="rvps7"><span class="rvts12"><br/></span></p>
+<p class="rvps10"><span class="rvts18">In der folgenden Tabelle werden die Eingangs-/Ausgangsparameter beschrieben:</span></p>
+<div class="rvps7"><table width="98%" border="1" cellpadding="2" cellspacing="-1" style="border-width: 0px; border-collapse: collapse;">
+<tr valign="top">
+<td width="17%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; background-color: #f0f0f0;"><p class="rvps7"><span class="rvts21">Parameter</span></p>
+</td>
+<td width="24%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-left: none; background-color: #f0f0f0;"><p class="rvps7"><span class="rvts21">Typ</span></p>
+</td>
+<td width="59%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-left: none; background-color: #f0f0f0;"><p class="rvps7"><span class="rvts21">Kommentar</span></p>
+</td>
+</tr>
+<tr valign="top">
+<td width="17%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-top: none;"><p class="rvps7"><span class="rvts6">LW</span></p>
+</td>
+<td width="24%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">WORD</span></p>
+</td>
+<td width="59%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">Leitwort des Bausteins. </span></p>
+<div class="rvps7"><table width="98%" border="1" cellpadding="2" cellspacing="-1" style="border-width: 0px; border-collapse: collapse;">
+<tr valign="top">
+<td width="17%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; background-color: #f0f0f0;"><p class="rvps7"><span class="rvts6">Bit</span></p>
+</td>
+<td width="59%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-left: none; background-color: #f0f0f0;"><p class="rvps7"><span class="rvts6">Kommentar</span></p>
+</td>
+</tr>
+<tr valign="top">
+<td width="17%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-top: none;"><p class="rvps7"><span class="rvts6">B2</span></p>
+</td>
+<td width="59%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">Alarmsperre ein/aus</span></p>
+</td>
+</tr>
+<tr valign="top">
+<td width="17%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-top: none;"><p class="rvps7"><span class="rvts6">B14</span></p>
+</td>
+<td width="59%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">Einzelquittierung</span></p>
+</td>
+</tr>
+</table>
+</div>
+</td>
+</tr>
+</table>
+</div>
+<p></p>
+<p class="rvps9"><span class="rvts15">Mit dem Personal Edition von HelpNDoc erstellt: </span><a class="rvts16" href="http://www.helpndoc.com/de">Kostenloser Qt Help-Dokumentationsgenerator</a></p>
+</div>
+	
+	<div id="topic_footer">
+
+			<div id="topic_footer_content">
+				Copyright &copy; 2010 -2016, Schneider Electric. Alle Rechte vorbehalten.</div>
+		</div>
+	</body>
+	
+</html>
+

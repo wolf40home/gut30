@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<DDTExchangeFile>
+	<DDTSource DDTName="CONDSUM_ST_DDT" version="8.00" dateTime="dt#2008-05-28-08:40:36">
+		<attribute name="TypeSignatureCheckSumString" value="ED93"></attribute>
+		<structure>
+			<variables name="CONDW" typeName="WORD">
+				<comment>Condition word</comment>
+			</variables>
+			<variables name="BYPASSW" typeName="WORD">
+				<comment>Bypass word</comment>
+			</variables>
+			<variables name="REARMREQW" typeName="WORD">
+				<comment>Rearm Required word</comment>
+			</variables>
+		</structure>
+	</DDTSource>
+</DDTExchangeFile>

@@ -1,0 +1,334 @@
+﻿<html>
+	
+<head>
+	<title>AA_30</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta name="generator" content="HelpNDoc Personal Edition 4.9.2.132">
+	<meta name="keywords" content="AA  - Beschreibung">
+	
+	<link type="text/css" rel="stylesheet" media="all" href="../HELP/reset.css" />
+	<link type="text/css" rel="stylesheet" media="all" href="../HELP/base.css" />
+	<link type="text/css" rel="stylesheet" media="all" href="../HELP/hnd.css" />
+	<!--[if lte IE 8]>
+		<link type="text/css" rel="stylesheet" media="all" href="../HELP/ielte8.css" />
+	<![endif]-->
+	<style type="text/css">
+		#topic_header
+		{
+			background-color: #EFEFEF;
+		}
+	</style>
+	<script type="text/javascript">
+		$(document).ready(function()
+		{
+			if (top.frames.length == 0)
+			{
+				var sTopicUrl = top.location.href.substring(top.location.href.lastIndexOf("/") + 1, top.location.href.length);
+				top.location.href = "German UAG Toolbox 30?" + sTopicUrl;
+			}
+			else
+			{
+				var bTocSelected = false;
+				(function waitForTOC()
+				{
+					if (top && top.FrameTOC && top.FrameTOC.SelectTocItem)
+					{
+						top.FrameTOC.SelectTocItem("AA_30");
+						bTocSelected = true;
+					}
+					if (!bTocSelected) setTimeout(function() { waitForTOC(); }, 300);
+				})();
+			}
+		});
+	</script>
+	
+	</head>
+
+<body>
+
+<div id="topic_header">
+			<div id="topic_header_content">
+				<h1 id="topic_header_text">AA_30</h1>
+				
+				</div>
+			<div class="clear"></div>
+		</div>
+	<div id="topic_content">
+		
+<p></p>
+<p class="rvps6"><a name="bodytext"></a>
+<span class="rvts12">Allgemein</span></p>
+<p class="rvps10"><span class="rvts28">Der abgeleitete Funktionsbaustein AA wird genutzt, um die Ausgangs Skalierung für alle Module durchzuführen.</span></p>
+<p class="rvps10"><span class="rvts28">Der DFB ist wie folgt implementiert:</span></p>
+<div class="rvps2"><table width="98%" border="1" cellpadding="2" cellspacing="-1" style="border-width: 0px; border-collapse: collapse;">
+<tr valign="top">
+<td width="43%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; background-color: #f0f0f0;"><p class="rvps10"><span class="rvts29">Software</span></p>
+</td>
+<td width="57%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-left: none; background-color: #f0f0f0;"><p class="rvps10"><span class="rvts29">Implementiert als</span></p>
+</td>
+</tr>
+<tr valign="top">
+<td width="43%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-top: none;"><p class="rvps10"><span class="rvts28">Unity Pro</span></p>
+</td>
+<td width="57%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps10"><span class="rvts28">DFB AA</span></p>
+</td>
+</tr>
+</table>
+</div>
+<p class="rvps6"><a name="D-SG-0025894.2"></a>
+<span class="rvts12">Funktionsbeschreibung</span></p>
+<p class="rvps10"><span class="rvts28">Der Baustein Skaliert einen Ausgangswert in einen Int Wert. </span></p>
+<p class="rvps6"><a name="D-SG-0025894.7"></a>
+<span class="rvts12">Fehler Management</span></p>
+<p class="rvps6"><span class="rvts12">-</span><a name="D-SG-0025894.62"></a>
+<span class="rvts12">Darstellung in FBD</span></p>
+<p class="rvps10"><span class="rvts28">Die Abbildung unten zeigt die Darstellung des DFBs AA in FBD:</span></p>
+<p class="rvps10"><img alt="" style="padding : 1px;" src="../HELP/NeuesElement271.png"></p>
+<p class="rvps10"><span class="rvts28">Als zusätzliche Parameter können EN und ENO &nbsp;konfiguriert werden.</span></p>
+<p class="rvps6"><span class="rvts12">Parameterbeschreibung</span></p>
+<p class="rvps10"><span class="rvts28">In der folgenden Tabelle sind die Eingangsparameter aufgeführt:</span></p>
+<div class="rvps7"><table width="98%" border="1" cellpadding="2" cellspacing="-1" style="border-width: 0px; border-collapse: collapse;">
+<tr valign="top">
+<td width="17%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; background-color: #f0f0f0;"><p class="rvps7"><span class="rvts21">Parameter</span></p>
+</td>
+<td width="24%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-left: none; background-color: #f0f0f0;"><p class="rvps7"><span class="rvts21">Typ</span></p>
+</td>
+<td width="59%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-left: none; background-color: #f0f0f0;"><p class="rvps7"><span class="rvts21">Kommentar</span></p>
+</td>
+</tr>
+<tr valign="top">
+<td width="17%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-top: none;"><p class="rvps7"><span class="rvts6">IN</span></p>
+</td>
+<td width="24%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">REG_OUT</span></p>
+</td>
+<td width="59%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">Stellgröße</span></p>
+</td>
+</tr>
+<tr valign="top">
+<td width="17%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-top: none;"><p class="rvps7"><span class="rvts6">RW_A</span></p>
+</td>
+<td width="24%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">REAL</span></p>
+</td>
+<td width="59%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">Rohwert Anfang</span></p>
+</td>
+</tr>
+<tr valign="top">
+<td width="17%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-top: none;"><p class="rvps7"><span class="rvts6">RW_E</span></p>
+</td>
+<td width="24%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">REAL</span></p>
+</td>
+<td width="59%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">Rohwert Ende</span></p>
+</td>
+</tr>
+<tr valign="top">
+<td width="17%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-top: none;"><p class="rvps7"><span class="rvts6">RW_4mA</span></p>
+</td>
+<td width="24%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">BOOL</span></p>
+</td>
+<td width="59%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">Min auf 4 mA</span></p>
+</td>
+</tr>
+<tr valign="top">
+<td width="17%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-top: none;"><p class="rvps7"><span class="rvts6">SV</span></p>
+</td>
+<td width="24%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">BOOL</span></p>
+</td>
+<td width="59%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">umkehrung der Wirkrichtung</span></p>
+</td>
+</tr>
+</table>
+</div>
+<p class="rvps10"><span class="rvts28"><br/></span></p>
+<p class="rvps10"><span class="rvts28">Die folgende Tabelle beschreibt die Ausgangsparameter:</span></p>
+<div class="rvps7"><table width="98%" border="1" cellpadding="2" cellspacing="-1" style="border-width: 0px; border-collapse: collapse;">
+<tr valign="top">
+<td width="17%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; background-color: #f0f0f0;"><p class="rvps7"><span class="rvts21">Parameter</span></p>
+</td>
+<td width="24%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-left: none; background-color: #f0f0f0;"><p class="rvps7"><span class="rvts21">Typ</span></p>
+</td>
+<td width="59%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-left: none; background-color: #f0f0f0;"><p class="rvps7"><span class="rvts21">Kommentar</span></p>
+</td>
+</tr>
+<tr valign="top">
+<td width="17%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-top: none;"><p class="rvps7"><span class="rvts6">RW</span></p>
+</td>
+<td width="24%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">INT</span></p>
+</td>
+<td width="59%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">Rohwert Ausgang</span></p>
+</td>
+</tr>
+<tr valign="top">
+<td width="17%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-top: none;"><p class="rvps7"><span class="rvts6">STA</span></p>
+</td>
+<td width="24%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">WORD</span></p>
+</td>
+<td width="59%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">Status Meldung </span></p>
+<div class="rvps7"><table width="98%" border="1" cellpadding="2" cellspacing="-1" style="border-width: 0px; border-collapse: collapse;">
+<tr valign="top">
+<td width="17%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; background-color: #f0f0f0;"><p class="rvps7"><span class="rvts21">Bit</span></p>
+</td>
+<td width="59%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-left: none; background-color: #f0f0f0;"><p class="rvps7"><span class="rvts21">Kommentar</span></p>
+</td>
+</tr>
+<tr valign="top">
+<td width="17%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-top: none;"><p class="rvps7"><span class="rvts6">B0</span></p>
+</td>
+<td width="59%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">Fehler in einer Berechnung mit Gleitkommawerten</span></p>
+</td>
+</tr>
+<tr valign="top">
+<td width="17%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-top: none;"><p class="rvps7"><span class="rvts6">B1</span></p>
+</td>
+<td width="59%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">Erfassung eines unzulässigen Wertes an einem der Gleitkommawerteingänge</span></p>
+</td>
+</tr>
+<tr valign="top">
+<td width="17%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-top: none;"><p class="rvps7"><span class="rvts6">B2</span></p>
+</td>
+<td width="59%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">Division durch Null bei einer Berechnung mit Gleitkommawerten </span></p>
+</td>
+</tr>
+<tr valign="top">
+<td width="17%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-top: none;"><p class="rvps7"><span class="rvts6">B3</span></p>
+</td>
+<td width="59%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">False Kapazitätsüberlauf bei einer Berechnung mit Gleitkommawerten</span></p>
+</td>
+</tr>
+<tr valign="top">
+<td width="17%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-top: none;"><p class="rvps7"><span class="rvts6">B4</span></p>
+</td>
+<td width="59%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">Der Clip-Parameter ist auf 1 eingestellt und der Eingang IN liegt außerhalb des Bereichs &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;[in_min, in_max]: zur Berechnung benötigt der Funktionsbaustein den Wert in_min bzw. in_max. </span></p>
+</td>
+</tr>
+<tr valign="top">
+<td width="17%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-top: none;"><p class="rvps7"><span class="rvts6">B7</span></p>
+</td>
+<td width="59%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">Der Parameter in_min ist gleich in_max</span></p>
+</td>
+</tr>
+</table>
+</div>
+</td>
+</tr>
+<tr valign="top">
+<td width="17%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-top: none;"><p class="rvps7"><span class="rvts6">STOER</span></p>
+</td>
+<td width="24%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">BOOL</span></p>
+</td>
+<td width="59%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">Sammelstörung</span></p>
+</td>
+</tr>
+</table>
+</div>
+<p class="rvps2"><span class="rvts28"><br/></span></p>
+<p class="rvps2"><span class="rvts28">Parametrierung der Rohwerte</span></p>
+<div class="rvps7"><table width="98%" border="1" cellpadding="2" cellspacing="-1" style="border-width: 0px; border-collapse: collapse;">
+<tr valign="top">
+<td width="30%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; background-color: #f0f0f0;"><p class="rvps7"><span class="rvts21">Karte</span></p>
+</td>
+<td width="24%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-left: none; background-color: #f0f0f0;"><p class="rvps7"><span class="rvts21">Parameter</span></p>
+</td>
+<td width="59%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-left: none; background-color: #f0f0f0;"><p class="rvps7"><span class="rvts21">Wert</span></p>
+</td>
+</tr>
+<tr valign="top">
+<td rowspan="4" width="30%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-top: none;"><p class="rvps7"><span class="rvts6">Ausgangskarte DAU</span></p>
+</td>
+<td width="24%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">Rohwert SKA</span></p>
+</td>
+<td width="59%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">RW_A = 0</span></p>
+</td>
+</tr>
+<tr valign="top">
+<td width="24%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">Rohwert SKE</span></p>
+</td>
+<td width="59%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">RW_E = 32000</span></p>
+<p class="rvps7"><span class="rvts6"><br/></span></p>
+</td>
+</tr>
+<tr valign="top">
+<td width="24%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">bei 0 -20 mA - Schalter</span></p>
+</td>
+<td width="59%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">RW_4mA = 0</span></p>
+</td>
+</tr>
+<tr valign="top">
+<td width="24%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">bei 4 -20 mA - Schalter</span></p>
+</td>
+<td width="59%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">RW_4mA = 1</span></p>
+</td>
+</tr>
+<tr valign="top">
+<td width="30%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-top: none;"><p class="rvps7"><span class="rvts6">Ausgangskarte ACO…Karteneinstellung 4-20mA</span></p>
+</td>
+<td colspan="2" width="83%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><div class="rvps7"><table width="98%" border="1" cellpadding="2" cellspacing="-1" style="border-width: 0px; border-collapse: collapse;">
+<tr valign="top">
+<td width="29%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">Rohwert SKA</span></p>
+</td>
+<td width="74%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">RW_A = 0</span></p>
+</td>
+</tr>
+<tr valign="top">
+<td width="29%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">Rohwert SKE</span></p>
+</td>
+<td width="74%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">RW_E = 16000</span></p>
+<p class="rvps7"><span class="rvts6"><br/></span></p>
+</td>
+</tr>
+<tr valign="top">
+<td width="29%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">bei 0 -20 mA - Schalter</span></p>
+</td>
+<td width="74%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">RW_4mA = 0</span></p>
+</td>
+</tr>
+</table>
+</div>
+</td>
+</tr>
+<tr valign="top">
+<td width="30%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-top: none;"><p class="rvps7"><span class="rvts6">Ausgangskarte ACO…Karteneinstellung 0-20mA</span></p>
+</td>
+<td colspan="2" width="83%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><div class="rvps7"><table width="98%" border="1" cellpadding="2" cellspacing="-1" style="border-width: 0px; border-collapse: collapse;">
+<tr valign="top">
+<td width="29%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">Rohwert SKA</span></p>
+</td>
+<td width="74%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">RW_A = 0</span></p>
+</td>
+</tr>
+<tr valign="top">
+<td width="29%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">Rohwert SKE</span></p>
+</td>
+<td width="74%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">RW_E = 20000</span></p>
+<p class="rvps7"><span class="rvts6"><br/></span></p>
+</td>
+</tr>
+<tr valign="top">
+<td width="29%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">bei 0 -20 mA - Schalter</span></p>
+</td>
+<td width="74%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">RW_4mA = 0</span></p>
+</td>
+</tr>
+<tr valign="top">
+<td width="29%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6"> bei 4 -20 mA - Schalter</span></p>
+</td>
+<td width="74%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">RW_4mA = 1</span></p>
+</td>
+</tr>
+</table>
+</div>
+</td>
+</tr>
+</table>
+</div>
+<p></p>
+</div>
+	
+	<div id="topic_footer">
+
+			<div id="topic_footer_content">
+				Copyright &copy; 2010 -2016, Schneider Electric. Alle Rechte vorbehalten.</div>
+		</div>
+	</body>
+	
+</html>
+

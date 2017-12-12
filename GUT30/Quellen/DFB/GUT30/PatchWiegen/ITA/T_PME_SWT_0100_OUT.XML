@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<DDTExchangeFile>
+	<DDTSource DDTName="T_PME_SWT_0100_OUT" version="1.00" dateTime="dt#2014-12-05-14:05:22">
+		<attribute name="IsTypeLocked" value="TRUE"></attribute>
+		<attribute name="TypeSignatureCheckSumString" value="507B"></attribute>
+		<attribute name="IsTypeHiddenButExported" value="TRUE"></attribute>
+		<structure>
+			<variables name="Free4" typeName="ARRAY[0..25] OF BYTE">
+				<comment>Unused Variable</comment>
+			</variables>
+			<variables name="CdeRegister" typeName="UINT">
+				<comment>For sending functional commands to the device ( eg. Tare, zero…)</comment>
+			</variables>
+			<variables name="PresetTareValue_IP" typeName="DINT">
+				<comment>Value of user preset tare</comment>
+			</variables>
+		</structure>
+	</DDTSource>
+</DDTExchangeFile>

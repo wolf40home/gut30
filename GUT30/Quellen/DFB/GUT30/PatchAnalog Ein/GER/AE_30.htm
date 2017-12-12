@@ -1,0 +1,819 @@
+﻿<html>
+	
+<head>
+	<title>AE_30</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta name="generator" content="HelpNDoc Personal Edition 4.9.2.132">
+	<meta name="keywords" content="AE">
+	
+	<link type="text/css" rel="stylesheet" media="all" href="../HELP/reset.css" />
+	<link type="text/css" rel="stylesheet" media="all" href="../HELP/base.css" />
+	<link type="text/css" rel="stylesheet" media="all" href="../HELP/hnd.css" />
+	<!--[if lte IE 8]>
+		<link type="text/css" rel="stylesheet" media="all" href="../HELP/ielte8.css" />
+	<![endif]-->
+	<style type="text/css">
+		#topic_header
+		{
+			background-color: #EFEFEF;
+		}
+	</style>
+	<script type="text/javascript">
+		$(document).ready(function()
+		{
+			if (top.frames.length == 0)
+			{
+				var sTopicUrl = top.location.href.substring(top.location.href.lastIndexOf("/") + 1, top.location.href.length);
+				top.location.href = "German UAG Toolbox 30.htm?" + sTopicUrl;
+			}
+			else
+			{
+				var bTocSelected = false;
+				(function waitForTOC()
+				{
+					if (top && top.FrameTOC && top.FrameTOC.SelectTocItem)
+					{
+						top.FrameTOC.SelectTocItem("AE_30");
+						bTocSelected = true;
+					}
+					if (!bTocSelected) setTimeout(function() { waitForTOC(); }, 300);
+				})();
+			}
+		});
+	</script>
+	
+	</head>
+
+<body>
+
+<div id="topic_header">
+			<div id="topic_header_content">
+				<h1 id="topic_header_text">AE_30</h1>
+				
+				</div>
+			<div class="clear"></div>
+		</div>
+	<div id="topic_content">
+		
+<p></p>
+<p class="rvps6"><a name="bodytext"></a>
+<span class="rvts12">Allgemein</span></p>
+<p class="rvps10"><span class="rvts18">Der abgeleitete Funktionsbaustein&nbsp;</span><span class="rvts21"> AE_30</span><span class="rvts18"> wird genutzt, um die Eingangs Skalierung &nbsp;für alle Unity &nbsp;Analog Eingangskarten durchzuführen.</span><br/><span class="rvts37"><br/></span></p>
+<p class="rvps10"><span class="rvts18">Der DFB ist wie folgt implementiert:</span></p>
+<div class="rvps2"><table width="98%" border="1" cellpadding="2" cellspacing="-1" style="border-width: 0px; border-collapse: collapse;">
+<tr valign="top">
+<td width="43%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; background-color: #f0f0f0;"><p class="rvps10"><span class="rvts24">Software</span></p>
+</td>
+<td width="57%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-left: none; background-color: #f0f0f0;"><p class="rvps10"><span class="rvts24">Implementiert als</span></p>
+</td>
+</tr>
+<tr valign="top">
+<td width="43%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-top: none;"><p class="rvps10"><span class="rvts18">Unity Pro</span></p>
+</td>
+<td width="57%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps10"><span class="rvts18">DFB &nbsp;AE_30</span></p>
+</td>
+</tr>
+</table>
+</div>
+<p class="rvps6"><a name="D-SG-0025894.2"></a>
+<span class="rvts12">Funktionsbeschreibung</span></p>
+<p class="rvps10"><span class="rvts18">Der Baustein Skaliert einen Eingangswert in einen Real Wert.</span></p>
+<p class="rvps10"><span class="rvts18">Passender Equipment Typ </span><span class="rvts24">UAG_A</span><span class="rvts18">E</span></p>
+<p class="rvps6"><a name="D-SG-0025894.7"></a>
+<span class="rvts12">Fehler Management</span></p>
+<p class="rvps6"><a name="D-SG-0025894.62"></a>
+<span class="rvts12">Darstellung in FBD</span></p>
+<p class="rvps10"><span class="rvts18">Die Abbildung unten zeigt die Darstellung des DFBs &nbsp;AE in FBD:</span></p>
+<p class="rvps2"><img alt="" style="padding : 1px;" src="../HELP/NeuesElement268.png"></p>
+<p class="rvps10"><span class="rvts18">Als zusätzliche Parameter können EN und ENO &nbsp;konfiguriert werden.</span></p>
+<p class="rvps6"><span class="rvts12">Parameterbeschreibung</span></p>
+<p class="rvps10"><span class="rvts18">In der folgenden Tabelle sind die Eingangsparameter aufgeführt:</span></p>
+<div class="rvps7"><table width="98%" border="1" cellpadding="2" cellspacing="-1" style="border-width: 0px; border-collapse: collapse;">
+<tr valign="top">
+<td width="17%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; background-color: #f0f0f0;"><p class="rvps7"><span class="rvts21">Parameter</span></p>
+</td>
+<td width="24%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-left: none; background-color: #f0f0f0;"><p class="rvps7"><span class="rvts21">Typ</span></p>
+</td>
+<td width="59%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-left: none; background-color: #f0f0f0;"><p class="rvps7"><span class="rvts21">Kommentar</span></p>
+</td>
+</tr>
+<tr valign="top">
+<td width="17%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-top: none;"><p class="rvps7"><span class="rvts6">E</span></p>
+</td>
+<td width="24%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">INT</span></p>
+</td>
+<td width="59%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">Rohwert der Eingangskarte</span></p>
+</td>
+</tr>
+<tr valign="top">
+<td width="17%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-top: none;"><p class="rvps7"><span class="rvts6">E_SKA</span></p>
+</td>
+<td width="24%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">REAL</span></p>
+</td>
+<td width="59%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">Skalenanfang</span></p>
+</td>
+</tr>
+<tr valign="top">
+<td width="17%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-top: none;"><p class="rvps7"><span class="rvts6">E_SKE</span></p>
+</td>
+<td width="24%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">REAL</span></p>
+</td>
+<td width="59%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">Skalenende</span></p>
+</td>
+</tr>
+<tr valign="top">
+<td width="17%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-top: none;"><p class="rvps7"><span class="rvts6">PTV_OUT</span></p>
+</td>
+<td width="24%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">PTV_OUT</span></p>
+</td>
+<td width="59%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">von PTV oder anderer Vorverarbeitung</span></p>
+</td>
+</tr>
+<tr valign="top">
+<td width="17%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-top: none;"><p class="rvps7"><span class="rvts6">TYP_SPS</span></p>
+</td>
+<td width="24%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><a class="rvts25" href="TYPVG_UNI.html#D-SG-0025894.2">TYPVG_UNI</a></p>
+</td>
+<td width="59%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">Einstellungen für den Baustein</span></p>
+<div class="rvps7"><table width="98%" border="1" cellpadding="2" cellspacing="-1" style="border-width: 0px; border-collapse: collapse;">
+<tr valign="top">
+<td width="17%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; background-color: #f0f0f0;"><p class="rvps7"><span class="rvts21">Bit</span></p>
+</td>
+<td width="59%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-left: none; background-color: #f0f0f0;"><p class="rvps7"><span class="rvts21">Kommentar</span></p>
+</td>
+</tr>
+<tr valign="top">
+<td width="17%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-top: none;"><p class="rvps7"><span class="rvts6">B1</span></p>
+</td>
+<td width="59%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">Meßbereichsanfang 4mA</span></p>
+</td>
+</tr>
+<tr valign="top">
+<td width="17%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-top: none;"><p class="rvps7"><span class="rvts6">B2</span></p>
+</td>
+<td width="59%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">Skalenende bei Drahtbruch</span></p>
+</td>
+</tr>
+<tr valign="top">
+<td width="17%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-top: none;"><p class="rvps7"><span class="rvts6">B3</span></p>
+</td>
+<td width="59%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">Überwachung auf RW Negativ</span></p>
+</td>
+</tr>
+<tr valign="top">
+<td width="17%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-top: none;"><p class="rvps7"><span class="rvts6">B4</span></p>
+</td>
+<td width="59%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">ARI</span></p>
+</td>
+</tr>
+</table>
+</div>
+</td>
+</tr>
+<tr valign="top">
+<td width="17%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-top: none;"><p class="rvps7"><span class="rvts6">DBR_ON</span></p>
+</td>
+<td width="24%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">INT</span></p>
+</td>
+<td width="59%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">Rohwert Drahtbruch Setzen bei 2 mA</span></p>
+</td>
+</tr>
+<tr valign="top">
+<td width="17%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-top: none;"><p class="rvps7"><span class="rvts6">DBR_OFF</span></p>
+</td>
+<td width="24%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">INT</span></p>
+</td>
+<td width="59%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">Rohwert Drahtbruch Löschen bei 3,75 mA</span></p>
+</td>
+</tr>
+<tr valign="top">
+<td width="17%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-top: none;"><p class="rvps7"><span class="rvts6">SKA_RW</span></p>
+</td>
+<td width="24%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">INT</span></p>
+</td>
+<td width="59%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">Rohwert Anfang</span></p>
+</td>
+</tr>
+<tr valign="top">
+<td width="17%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-top: none;"><p class="rvps7"><span class="rvts6">SKA_4mA</span></p>
+</td>
+<td width="24%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">INT</span></p>
+</td>
+<td width="59%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">Rohwert bei 4 mA</span></p>
+</td>
+</tr>
+<tr valign="top">
+<td width="17%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-top: none;"><p class="rvps7"><span class="rvts6">SKE_RW</span></p>
+</td>
+<td width="24%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">INT</span></p>
+</td>
+<td width="59%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">Rohwert Ende</span></p>
+</td>
+</tr>
+<tr valign="top">
+<td width="17%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-top: none;"><p class="rvps7"><span class="rvts6">TYPVG</span></p>
+</td>
+<td width="24%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><a class="rvts25" href="TYPVG_UNI.html#D-SG-0025894.2">TYPVG_UNI</a></p>
+</td>
+<td width="59%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">Bitweise Anpassung des Aussehens des Panel in Citect</span></p>
+</td>
+</tr>
+<tr valign="top">
+<td width="17%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-top: none;"><p class="rvps7"><span class="rvts6">SQ</span></p>
+</td>
+<td width="24%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">BOOL</span></p>
+</td>
+<td width="59%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">Sammelquittierung</span></p>
+</td>
+</tr>
+<tr valign="top">
+<td width="17%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-top: none;"><p class="rvps7"><span class="rvts6">E_SIM</span></p>
+</td>
+<td width="24%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">REAL</span></p>
+</td>
+<td width="59%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">Wert für die Simulation des Bausteins.</span></p>
+</td>
+</tr>
+<tr valign="top">
+<td width="17%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-top: none;"><p class="rvps7"><span class="rvts6">FE</span></p>
+</td>
+<td width="24%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">BOOL</span></p>
+</td>
+<td width="59%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">Hardware Fehler =0</span></p>
+</td>
+</tr>
+<tr valign="top">
+<td width="17%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-top: none;"><p class="rvps7"><span class="rvts6">GL</span></p>
+</td>
+<td width="24%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">INT</span></p>
+</td>
+<td width="59%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">Wert für Mittelwertbildung</span></p>
+</td>
+</tr>
+<tr valign="top">
+<td width="17%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-top: none;"><p class="rvps7"><span class="rvts6">REP</span></p>
+</td>
+<td width="24%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">BOOL</span></p>
+</td>
+<td width="59%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">Meßstelle in Reperatur</span></p>
+</td>
+</tr>
+<tr valign="top">
+<td width="17%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-top: none;"><p class="rvps7"><span class="rvts6">LSP_E</span></p>
+</td>
+<td width="24%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">BOOL</span></p>
+</td>
+<td width="59%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">Leitsperre durch SPS</span></p>
+</td>
+</tr>
+<tr valign="top">
+<td width="17%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-top: none;"><p class="rvps7"><span class="rvts6">ASP_E</span></p>
+</td>
+<td width="24%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">BOOL</span></p>
+</td>
+<td width="59%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">Alarmsperre durch SPS</span></p>
+</td>
+</tr>
+<tr valign="top">
+<td width="17%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-top: none;"><p class="rvps7"><span class="rvts6">FE</span></p>
+</td>
+<td width="24%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">BOOL</span></p>
+</td>
+<td width="59%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">Hardware Störung</span></p>
+</td>
+</tr>
+</table>
+</div>
+<p class="rvps10"><span class="rvts18">In der folgenden Tabelle werden die Eingangs-/Ausgangsparameter beschrieben:</span></p>
+<div class="rvps7"><table width="98%" border="1" cellpadding="2" cellspacing="-1" style="border-width: 0px; border-collapse: collapse;">
+<tr valign="top">
+<td width="17%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; background-color: #f0f0f0;"><p class="rvps7"><span class="rvts21">Parameter</span></p>
+</td>
+<td width="24%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-left: none; background-color: #f0f0f0;"><p class="rvps7"><span class="rvts21">Typ</span></p>
+</td>
+<td width="59%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-left: none; background-color: #f0f0f0;"><p class="rvps7"><span class="rvts21">Kommentar</span></p>
+</td>
+</tr>
+<tr valign="top">
+<td width="17%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-top: none;"><p class="rvps7"><span class="rvts6">LW</span></p>
+</td>
+<td width="24%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">WORD</span></p>
+</td>
+<td width="59%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">Leitwort des Bausteins. </span></p>
+<div class="rvps7"><table width="98%" border="1" cellpadding="2" cellspacing="-1" style="border-width: 0px; border-collapse: collapse;">
+<tr valign="top">
+<td width="17%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; background-color: #f0f0f0;"><p class="rvps7"><span class="rvts21">Bit</span></p>
+</td>
+<td width="59%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-left: none; background-color: #f0f0f0;"><p class="rvps7"><span class="rvts21">Kommentar</span></p>
+</td>
+</tr>
+<tr valign="top">
+<td width="17%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-top: none;"><p class="rvps7"><span class="rvts6">B0</span></p>
+</td>
+<td width="59%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">Leitsperre ein/aus</span></p>
+</td>
+</tr>
+<tr valign="top">
+<td width="17%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-top: none;"><p class="rvps7"><span class="rvts6">B1</span></p>
+</td>
+<td width="59%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">Meldesperre ein/aus</span></p>
+</td>
+</tr>
+<tr valign="top">
+<td width="17%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-top: none;"><p class="rvps7"><span class="rvts6">B2</span></p>
+</td>
+<td width="59%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">Alarmsperre ein/aus</span></p>
+</td>
+</tr>
+<tr valign="top">
+<td width="17%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-top: none;"><p class="rvps7"><span class="rvts6">B3</span></p>
+</td>
+<td width="59%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6"><br/></span></p>
+</td>
+</tr>
+<tr valign="top">
+<td width="17%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-top: none;"><p class="rvps7"><span class="rvts6">B4</span></p>
+</td>
+<td width="59%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">Simulation ein / aus</span></p>
+</td>
+</tr>
+<tr valign="top">
+<td width="17%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-top: none;"><p class="rvps7"><span class="rvts6">B14 </span></p>
+</td>
+<td width="59%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">Einzelquittierung</span></p>
+</td>
+</tr>
+<tr valign="top">
+<td width="17%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-top: none;"><p class="rvps7"><span class="rvts6">B15</span></p>
+</td>
+<td width="59%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6"><br/></span></p>
+</td>
+</tr>
+</table>
+</div>
+</td>
+</tr>
+</table>
+</div>
+<p class="rvps10"><span class="rvts18">Die folgende Tabelle beschreibt die Ausgangsparameter:</span></p>
+<div class="rvps7"><table width="98%" border="1" cellpadding="2" cellspacing="-1" style="border-width: 0px; border-collapse: collapse;">
+<tr valign="top">
+<td width="17%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; background-color: #f0f0f0;"><p class="rvps7"><span class="rvts21">Parameter</span></p>
+</td>
+<td width="24%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-left: none; background-color: #f0f0f0;"><p class="rvps7"><span class="rvts21">Typ</span></p>
+</td>
+<td width="59%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-left: none; background-color: #f0f0f0;"><p class="rvps7"><span class="rvts21">Kommentar</span></p>
+</td>
+</tr>
+<tr valign="top">
+<td width="17%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-top: none;"><p class="rvps7"><span class="rvts6">AE</span></p>
+</td>
+<td width="24%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><a class="rvts38" href="AE_IN.html">AE_IN</a></p>
+</td>
+<td width="59%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">Datenstruktur für die Übergabe der Werte an andere Bausteine.</span></p>
+</td>
+</tr>
+<tr valign="top">
+<td width="17%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-top: none;"><p class="rvps7"><span class="rvts6">X</span></p>
+</td>
+<td width="24%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">REAL</span></p>
+</td>
+<td width="59%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">Istwert mit Glättung</span></p>
+</td>
+</tr>
+<tr valign="top">
+<td width="17%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-top: none;"><p class="rvps7"><span class="rvts6">RW_X</span></p>
+</td>
+<td width="24%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">REAL</span></p>
+</td>
+<td width="59%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">Istwert ohne Glättung</span></p>
+</td>
+</tr>
+<tr valign="top">
+<td width="17%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-top: none;"><p class="rvps7"><span class="rvts6">DBR</span></p>
+</td>
+<td width="24%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">BOOL</span></p>
+</td>
+<td width="59%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">Drahtbruch</span></p>
+</td>
+</tr>
+<tr valign="top">
+<td width="17%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-top: none;"><p class="rvps7"><span class="rvts6">RWNEG</span></p>
+</td>
+<td width="24%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">BOOL</span></p>
+</td>
+<td width="59%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">Rohwert negativ</span></p>
+</td>
+</tr>
+<tr valign="top">
+<td width="17%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-top: none;"><p class="rvps7"><span class="rvts6">M</span></p>
+</td>
+<td width="24%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">DWORD</span></p>
+</td>
+<td width="59%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">Meldewort für den Baustein. </span></p>
+<p class="rvps7"><span class="rvts6">M Vorgabe für Citect. Die Bit gelten für alle </span><a class="rvts25" href="p_ana_in_20.html">AE</a><span class="rvts6">, dieser Baustein nutzt nur die Fett gedruckten.</span></p>
+<div class="rvps7"><table width="98%" border="1" cellpadding="2" cellspacing="-1" style="border-width: 0px; border-collapse: collapse;">
+<tr valign="top">
+<td width="17%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; background-color: #f0f0f0;"><p class="rvps7"><span class="rvts21">Bit</span></p>
+</td>
+<td width="59%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-left: none; background-color: #f0f0f0;"><p class="rvps7"><span class="rvts21">Kommentar</span></p>
+</td>
+</tr>
+<tr valign="top">
+<td width="17%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-top: none;"><p class="rvps7"><span class="rvts6">B0</span></p>
+</td>
+<td width="59%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">Reparatur</span></p>
+</td>
+</tr>
+<tr valign="top">
+<td width="17%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-top: none;"><p class="rvps7"><span class="rvts6">B1</span></p>
+</td>
+<td width="59%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">kein Interner Fehler</span></p>
+</td>
+</tr>
+<tr valign="top">
+<td width="17%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-top: none;"><p class="rvps7"><span class="rvts6">B2</span></p>
+</td>
+<td width="59%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">Leitsperre</span></p>
+</td>
+</tr>
+<tr valign="top">
+<td width="17%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-top: none;"><p class="rvps7"><span class="rvts6">B3</span></p>
+</td>
+<td width="59%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">Rohwert negativ</span></p>
+</td>
+</tr>
+<tr valign="top">
+<td width="17%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-top: none;"><p class="rvps7"><span class="rvts6">B4</span></p>
+</td>
+<td width="59%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">Messwert ok</span></p>
+</td>
+</tr>
+<tr valign="top">
+<td width="17%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-top: none;"><p class="rvps7"><span class="rvts6">B5</span></p>
+</td>
+<td width="59%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">Drahtbruch</span></p>
+</td>
+</tr>
+<tr valign="top">
+<td width="17%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-top: none;"><p class="rvps7"><span class="rvts6">B6</span></p>
+</td>
+<td width="59%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6"><br/></span></p>
+</td>
+</tr>
+<tr valign="top">
+<td width="17%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-top: none;"><p class="rvps7"><span class="rvts6">B7</span></p>
+</td>
+<td width="59%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6"><br/></span></p>
+</td>
+</tr>
+<tr valign="top">
+<td width="17%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-top: none;"><p class="rvps7"><span class="rvts6">B8</span></p>
+</td>
+<td width="59%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6"><br/></span></p>
+</td>
+</tr>
+<tr valign="top">
+<td width="17%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-top: none;"><p class="rvps7"><span class="rvts6">B9</span></p>
+</td>
+<td width="59%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6"><br/></span></p>
+</td>
+</tr>
+<tr valign="top">
+<td width="17%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-top: none;"><p class="rvps7"><span class="rvts6">B10</span></p>
+</td>
+<td width="59%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6"><br/></span></p>
+</td>
+</tr>
+<tr valign="top">
+<td width="17%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-top: none;"><p class="rvps7"><span class="rvts6">B11</span></p>
+</td>
+<td width="59%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6"><br/></span></p>
+</td>
+</tr>
+<tr valign="top">
+<td width="17%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-top: none;"><p class="rvps7"><span class="rvts6">B12</span></p>
+</td>
+<td width="59%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6"><br/></span></p>
+</td>
+</tr>
+<tr valign="top">
+<td width="17%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-top: none;"><p class="rvps7"><span class="rvts6">B13</span></p>
+</td>
+<td width="59%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6"><br/></span></p>
+</td>
+</tr>
+<tr valign="top">
+<td width="17%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-top: none;"><p class="rvps7"><span class="rvts6">B14 </span></p>
+</td>
+<td width="59%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6"><br/></span></p>
+</td>
+</tr>
+<tr valign="top">
+<td width="17%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-top: none;"><p class="rvps7"><span class="rvts6">B15</span></p>
+</td>
+<td width="59%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">Meldesperre</span></p>
+</td>
+</tr>
+<tr valign="top">
+<td width="17%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-top: none;"><p class="rvps7"><span class="rvts6">B16</span></p>
+</td>
+<td width="59%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6"><br/></span></p>
+</td>
+</tr>
+<tr valign="top">
+<td width="17%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-top: none;"><p class="rvps7"><span class="rvts6">B17</span></p>
+</td>
+<td width="59%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6"><br/></span></p>
+</td>
+</tr>
+<tr valign="top">
+<td width="17%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-top: none;"><p class="rvps7"><span class="rvts6">B18</span></p>
+</td>
+<td width="59%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6"><br/></span></p>
+</td>
+</tr>
+<tr valign="top">
+<td width="17%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-top: none;"><p class="rvps7"><span class="rvts6">B19</span></p>
+</td>
+<td width="59%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6"><br/></span></p>
+</td>
+</tr>
+<tr valign="top">
+<td width="17%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-top: none;"><p class="rvps7"><span class="rvts6">B20</span></p>
+</td>
+<td width="59%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">Alarmunterdrückung SPS</span></p>
+</td>
+</tr>
+<tr valign="top">
+<td width="17%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-top: none;"><p class="rvps7"><span class="rvts6">B21</span></p>
+</td>
+<td width="59%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">Alarmsperre</span></p>
+</td>
+</tr>
+<tr valign="top">
+<td width="17%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-top: none;"><p class="rvps7"><span class="rvts6">B22</span></p>
+</td>
+<td width="59%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">Alarmspeicher Ausfall</span></p>
+</td>
+</tr>
+<tr valign="top">
+<td width="17%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-top: none;"><p class="rvps7"><span class="rvts6">B23</span></p>
+</td>
+<td width="59%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6"><br/></span></p>
+</td>
+</tr>
+<tr valign="top">
+<td width="17%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-top: none;"><p class="rvps7"><span class="rvts6">B24</span></p>
+</td>
+<td width="59%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">Diagnose aktiv</span></p>
+</td>
+</tr>
+<tr valign="top">
+<td width="17%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-top: none;"><p class="rvps7"><span class="rvts6">B25</span></p>
+</td>
+<td width="59%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">Wartungsbedarf</span></p>
+</td>
+</tr>
+<tr valign="top">
+<td width="17%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-top: none;"><p class="rvps7"><span class="rvts6">B26</span></p>
+</td>
+<td width="59%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">Außerhalb der Spezifikation</span></p>
+</td>
+</tr>
+<tr valign="top">
+<td width="17%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-top: none;"><p class="rvps7"><span class="rvts6">B27</span></p>
+</td>
+<td width="59%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">Funktionskontrolle</span></p>
+</td>
+</tr>
+<tr valign="top">
+<td width="17%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-top: none;"><p class="rvps7"><span class="rvts6">B28</span></p>
+</td>
+<td width="59%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">Ausfall</span></p>
+</td>
+</tr>
+<tr valign="top">
+<td width="17%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-top: none;"><p class="rvps7"><span class="rvts6">B29</span></p>
+</td>
+<td width="59%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">Diagnose passiv</span></p>
+</td>
+</tr>
+<tr valign="top">
+<td width="17%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-top: none;"><p class="rvps7"><span class="rvts6">B30</span></p>
+</td>
+<td width="59%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">Simulation</span></p>
+</td>
+</tr>
+<tr valign="top">
+<td width="17%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-top: none;"><p class="rvps7"><span class="rvts6">B31</span></p>
+</td>
+<td width="59%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6"><br/></span></p>
+</td>
+</tr>
+</table>
+</div>
+</td>
+</tr>
+<tr valign="top">
+<td width="17%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-top: none;"><p class="rvps7"><span class="rvts6">TYP</span></p>
+</td>
+<td width="24%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">WORD</span></p>
+</td>
+<td width="59%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">TYP Vorgabe für Citect. </span><span class="rvts39">Die Bit gelten für alle </span><a class="rvts40" href="p_ana_in_20.html">AE</a><span class="rvts39">, dieser Baustein nutzt nur die Fett gedruckten</span><span class="rvts6">.</span></p>
+<div class="rvps7"><table width="98%" border="1" cellpadding="2" cellspacing="-1" style="border-width: 0px; border-collapse: collapse;">
+<tr valign="top">
+<td width="17%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; background-color: #f0f0f0;"><p class="rvps7"><span class="rvts21">Bit</span></p>
+</td>
+<td width="24%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-left: none; background-color: #f0f0f0;"><p class="rvps7"><span class="rvts21">Fester Wert</span></p>
+</td>
+<td width="59%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-left: none; background-color: #f0f0f0;"><p class="rvps7"><span class="rvts21">Kommentar</span></p>
+</td>
+</tr>
+<tr valign="top">
+<td width="17%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-top: none;"><p class="rvps7"><span class="rvts6">B0</span></p>
+</td>
+<td width="24%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">1</span></p>
+</td>
+<td width="59%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">ohne Anzeige A++</span></p>
+</td>
+</tr>
+<tr valign="top">
+<td width="17%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-top: none;"><p class="rvps7"><span class="rvts6">B1</span></p>
+</td>
+<td width="24%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">1</span></p>
+</td>
+<td width="59%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">ohne Anzeige A+</span></p>
+</td>
+</tr>
+<tr valign="top">
+<td width="17%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-top: none;"><p class="rvps7"><span class="rvts6">B2</span></p>
+</td>
+<td width="24%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">1</span></p>
+</td>
+<td width="59%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">ohne Anzeige S+</span></p>
+</td>
+</tr>
+<tr valign="top">
+<td width="17%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-top: none;"><p class="rvps7"><span class="rvts6">B3</span></p>
+</td>
+<td width="24%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">1</span></p>
+</td>
+<td width="59%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">ohne Anzeige S-</span></p>
+</td>
+</tr>
+<tr valign="top">
+<td width="17%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-top: none;"><p class="rvps7"><span class="rvts6">B4</span></p>
+</td>
+<td width="24%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">1</span></p>
+</td>
+<td width="59%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">ohne Anzeige A-</span></p>
+</td>
+</tr>
+<tr valign="top">
+<td width="17%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-top: none;"><p class="rvps7"><span class="rvts6">B5</span></p>
+</td>
+<td width="24%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">1</span></p>
+</td>
+<td width="59%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">ohne Anzeige A--</span></p>
+</td>
+</tr>
+<tr valign="top">
+<td width="17%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-top: none;"><p class="rvps7"><span class="rvts6">B6</span></p>
+</td>
+<td width="24%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">1</span></p>
+</td>
+<td width="59%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">ohne Anzeige HYS</span></p>
+</td>
+</tr>
+<tr valign="top">
+<td width="17%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-top: none;"><p class="rvps7"><span class="rvts6">B7</span></p>
+</td>
+<td width="24%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6"><br/></span></p>
+</td>
+<td width="59%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts21">ohne Meldesperre</span></p>
+</td>
+</tr>
+<tr valign="top">
+<td width="17%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-top: none;"><p class="rvps7"><span class="rvts6">B8</span></p>
+</td>
+<td width="24%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6"><br/></span></p>
+</td>
+<td width="59%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts21">ohne Alarmsperre</span></p>
+</td>
+</tr>
+<tr valign="top">
+<td width="17%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-top: none;"><p class="rvps7"><span class="rvts6">B9</span></p>
+</td>
+<td width="24%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6"><br/></span></p>
+</td>
+<td width="59%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts21">ohne Leitsperre</span></p>
+</td>
+</tr>
+<tr valign="top">
+<td width="17%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-top: none;"><p class="rvps7"><span class="rvts6">B10</span></p>
+</td>
+<td width="24%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">1</span></p>
+</td>
+<td width="59%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">A++ und A-- nicht leitbar</span></p>
+</td>
+</tr>
+<tr valign="top">
+<td width="17%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-top: none;"><p class="rvps7"><span class="rvts6">B11</span></p>
+</td>
+<td width="24%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">1</span></p>
+</td>
+<td width="59%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">A+ und A- nicht leitbar</span></p>
+</td>
+</tr>
+<tr valign="top">
+<td width="17%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-top: none;"><p class="rvps7"><span class="rvts6">B12</span></p>
+</td>
+<td width="24%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">1</span></p>
+</td>
+<td width="59%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">S+ und S- nicht leitbar</span></p>
+</td>
+</tr>
+<tr valign="top">
+<td width="17%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-top: none;"><p class="rvps7"><span class="rvts6">B13</span></p>
+</td>
+<td width="24%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">1</span></p>
+</td>
+<td width="59%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">Hyst. nicht leitbar</span></p>
+</td>
+</tr>
+<tr valign="top">
+<td width="17%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-top: none;"><p class="rvps7"><span class="rvts6">B14 </span></p>
+</td>
+<td width="24%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6"><br/></span></p>
+</td>
+<td width="59%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts21">ohne Alarmierung PLS</span></p>
+</td>
+</tr>
+<tr valign="top">
+<td width="17%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-top: none;"><p class="rvps7"><span class="rvts6">B15</span></p>
+</td>
+<td width="24%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">1</span></p>
+</td>
+<td width="59%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">ohne Anzeige S++ und S--</span></p>
+</td>
+</tr>
+</table>
+</div>
+</td>
+</tr>
+<tr valign="top">
+<td width="17%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-top: none;"><p class="rvps7"><span class="rvts6">SIM</span></p>
+</td>
+<td width="24%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">BOOL</span></p>
+</td>
+<td width="59%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">Simulation</span></p>
+</td>
+</tr>
+<tr valign="top">
+<td width="17%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-top: none;"><p class="rvps7"><span class="rvts6">MSP</span></p>
+</td>
+<td width="24%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">BOOL</span></p>
+</td>
+<td width="59%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">Anzeige Meldesperre</span></p>
+</td>
+</tr>
+<tr valign="top">
+<td width="17%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-top: none;"><p class="rvps7"><span class="rvts6">LSP</span></p>
+</td>
+<td width="24%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">BOOL</span></p>
+</td>
+<td width="59%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">Anzeige Leitsperre</span></p>
+</td>
+</tr>
+<tr valign="top">
+<td width="17%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-top: none;"><p class="rvps7"><span class="rvts6">ASP</span></p>
+</td>
+<td width="24%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">BOOL</span></p>
+</td>
+<td width="59%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">Anzeige Alarmsperre</span></p>
+</td>
+</tr>
+<tr valign="top">
+<td width="17%" valign="top" style="border-width : 1px; border-color : #a0a0a0 #a0a0a0 #a0a0a0 #a0a0a0; border-style: solid; padding: 2px; border-top: none;"><p class="rvps7"><span class="rvts6">STOER</span></p>
+</td>
+<td width="24%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">BOOL</span></p>
+</td>
+<td width="59%" valign="top" style="border-width : 1px; border-color : #000000 #a0a0a0 #a0a0a0 #000000; border-style: solid; padding: 2px; border-top: none; border-left: none;"><p class="rvps7"><span class="rvts6">Sammelstörung</span></p>
+</td>
+</tr>
+</table>
+</div>
+<p></p>
+<p class="rvps9"><span class="rvts15">Mit dem Personal Edition von HelpNDoc erstellt: </span><a class="rvts16" href="http://www.helpndoc.com/de">Einfacher EPub und Dokumentationseditor</a></p>
+</div>
+	
+	<div id="topic_footer">
+
+			<div id="topic_footer_content">
+				Copyright &copy; 2010 -2016, Schneider Electric. Alle Rechte vorbehalten.</div>
+		</div>
+	</body>
+	
+</html>
+

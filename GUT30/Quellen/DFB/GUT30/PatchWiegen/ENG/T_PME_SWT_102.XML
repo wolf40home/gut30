@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<DDTExchangeFile>
+	<DDTSource DDTName="T_PME_SWT_102" version="1.00" dateTime="dt#2014-12-05-14:05:22">
+		<comment>Device DDT for embedded M580 DTM (with standalone PLC)</comment>
+		<attribute name="IsTypeLocked" value="TRUE"></attribute>
+		<attribute name="IsDeviceDDT" value="TRUE"></attribute>
+		<attribute name="DeviceDDTKind" value="2#0000_0000"></attribute>
+		<attribute name="TypeSignatureCheckSumString" value="45FD"></attribute>
+		<attribute name="IsHSBYExchange" value="FALSE"></attribute>
+		<attribute name="IsTypeHiddenButExported" value="TRUE"></attribute>
+		<structure>
+			<variables name="Freshness" typeName="BOOL">
+				<comment>Global Freshness</comment>
+				<attribute name="RequestAccessRight" value="1"></attribute>
+				<attribute name="InstancesProgramAccessRight" value="1"></attribute>
+			</variables>
+			<variables name="Freshness_1" typeName="BOOL">
+				<comment>Freshness of Object</comment>
+				<attribute name="RequestAccessRight" value="1"></attribute>
+				<attribute name="InstancesProgramAccessRight" value="1"></attribute>
+			</variables>
+			<variables name="Fresh_Reserved" typeName="ARRAY[0..1] OF BYTE">
+				<comment>Reserved</comment>
+				<attribute name="IsVariableHidden" value="-1"></attribute>
+				<attribute name="RequestAccessRight" value="1"></attribute>
+				<attribute name="InstancesProgramAccessRight" value="1"></attribute>
+			</variables>
+			<variables name="Inputs" typeName="T_PME_SWT_0100_IN_1">
+				<comment>Input Variables</comment>
+			</variables>
+			<variables name="Outputs" typeName="T_PME_SWT_0100_OUT_1">
+				<comment>Output Variables</comment>
+			</variables>
+		</structure>
+	</DDTSource>
+</DDTExchangeFile>

@@ -1,0 +1,2672 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<FBDExchangeFile>
+	<FBSource nameOfFBType="Scaime_PMESWT_EIP_DFB" version="4.51" dateTime="dt#2017-08-10-13:57:08">
+		<comment>DFB to perform Runtime Configuration of SCAIME Mx80 Weighing Module PMESWT 0100</comment>
+		<attribute name="TypePassword" value=""></attribute>
+		<attribute name="TypeProtectionLevel" value="2#0000_0000"></attribute>
+		<attribute name="IsTypePasswordCrypted" value="FALSE"></attribute>
+		<attribute name="TypeCodeCheckSumString" value="9AC7"></attribute>
+		<attribute name="TypeSignatureCheckSumString" value="4D03"></attribute>
+		<inputParameters>
+			<variables name="CIP_Address" typeName="ADDM_TYPE">
+				<attribute name="PositionPin" value="1"></attribute>
+			</variables>
+		</inputParameters>
+		<inOutParameters>
+			<variables name="Module_IO_Scanning_ST" typeName="T_PME_SWT_105">
+				<attribute name="PositionPin" value="3"></attribute>
+			</variables>
+			<variables name="Module_Configuration_ST" typeName="T_WEIGHING_PMESWT_ST">
+				<attribute name="PositionPin" value="4"></attribute>
+			</variables>
+		</inOutParameters>
+		<privateLocalVariables>
+			<variables name="wordtmp1" typeName="WORD"></variables>
+			<variables name="wordtmp2" typeName="WORD"></variables>
+			<variables name="arint2tmp2" typeName="ARRAY[0..0] OF INT"></variables>
+			<variables name="arint2tmp" typeName="ARRAY[0..1] OF INT"></variables>
+			<variables name="dinttmp1" typeName="DINT"></variables>
+			<variables name="udinttmp1" typeName="UDINT"></variables>
+			<variables name="bytetmp1" typeName="BYTE"></variables>
+			<variables name="CIP_Service" typeName="BYTE"></variables>
+			<variables name="CIP_Classe" typeName="BYTE"></variables>
+			<variables name="CIP_Instance" typeName="BYTE"></variables>
+			<variables name="CIP_Attribut" typeName="BYTE"></variables>
+			<variables name="CIP_X00" typeName="BOOL"></variables>
+			<variables name="CIP_X01" typeName="BOOL"></variables>
+			<variables name="CIP_X02" typeName="BOOL"></variables>
+			<variables name="CIP_Valid_Class" typeName="BOOL"></variables>
+			<variables name="CIP_Valid_Attribute" typeName="BOOL"></variables>
+			<variables name="CIP_Valid_Req" typeName="BOOL"></variables>
+			<variables name="CIP_ReqSizeBytes" typeName="INT"></variables>
+			<variables name="CIP_ReqSizeWords" typeName="INT"></variables>
+			<variables name="CIP_ReqDataSizeWords" typeName="INT"></variables>
+			<variables name="CIP_Attribut_INT" typeName="INT"></variables>
+			<variables name="i" typeName="INT"></variables>
+			<variables name="j" typeName="INT"></variables>
+			<variables name="PIP_RequestType" typeName="BOOL"></variables>
+			<variables name="PIP_NbParams" typeName="INT"></variables>
+			<variables name="PIP_Current_Param_ID" typeName="INT"></variables>
+			<variables name="PIP_Current_Param_Type" typeName="BYTE"></variables>
+			<variables name="PIP_Current_Param_Length" typeName="BYTE"></variables>
+			<variables name="Invalid_ID" typeName="BOOL"></variables>
+			<variables name="PIP_Previous_ID_TLV_Size" typeName="INT"></variables>
+			<variables name="Temp_Buffer_Data" typeName="ARRAY[0..570] OF BYTE"></variables>
+			<variables name="Functional_Command_In_Progress" typeName="BOOL"></variables>
+			<variables name="Restore_Runtime_Conf_Done" typeName="BOOL"></variables>
+			<variables name="Upload_RuntimeCfg_Done" typeName="BOOL"></variables>
+			<variables name="Explicit_Write_Cde_Register_flag" typeName="BOOL">
+				<variableInit value="FALSE"></variableInit>
+			</variables>
+			<variables name="Save_CIP_Execute" typeName="BOOL">
+				<variableInit value="TRUE"></variableInit>
+			</variables>
+			<variables name="Management_Param" typeName="ARRAY[0..3] OF INT"></variables>
+			<variables name="DataExch_Tx_Rx_Buffer" typeName="ARRAY[0..290] OF INT"></variables>
+			<variables name="Implicit_Response_Register" typeName="UINT"></variables>
+			<variables name="Command_Register_Temp" typeName="UINT"></variables>
+			<variables name="Calibration_Step" typeName="UINT"></variables>
+		</privateLocalVariables>
+		<FBProgram name="main">
+			<STSource>
+(****************************************************************************************)
+(* DFB		 : SCAIME Mx80 Weighing Module PMESWT 0100                              *)
+(*											*)
+(* Brief 	 : This function allows to perform runtime configuration of weighing    *)
+(*                 module using explicit request on parameters ID (PIP protocol)        *)
+(*											*)
+(* Author        : Youssouf Coulibaly 							*)
+(* Version       : 4.47								        *)
+(* Date		 : 11 December 2014							*)
+(*											*)
+(* Copyright 2014, SCAIME, all rights reserved						*)
+(****************************************************************************************)
+
+(* Initialization step *)
+if (Module_Configuration_ST.Initialization and not Module_Configuration_ST.Application_Status.Dfb_Initialization_Done) then
+
+	CIP_X00 := true;
+	CIP_X01 := false;
+	CIP_X02 := false;
+	PIP_Previous_ID_TLV_Size := 0;
+	PIP_Current_Param_ID := 0;
+	PIP_Current_Param_Length := 0;
+	i:=0;
+	j:=0;
+
+	Upload_RuntimeCfg_Done := false;
+	Invalid_ID := false;
+
+end_if;
+
+Module_Configuration_ST.Application_Status.Dfb_Initialization_Done := Module_Configuration_ST.Initialization;
+
+(* Device in RUN state information *)
+Module_Configuration_ST.Application_Status.Module_RUN_State := Module_IO_Scanning_ST.Inputs.DEVICE_HEALTH;
+
+(* Process IO Scanning if device in RUN state *)
+if (Module_Configuration_ST.Application_Status.Module_RUN_State and Module_Configuration_ST.Application_Status.Dfb_Initialization_Done) then 
+
+	Implicit_Response_Register := Module_IO_Scanning_ST.Inputs.RespRegister;
+	
+	Module_Configuration_ST.Application_Status.Gross_Measurement:= Module_IO_Scanning_ST.Inputs.GrossMeasurement;
+	Module_Configuration_ST.Application_Status.Net_Measurement:= Module_IO_Scanning_ST.Inputs.NetMeasurement;
+	Module_Configuration_ST.Application_Status.Tare_Value:= Module_IO_Scanning_ST.Inputs.TareValue;
+	Module_Configuration_ST.Application_Status.Flow_Rate_Value:= Module_IO_Scanning_ST.Inputs.FlowRate;
+	Module_Configuration_ST.Application_Status.Factory_Measurement:= Module_IO_Scanning_ST.Inputs.FactMeasurement;
+
+	Module_Configuration_ST.Application_Status.Legal_ForTrade_Counter:= Module_IO_Scanning_ST.Inputs.LegalForTradeCount;
+	Module_Configuration_ST.Application_Status.Legal_ForTrade_Checksum:= Module_IO_Scanning_ST.Inputs.LegalForTradeCRC;
+
+	wordtmp1:= UINT_TO_WORD(Module_IO_Scanning_ST.Inputs.Measurement_Status);	
+
+	Module_Configuration_ST.Application_Status.Measurement_ok := (wordtmp1.2 = 0 and wordtmp1.3 = 0);
+
+	Module_Configuration_ST.Application_Status.Stability_flag := wordtmp1.4;
+	
+	Module_Configuration_ST.Application_Status.Preset_Tare_Process_flag := wordtmp1.7;
+	Module_Configuration_ST.Application_Status.Flash_Memory_Status := wordtmp1.6;		
+
+	Module_Configuration_ST.Application_Status.Input_I0_State := wordtmp1.8;
+	Module_Configuration_ST.Application_Status.Input_I1_State := wordtmp1.9;
+
+	Module_Configuration_ST.Application_Status.Output_S0_State := wordtmp1.10;
+	Module_Configuration_ST.Application_Status.Output_S1_State := wordtmp1.11;
+	Module_Configuration_ST.Application_Status.Output_S2_State := wordtmp1.12;
+	Module_Configuration_ST.Application_Status.Output_S3_State := wordtmp1.13;
+
+	Module_Configuration_ST.Application_Status.Tare_Process_flag := wordtmp1.14;
+	Module_Configuration_ST.Application_Status.ZeroTare_Process_flag := wordtmp1.15;
+
+	wordtmp1:= UINT_TO_WORD(Module_IO_Scanning_ST.Inputs.DeviceStatus);
+		
+	Module_Configuration_ST.Application_Status.Dosing_Cycle_Status := wordtmp1.0;
+
+	Module_Configuration_ST.Application_Status.Calibration_Done_Status := wordtmp1.1;
+
+	Module_Configuration_ST.Application_Status.App_Firmware_Version := Module_IO_Scanning_ST.Inputs.Reserved_2;
+
+	wordtmp1.0 := wordtmp1.10;
+	wordtmp1.1 := wordtmp1.11;
+	wordtmp1.2 := wordtmp1.12;
+	wordtmp1.3 := wordtmp1.13;
+	wordtmp1.4 := wordtmp1.14;
+	wordtmp1.5 := wordtmp1.15;
+	
+	Module_Configuration_ST.Application_Status.Calibration_Sequence_Code := WORD_TO_BYTE(wordtmp1 and 16#3F);
+
+	case BYTE_TO_INT(Module_Configuration_ST.Application_Status.Calibration_Sequence_Code) of 
+
+		0 : 
+			Module_Configuration_ST.Application_Status.Calibration_Sequence_dfb_Message := 'Waiting for Calibration Command';
+
+
+		1 : 
+			Module_Configuration_ST.Application_Status.Calibration_Sequence_dfb_Message := 'Theoretical Zero Calibration Done';
+
+		2 : 
+			Module_Configuration_ST.Application_Status.Calibration_Sequence_dfb_Message := 'Theoretical Full Span Calibration Done';
+
+		3 : 
+			Module_Configuration_ST.Application_Status.Calibration_Sequence_dfb_Message := 'Zero Adjustment Done';
+
+		4 : 
+			Module_Configuration_ST.Application_Status.Calibration_Sequence_dfb_Message := 'Span Adjustment Done';
+
+		5 : 
+			Module_Configuration_ST.Application_Status.Calibration_Sequence_dfb_Message := 'Waiting For Zero Reference Acquisition';(*'Starting Physical Calibration';*)
+
+		6 : 
+			Module_Configuration_ST.Application_Status.Calibration_Sequence_dfb_Message := 'Waiting For Reference Load 1 Acquisition';(*'Zero Acquisition Done';*)
+
+		7 : 
+			if (Module_Configuration_ST.Application_Configuration.Calibration.Number_Of_Segments &gt; 1) then
+
+				Module_Configuration_ST.Application_Status.Calibration_Sequence_dfb_Message := 'Waiting For Reference Load 2 Acquisition';(*'Ref. Load 1 Acquisition Done';*)
+			else
+
+				Module_Configuration_ST.Application_Status.Calibration_Sequence_dfb_Message := 'Waiting For Save Command';(*'Ref. Load 3 Acquisition Done'*);	
+			end_if;			
+		8 : 
+			if (Module_Configuration_ST.Application_Configuration.Calibration.Number_Of_Segments &gt; 2) then
+
+				Module_Configuration_ST.Application_Status.Calibration_Sequence_dfb_Message := 'Waiting For Reference Load 3 Acquisition';(*'Ref. Load 2 Acquisition Done';*)
+			else
+
+				Module_Configuration_ST.Application_Status.Calibration_Sequence_dfb_Message := 'Waiting For Save Command';(*'Ref. Load 3 Acquisition Done'*);	
+			end_if;	
+
+		9 : 
+			Module_Configuration_ST.Application_Status.Calibration_Sequence_dfb_Message := 'Waiting For Save Command';(*'Ref. Load 3 Acquisition Done'*);
+
+		10 : 
+			Module_Configuration_ST.Application_Status.Calibration_Sequence_dfb_Message := 'Save Calibration Done';
+
+	end_case;  
+
+	(* IO Scanning Response Register *)
+	if (Implicit_Response_Register = 16#01) then
+		
+		Functional_Command_In_Progress := true;
+	else
+		Functional_Command_In_Progress := false;
+	end_if;
+
+	Module_Configuration_ST.Application_Status.Implicit_Response_Register := Implicit_Response_Register;
+	
+
+	(* IO Scanning Command Register in Output (sending to device) *)
+	if (Module_Configuration_ST.Application_Commands.Device_Reset) then
+
+		if (not Functional_Command_In_Progress) then
+
+			Module_IO_Scanning_ST.Outputs.CdeRegister := 16#00D0;
+
+			Module_Configuration_ST.Application_Commands.Device_Reset := false;
+
+		end_if;
+	end_if;
+
+	if (Module_Configuration_ST.Application_Commands.Tare) then
+
+		if (not Functional_Command_In_Progress) then
+
+			Module_IO_Scanning_ST.Outputs.CdeRegister := 16#00D4;
+
+			Module_Configuration_ST.Application_Commands.Tare := false;
+
+		end_if;
+		
+	end_if;
+
+	if (Module_Configuration_ST.Application_Commands.Cancel_Tare) then
+
+		if (not Functional_Command_In_Progress) then
+
+			Module_IO_Scanning_ST.Outputs.CdeRegister := 16#00D5;
+
+			Module_Configuration_ST.Application_Commands.Cancel_Tare := false;
+
+		end_if;
+	end_if;
+
+	if (Module_Configuration_ST.Application_Commands.Preset_Tare) then
+
+		if (not Functional_Command_In_Progress) then
+
+			Module_IO_Scanning_ST.Outputs.CdeRegister := 16#00E5;
+
+			Module_Configuration_ST.Application_Commands.Preset_Tare := false;
+
+		end_if;
+	end_if;
+
+	if (Module_Configuration_ST.Application_Commands.Zero) then
+
+		if (not Functional_Command_In_Progress) then
+
+			Module_IO_Scanning_ST.Outputs.CdeRegister := 16#00D3;
+
+			Module_Configuration_ST.Application_Commands.Zero := false;
+
+		end_if;
+	end_if;
+
+	if (Module_Configuration_ST.Application_Commands.Tare_In_Specified_Time) then
+
+		if (not Functional_Command_In_Progress) then
+
+			Module_IO_Scanning_ST.Outputs.CdeRegister := 16#00E7;
+
+			Module_Configuration_ST.Application_Commands.Tare_In_Specified_Time := false;
+
+		end_if;
+	end_if;
+
+	if (Module_Configuration_ST.Application_Commands.Zero_In_Specified_Time) then
+
+		if (not Functional_Command_In_Progress) then
+
+			Module_IO_Scanning_ST.Outputs.CdeRegister := 16#00E6;
+
+			Module_Configuration_ST.Application_Commands.Zero_In_Specified_Time := false;
+
+		end_if;
+	end_if;
+
+	if (Module_Configuration_ST.Application_Commands.Clearing_functional_registers) then
+
+		if (not Functional_Command_In_Progress) then
+
+			Module_IO_Scanning_ST.Outputs.CdeRegister := 16#0000;
+
+			Module_Configuration_ST.Application_Commands.Clearing_functional_registers := false;
+
+		end_if;
+	end_if;	
+
+
+	if (Module_Configuration_ST.Application_Commands.Start_Dosing_Cycle) then
+
+		if (not Functional_Command_In_Progress) then
+
+			Module_IO_Scanning_ST.Outputs.CdeRegister := 16#00E8;
+
+			Module_Configuration_ST.Application_Commands.Start_Dosing_Cycle := false;
+
+		end_if;
+	end_if;
+
+
+	if (Module_Configuration_ST.Application_Commands.Stop_Dosing_Cycle) then
+
+		if (not Functional_Command_In_Progress) then
+
+			Module_IO_Scanning_ST.Outputs.CdeRegister := 16#00E9;
+
+			Module_Configuration_ST.Application_Commands.Stop_Dosing_Cycle := false;
+
+		end_if;
+	end_if;
+
+	
+	if (Module_Configuration_ST.Application_Commands.Saving_Calibration_in_flash) then
+
+		if (not Functional_Command_In_Progress) then
+
+			Module_IO_Scanning_ST.Outputs.CdeRegister := 16#00DE;
+
+			Module_Configuration_ST.Application_Commands.Saving_Calibration_in_flash := false;
+
+		end_if;
+	end_if;
+
+	if (Module_Configuration_ST.Application_Commands.Saving_in_flash_memory) then
+
+		if (not Functional_Command_In_Progress) then
+
+			Module_IO_Scanning_ST.Outputs.CdeRegister := 16#00D1;
+
+			Module_Configuration_ST.Application_Commands.Saving_in_flash_memory := false;
+
+		end_if;
+	end_if;
+
+	if (Module_Configuration_ST.Application_Commands.Restore_Factory_Settings) then
+
+		if (not Functional_Command_In_Progress) then
+
+			Module_IO_Scanning_ST.Outputs.CdeRegister := 16#00D2;
+
+			Restore_Runtime_Conf_Done := true;
+
+			Module_Configuration_ST.Application_Commands.Restore_Factory_Settings := false;
+
+			CIP_X00 := true;
+			CIP_X01 := false;
+			CIP_X02 := false;
+
+			PIP_Previous_ID_TLV_Size := 0;
+			PIP_Current_Param_ID := 0;
+			PIP_Current_Param_Length := 0;
+			i:=0;
+			j:=0;
+
+			Upload_RuntimeCfg_Done := false;
+
+		end_if;
+	end_if;
+
+	(* Weighing Module Physical Calibration Mode Management *)
+	if (Module_Configuration_ST.Application_Commands.Start_Physical_Calibration) then
+
+		case Calibration_Step of 
+
+			0 : (* Cancel previous one if needed *)
+				Command_Register_Temp := 16#00D6;
+
+				Calibration_Step := 1;
+
+			1 : (* start new sequence *)
+				Command_Register_Temp := 16#00D9;
+
+				Calibration_Step := 2;
+
+			2 : (* Wait response *)
+				case Implicit_Response_Register of
+
+					2 :
+						Command_Register_Temp := 16#0000;
+
+						Calibration_Step := 3;	
+
+						Module_Configuration_ST.Application_Status.Calibration_Error_Status := false;
+					3 :
+						Command_Register_Temp := 16#00D6;
+
+						Calibration_Step := 0;
+
+						Module_Configuration_ST.Application_Commands.Start_Physical_Calibration := false;
+
+						Module_Configuration_ST.Application_Status.Calibration_Error_Status := true;
+				end_case;
+
+			3 : (* Wait zero acquisition validation *)
+				if (Module_Configuration_ST.Application_Commands.Calibration_Steps_Validation and not Functional_Command_In_Progress) then
+
+					Module_Configuration_ST.Application_Commands.Calibration_Steps_Validation := false;
+
+					Command_Register_Temp := 16#00DA;
+
+					Calibration_Step := 4;				
+				end_if;
+
+			4 : (* Wait response *)
+				case Implicit_Response_Register of
+
+					0, 1 :
+						;
+					2 :
+						Calibration_Step := 5;
+
+						Command_Register_Temp := 16#0000;
+
+						Module_Configuration_ST.Application_Status.Calibration_Error_Status := false;
+					3 :
+						Command_Register_Temp := 16#0000;
+
+						Calibration_Step := 3;
+
+						Module_Configuration_ST.Application_Status.Calibration_Error_Status := true;
+					else
+						Command_Register_Temp := 16#00D6;
+
+						Calibration_Step := 0;
+
+						Module_Configuration_ST.Application_Commands.Start_Physical_Calibration := false;
+
+						Module_Configuration_ST.Application_Status.Calibration_Error_Status := true;
+				end_case;
+
+			5 : (* Wait Load 1 acquisition validation *)
+				if (Module_Configuration_ST.Application_Commands.Calibration_Steps_Validation and not Functional_Command_In_Progress) then
+
+					Module_Configuration_ST.Application_Commands.Calibration_Steps_Validation := false;
+
+					Command_Register_Temp := 16#00DB;
+				
+					Calibration_Step := 6;										
+				end_if;
+
+			6 : (* Wait response *)
+				case Implicit_Response_Register of
+
+					0, 1 :
+						;
+					2 :
+						Command_Register_Temp := 16#0000;
+
+						Module_Configuration_ST.Application_Status.Calibration_Error_Status := false;
+
+						if (Module_Configuration_ST.Application_Configuration.Calibration.Number_Of_Segments &gt; 1) then
+
+							Calibration_Step := 7;
+						else
+							Calibration_Step := 11;
+
+							(*Module_Configuration_ST.Application_Commands.Calibration_Mode := false;*)
+						end_if;
+					3 :
+						Command_Register_Temp := 16#0000;
+
+						Calibration_Step := 5;
+
+						Module_Configuration_ST.Application_Status.Calibration_Error_Status := true;
+					else
+						Command_Register_Temp := 16#00D6;
+
+						Calibration_Step := 0;
+
+						Module_Configuration_ST.Application_Commands.Start_Physical_Calibration := false;
+
+						Module_Configuration_ST.Application_Status.Calibration_Error_Status := true;
+				end_case;
+
+			7 : (* Wait Load 2 acquisition validation *)
+				if (Module_Configuration_ST.Application_Commands.Calibration_Steps_Validation and not Functional_Command_In_Progress) then
+
+					Module_Configuration_ST.Application_Commands.Calibration_Steps_Validation := false;
+
+					Command_Register_Temp := 16#00DC;
+
+					Calibration_Step := 8;			
+				end_if;
+
+			8 : (* Wait response *)
+				case Implicit_Response_Register of
+
+					0, 1 :
+						;
+					2 :
+						Command_Register_Temp := 16#0000;
+
+						Module_Configuration_ST.Application_Status.Calibration_Error_Status := false;
+
+						if (Module_Configuration_ST.Application_Configuration.Calibration.Number_Of_Segments &gt; 2) then
+
+							Calibration_Step := 9;
+						else
+							Calibration_Step := 11;
+
+							(*Module_Configuration_ST.Application_Commands.Calibration_Mode := false;*)
+						end_if;	
+					3 :
+						Command_Register_Temp := 16#0000;
+
+						Calibration_Step := 7;
+
+						Module_Configuration_ST.Application_Status.Calibration_Error_Status := true;
+					else
+						Command_Register_Temp := 16#00D6;
+
+						Calibration_Step := 0;
+
+						Module_Configuration_ST.Application_Commands.Start_Physical_Calibration := false;
+
+						Module_Configuration_ST.Application_Status.Calibration_Error_Status := true;
+				end_case;
+
+
+			9 : (* Wait Load 3 acquisition validation *)
+				if (Module_Configuration_ST.Application_Commands.Calibration_Steps_Validation and not Functional_Command_In_Progress) then
+
+					Module_Configuration_ST.Application_Commands.Calibration_Steps_Validation := false;
+
+					Command_Register_Temp := 16#00DD;
+
+					Calibration_Step := 10;														
+				end_if;
+
+			10 : (* Wait response *)
+				case Implicit_Response_Register of
+
+					0, 1 :
+						;
+					2 :
+						Command_Register_Temp := 16#0000;
+
+						Calibration_Step := 11;
+
+						(*Module_Configuration_ST.Application_Commands.Calibration_Mode := false;*)
+
+						Module_Configuration_ST.Application_Status.Calibration_Error_Status := false;
+					3 :
+						Calibration_Step := 9;
+
+						Command_Register_Temp := 16#0000;
+
+						Module_Configuration_ST.Application_Status.Calibration_Error_Status := true;
+				end_case;
+
+			11 : (* Save calibration command *)
+				if (not Functional_Command_In_Progress) then
+
+					Command_Register_Temp := 16#00DE;
+
+					Calibration_Step := 12;
+				end_if;
+
+			12 : (* Wait response *)
+				case Implicit_Response_Register of
+
+					0, 1 :
+						;
+					2 :
+						Command_Register_Temp := 16#0000;
+
+						Calibration_Step := 0;
+
+						Module_Configuration_ST.Application_Commands.Start_Physical_Calibration := false;
+
+						Module_Configuration_ST.Application_Status.Calibration_Error_Status := false;
+					3 :
+						Calibration_Step := 11;
+
+						Command_Register_Temp := 16#0000;
+
+						Module_Configuration_ST.Application_Status.Calibration_Error_Status := true;
+				end_case;
+		end_case;
+
+		if (not Functional_Command_In_Progress) then
+
+			Module_IO_Scanning_ST.Outputs.CdeRegister := Command_Register_Temp;
+		end_if;	
+
+		if (Module_Configuration_ST.Application_Commands.Cancel_Current_Command) then
+
+			if (not Functional_Command_In_Progress) then
+
+				Module_IO_Scanning_ST.Outputs.CdeRegister := 16#00D6;
+
+				Module_Configuration_ST.Application_Commands.Cancel_Current_Command := false;
+
+				Command_Register_Temp := 16#0000;
+
+				Calibration_Step := 0;
+
+				Module_Configuration_ST.Application_Commands.Start_Physical_Calibration := false;
+
+				Module_Configuration_ST.Application_Status.Calibration_Error_Status := false;
+			end_if;
+		end_if;		
+			
+	end_if;
+else
+
+	if (not Module_Configuration_ST.Application_Status.Dfb_Initialization_Done or not Module_Configuration_ST.Application_Status.Module_RUN_State) then
+
+		Module_Configuration_ST.Application_Configuration.SWTouch.HMI_Address := 0;
+		Module_Configuration_ST.Application_Configuration.SWTouch.HMI_Baudrate := 0;
+		Module_Configuration_ST.Application_Configuration.SWTouch.HMI_Panel_Settings := 0;
+		Module_Configuration_ST.Application_Configuration.SWTouch.HMI_PassWord := '';
+
+		Module_Configuration_ST.Application_Configuration.LegalFor_Trade.Legal_Mode_Sealing_Switchs := 0;
+		Module_Configuration_ST.Application_Configuration.LegalFor_Trade.LegalForTrade_SW_Version := 0;
+		Module_Configuration_ST.Application_Configuration.LegalFor_Trade.LegalForTrade_Counter := 0;
+		Module_Configuration_ST.Application_Configuration.LegalFor_Trade.LegalForTrade_Checksum := 0;
+		Module_Configuration_ST.Application_Configuration.LegalFor_Trade.Zero_functions := 0;
+		Module_Configuration_ST.Application_Configuration.LegalFor_Trade.Zero_Tare_Specified_Time_ms := 0;
+		Module_Configuration_ST.Application_Configuration.LegalFor_Trade.Preset_Tare_Value := 0;
+		Module_Configuration_ST.Application_Configuration.LegalFor_Trade.Stability_Criterion := 0;
+		Module_Configuration_ST.Application_Configuration.LegalFor_Trade.Decimal_Point_Position := 0;
+		Module_Configuration_ST.Application_Configuration.LegalFor_Trade.Unit := '';
+		Module_Configuration_ST.Application_Configuration.LegalFor_Trade.LoadCell_Terminal_Resistor := 0;
+
+		Module_Configuration_ST.Application_Configuration.Calibration.Maximum_Capacity := 0;
+		Module_Configuration_ST.Application_Configuration.Calibration.Number_Of_Segments := 0;
+		Module_Configuration_ST.Application_Configuration.Calibration.Calibration_Load_1 := 0;
+		Module_Configuration_ST.Application_Configuration.Calibration.Calibration_Load_2 := 0;
+		Module_Configuration_ST.Application_Configuration.Calibration.Calibration_Load_3 := 0;
+		Module_Configuration_ST.Application_Configuration.Calibration.Sensor_Sensitivity := 0.0;
+		Module_Configuration_ST.Application_Configuration.Calibration.Sensor_Zero_Sensitivity := 0.0;
+		Module_Configuration_ST.Application_Configuration.Calibration.Scale_Interval := 0;
+		Module_Configuration_ST.Application_Configuration.Calibration.User_Calibration_Zero_Value := 0;
+		Module_Configuration_ST.Application_Configuration.Calibration.Coef_Span_adjustment_1 := 0.0;
+		Module_Configuration_ST.Application_Configuration.Calibration.Coef_Span_adjustment_2 := 0.0;
+		Module_Configuration_ST.Application_Configuration.Calibration.Coef_Span_adjustment_3 := 0.0;
+		Module_Configuration_ST.Application_Configuration.Calibration.Global_SpanAdjustment_Coef := 0.0;
+		Module_Configuration_ST.Application_Configuration.Calibration.Calibration_Place_g_Value := 0.0;
+		Module_Configuration_ST.Application_Configuration.Calibration.Place_Of_Use_g_Value := 0.0;
+
+		Module_Configuration_ST.Application_Configuration.Calibration.Calibration_Restoring_status := 0;
+		
+		Module_Configuration_ST.Application_Configuration.Calibration.Ignored_DTM_Calibration := false;
+		Module_Configuration_ST.Application_Configuration.Ignored_DTM_Configuration := false;
+		
+
+		Module_Configuration_ST.Application_Configuration.Filtering.AD_Converter_Settings := 0;
+		Module_Configuration_ST.Application_Configuration.Filtering.Low_Pass_Order := 0;
+		Module_Configuration_ST.Application_Configuration.Filtering.Low_Pass_CutOff_Frequency := 0.0;
+		Module_Configuration_ST.Application_Configuration.Filtering.Mean_Filter_Depth := 0;
+		Module_Configuration_ST.Application_Configuration.Filtering.Flow_Filter_Depth := 0;
+		Module_Configuration_ST.Application_Configuration.Filtering.Flow_Time_Unit := '';
+
+		Module_Configuration_ST.Application_Configuration.Logical_Inputs_Outputs.Input_I0_Settings := 0;
+		Module_Configuration_ST.Application_Configuration.Logical_Inputs_Outputs.Input_I1_Settings := 0;
+		Module_Configuration_ST.Application_Configuration.Logical_Inputs_Outputs.Inputs_Holding_Time_ms := 0;
+		Module_Configuration_ST.Application_Configuration.Logical_Inputs_Outputs.Outputs_S0S1_Settings := 0;
+		Module_Configuration_ST.Application_Configuration.Logical_Inputs_Outputs.Coarse_Feed_CutOff_Point := 0;
+		Module_Configuration_ST.Application_Configuration.Logical_Inputs_Outputs.Fine_Feed_CutOff_Point := 0;
+		Module_Configuration_ST.Application_Configuration.Logical_Inputs_Outputs.Fine_Feed_Mask_Time_ms := 0;
+		Module_Configuration_ST.Application_Configuration.Logical_Inputs_Outputs.Output_S2_Setting := 0;
+		Module_Configuration_ST.Application_Configuration.Logical_Inputs_Outputs.S2_Set_Point_Low_Value := 0;
+		Module_Configuration_ST.Application_Configuration.Logical_Inputs_Outputs.S2_Set_Point_High_Value := 0;
+		Module_Configuration_ST.Application_Configuration.Logical_Inputs_Outputs.Output_S3_Setting := 0;
+		Module_Configuration_ST.Application_Configuration.Logical_Inputs_Outputs.S3_Set_Point_Low_Value := 0;
+		Module_Configuration_ST.Application_Configuration.Logical_Inputs_Outputs.S3_Set_Point_High_Value := 0;
+		
+		Module_Configuration_ST.Application_Status.Explicit_Cde_Register_RetCode := 0;	
+		Module_Configuration_ST.Application_Status.Implicit_Response_Register := 0;	
+		Module_Configuration_ST.Application_Status.Gross_Measurement := 0;	
+		Module_Configuration_ST.Application_Status.Net_Measurement := 0;	
+		Module_Configuration_ST.Application_Status.Tare_Value := 0;	
+		Module_Configuration_ST.Application_Status.Flow_Rate_Value := 0.0;	
+		Module_Configuration_ST.Application_Status.Factory_Measurement := 0;	
+		Module_Configuration_ST.Application_Status.Stability_flag := 0;	
+		Module_Configuration_ST.Application_Status.Measurement_Ok := 0;	
+		Module_Configuration_ST.Application_Status.Tare_Process_flag := 0;
+		Module_Configuration_ST.Application_Status.ZeroTare_Process_flag := 0;
+		Module_Configuration_ST.Application_Status.Preset_Tare_Process_flag := 0;
+		Module_Configuration_ST.Application_Status.Flash_Memory_Status := 0;
+			
+		Module_Configuration_ST.Application_Status.Input_I0_State := 0;	
+		Module_Configuration_ST.Application_Status.Input_I1_State := 0;	
+		Module_Configuration_ST.Application_Status.Output_S0_State := 0;	
+		Module_Configuration_ST.Application_Status.Output_S1_State := 0;	
+		Module_Configuration_ST.Application_Status.Output_S2_State := 0;	
+		Module_Configuration_ST.Application_Status.Output_S3_State := 0;	
+		Module_Configuration_ST.Application_Status.Dosing_Cycle_Status := 0;
+		
+		Module_Configuration_ST.Application_Status.Calibration_Done_Status := 0;	
+		Module_Configuration_ST.Application_Status.Calibration_Sequence_Code := 0;	
+		Module_Configuration_ST.Application_Status.Calibration_Sequence_dfb_Message := '';	
+		Module_Configuration_ST.Application_Status.Calibration_Error_Status := 0;	
+		Module_Configuration_ST.Application_Status.App_Firmware_Version := 0;	
+		Module_Configuration_ST.Application_Status.Legal_ForTrade_Counter := 0;	
+		Module_Configuration_ST.Application_Status.Legal_ForTrade_Checksum := 0;			
+			
+
+		Upload_RuntimeCfg_Done := false;
+
+		CIP_X00 := true;
+		CIP_X01 := false;
+		CIP_X02 := false;
+
+		PIP_Previous_ID_TLV_Size := 0;
+		PIP_Current_Param_ID := 0;
+		PIP_Current_Param_Length := 0;
+		i:=0;
+		j:=0;
+	else		
+		if (Module_Configuration_ST.Application_Status.Dfb_Initialization_Done and Module_Configuration_ST.Application_Commands.Upload_Runtime_Config and Upload_RuntimeCfg_Done) then
+
+			CIP_X00 := true;
+			CIP_X01 := false;
+			CIP_X02 := false;
+
+			PIP_Previous_ID_TLV_Size := 0;
+			PIP_Current_Param_ID := 0;
+			PIP_Current_Param_Length := 0;
+			i:=0;
+			j:=0;
+
+			Upload_RuntimeCfg_Done := false;
+			Invalid_ID := false;
+		
+		end_if;	
+	end_if;
+end_if;
+
+
+(* Explicit request management to read/write device PRM parameters *)
+if (CIP_X00) then
+	if ((Module_Configuration_ST.Application_Commands.Execute_Explicit_Request and not Save_CIP_Execute and not Management_Param[0].0 and Module_Configuration_ST.Application_Status.Module_RUN_State ) or (Module_Configuration_ST.Application_Status.Dfb_Initialization_Done and 
+		Module_Configuration_ST.Application_Commands.Upload_Runtime_Config and Module_Configuration_ST.Application_Status.Module_RUN_State and not 
+		Upload_RuntimeCfg_Done)) then
+
+		(* Definition de l'objet CIP *)
+		(* Toolkit PassThrough explicit Service = 16#35 *)
+		CIP_Service  := 16#35;
+
+		(* Toolkit PassThrough explicit Class = 16#64 *)
+		CIP_Classe   := 16#64;
+
+		(* Toolkit PassThrough explicit Instance = 16#01 *)
+		CIP_Instance := 16#01;
+
+		(* Toolkit PassThrough explicit Attribut = 16#01 *)
+		CIP_Attribut_INT := 16#01;
+
+		CIP_Attribut := INT_TO_BYTE(CIP_Attribut_INT);
+
+		CIP_ReqSizeWords     := 0;
+		CIP_ReqDataSizeWords := 0;
+		CIP_Valid_Req        := false;
+		Invalid_ID 	     := false;
+
+		(* Vérification de la classe (Seulement une supportée par le Toolkit 0x64) *)
+		CIP_Valid_Class      := (CIP_Classe = 16#64);
+
+		(* Vérification de l'instance *)
+		(* Elle est toujours à 1, on ne l'utilise pas *)
+
+		(* Vérification de l'attribut *)
+		if (CIP_Classe = 16#64) then
+			CIP_Valid_Attribute := (CIP_Attribut_INT = 16#01);
+		end_if;
+
+		(* Elaboration de la requête *)
+		if(CIP_Valid_Class) then
+
+			if (CIP_Service = 16#35) then
+			(* Set_PassThrough_Request *)
+				if (CIP_Classe = 16#64) then
+
+					if (Module_Configuration_ST.Application_Commands.Execute_Explicit_Request) then 
+						
+						Save_CIP_Execute := true;
+					end_if;
+
+					if (Module_Configuration_ST.Application_Commands.Upload_Runtime_Config and not Upload_RuntimeCfg_Done) then
+
+						(* Service READ utilisé dans la requête PIP *)
+						PIP_RequestType := 0;
+
+						(* Nombre de parametres dans la requête PIP (IDs 1000 up to 1061) *)
+						PIP_NbParams    := 62;
+
+						(* Entête de la requête PIP *)
+						DataExch_Tx_Rx_Buffer[4] := WORD_TO_INT(BYTE_AS_WORD(BOOL_TO_BYTE(PIP_RequestType), INT_TO_BYTE(PIP_NbParams)));						
+
+					else
+
+						(* Nombre de parametres dans la requête PIP *)
+						PIP_NbParams    := BYTE_TO_INT(Module_Configuration_ST.Application_Commands.Number_Of_Parameters);
+
+						(* Service utilisé dans la requête PIP *)
+						PIP_RequestType := Module_Configuration_ST.Application_Commands.Explicit_Request_Service;
+
+						(* Entête de la requête PIP *)
+						DataExch_Tx_Rx_Buffer[4] := WORD_TO_INT(BYTE_AS_WORD(BOOL_TO_BYTE(Module_Configuration_ST.Application_Commands.Explicit_Request_Service), Module_Configuration_ST.Application_Commands.Number_Of_Parameters));
+					end_if;
+
+					(* Requête de lecture des données *)
+					if (not PIP_RequestType) then
+						
+						Invalid_ID := PIP_NbParams = 0;
+
+						(* Recuperation des IDs à lire *) 
+						for i:= 0 to (PIP_NbParams - 1) do
+
+							if (Module_Configuration_ST.Application_Commands.Upload_Runtime_Config and not Upload_RuntimeCfg_Done) then
+								
+								(* All PRM Ids list *)
+								DataExch_Tx_Rx_Buffer[5 + i] := 1000 + i;
+
+							else
+								if (Module_Configuration_ST.Application_Commands.Configuration_Parameters_IDs[i] &gt;= 1000 and Module_Configuration_ST.Application_Commands.Configuration_Parameters_IDs[i] &lt;= 1061) then
+
+									DataExch_Tx_Rx_Buffer[5 + i] := Module_Configuration_ST.Application_Commands.Configuration_Parameters_IDs[i];
+								else
+									Invalid_ID := true;
+
+									i:= PIP_NbParams;
+								end_if;
+
+							end_if;
+								
+						end_for;
+						
+						if (not Invalid_ID) then
+
+							(* taille des données de la requête en mots *)
+							CIP_ReqDataSizeWords := PIP_NbParams + 1;
+							CIP_Valid_Req := true;
+						end_if;
+
+					(* Requête d'ecriture PIP *)
+					else	
+						CIP_Valid_Req := false;
+										
+						PIP_Previous_ID_TLV_Size := 0;
+						PIP_Current_Param_ID := 0;
+						Explicit_Write_Cde_Register_flag := false;
+
+
+						(* Scrutation des IDs pour constituer les TLV des données *)
+						for i:= 0 to (PIP_NbParams - 1) do
+
+							(* Get current Parameter ID *)
+							PIP_Current_Param_ID := Module_Configuration_ST.Application_Commands.Configuration_Parameters_IDs[i];
+							
+							if (PIP_Current_Param_ID &gt;= 1000 and PIP_Current_Param_ID &lt;= 1061) then
+
+								CIP_Valid_Req := true;
+
+								case PIP_Current_Param_ID of 	
+									(* Write HMI address *)
+									1000:
+										PIP_Current_Param_Type := 16#0C;
+										PIP_Current_Param_Length := 16#01;
+
+										WORD_AS_BYTE(INT_TO_WORD(PIP_Current_Param_ID), Temp_Buffer_Data[PIP_Previous_ID_TLV_Size], Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 1]);
+
+										Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 2] := PIP_Current_Param_Type;
+										Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 3] := PIP_Current_Param_Length;
+										Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 4] := Module_Configuration_ST.Application_Configuration.SWTouch.HMI_Address;
+
+									(* Write HMI baud rate *)
+									1001:
+										PIP_Current_Param_Type := 16#0C;
+										PIP_Current_Param_Length := 16#01;	
+								
+										WORD_AS_BYTE(INT_TO_WORD(PIP_Current_Param_ID), Temp_Buffer_Data[PIP_Previous_ID_TLV_Size], Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 1]);
+
+										Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 2] := PIP_Current_Param_Type;
+										Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 3] := PIP_Current_Param_Length;
+
+										bytetmp1 := 0;
+										case Module_Configuration_ST.Application_Configuration.SWTouch.HMI_Baudrate of 
+											9600   : bytetmp1 := 0;
+											19200  : bytetmp1 := 1;
+											38400  : bytetmp1 := 2;
+											57600  : bytetmp1 := 3;
+											115200 : bytetmp1 := 4;
+										end_case;
+
+										Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 4] := bytetmp1;									
+					
+									(* Write HMI panel parameters *)
+									1002:
+										PIP_Current_Param_Type := 16#0D;
+										PIP_Current_Param_Length := 16#02;
+
+										WORD_AS_BYTE(INT_TO_WORD(PIP_Current_Param_ID), Temp_Buffer_Data[PIP_Previous_ID_TLV_Size], Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 1]);
+
+										Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 2] := PIP_Current_Param_Type;
+										Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 3] := PIP_Current_Param_Length;
+										WORD_AS_BYTE(Module_Configuration_ST.Application_Configuration.SWTouch.HMI_Panel_Settings, Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 4], Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 5]);
+
+									(* Write HMI protection PassWord *)	
+									1003:
+										PIP_Current_Param_Type := 16#0B;
+										PIP_Current_Param_Length := 16#04;
+								
+										WORD_AS_BYTE(INT_TO_WORD(PIP_Current_Param_ID), Temp_Buffer_Data[PIP_Previous_ID_TLV_Size], Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 1]);
+
+										Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 2] := PIP_Current_Param_Type;
+										Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 3] := PIP_Current_Param_Length;
+
+										arint2tmp := STRING_TO_ASCII(Module_Configuration_ST.Application_Configuration.SWTouch.HMI_PassWord);
+										WORD_AS_BYTE(INT_TO_WORD(arint2tmp[0]), Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 4], Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 5]);
+										WORD_AS_BYTE(INT_TO_WORD(arint2tmp[1]), Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 6], Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 7]);
+
+									(* Write Logicial Input I0 Setting *)
+									1004:
+										PIP_Current_Param_Type := 16#0C;
+										PIP_Current_Param_Length := 16#01;	
+								
+										WORD_AS_BYTE(INT_TO_WORD(PIP_Current_Param_ID), Temp_Buffer_Data[PIP_Previous_ID_TLV_Size], Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 1]);
+
+										Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 2] := PIP_Current_Param_Type;
+										Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 3] := PIP_Current_Param_Length;
+										Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 4] := Module_Configuration_ST.Application_Configuration.Logical_Inputs_Outputs.Input_I0_Settings;
+
+									(* Write Logicial Input I1 Setting *)
+									1005:
+										PIP_Current_Param_Type := 16#0C;
+										PIP_Current_Param_Length := 16#01;	
+								
+										WORD_AS_BYTE(INT_TO_WORD(PIP_Current_Param_ID), Temp_Buffer_Data[PIP_Previous_ID_TLV_Size], Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 1]);
+
+										Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 2] := PIP_Current_Param_Type;
+										Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 3] := PIP_Current_Param_Length;
+										Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 4] := Module_Configuration_ST.Application_Configuration.Logical_Inputs_Outputs.Input_I1_Settings;
+
+									(* Write Logical Inputs holding time *)
+									1006:
+										PIP_Current_Param_Type := 16#02;
+										PIP_Current_Param_Length := 16#02;
+
+										WORD_AS_BYTE(INT_TO_WORD(PIP_Current_Param_ID), Temp_Buffer_Data[PIP_Previous_ID_TLV_Size], Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 1]);
+
+										Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 2] := PIP_Current_Param_Type;
+										Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 3] := PIP_Current_Param_Length;
+
+										WORD_AS_BYTE(INT_TO_WORD(UINT_TO_INT(Module_Configuration_ST.Application_Configuration.Logical_Inputs_Outputs.Inputs_Holding_Time_ms)), Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 4], 
+																											Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 5]);
+								
+									(* Write Logicial Outputs S0 &amp; S1 Setting *)
+									1007:
+										PIP_Current_Param_Type := 16#0D;
+										PIP_Current_Param_Length := 16#02;
+
+										WORD_AS_BYTE(INT_TO_WORD(PIP_Current_Param_ID), Temp_Buffer_Data[PIP_Previous_ID_TLV_Size], Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 1]);
+
+										Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 2] := PIP_Current_Param_Type;
+										Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 3] := PIP_Current_Param_Length;
+
+										WORD_AS_BYTE(Module_Configuration_ST.Application_Configuration.Logical_Inputs_Outputs.Outputs_S0S1_Settings, Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 4], Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 5]);
+
+									(* Write Coarse feed cut off point *)	
+									1008:
+										PIP_Current_Param_Type := 16#0E;
+										PIP_Current_Param_Length := 16#04;
+
+										WORD_AS_BYTE(INT_TO_WORD(PIP_Current_Param_ID), Temp_Buffer_Data[PIP_Previous_ID_TLV_Size], Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 1]);
+
+										Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 2] := PIP_Current_Param_Type;
+										Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 3] := PIP_Current_Param_Length;
+
+										DINT_AS_WORD(Module_Configuration_ST.Application_Configuration.Logical_Inputs_Outputs.Coarse_Feed_CutOff_Point, wordtmp1, wordtmp2);
+
+										WORD_AS_BYTE(wordtmp1, Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 4], Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 5]);
+										WORD_AS_BYTE(wordtmp2, Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 6], Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 7]);
+
+									(* Write Fine feed cut off point *)	
+									1009:
+										PIP_Current_Param_Type := 16#0E;
+										PIP_Current_Param_Length := 16#04;
+
+										WORD_AS_BYTE(INT_TO_WORD(PIP_Current_Param_ID), Temp_Buffer_Data[PIP_Previous_ID_TLV_Size], Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 1]);
+
+										Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 2] := PIP_Current_Param_Type;
+										Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 3] := PIP_Current_Param_Length;
+
+										DINT_AS_WORD(Module_Configuration_ST.Application_Configuration.Logical_Inputs_Outputs.Fine_Feed_CutOff_Point, wordtmp1, wordtmp2);
+
+										WORD_AS_BYTE(wordtmp1, Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 4], Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 5]);
+										WORD_AS_BYTE(wordtmp2, Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 6], Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 7]);
+
+									(* Write Fine Feed Mask time *)
+									1010:
+										PIP_Current_Param_Type := 16#02;
+										PIP_Current_Param_Length := 16#02;
+
+										WORD_AS_BYTE(INT_TO_WORD(PIP_Current_Param_ID), Temp_Buffer_Data[PIP_Previous_ID_TLV_Size], Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 1]);
+
+										Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 2] := PIP_Current_Param_Type;
+										Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 3] := PIP_Current_Param_Length;
+
+										WORD_AS_BYTE(INT_TO_WORD(UINT_TO_INT(Module_Configuration_ST.Application_Configuration.Logical_Inputs_Outputs.Fine_Feed_Mask_Time_ms)), Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 4], 
+																											Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 5]);
+
+									(* Write Logicial Output S2 Setting *)
+									1011:
+										PIP_Current_Param_Type := 16#0C;
+										PIP_Current_Param_Length := 16#01;	
+								
+										WORD_AS_BYTE(INT_TO_WORD(PIP_Current_Param_ID), Temp_Buffer_Data[PIP_Previous_ID_TLV_Size], Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 1]);
+
+										Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 2] := PIP_Current_Param_Type;
+										Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 3] := PIP_Current_Param_Length;
+										Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 4] := Module_Configuration_ST.Application_Configuration.Logical_Inputs_Outputs.Output_S2_Setting;
+
+									(* Write S2 threshold Low Value *)	
+									1012:
+										PIP_Current_Param_Type := 16#0E;
+										PIP_Current_Param_Length := 16#04;
+
+										WORD_AS_BYTE(INT_TO_WORD(PIP_Current_Param_ID), Temp_Buffer_Data[PIP_Previous_ID_TLV_Size], Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 1]);
+
+										Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 2] := PIP_Current_Param_Type;
+										Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 3] := PIP_Current_Param_Length;
+
+										DINT_AS_WORD(Module_Configuration_ST.Application_Configuration.Logical_Inputs_Outputs.S2_Set_Point_Low_Value, wordtmp1, wordtmp2);
+
+										WORD_AS_BYTE(wordtmp1, Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 4], Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 5]);
+										WORD_AS_BYTE(wordtmp2, Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 6], Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 7]);
+
+									(* Write S2 threshold High Value *)	
+									1013:
+										PIP_Current_Param_Type := 16#0E;
+										PIP_Current_Param_Length := 16#04;
+
+										WORD_AS_BYTE(INT_TO_WORD(PIP_Current_Param_ID), Temp_Buffer_Data[PIP_Previous_ID_TLV_Size], Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 1]);
+
+										Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 2] := PIP_Current_Param_Type;
+										Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 3] := PIP_Current_Param_Length;
+
+										DINT_AS_WORD(Module_Configuration_ST.Application_Configuration.Logical_Inputs_Outputs.S2_Set_Point_High_Value, wordtmp1, wordtmp2);
+
+										WORD_AS_BYTE(wordtmp1, Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 4], Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 5]);
+										WORD_AS_BYTE(wordtmp2, Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 6], Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 7]);
+
+									(* Write Logicial Output S3 Setting *)
+									1014:
+										PIP_Current_Param_Type := 16#0C;
+										PIP_Current_Param_Length := 16#01;	
+								
+										WORD_AS_BYTE(INT_TO_WORD(PIP_Current_Param_ID), Temp_Buffer_Data[PIP_Previous_ID_TLV_Size], Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 1]);
+
+										Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 2] := PIP_Current_Param_Type;
+										Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 3] := PIP_Current_Param_Length;
+										Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 4] := Module_Configuration_ST.Application_Configuration.Logical_Inputs_Outputs.Output_S3_Setting;
+
+									(* Write S3 threshold Low Value *)	
+									1015:
+										PIP_Current_Param_Type := 16#0E;
+										PIP_Current_Param_Length := 16#04;
+
+										WORD_AS_BYTE(INT_TO_WORD(PIP_Current_Param_ID), Temp_Buffer_Data[PIP_Previous_ID_TLV_Size], Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 1]);
+
+										Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 2] := PIP_Current_Param_Type;
+										Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 3] := PIP_Current_Param_Length;
+
+										DINT_AS_WORD(Module_Configuration_ST.Application_Configuration.Logical_Inputs_Outputs.S3_Set_Point_Low_Value, wordtmp1, wordtmp2);
+
+										WORD_AS_BYTE(wordtmp1, Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 4], Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 5]);
+										WORD_AS_BYTE(wordtmp2, Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 6], Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 7]);
+
+									(* Write S3 threshold High Value *)	
+									1016:
+										PIP_Current_Param_Type := 16#0E;
+										PIP_Current_Param_Length := 16#04;
+
+										WORD_AS_BYTE(INT_TO_WORD(PIP_Current_Param_ID), Temp_Buffer_Data[PIP_Previous_ID_TLV_Size], Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 1]);
+
+										Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 2] := PIP_Current_Param_Type;
+										Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 3] := PIP_Current_Param_Length;
+
+										DINT_AS_WORD(Module_Configuration_ST.Application_Configuration.Logical_Inputs_Outputs.S3_Set_Point_High_Value, wordtmp1, wordtmp2);
+
+										WORD_AS_BYTE(wordtmp1, Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 4], Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 5]);
+										WORD_AS_BYTE(wordtmp2, Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 6], Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 7]);
+								
+									(* Write AD Converter Setting *)
+									1017:
+										PIP_Current_Param_Type := 16#0D;
+										PIP_Current_Param_Length := 16#02;
+
+										WORD_AS_BYTE(INT_TO_WORD(PIP_Current_Param_ID), Temp_Buffer_Data[PIP_Previous_ID_TLV_Size], Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 1]);
+
+										Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 2] := PIP_Current_Param_Type;
+										Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 3] := PIP_Current_Param_Length;
+
+										WORD_AS_BYTE(INT_TO_WORD(UINT_TO_INT(Module_Configuration_ST.Application_Configuration.Filtering.AD_Converter_Settings)), Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 4], 
+Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 5]);
+
+									(* Write Low pass order Setting *)
+									1018:
+										PIP_Current_Param_Type := 16#0D;
+										PIP_Current_Param_Length := 16#02;
+
+										WORD_AS_BYTE(INT_TO_WORD(PIP_Current_Param_ID), Temp_Buffer_Data[PIP_Previous_ID_TLV_Size], Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 1]);
+
+										Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 2] := PIP_Current_Param_Type;
+										Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 3] := PIP_Current_Param_Length;
+
+										WORD_AS_BYTE(INT_TO_WORD(UINT_TO_INT(Module_Configuration_ST.Application_Configuration.Filtering.Low_Pass_Order)), Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 5], Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 4]);
+
+									(* Write Low pass cut off frequency Setting *)
+									1019:
+										PIP_Current_Param_Type := 16#02;
+										PIP_Current_Param_Length := 16#02;
+
+										WORD_AS_BYTE(INT_TO_WORD(PIP_Current_Param_ID), Temp_Buffer_Data[PIP_Previous_ID_TLV_Size], Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 1]);
+
+										Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 2] := PIP_Current_Param_Type;
+										Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 3] := PIP_Current_Param_Length;
+
+										WORD_AS_BYTE(INT_TO_WORD(REAL_TO_INT(Module_Configuration_ST.Application_Configuration.Filtering.Low_Pass_CutOff_Frequency*100.0)), Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 4], 
+																										    Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 5]);
+
+									(* Write Mean filter depth Setting *)
+									1020:
+										PIP_Current_Param_Type := 16#02;
+										PIP_Current_Param_Length := 16#02;
+
+										WORD_AS_BYTE(INT_TO_WORD(PIP_Current_Param_ID), Temp_Buffer_Data[PIP_Previous_ID_TLV_Size], Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 1]);
+
+										Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 2] := PIP_Current_Param_Type;
+										Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 3] := PIP_Current_Param_Length;
+
+										WORD_AS_BYTE(INT_TO_WORD(UINT_TO_INT(Module_Configuration_ST.Application_Configuration.Filtering.Mean_Filter_Depth)), Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 4], Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 5]);
+
+									(* Write Flow rate depth Setting *)
+									1021:
+										PIP_Current_Param_Type := 16#02;
+										PIP_Current_Param_Length := 16#02;
+
+										WORD_AS_BYTE(INT_TO_WORD(PIP_Current_Param_ID), Temp_Buffer_Data[PIP_Previous_ID_TLV_Size], Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 1]);
+
+										Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 2] := PIP_Current_Param_Type;
+										Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 3] := PIP_Current_Param_Length;
+
+										WORD_AS_BYTE(INT_TO_WORD(UINT_TO_INT(Module_Configuration_ST.Application_Configuration.Filtering.Flow_Filter_Depth)), Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 4], Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 5]);
+
+									(* Write Flow rate time Unit *)	
+									1022:
+										PIP_Current_Param_Type := 16#0B;
+										PIP_Current_Param_Length := 16#02;
+
+										WORD_AS_BYTE(INT_TO_WORD(PIP_Current_Param_ID), Temp_Buffer_Data[PIP_Previous_ID_TLV_Size], Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 1]);
+
+										Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 2] := PIP_Current_Param_Type;
+										Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 3] := PIP_Current_Param_Length;
+									
+										if(Module_Configuration_ST.Application_Configuration.Filtering.Flow_Time_Unit = 'mn') then
+
+											arint2tmp := STRING_TO_ASCII('mn');
+											WORD_AS_BYTE(INT_TO_WORD(arint2tmp[0]), Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 5], Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 4]);									
+	
+	
+										else 
+											if(Module_Configuration_ST.Application_Configuration.Filtering.Flow_Time_Unit = 's') then
+												arint2tmp := STRING_TO_ASCII('s ');
+												WORD_AS_BYTE(INT_TO_WORD(arint2tmp[0]), Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 4], Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 5]);	
+											else 
+												if(Module_Configuration_ST.Application_Configuration.Filtering.Flow_Time_Unit = 'h') then
+													arint2tmp := STRING_TO_ASCII('h ');
+													WORD_AS_BYTE(INT_TO_WORD(arint2tmp[0]), Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 4], Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 5]);
+												else
+													CIP_Valid_Req := false;
+												end_if;
+											end_if;
+
+										end_if;
+
+									(* Write legal for trade &amp; sealing switch *)
+									1023:
+										PIP_Current_Param_Type := 16#0C;
+										PIP_Current_Param_Length := 16#01;	
+								
+										WORD_AS_BYTE(INT_TO_WORD(PIP_Current_Param_ID), Temp_Buffer_Data[PIP_Previous_ID_TLV_Size], Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 1]);
+
+										Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 2] := PIP_Current_Param_Type;
+										Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 3] := PIP_Current_Param_Length;
+										Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 4] := Module_Configuration_ST.Application_Configuration.LegalFor_Trade.Legal_Mode_Sealing_Switchs;
+
+									(* Write Zero functions Setting *)
+									1027:
+										PIP_Current_Param_Type := 16#0D;
+										PIP_Current_Param_Length := 16#02;
+
+										WORD_AS_BYTE(INT_TO_WORD(PIP_Current_Param_ID), Temp_Buffer_Data[PIP_Previous_ID_TLV_Size], Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 1]);
+
+										Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 2] := PIP_Current_Param_Type;
+										Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 3] := PIP_Current_Param_Length;
+
+										WORD_AS_BYTE(INT_TO_WORD(UINT_TO_INT(Module_Configuration_ST.Application_Configuration.LegalFor_Trade.Zero_functions)), Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 4], Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 5]);
+
+									(* Write Stability criterion setting *)
+									1028:
+										PIP_Current_Param_Type := 16#0C;
+										PIP_Current_Param_Length := 16#01;	
+								
+										WORD_AS_BYTE(INT_TO_WORD(PIP_Current_Param_ID), Temp_Buffer_Data[PIP_Previous_ID_TLV_Size], Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 1]);
+
+										Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 2] := PIP_Current_Param_Type;
+										Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 3] := PIP_Current_Param_Length;
+										Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 4] := Module_Configuration_ST.Application_Configuration.LegalFor_Trade.Stability_Criterion;
+
+									(* Write Determinist tare-Zero time Setting *)
+									1029:
+										PIP_Current_Param_Type := 16#02;
+										PIP_Current_Param_Length := 16#02;
+
+										WORD_AS_BYTE(INT_TO_WORD(PIP_Current_Param_ID), Temp_Buffer_Data[PIP_Previous_ID_TLV_Size], Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 1]);
+
+										Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 2] := PIP_Current_Param_Type;
+										Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 3] := PIP_Current_Param_Length;
+
+										WORD_AS_BYTE(INT_TO_WORD(UINT_TO_INT(Module_Configuration_ST.Application_Configuration.LegalFor_Trade.Zero_Tare_Specified_Time_ms)), Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 4], 
+																										     Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 5]);
+																	
+									(* Write Preset tare setting *)	
+									1030:
+										PIP_Current_Param_Type := 16#0E;
+										PIP_Current_Param_Length := 16#04;
+
+										WORD_AS_BYTE(INT_TO_WORD(PIP_Current_Param_ID), Temp_Buffer_Data[PIP_Previous_ID_TLV_Size], Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 1]);
+
+										Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 2] := PIP_Current_Param_Type;
+										Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 3] := PIP_Current_Param_Length;
+
+										UDINT_AS_WORD(Module_Configuration_ST.Application_Configuration.LegalFor_Trade.Preset_Tare_Value, wordtmp1, wordtmp2);
+
+										WORD_AS_BYTE(wordtmp1, Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 4], Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 5]);
+										WORD_AS_BYTE(wordtmp2, Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 6], Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 7]);									
+																																		
+									(* Write Maximum capacity *)	
+									1031:
+										PIP_Current_Param_Type := 16#0E;
+										PIP_Current_Param_Length := 16#04;
+
+										WORD_AS_BYTE(INT_TO_WORD(PIP_Current_Param_ID), Temp_Buffer_Data[PIP_Previous_ID_TLV_Size], Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 1]);
+
+										Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 2] := PIP_Current_Param_Type;
+										Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 3] := PIP_Current_Param_Length;
+
+										UDINT_AS_WORD(Module_Configuration_ST.Application_Configuration.Calibration.Maximum_Capacity, wordtmp1, wordtmp2);
+
+										WORD_AS_BYTE(wordtmp1, Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 4], Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 5]);
+										WORD_AS_BYTE(wordtmp2, Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 6], Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 7]);	
+
+									(* Write Unit *)	
+									1032:
+										PIP_Current_Param_Type := 16#0B;
+										PIP_Current_Param_Length := 16#04;
+
+										WORD_AS_BYTE(INT_TO_WORD(PIP_Current_Param_ID), Temp_Buffer_Data[PIP_Previous_ID_TLV_Size], Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 1]);
+
+										Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 2] := PIP_Current_Param_Type;
+										Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 3] := PIP_Current_Param_Length;
+
+										arint2tmp := STRING_TO_ASCII(Module_Configuration_ST.Application_Configuration.LegalFor_Trade.Unit);
+										WORD_AS_BYTE(INT_TO_WORD(arint2tmp[0]), Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 7], Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 6]);
+										WORD_AS_BYTE(INT_TO_WORD(arint2tmp[1]), Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 5], Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 4]);
+
+									(* Write Scale interval *)
+									1033:
+										PIP_Current_Param_Type := 16#02;
+										PIP_Current_Param_Length := 16#02;
+
+										WORD_AS_BYTE(INT_TO_WORD(PIP_Current_Param_ID), Temp_Buffer_Data[PIP_Previous_ID_TLV_Size], Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 1]);
+
+										Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 2] := PIP_Current_Param_Type;
+										Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 3] := PIP_Current_Param_Length;
+
+										WORD_AS_BYTE(INT_TO_WORD(UINT_TO_INT(Module_Configuration_ST.Application_Configuration.Calibration.Scale_Interval)), Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 4], Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 5]);
+
+									(* Write Decimal point position *)
+									1034:
+										PIP_Current_Param_Type := 16#0C;
+										PIP_Current_Param_Length := 16#01;	
+								
+										WORD_AS_BYTE(INT_TO_WORD(PIP_Current_Param_ID), Temp_Buffer_Data[PIP_Previous_ID_TLV_Size], Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 1]);
+
+										Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 2] := PIP_Current_Param_Type;
+										Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 3] := PIP_Current_Param_Length;
+										Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 4] := Module_Configuration_ST.Application_Configuration.LegalFor_Trade.Decimal_Point_Position;
+
+									(* Write Sensor sensitivity *)
+									1035:
+										PIP_Current_Param_Type := 16#0E;
+										PIP_Current_Param_Length := 16#04;
+
+										WORD_AS_BYTE(INT_TO_WORD(PIP_Current_Param_ID), Temp_Buffer_Data[PIP_Previous_ID_TLV_Size], Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 1]);
+
+										Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 2] := PIP_Current_Param_Type;
+										Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 3] := PIP_Current_Param_Length;
+
+										udinttmp1 := REAL_TO_UDINT(Module_Configuration_ST.Application_Configuration.Calibration.Sensor_Sensitivity*100000.0);
+
+										UDINT_AS_WORD(udinttmp1, wordtmp1, wordtmp2);
+
+										WORD_AS_BYTE(wordtmp1, Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 4], Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 5]);
+										WORD_AS_BYTE(wordtmp2, Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 6], Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 7]);	
+
+									(* Write Zero sensitivity *)
+									1036:
+										PIP_Current_Param_Type := 16#0E;
+										PIP_Current_Param_Length := 16#04;
+
+										WORD_AS_BYTE(INT_TO_WORD(PIP_Current_Param_ID), Temp_Buffer_Data[PIP_Previous_ID_TLV_Size], Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 1]);
+
+										Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 2] := PIP_Current_Param_Type;
+										Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 3] := PIP_Current_Param_Length;
+
+										dinttmp1 := REAL_TO_DINT(Module_Configuration_ST.Application_Configuration.Calibration.Sensor_Zero_Sensitivity*100000.0);
+
+										DINT_AS_WORD(dinttmp1, wordtmp1, wordtmp2);
+
+										WORD_AS_BYTE(wordtmp1, Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 4], Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 5]);
+										WORD_AS_BYTE(wordtmp2, Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 6], Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 7]);	
+
+									(* Write Number of calibration segments *)
+									1037:
+										PIP_Current_Param_Type := 16#02;
+										PIP_Current_Param_Length := 16#02;
+
+										WORD_AS_BYTE(INT_TO_WORD(PIP_Current_Param_ID), Temp_Buffer_Data[PIP_Previous_ID_TLV_Size], Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 1]);
+
+										Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 2] := PIP_Current_Param_Type;
+										Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 3] := PIP_Current_Param_Length;
+
+										WORD_AS_BYTE(INT_TO_WORD(UINT_TO_INT(Module_Configuration_ST.Application_Configuration.Calibration.Number_Of_Segments)), Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 4], Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 5]);
+
+									(* Write Calibration load 1 *)	
+									1038:
+										PIP_Current_Param_Type := 16#0E;
+										PIP_Current_Param_Length := 16#04;
+
+										WORD_AS_BYTE(INT_TO_WORD(PIP_Current_Param_ID), Temp_Buffer_Data[PIP_Previous_ID_TLV_Size], Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 1]);
+
+										Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 2] := PIP_Current_Param_Type;
+										Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 3] := PIP_Current_Param_Length;
+
+										UDINT_AS_WORD(Module_Configuration_ST.Application_Configuration.Calibration.Calibration_Load_1, wordtmp1, wordtmp2);
+
+										WORD_AS_BYTE(wordtmp1, Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 4], Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 5]);
+										WORD_AS_BYTE(wordtmp2, Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 6], Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 7]);						
+
+									(* Write Calibration load 2 *)	
+									1039:
+										PIP_Current_Param_Type := 16#0E;
+										PIP_Current_Param_Length := 16#04;
+
+										WORD_AS_BYTE(INT_TO_WORD(PIP_Current_Param_ID), Temp_Buffer_Data[PIP_Previous_ID_TLV_Size], Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 1]);
+
+										Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 2] := PIP_Current_Param_Type;
+										Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 3] := PIP_Current_Param_Length;
+
+										UDINT_AS_WORD(Module_Configuration_ST.Application_Configuration.Calibration.Calibration_Load_2, wordtmp1, wordtmp2);
+
+										WORD_AS_BYTE(wordtmp1, Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 4], Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 5]);
+										WORD_AS_BYTE(wordtmp2, Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 6], Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 7]);
+
+									(* Write Calibration load 3 *)	
+									1040:
+										PIP_Current_Param_Type := 16#0E;
+										PIP_Current_Param_Length := 16#04;
+
+										WORD_AS_BYTE(INT_TO_WORD(PIP_Current_Param_ID), Temp_Buffer_Data[PIP_Previous_ID_TLV_Size], Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 1]);
+
+										Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 2] := PIP_Current_Param_Type;
+										Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 3] := PIP_Current_Param_Length;
+
+										UDINT_AS_WORD(Module_Configuration_ST.Application_Configuration.Calibration.Calibration_Load_3, wordtmp1, wordtmp2);
+
+										WORD_AS_BYTE(wordtmp1, Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 4], Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 5]);
+										WORD_AS_BYTE(wordtmp2, Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 6], Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 7]);
+
+									(* Write Calibration Zero Value *)	
+									1041:
+										PIP_Current_Param_Type := 16#0E;
+										PIP_Current_Param_Length := 16#04;
+
+										WORD_AS_BYTE(INT_TO_WORD(PIP_Current_Param_ID), Temp_Buffer_Data[PIP_Previous_ID_TLV_Size], Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 1]);
+
+										Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 2] := PIP_Current_Param_Type;
+										Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 3] := PIP_Current_Param_Length;
+
+										DINT_AS_WORD(Module_Configuration_ST.Application_Configuration.Calibration.User_Calibration_Zero_Value, wordtmp1, wordtmp2);
+
+										WORD_AS_BYTE(wordtmp1, Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 4], Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 5]);
+										WORD_AS_BYTE(wordtmp2, Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 6], Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 7]);
+
+									(* Write Global span coefficient *)	
+									1042:
+										PIP_Current_Param_Type := 16#0E;
+										PIP_Current_Param_Length := 16#04;
+
+										WORD_AS_BYTE(INT_TO_WORD(PIP_Current_Param_ID), Temp_Buffer_Data[PIP_Previous_ID_TLV_Size], Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 1]);
+
+										Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 2] := PIP_Current_Param_Type;
+										Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 3] := PIP_Current_Param_Length;
+
+										udinttmp1 := REAL_TO_UDINT(Module_Configuration_ST.Application_Configuration.Calibration.Global_SpanAdjustment_Coef*1000000.0);
+
+										UDINT_AS_WORD(udinttmp1, wordtmp1, wordtmp2);
+
+										WORD_AS_BYTE(wordtmp1, Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 4], Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 5]);
+										WORD_AS_BYTE(wordtmp2, Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 6], Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 7]);
+
+									(* Write Span adjustment coefficient 1 *)	
+									1043:
+										PIP_Current_Param_Type := 16#09;
+										PIP_Current_Param_Length := 16#04;
+
+										WORD_AS_BYTE(INT_TO_WORD(PIP_Current_Param_ID), Temp_Buffer_Data[PIP_Previous_ID_TLV_Size], Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 1]);
+
+										Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 2] := PIP_Current_Param_Type;
+										Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 3] := PIP_Current_Param_Length;
+
+										REAL_AS_WORD(Module_Configuration_ST.Application_Configuration.Calibration.Coef_Span_adjustment_1, wordtmp1, wordtmp2);
+										WORD_AS_BYTE(wordtmp1, Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 4], Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 5]);
+										WORD_AS_BYTE(wordtmp2, Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 6], Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 7]);
+
+									(* Write Span adjustment coefficient 2 *)	
+									1044:
+										PIP_Current_Param_Type := 16#09;
+										PIP_Current_Param_Length := 16#04;
+
+										WORD_AS_BYTE(INT_TO_WORD(PIP_Current_Param_ID), Temp_Buffer_Data[PIP_Previous_ID_TLV_Size], Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 1]);
+
+										Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 2] := PIP_Current_Param_Type;
+										Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 3] := PIP_Current_Param_Length;
+
+										REAL_AS_WORD(Module_Configuration_ST.Application_Configuration.Calibration.Coef_Span_adjustment_2, wordtmp1, wordtmp2);
+										WORD_AS_BYTE(wordtmp1, Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 4], Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 5]);
+										WORD_AS_BYTE(wordtmp2, Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 6], Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 7]);
+
+									(* Write Span adjustment coefficient 3 *)	
+									1045:
+										PIP_Current_Param_Type := 16#09;
+										PIP_Current_Param_Length := 16#04;
+
+										WORD_AS_BYTE(INT_TO_WORD(PIP_Current_Param_ID), Temp_Buffer_Data[PIP_Previous_ID_TLV_Size], Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 1]);
+
+										Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 2] := PIP_Current_Param_Type;
+										Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 3] := PIP_Current_Param_Length;
+
+										REAL_AS_WORD(Module_Configuration_ST.Application_Configuration.Calibration.Coef_Span_adjustment_3, wordtmp1, wordtmp2);
+										WORD_AS_BYTE(wordtmp1, Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 4], Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 5]);
+										WORD_AS_BYTE(wordtmp2, Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 6], Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 7]);
+
+									(* Write Calibration place G *)	
+									1046:
+										PIP_Current_Param_Type := 16#0E;
+										PIP_Current_Param_Length := 16#04;
+
+										WORD_AS_BYTE(INT_TO_WORD(PIP_Current_Param_ID), Temp_Buffer_Data[PIP_Previous_ID_TLV_Size], Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 1]);
+
+										Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 2] := PIP_Current_Param_Type;
+										Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 3] := PIP_Current_Param_Length;
+
+										udinttmp1 := REAL_TO_UDINT(Module_Configuration_ST.Application_Configuration.Calibration.Calibration_Place_g_Value*1000000.0);
+
+										UDINT_AS_WORD(udinttmp1, wordtmp1, wordtmp2);
+
+										WORD_AS_BYTE(wordtmp1, Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 4], Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 5]);
+										WORD_AS_BYTE(wordtmp2, Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 6], Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 7]);	
+
+									(* Write Using place G *)	
+									1047:
+										PIP_Current_Param_Type := 16#0E;
+										PIP_Current_Param_Length := 16#04;
+
+										WORD_AS_BYTE(INT_TO_WORD(PIP_Current_Param_ID), Temp_Buffer_Data[PIP_Previous_ID_TLV_Size], Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 1]);
+
+										Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 2] := PIP_Current_Param_Type;
+										Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 3] := PIP_Current_Param_Length;
+
+										udinttmp1 := REAL_TO_UDINT(Module_Configuration_ST.Application_Configuration.Calibration.Place_Of_Use_g_Value*1000000.0);
+
+										UDINT_AS_WORD(udinttmp1, wordtmp1, wordtmp2);
+
+										WORD_AS_BYTE(wordtmp1, Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 4], Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 5]);
+										WORD_AS_BYTE(wordtmp2, Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 6], Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 7]);	
+
+									(* Write measurements value (ONLY READ ACCESS !!) *)	
+									1024, 1025, 1026, 1048, 1049, 1050, 1051, 1052, 1053, 1054, 1055, 1057, 1059:
+										CIP_Valid_Req := false;
+
+									(* Write Command register *)
+									1056:
+										PIP_Current_Param_Type := 16#02;
+										PIP_Current_Param_Length := 16#02;
+
+										WORD_AS_BYTE(INT_TO_WORD(PIP_Current_Param_ID), Temp_Buffer_Data[PIP_Previous_ID_TLV_Size], Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 1]);
+
+										Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 2] := PIP_Current_Param_Type;
+										Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 3] := PIP_Current_Param_Length;
+
+										WORD_AS_BYTE(Module_Configuration_ST.Application_Commands.Explicit_Command_Register_Code, Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 4], Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 5]);
+
+										Explicit_Write_Cde_Register_flag := true;
+
+										if (Module_Configuration_ST.Application_Commands.Explicit_Command_Register_Code = 16#00D0) then
+
+											Upload_RuntimeCfg_Done := false;
+
+										end_if;
+								
+									(* Write Load cell wiring mode and Terminaison resistor  *)
+									1058:
+										PIP_Current_Param_Type := 16#0C;
+										PIP_Current_Param_Length := 16#01;
+
+										WORD_AS_BYTE(INT_TO_WORD(PIP_Current_Param_ID), Temp_Buffer_Data[PIP_Previous_ID_TLV_Size], Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 1]);
+
+										Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 2] := PIP_Current_Param_Type;
+										Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 3] := PIP_Current_Param_Length;
+										Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 4] := Module_Configuration_ST.Application_Configuration.LegalFor_Trade.LoadCell_Terminal_Resistor;
+							
+									(* Write Restoring calibration status *)
+									1060:
+										PIP_Current_Param_Type := 16#0C;
+										PIP_Current_Param_Length := 16#01;	
+								
+										WORD_AS_BYTE(INT_TO_WORD(PIP_Current_Param_ID), Temp_Buffer_Data[PIP_Previous_ID_TLV_Size], Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 1]);
+
+										Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 2] := PIP_Current_Param_Type;
+										Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 3] := PIP_Current_Param_Length;
+										Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 4] := Module_Configuration_ST.Application_Configuration.Calibration.Calibration_Restoring_status;
+
+									(* Write fdr calibration and config usage options *)
+									1061:
+										bytetmp1 := 0;
+
+										PIP_Current_Param_Type := 16#0C;
+										PIP_Current_Param_Length := 16#01;	
+								
+										WORD_AS_BYTE(INT_TO_WORD(PIP_Current_Param_ID), Temp_Buffer_Data[PIP_Previous_ID_TLV_Size], Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 1]);
+
+										bytetmp1.0 := Module_Configuration_ST.Application_Configuration.Calibration.Ignored_DTM_Calibration;
+										bytetmp1.1 := Module_Configuration_ST.Application_Configuration.Ignored_DTM_Configuration;
+
+										Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 2] := PIP_Current_Param_Type;
+										Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 3] := PIP_Current_Param_Length;
+										Temp_Buffer_Data[PIP_Previous_ID_TLV_Size + 4] := bytetmp1;
+
+
+								end_case;
+							else
+								CIP_Valid_Req := false;
+
+								 i := PIP_NbParams;
+							end_if;
+
+							if (CIP_Valid_Req) then 
+
+								(* Size = 2Bytes_ID + 1Byte_Type + 1Byte_Length + (Lenght)Bytes_Value *)
+								PIP_Previous_ID_TLV_Size := PIP_Previous_ID_TLV_Size + 4 + BYTE_TO_INT(PIP_Current_Param_Length);
+							end_if;
+						end_for;
+
+						if (not (INT_TO_BOOL(MOD_INT(PIP_Previous_ID_TLV_Size, 2)))) then
+
+							(* taille des données de la requête en mots *)
+							CIP_ReqDataSizeWords := PIP_Previous_ID_TLV_Size/2 + 1;
+
+						else
+							(* taille des données de la requête en mots *)
+							CIP_ReqDataSizeWords := PIP_Previous_ID_TLV_Size/2 + 2;
+
+						end_if;
+
+					end_if;							
+					
+
+				end_if;
+				if (CIP_Valid_Req) then
+					(* taille de la requête en mots *)
+					CIP_ReqSizeWords := 3;
+				end_if;
+			end_if;
+		end_if;
+
+		if(CIP_Valid_Req) then
+
+			if (PIP_RequestType) then
+
+				j :=0;
+
+				(* Convert Temp Receive BYTE array to INT array *)
+				for i:= 0 to (CIP_ReqDataSizeWords) do	
+											
+					DataExch_Tx_Rx_Buffer[5 + i] := WORD_TO_INT(BYTE_AS_WORD(Temp_Buffer_Data[j], Temp_Buffer_Data[j + 1]));
+
+					j := j + 2;
+				end_for;
+
+			end_if;
+
+			(* Information du service de requête CIP : 
+			Octet de poids fort = taille de la requête en mots
+			Octet de poids faible = code du service EtherNet/IP *)
+			DataExch_Tx_Rx_Buffer[0] := WORD_TO_INT(BYTE_AS_WORD(CIP_Service,
+								INT_TO_BYTE(CIP_ReqSizeWords)));
+
+			(* Information de classe de la requête CIP : 
+			Octet de poids fort = classe
+			Octet de poids faible = segment de classe (16#20) *)
+			DataExch_Tx_Rx_Buffer[1] := WORD_TO_INT(BYTE_AS_WORD(16#20, CIP_Classe));
+
+			(* Information d'instance de la requête CIP : 
+			Octet de poids fort = instance (toujours 1 dans le cas présent)
+			Octet de poids faible = segment d'instance : 16#24 *)
+			DataExch_Tx_Rx_Buffer[2] := WORD_TO_INT(BYTE_AS_WORD(16#24, 16#01));
+
+			(* Information d'attribut de la requête CIP : 
+			Octet de poids fort = instance (toujours 1 dans le cas présent)
+			Octet de poids faible = segment d'attribut : 16#30 *)
+			DataExch_Tx_Rx_Buffer[3] := WORD_TO_INT(BYTE_AS_WORD(16#30, 16#01));
+
+			(* taille de la requête en octets *)
+			CIP_ReqSizeBytes := (CIP_ReqSizeWords + CIP_ReqDataSizeWords) * 2;
+
+			(* Block time out de la requête en ms x100 ms *)
+			Management_Param[2] := 10; (* 1s time out delay *)
+
+			(* taille de la requête en octets *)
+			Management_Param[3] := CIP_ReqSizeBytes + 2;
+
+			CIP_X00 := false;
+			CIP_X01 := true;
+
+			Module_Configuration_ST.Application_Status.Data_Exch_Error := false;
+			Module_Configuration_ST.Application_Status.Explicit_Error_Request := false;
+			Module_Configuration_ST.Application_Status.Explicit_Error_Sys := false;
+			Module_Configuration_ST.Application_Status.Explicit_Error_Cip := false;
+		else
+			CIP_X00 := false;
+			CIP_X02 := true;
+
+			Module_Configuration_ST.Application_Status.Data_Exch_Error := false;
+			Module_Configuration_ST.Application_Status.Explicit_Error_Request := true;
+			Module_Configuration_ST.Application_Status.Explicit_Error_Sys := false;
+			Module_Configuration_ST.Application_Status.Explicit_Error_Cip := false;
+		end_if;
+
+	end_if;
+elsif (CIP_X01) then
+	(* DATA_EXCH *)
+	if (not Management_Param[0].0) then
+		(* Activité terminée *)
+
+		(* Contrôle de la réponse *)
+		(*Management_Param[1]  MSB : Rapport d'opération  LSB : Rapport de communication *)
+		if (Management_Param[1] &lt;&gt; 0) then
+			Module_Configuration_ST.Application_Status.Data_Exch_Error := true;
+			WORD_AS_BYTE(INT_TO_WORD(Management_Param[1]),
+						Module_Configuration_ST.Application_Status.Data_Exch_Com_Report,
+						Module_Configuration_ST.Application_Status.Data_Exch_Operation_Report);
+		else
+			if ((DataExch_Tx_Rx_Buffer[0] and 16#FF00) &lt;&gt; 0) then
+				(* Erreur Système *)
+				Module_Configuration_ST.Application_Status.Explicit_Error_Sys := true;
+				Module_Configuration_ST.Application_Status.Explicit_SysError := ROL(DataExch_Tx_Rx_Buffer[1], 8);
+			elsif (DataExch_Tx_Rx_Buffer[1] &lt;&gt; 0) then
+				(* Erreur CIP *)
+				Module_Configuration_ST.Application_Status.Explicit_Error_Cip := true;
+				Module_Configuration_ST.Application_Status.Explicit_CipEtatGal := INT_TO_BYTE(DataExch_Tx_Rx_Buffer[1] and 16#00FF);
+				Module_Configuration_ST.Application_Status.Explicit_CipEtatEtenduLen := INT_TO_BYTE(
+									ROL(DataExch_Tx_Rx_Buffer[1] and 16#FF00, 8));
+			else
+				(* Pas d'erreur CIP reponse, analyse des données PIP *)
+				if (not PIP_RequestType) then
+					(* PIP Read request *)
+					
+					(* Error in PIP response *)
+					if ((DataExch_Tx_Rx_Buffer[2] and 16#FF00) &lt;&gt; 0) then
+					 	Module_Configuration_ST.Application_Status.Explicit_Pip_Error_Response := true;
+					else 
+						Module_Configuration_ST.Application_Status.Explicit_Pip_Error_Response := false;
+					end_if;
+
+					if (not Module_Configuration_ST.Application_Status.Explicit_Pip_Error_Response) then 
+
+						if ((DataExch_Tx_Rx_Buffer[3] and 16#00FF) = PIP_NbParams) then 
+
+							PIP_Previous_ID_TLV_Size := 0;
+							PIP_Current_Param_ID := 0;
+
+							j := 0;							
+
+							(* Convert Receive INT array to BYTE array *)
+							for i:= 0 to ((PIP_NbParams*4) + 4) do								
+
+								wordtmp1 := INT_TO_WORD(DataExch_Tx_Rx_Buffer[i]);
+
+								WORD_AS_BYTE (IN := (*WORD*)wordtmp1,
+								              LOW =&gt; (*BYTE*)Temp_Buffer_Data[j],
+								              HIGH =&gt; (*BYTE*)Temp_Buffer_Data[j + 1]);
+
+								j := j + 2;
+
+							end_for;
+
+							(* Scrutation des IDs pour constituer les TLV des données *)
+							for i:= 0 to (PIP_NbParams - 1) do
+
+								(* Get current Parameter ID on combinaison of two next elements *)
+								PIP_Current_Param_ID := WORD_TO_INT(BYTE_AS_WORD(Temp_Buffer_Data[7 + PIP_Previous_ID_TLV_Size], Temp_Buffer_Data[8 + PIP_Previous_ID_TLV_Size]));
+								PIP_Current_Param_Type := Temp_Buffer_Data[9 + PIP_Previous_ID_TLV_Size];
+								PIP_Current_Param_Length := Temp_Buffer_Data[10 + PIP_Previous_ID_TLV_Size];
+																					
+								case PIP_Current_Param_ID of 	
+									(* Reading of HMI address *)
+									1000:
+										if (PIP_Current_Param_Type = 16#0C and PIP_Current_Param_Length = 16#01) then
+
+											Module_Configuration_ST.Application_Configuration.SWTouch.HMI_Address := Temp_Buffer_Data[10 + PIP_Previous_ID_TLV_Size + 1];
+										else
+
+											Module_Configuration_ST.Application_Status.Explicit_Pip_Error_Response := true;
+																																	
+										end_if;
+																
+									(* Reading of HMI baud rate *)
+									1001:
+										if (PIP_Current_Param_Type = 16#0C and PIP_Current_Param_Length = 16#01) then
+											
+											case BYTE_TO_INT(Temp_Buffer_Data[10 + PIP_Previous_ID_TLV_Size + 1]) of 
+												0 : udinttmp1 := 9600;
+												1 : udinttmp1 := 19200;
+												2 : udinttmp1 := 38400;
+												3 : udinttmp1 := 57600;
+												4 : udinttmp1 := 115200;
+											end_case;											
+
+											Module_Configuration_ST.Application_Configuration.SWTouch.HMI_Baudrate := udinttmp1;
+										else
+
+											Module_Configuration_ST.Application_Status.Explicit_Pip_Error_Response := true;
+																																	
+										end_if;																
+								
+									(* Reading of HMI panel parameters *)
+									1002:
+										if (PIP_Current_Param_Type = 16#0D and PIP_Current_Param_Length = 16#02) then
+
+											Module_Configuration_ST.Application_Configuration.SWTouch.HMI_Panel_Settings := BYTE_AS_WORD(Temp_Buffer_Data[10 + PIP_Previous_ID_TLV_Size + 1], Temp_Buffer_Data[10 + PIP_Previous_ID_TLV_Size + 2]);
+										else
+
+											Module_Configuration_ST.Application_Status.Explicit_Pip_Error_Response := true;
+																																	
+										end_if;	
+
+									(* Reading of HMI protection PassWord *)	
+									1003:
+										if (PIP_Current_Param_Type = 16#0B and PIP_Current_Param_Length = 16#04) then
+											
+											arint2tmp[0] := WORD_TO_INT(BYTE_AS_WORD(Temp_Buffer_Data[10 + PIP_Previous_ID_TLV_Size + 1], Temp_Buffer_Data[10 + PIP_Previous_ID_TLV_Size + 2]));
+
+											arint2tmp[1] := WORD_TO_INT(BYTE_AS_WORD(Temp_Buffer_Data[10 + PIP_Previous_ID_TLV_Size + 3], Temp_Buffer_Data[10 + PIP_Previous_ID_TLV_Size + 4]));
+
+											Module_Configuration_ST.Application_Configuration.SWTouch.HMI_PassWord := ASCII_TO_STRING(arint2tmp);
+
+										else
+
+											Module_Configuration_ST.Application_Status.Explicit_Pip_Error_Response := true;
+																																	
+										end_if;	
+
+									(* Reading of Logicial Input I0 Setting *)
+									1004:
+										if (PIP_Current_Param_Type = 16#0C and PIP_Current_Param_Length = 16#01) then
+
+											Module_Configuration_ST.Application_Configuration.Logical_Inputs_Outputs.Input_I0_Settings := Temp_Buffer_Data[10 + PIP_Previous_ID_TLV_Size + 1];
+										else
+
+											Module_Configuration_ST.Application_Status.Explicit_Pip_Error_Response := true;
+																																	
+										end_if;
+
+									(* Reading of Logicial Input I1 Setting *)
+									1005:
+										if (PIP_Current_Param_Type = 16#0C and PIP_Current_Param_Length = 16#01) then
+
+											Module_Configuration_ST.Application_Configuration.Logical_Inputs_Outputs.Input_I1_Settings := Temp_Buffer_Data[10 + PIP_Previous_ID_TLV_Size + 1];
+										else
+
+											Module_Configuration_ST.Application_Status.Explicit_Pip_Error_Response := true;
+																																	
+										end_if;											
+										
+									(* Reading of Logical Inputs holding time *)
+									1006:
+										if (PIP_Current_Param_Type = 16#02 and PIP_Current_Param_Length = 16#02) then
+
+											wordtmp1 := BYTE_AS_WORD(Temp_Buffer_Data[10 + PIP_Previous_ID_TLV_Size + 1], Temp_Buffer_Data[10 + PIP_Previous_ID_TLV_Size + 2]);
+										
+											Module_Configuration_ST.Application_Configuration.Logical_Inputs_Outputs.Inputs_Holding_Time_ms := WORD_TO_UINT(wordtmp1);
+										else
+
+											Module_Configuration_ST.Application_Status.Explicit_Pip_Error_Response := true;
+																																	
+										end_if;
+								
+									(* Reading of Logicial Outputs S0 &amp; S1 Setting *)
+									1007:
+										if (PIP_Current_Param_Type = 16#0D and PIP_Current_Param_Length = 16#02) then
+
+											wordtmp1 := BYTE_AS_WORD(Temp_Buffer_Data[10 + PIP_Previous_ID_TLV_Size + 1], Temp_Buffer_Data[10 + PIP_Previous_ID_TLV_Size + 2]);
+										
+											Module_Configuration_ST.Application_Configuration.Logical_Inputs_Outputs.Outputs_S0S1_Settings := wordtmp1;
+										else
+
+											Module_Configuration_ST.Application_Status.Explicit_Pip_Error_Response := true;
+																																	
+										end_if;
+
+									(* Reading of Coarse feed cut off point *)	
+									1008:
+										if (PIP_Current_Param_Type = 16#0E and PIP_Current_Param_Length = 16#04) then
+
+											wordtmp1 := BYTE_AS_WORD(Temp_Buffer_Data[10 + PIP_Previous_ID_TLV_Size + 1], Temp_Buffer_Data[10 + PIP_Previous_ID_TLV_Size + 2]);
+											wordtmp2 := BYTE_AS_WORD(Temp_Buffer_Data[10 + PIP_Previous_ID_TLV_Size + 3], Temp_Buffer_Data[10 + PIP_Previous_ID_TLV_Size + 4]);
+
+											Module_Configuration_ST.Application_Configuration.Logical_Inputs_Outputs.Coarse_Feed_CutOff_Point := WORD_AS_DINT(wordtmp1, wordtmp2);
+
+										else
+
+											Module_Configuration_ST.Application_Status.Explicit_Pip_Error_Response := true;
+																																	
+										end_if;
+
+									(* Reading of Fine feed cut off point *)	
+									1009:
+										if (PIP_Current_Param_Type = 16#0E and PIP_Current_Param_Length = 16#04) then
+
+											wordtmp1 := BYTE_AS_WORD(Temp_Buffer_Data[10 + PIP_Previous_ID_TLV_Size + 1], Temp_Buffer_Data[10 + PIP_Previous_ID_TLV_Size + 2]);
+											wordtmp2 := BYTE_AS_WORD(Temp_Buffer_Data[10 + PIP_Previous_ID_TLV_Size + 3], Temp_Buffer_Data[10 + PIP_Previous_ID_TLV_Size + 4]);
+
+											Module_Configuration_ST.Application_Configuration.Logical_Inputs_Outputs.Fine_Feed_CutOff_Point := WORD_AS_DINT(wordtmp1, wordtmp2);
+
+										else
+
+											Module_Configuration_ST.Application_Status.Explicit_Pip_Error_Response := true;
+																																	
+										end_if;
+
+									(* Reading of Fine Feed Mask time *)
+									1010:
+										if (PIP_Current_Param_Type = 16#02 and PIP_Current_Param_Length = 16#02) then
+
+											wordtmp1 := BYTE_AS_WORD(Temp_Buffer_Data[10 + PIP_Previous_ID_TLV_Size + 1], Temp_Buffer_Data[10 + PIP_Previous_ID_TLV_Size + 2]);
+										
+											Module_Configuration_ST.Application_Configuration.Logical_Inputs_Outputs.Fine_Feed_Mask_Time_ms := WORD_TO_UINT(wordtmp1);
+										else
+
+											Module_Configuration_ST.Application_Status.Explicit_Pip_Error_Response := true;
+																																	
+										end_if;
+
+									(* Reading of Logicial Output S2 Setting *)
+									1011:
+										if (PIP_Current_Param_Type = 16#0C and PIP_Current_Param_Length = 16#01) then
+
+											Module_Configuration_ST.Application_Configuration.Logical_Inputs_Outputs.Output_S2_Setting := Temp_Buffer_Data[10 + PIP_Previous_ID_TLV_Size + 1];
+										else
+
+											Module_Configuration_ST.Application_Status.Explicit_Pip_Error_Response := true;
+																																	
+										end_if;	
+
+									(* Reading of S2 threshold Low Value *)	
+									1012:
+										if (PIP_Current_Param_Type = 16#0E and PIP_Current_Param_Length = 16#04) then
+
+											wordtmp1 := BYTE_AS_WORD(Temp_Buffer_Data[10 + PIP_Previous_ID_TLV_Size + 1], Temp_Buffer_Data[10 + PIP_Previous_ID_TLV_Size + 2]);
+											wordtmp2 := BYTE_AS_WORD(Temp_Buffer_Data[10 + PIP_Previous_ID_TLV_Size + 3], Temp_Buffer_Data[10 + PIP_Previous_ID_TLV_Size + 4]);
+
+											Module_Configuration_ST.Application_Configuration.Logical_Inputs_Outputs.S2_Set_Point_Low_Value := WORD_AS_DINT(wordtmp1, wordtmp2);
+
+										else
+
+											Module_Configuration_ST.Application_Status.Explicit_Pip_Error_Response := true;
+																																	
+										end_if;
+
+									(* Reading of S2 threshold High Value *)	
+									1013:
+										if (PIP_Current_Param_Type = 16#0E and PIP_Current_Param_Length = 16#04) then
+
+											wordtmp1 := BYTE_AS_WORD(Temp_Buffer_Data[10 + PIP_Previous_ID_TLV_Size + 1], Temp_Buffer_Data[10 + PIP_Previous_ID_TLV_Size + 2]);
+											wordtmp2 := BYTE_AS_WORD(Temp_Buffer_Data[10 + PIP_Previous_ID_TLV_Size + 3], Temp_Buffer_Data[10 + PIP_Previous_ID_TLV_Size + 4]);
+
+											Module_Configuration_ST.Application_Configuration.Logical_Inputs_Outputs.S2_Set_Point_High_Value := WORD_AS_DINT(wordtmp1, wordtmp2);
+
+										else
+
+											Module_Configuration_ST.Application_Status.Explicit_Pip_Error_Response := true;
+																																	
+										end_if;
+
+									(* Reading of Logicial Output S3 Setting *)
+									1014:
+										if (PIP_Current_Param_Type = 16#0C and PIP_Current_Param_Length = 16#01) then
+
+											Module_Configuration_ST.Application_Configuration.Logical_Inputs_Outputs.Output_S3_Setting := Temp_Buffer_Data[10 + PIP_Previous_ID_TLV_Size + 1];
+										else
+
+											Module_Configuration_ST.Application_Status.Explicit_Pip_Error_Response := true;
+																																	
+										end_if;
+
+									(* Reading of S3 threshold Low Value *)	
+									1015:
+										if (PIP_Current_Param_Type = 16#0E and PIP_Current_Param_Length = 16#04) then
+
+											wordtmp1 := BYTE_AS_WORD(Temp_Buffer_Data[10 + PIP_Previous_ID_TLV_Size + 1], Temp_Buffer_Data[10 + PIP_Previous_ID_TLV_Size + 2]);
+											wordtmp2 := BYTE_AS_WORD(Temp_Buffer_Data[10 + PIP_Previous_ID_TLV_Size + 3], Temp_Buffer_Data[10 + PIP_Previous_ID_TLV_Size + 4]);
+
+											Module_Configuration_ST.Application_Configuration.Logical_Inputs_Outputs.S3_Set_Point_Low_Value := WORD_AS_DINT(wordtmp1, wordtmp2);
+
+										else
+
+											Module_Configuration_ST.Application_Status.Explicit_Pip_Error_Response := true;
+																																	
+										end_if;
+
+									(* Reading of S3 threshold High Value *)	
+									1016:
+										if (PIP_Current_Param_Type = 16#0E and PIP_Current_Param_Length = 16#04) then
+
+											wordtmp1 := BYTE_AS_WORD(Temp_Buffer_Data[10 + PIP_Previous_ID_TLV_Size + 1], Temp_Buffer_Data[10 + PIP_Previous_ID_TLV_Size + 2]);
+											wordtmp2 := BYTE_AS_WORD(Temp_Buffer_Data[10 + PIP_Previous_ID_TLV_Size + 3], Temp_Buffer_Data[10 + PIP_Previous_ID_TLV_Size + 4]);
+
+											Module_Configuration_ST.Application_Configuration.Logical_Inputs_Outputs.S3_Set_Point_High_Value := WORD_AS_DINT(wordtmp1, wordtmp2);
+
+										else
+
+											Module_Configuration_ST.Application_Status.Explicit_Pip_Error_Response := true;
+																																	
+										end_if;
+								
+									(* Reading of AD Converter Setting *)
+									1017:
+										if (PIP_Current_Param_Type = 16#0D and PIP_Current_Param_Length = 16#02) then
+
+											wordtmp1 := BYTE_AS_WORD(Temp_Buffer_Data[10 + PIP_Previous_ID_TLV_Size + 1], Temp_Buffer_Data[10 + PIP_Previous_ID_TLV_Size + 2]);
+											Module_Configuration_ST.Application_Configuration.Filtering.AD_Converter_Settings := WORD_TO_UINT(wordtmp1);
+										else
+
+											Module_Configuration_ST.Application_Status.Explicit_Pip_Error_Response := true;
+																																	
+										end_if;
+
+									(* Reading of Low pass order Setting *)
+									1018:
+										if (PIP_Current_Param_Type = 16#0D and PIP_Current_Param_Length = 16#02) then
+
+											wordtmp1 := BYTE_AS_WORD(Temp_Buffer_Data[10 + PIP_Previous_ID_TLV_Size + 1], Temp_Buffer_Data[10 + PIP_Previous_ID_TLV_Size + 2]);
+											Module_Configuration_ST.Application_Configuration.Filtering.Low_Pass_Order := INT_TO_UINT(ROL(WORD_TO_INT(wordtmp1), 8));
+										else
+
+											Module_Configuration_ST.Application_Status.Explicit_Pip_Error_Response := true;
+																																	
+										end_if;
+
+									(* Reading of Low pass cut off frequency Setting *)
+									1019:
+										if (PIP_Current_Param_Type = 16#02 and PIP_Current_Param_Length = 16#02) then
+
+											wordtmp1 := BYTE_AS_WORD(Temp_Buffer_Data[10 + PIP_Previous_ID_TLV_Size + 1], Temp_Buffer_Data[10 + PIP_Previous_ID_TLV_Size + 2]);
+											Module_Configuration_ST.Application_Configuration.Filtering.Low_Pass_CutOff_Frequency := UINT_TO_REAL(WORD_TO_UINT(wordtmp1))/100.0;
+										else
+
+											Module_Configuration_ST.Application_Status.Explicit_Pip_Error_Response := true;
+																																	
+										end_if;
+
+									(* Reading of Mean filter depth Setting *)
+									1020:
+										if (PIP_Current_Param_Type = 16#02 and PIP_Current_Param_Length = 16#02) then
+
+											wordtmp1 := BYTE_AS_WORD(Temp_Buffer_Data[10 + PIP_Previous_ID_TLV_Size + 1], Temp_Buffer_Data[10 + PIP_Previous_ID_TLV_Size + 2]);
+											Module_Configuration_ST.Application_Configuration.Filtering.Mean_Filter_Depth := WORD_TO_UINT(wordtmp1);
+										else
+
+											Module_Configuration_ST.Application_Status.Explicit_Pip_Error_Response := true;
+																																	
+										end_if;
+
+									(* Reading of Flow rate depth Setting *)
+									1021:
+										if (PIP_Current_Param_Type = 16#02 and PIP_Current_Param_Length = 16#02) then
+
+											wordtmp1 := BYTE_AS_WORD(Temp_Buffer_Data[10 + PIP_Previous_ID_TLV_Size + 1], Temp_Buffer_Data[10 + PIP_Previous_ID_TLV_Size + 2]);
+											Module_Configuration_ST.Application_Configuration.Filtering.Flow_Filter_Depth := WORD_TO_UINT(wordtmp1);
+										else
+
+											Module_Configuration_ST.Application_Status.Explicit_Pip_Error_Response := true;
+																																	
+										end_if;
+
+									(* Reading of Flow rate time Unit *)	
+									1022:	
+										if (PIP_Current_Param_Type = 16#0B and PIP_Current_Param_Length = 16#02) then
+
+											arint2tmp2[0] := WORD_TO_INT(BYTE_AS_WORD(Temp_Buffer_Data[10 + PIP_Previous_ID_TLV_Size + 2], Temp_Buffer_Data[10 + PIP_Previous_ID_TLV_Size + 1]));
+											Module_Configuration_ST.Application_Configuration.Filtering.Flow_Time_Unit := ASCII_TO_STRING(arint2tmp2);
+
+											if (Module_Configuration_ST.Application_Configuration.Filtering.Flow_Time_Unit &lt;&gt; 'mn') then
+
+												if(Module_Configuration_ST.Application_Configuration.Filtering.Flow_Time_Unit = ' s') then
+
+													Module_Configuration_ST.Application_Configuration.Filtering.Flow_Time_Unit := 's';	
+												else 
+													Module_Configuration_ST.Application_Configuration.Filtering.Flow_Time_Unit := 'h';													
+												end_if;
+
+											end_if;
+										else
+											Module_Configuration_ST.Application_Status.Explicit_Pip_Error_Response := true;
+																																	
+										end_if;
+
+									(* Reading of legal for trade &amp; sealing switch *)
+									1023:
+										if (PIP_Current_Param_Type = 16#0C and PIP_Current_Param_Length = 16#01) then
+
+											Module_Configuration_ST.Application_Configuration.LegalFor_Trade.Legal_Mode_Sealing_Switchs := Temp_Buffer_Data[10 + PIP_Previous_ID_TLV_Size + 1];
+										else
+
+											Module_Configuration_ST.Application_Status.Explicit_Pip_Error_Response := true;
+																																	
+										end_if;	
+									
+									(* Reading of legal for trade Version *)
+									1024:
+										if (PIP_Current_Param_Type = 16#0C and PIP_Current_Param_Length = 16#01) then
+
+											Module_Configuration_ST.Application_Configuration.LegalFor_Trade.LegalForTrade_SW_Version := Temp_Buffer_Data[10 + PIP_Previous_ID_TLV_Size + 1];
+										else
+
+											Module_Configuration_ST.Application_Status.Explicit_Pip_Error_Response := true;
+																																	
+										end_if;
+									
+									(* Reading of legal for trade Counter *)
+									1025:
+										if (PIP_Current_Param_Type = 16#02 and PIP_Current_Param_Length = 16#02) then
+
+											wordtmp1 := BYTE_AS_WORD(Temp_Buffer_Data[10 + PIP_Previous_ID_TLV_Size + 1], Temp_Buffer_Data[10 + PIP_Previous_ID_TLV_Size + 2]);
+											Module_Configuration_ST.Application_Configuration.LegalFor_Trade.LegalForTrade_Counter := WORD_TO_UINT(wordtmp1);
+										else
+
+											Module_Configuration_ST.Application_Status.Explicit_Pip_Error_Response := true;
+																																	
+										end_if;
+									
+									(* Reading of legal for trade Checksum CRC16 *)
+									1026:
+										if (PIP_Current_Param_Type = 16#02 and PIP_Current_Param_Length = 16#02) then
+
+											wordtmp1 := BYTE_AS_WORD(Temp_Buffer_Data[10 + PIP_Previous_ID_TLV_Size + 1], Temp_Buffer_Data[10 + PIP_Previous_ID_TLV_Size + 2]);
+											Module_Configuration_ST.Application_Configuration.LegalFor_Trade.LegalForTrade_Checksum := WORD_TO_UINT(wordtmp1);
+										else
+
+											Module_Configuration_ST.Application_Status.Explicit_Pip_Error_Response := true;
+																																	
+										end_if;
+
+									(* Reading of Zero functions Setting *)
+									1027:
+										if (PIP_Current_Param_Type = 16#0D and PIP_Current_Param_Length = 16#02) then
+
+											wordtmp1 := BYTE_AS_WORD(Temp_Buffer_Data[10 + PIP_Previous_ID_TLV_Size + 1], Temp_Buffer_Data[10 + PIP_Previous_ID_TLV_Size + 2]);
+											Module_Configuration_ST.Application_Configuration.LegalFor_Trade.Zero_functions := WORD_TO_UINT(wordtmp1);
+										else
+
+											Module_Configuration_ST.Application_Status.Explicit_Pip_Error_Response := true;
+																																	
+										end_if;	
+
+									(* Reading of Stability criterion setting *)
+									1028:
+										if (PIP_Current_Param_Type = 16#0C and PIP_Current_Param_Length = 16#01) then
+
+											Module_Configuration_ST.Application_Configuration.LegalFor_Trade.Stability_Criterion := Temp_Buffer_Data[10 + PIP_Previous_ID_TLV_Size + 1];
+										else
+
+											Module_Configuration_ST.Application_Status.Explicit_Pip_Error_Response := true;
+																																	
+										end_if;	
+
+									(* Reading of Determinist tare-Zero time Setting *)
+									1029:
+										if (PIP_Current_Param_Type = 16#02 and PIP_Current_Param_Length = 16#02) then
+
+											wordtmp1 := BYTE_AS_WORD(Temp_Buffer_Data[10 + PIP_Previous_ID_TLV_Size + 1], Temp_Buffer_Data[10 + PIP_Previous_ID_TLV_Size + 2]);
+										
+											Module_Configuration_ST.Application_Configuration.LegalFor_Trade.Zero_Tare_Specified_Time_ms := WORD_TO_UINT(wordtmp1);
+										else
+
+											Module_Configuration_ST.Application_Status.Explicit_Pip_Error_Response := true;
+																																	
+										end_if;
+																	
+									(* Reading of Preset tare *)	
+									1030:
+										if (PIP_Current_Param_Type = 16#0E and PIP_Current_Param_Length = 16#04) then
+
+											wordtmp1 := BYTE_AS_WORD(Temp_Buffer_Data[10 + PIP_Previous_ID_TLV_Size + 1], Temp_Buffer_Data[10 + PIP_Previous_ID_TLV_Size + 2]);
+											wordtmp2 := BYTE_AS_WORD(Temp_Buffer_Data[10 + PIP_Previous_ID_TLV_Size + 3], Temp_Buffer_Data[10 + PIP_Previous_ID_TLV_Size + 4]);
+
+											Module_Configuration_ST.Application_Configuration.LegalFor_Trade.Preset_Tare_Value := WORD_AS_UDINT(wordtmp1, wordtmp2);
+
+										else
+
+											Module_Configuration_ST.Application_Status.Explicit_Pip_Error_Response := true;
+																																	
+										end_if;								
+																	
+									(* Reading of Maximum capacity *)	
+									1031:																				
+										if (PIP_Current_Param_Type = 16#0E and PIP_Current_Param_Length = 16#04) then
+
+											wordtmp1 := BYTE_AS_WORD(Temp_Buffer_Data[10 + PIP_Previous_ID_TLV_Size + 1], Temp_Buffer_Data[10 + PIP_Previous_ID_TLV_Size + 2]);
+											wordtmp2 := BYTE_AS_WORD(Temp_Buffer_Data[10 + PIP_Previous_ID_TLV_Size + 3], Temp_Buffer_Data[10 + PIP_Previous_ID_TLV_Size + 4]);
+
+											Module_Configuration_ST.Application_Configuration.Calibration.Maximum_Capacity := WORD_AS_UDINT(wordtmp1, wordtmp2);
+
+										else
+
+											Module_Configuration_ST.Application_Status.Explicit_Pip_Error_Response := true;
+																																	
+										end_if;	
+	
+									(* Reading of Unit *)	
+									1032:
+										if (PIP_Current_Param_Type = 16#0B and PIP_Current_Param_Length = 16#04) then
+																
+											arint2tmp[0] := WORD_TO_INT(BYTE_AS_WORD(Temp_Buffer_Data[10 + PIP_Previous_ID_TLV_Size + 4], Temp_Buffer_Data[10 + PIP_Previous_ID_TLV_Size + 3]));
+											arint2tmp[1] := WORD_TO_INT(BYTE_AS_WORD(Temp_Buffer_Data[10 + PIP_Previous_ID_TLV_Size + 2], Temp_Buffer_Data[10 + PIP_Previous_ID_TLV_Size + 1]));
+
+											Module_Configuration_ST.Application_Configuration.LegalFor_Trade.Unit := ASCII_TO_STRING(arint2tmp);
+										else
+
+											Module_Configuration_ST.Application_Status.Explicit_Pip_Error_Response := true;
+																																	
+										end_if;
+
+									(* Reading of Scale interval *)
+									1033:
+										if (PIP_Current_Param_Type = 16#02 and PIP_Current_Param_Length = 16#02) then
+
+											wordtmp1 := BYTE_AS_WORD(Temp_Buffer_Data[10 + PIP_Previous_ID_TLV_Size + 1], Temp_Buffer_Data[10 + PIP_Previous_ID_TLV_Size + 2]);
+										
+											Module_Configuration_ST.Application_Configuration.Calibration.Scale_Interval := WORD_TO_UINT(wordtmp1);
+										else
+
+											Module_Configuration_ST.Application_Status.Explicit_Pip_Error_Response := true;
+																																	
+										end_if;
+
+									(* Reading of Decimal point position *)
+									1034:
+										if (PIP_Current_Param_Type = 16#0C and PIP_Current_Param_Length = 16#01) then
+
+											Module_Configuration_ST.Application_Configuration.LegalFor_Trade.Decimal_Point_Position := Temp_Buffer_Data[10 + PIP_Previous_ID_TLV_Size + 1];
+										else
+
+											Module_Configuration_ST.Application_Status.Explicit_Pip_Error_Response := true;
+																																	
+										end_if;	
+
+									(* Reading of Sensor sensitivity *)
+									1035:
+										if (PIP_Current_Param_Type = 16#0E and PIP_Current_Param_Length = 16#04) then
+
+											wordtmp1 := BYTE_AS_WORD(Temp_Buffer_Data[10 + PIP_Previous_ID_TLV_Size + 1], Temp_Buffer_Data[10 + PIP_Previous_ID_TLV_Size + 2]);
+											wordtmp2 := BYTE_AS_WORD(Temp_Buffer_Data[10 + PIP_Previous_ID_TLV_Size + 3], Temp_Buffer_Data[10 + PIP_Previous_ID_TLV_Size + 4]);
+											
+											udinttmp1 := WORD_AS_UDINT(wordtmp1, wordtmp2);
+
+											Module_Configuration_ST.Application_Configuration.Calibration.Sensor_Sensitivity := UDINT_TO_REAL(udinttmp1)/100000.0;
+
+										else
+
+											Module_Configuration_ST.Application_Status.Explicit_Pip_Error_Response := true;
+																																	
+										end_if;
+
+									(* Reading of Zero sensitivity *)
+									1036:
+										if (PIP_Current_Param_Type = 16#0E and PIP_Current_Param_Length = 16#04) then
+
+											wordtmp1 := BYTE_AS_WORD(Temp_Buffer_Data[10 + PIP_Previous_ID_TLV_Size + 1], Temp_Buffer_Data[10 + PIP_Previous_ID_TLV_Size + 2]);
+											wordtmp2 := BYTE_AS_WORD(Temp_Buffer_Data[10 + PIP_Previous_ID_TLV_Size + 3], Temp_Buffer_Data[10 + PIP_Previous_ID_TLV_Size + 4]);
+
+											dinttmp1 := WORD_AS_DINT(wordtmp1, wordtmp2);
+
+											Module_Configuration_ST.Application_Configuration.Calibration.Sensor_Zero_Sensitivity := DINT_TO_REAL(dinttmp1)/100000.0;
+
+										else
+
+											Module_Configuration_ST.Application_Status.Explicit_Pip_Error_Response := true;
+																																	
+										end_if;
+
+									(* Reading of Number of calibration segments *)
+									1037:
+										if (PIP_Current_Param_Type = 16#02 and PIP_Current_Param_Length = 16#02) then
+
+											wordtmp1 := BYTE_AS_WORD(Temp_Buffer_Data[10 + PIP_Previous_ID_TLV_Size + 1], Temp_Buffer_Data[10 + PIP_Previous_ID_TLV_Size + 2]);
+										
+											Module_Configuration_ST.Application_Configuration.Calibration.Number_Of_Segments := WORD_TO_UINT(wordtmp1);
+										else
+
+											Module_Configuration_ST.Application_Status.Explicit_Pip_Error_Response := true;
+																																	
+										end_if;
+
+									(* Reading of Calibration load 1 *)	
+									1038:
+										if (PIP_Current_Param_Type = 16#0E and PIP_Current_Param_Length = 16#04) then
+
+											wordtmp1 := BYTE_AS_WORD(Temp_Buffer_Data[10 + PIP_Previous_ID_TLV_Size + 1], Temp_Buffer_Data[10 + PIP_Previous_ID_TLV_Size + 2]);
+											wordtmp2 := BYTE_AS_WORD(Temp_Buffer_Data[10 + PIP_Previous_ID_TLV_Size + 3], Temp_Buffer_Data[10 + PIP_Previous_ID_TLV_Size + 4]);
+
+											Module_Configuration_ST.Application_Configuration.Calibration.Calibration_Load_1 := WORD_AS_UDINT(wordtmp1, wordtmp2);
+
+										else
+
+											Module_Configuration_ST.Application_Status.Explicit_Pip_Error_Response := true;
+																																	
+										end_if;
+
+									(* Reading of Calibration load 2 *)	
+									1039:
+										if (PIP_Current_Param_Type = 16#0E and PIP_Current_Param_Length = 16#04) then
+
+											wordtmp1 := BYTE_AS_WORD(Temp_Buffer_Data[10 + PIP_Previous_ID_TLV_Size + 1], Temp_Buffer_Data[10 + PIP_Previous_ID_TLV_Size + 2]);
+											wordtmp2 := BYTE_AS_WORD(Temp_Buffer_Data[10 + PIP_Previous_ID_TLV_Size + 3], Temp_Buffer_Data[10 + PIP_Previous_ID_TLV_Size + 4]);
+
+											Module_Configuration_ST.Application_Configuration.Calibration.Calibration_Load_2 := WORD_AS_UDINT(wordtmp1, wordtmp2);
+
+										else
+
+											Module_Configuration_ST.Application_Status.Explicit_Pip_Error_Response := true;
+																																	
+										end_if;
+
+									(* Reading of Calibration load 3 *)	
+									1040:
+										if (PIP_Current_Param_Type = 16#0E and PIP_Current_Param_Length = 16#04) then
+
+											wordtmp1 := BYTE_AS_WORD(Temp_Buffer_Data[10 + PIP_Previous_ID_TLV_Size + 1], Temp_Buffer_Data[10 + PIP_Previous_ID_TLV_Size + 2]);
+											wordtmp2 := BYTE_AS_WORD(Temp_Buffer_Data[10 + PIP_Previous_ID_TLV_Size + 3], Temp_Buffer_Data[10 + PIP_Previous_ID_TLV_Size + 4]);
+
+											Module_Configuration_ST.Application_Configuration.Calibration.Calibration_Load_3 := WORD_AS_UDINT(wordtmp1, wordtmp2);
+
+										else
+
+											Module_Configuration_ST.Application_Status.Explicit_Pip_Error_Response := true;
+																																	
+										end_if;
+
+									(* Reading of Calibration Zero Value *)	
+									1041:
+										if (PIP_Current_Param_Type = 16#0E and PIP_Current_Param_Length = 16#04) then
+
+											wordtmp1 := BYTE_AS_WORD(Temp_Buffer_Data[10 + PIP_Previous_ID_TLV_Size + 1], Temp_Buffer_Data[10 + PIP_Previous_ID_TLV_Size + 2]);
+											wordtmp2 := BYTE_AS_WORD(Temp_Buffer_Data[10 + PIP_Previous_ID_TLV_Size + 3], Temp_Buffer_Data[10 + PIP_Previous_ID_TLV_Size + 4]);
+
+											Module_Configuration_ST.Application_Configuration.Calibration.User_Calibration_Zero_Value := WORD_AS_DINT(wordtmp1, wordtmp2);
+
+										else
+
+											Module_Configuration_ST.Application_Status.Explicit_Pip_Error_Response := true;
+																																	
+										end_if;
+
+									(* Reading of Global span coefficient *)	
+									1042:
+										if (PIP_Current_Param_Type = 16#0E and PIP_Current_Param_Length = 16#04) then
+
+											wordtmp1 := BYTE_AS_WORD(Temp_Buffer_Data[10 + PIP_Previous_ID_TLV_Size + 1], Temp_Buffer_Data[10 + PIP_Previous_ID_TLV_Size + 2]);
+											wordtmp2 := BYTE_AS_WORD(Temp_Buffer_Data[10 + PIP_Previous_ID_TLV_Size + 3], Temp_Buffer_Data[10 + PIP_Previous_ID_TLV_Size + 4]);
+
+											udinttmp1 := WORD_AS_UDINT(wordtmp1, wordtmp2);
+
+											Module_Configuration_ST.Application_Configuration.Calibration.Global_SpanAdjustment_Coef := UDINT_TO_REAL(udinttmp1)/1000000.0;
+
+										else
+
+											Module_Configuration_ST.Application_Status.Explicit_Pip_Error_Response := true;
+																																	
+										end_if;
+
+									(* Reading of Span adjustment coefficient 1 *)	
+									1043:
+										if (PIP_Current_Param_Type = 16#09 and PIP_Current_Param_Length = 16#04) then
+
+											wordtmp1 := BYTE_AS_WORD(Temp_Buffer_Data[10 + PIP_Previous_ID_TLV_Size + 1], Temp_Buffer_Data[10 + PIP_Previous_ID_TLV_Size + 2]);
+											wordtmp2 := BYTE_AS_WORD(Temp_Buffer_Data[10 + PIP_Previous_ID_TLV_Size + 3], Temp_Buffer_Data[10 + PIP_Previous_ID_TLV_Size + 4]);
+
+											Module_Configuration_ST.Application_Configuration.Calibration.Coef_Span_adjustment_1 := WORD_AS_REAL(wordtmp1, wordtmp2);
+
+										else
+
+											Module_Configuration_ST.Application_Status.Explicit_Pip_Error_Response := true;
+																																	
+										end_if;
+
+									(* Reading of Span adjustment coefficient 2 *)	
+									1044:
+										if (PIP_Current_Param_Type = 16#09 and PIP_Current_Param_Length = 16#04) then
+
+											wordtmp1 := BYTE_AS_WORD(Temp_Buffer_Data[10 + PIP_Previous_ID_TLV_Size + 1], Temp_Buffer_Data[10 + PIP_Previous_ID_TLV_Size + 2]);
+											wordtmp2 := BYTE_AS_WORD(Temp_Buffer_Data[10 + PIP_Previous_ID_TLV_Size + 3], Temp_Buffer_Data[10 + PIP_Previous_ID_TLV_Size + 4]);
+
+											Module_Configuration_ST.Application_Configuration.Calibration.Coef_Span_adjustment_2 := WORD_AS_REAL(wordtmp1, wordtmp2);
+
+										else
+
+											Module_Configuration_ST.Application_Status.Explicit_Pip_Error_Response := true;
+																																	
+										end_if;
+
+									(* Reading of Span adjustment coefficient 3 *)	
+									1045:
+										if (PIP_Current_Param_Type = 16#09 and PIP_Current_Param_Length = 16#04) then
+
+											wordtmp1 := BYTE_AS_WORD(Temp_Buffer_Data[10 + PIP_Previous_ID_TLV_Size + 1], Temp_Buffer_Data[10 + PIP_Previous_ID_TLV_Size + 2]);
+											wordtmp2 := BYTE_AS_WORD(Temp_Buffer_Data[10 + PIP_Previous_ID_TLV_Size + 3], Temp_Buffer_Data[10 + PIP_Previous_ID_TLV_Size + 4]);
+
+											Module_Configuration_ST.Application_Configuration.Calibration.Coef_Span_adjustment_3 := WORD_AS_REAL(wordtmp1, wordtmp2);
+
+										else
+
+											Module_Configuration_ST.Application_Status.Explicit_Pip_Error_Response := true;
+																																	
+										end_if;
+
+									(* Reading of Calibration place G *)	
+									1046:
+										if (PIP_Current_Param_Type = 16#0E and PIP_Current_Param_Length = 16#04) then
+
+											wordtmp1 := BYTE_AS_WORD(Temp_Buffer_Data[10 + PIP_Previous_ID_TLV_Size + 1], Temp_Buffer_Data[10 + PIP_Previous_ID_TLV_Size + 2]);
+											wordtmp2 := BYTE_AS_WORD(Temp_Buffer_Data[10 + PIP_Previous_ID_TLV_Size + 3], Temp_Buffer_Data[10 + PIP_Previous_ID_TLV_Size + 4]);
+
+											udinttmp1 := WORD_AS_UDINT(wordtmp1, wordtmp2);
+
+											Module_Configuration_ST.Application_Configuration.Calibration.Calibration_Place_g_Value := UDINT_TO_REAL(udinttmp1)/1000000.0;
+
+										else
+
+											Module_Configuration_ST.Application_Status.Explicit_Pip_Error_Response := true;
+																																	
+										end_if;
+
+									(* Reading of Using place G *)	
+									1047:
+										if (PIP_Current_Param_Type = 16#0E and PIP_Current_Param_Length = 16#04) then
+
+											wordtmp1 := BYTE_AS_WORD(Temp_Buffer_Data[10 + PIP_Previous_ID_TLV_Size + 1], Temp_Buffer_Data[10 + PIP_Previous_ID_TLV_Size + 2]);
+											wordtmp2 := BYTE_AS_WORD(Temp_Buffer_Data[10 + PIP_Previous_ID_TLV_Size + 3], Temp_Buffer_Data[10 + PIP_Previous_ID_TLV_Size + 4]);
+
+											udinttmp1 := WORD_AS_UDINT(wordtmp1, wordtmp2);
+
+											Module_Configuration_ST.Application_Configuration.Calibration.Place_Of_Use_g_Value := UDINT_TO_REAL(udinttmp1)/1000000.0;
+										else
+
+											Module_Configuration_ST.Application_Status.Explicit_Pip_Error_Response := true;
+																																	
+										end_if;
+
+									(* Reading of Gross measurement value*)	
+									1048:
+										if (PIP_Current_Param_Type = 16#0E and PIP_Current_Param_Length = 16#04) then
+
+											wordtmp1 := BYTE_AS_WORD(Temp_Buffer_Data[10 + PIP_Previous_ID_TLV_Size + 1], Temp_Buffer_Data[10 + PIP_Previous_ID_TLV_Size + 2]);
+											wordtmp2 := BYTE_AS_WORD(Temp_Buffer_Data[10 + PIP_Previous_ID_TLV_Size + 3], Temp_Buffer_Data[10 + PIP_Previous_ID_TLV_Size + 4]);
+
+											(*Module_Calling_Struct.Module_Status.Gross_Measurement := WORD_AS_DINT(wordtmp1, wordtmp2);*)
+
+										else
+
+											Module_Configuration_ST.Application_Status.Explicit_Pip_Error_Response := true;
+																																	
+										end_if;
+
+
+									(* Reading of Net measurement value*)	
+									1049:
+										if (PIP_Current_Param_Type = 16#0E and PIP_Current_Param_Length = 16#04) then
+
+											wordtmp1 := BYTE_AS_WORD(Temp_Buffer_Data[10 + PIP_Previous_ID_TLV_Size + 1], Temp_Buffer_Data[10 + PIP_Previous_ID_TLV_Size + 2]);
+											wordtmp2 := BYTE_AS_WORD(Temp_Buffer_Data[10 + PIP_Previous_ID_TLV_Size + 3], Temp_Buffer_Data[10 + PIP_Previous_ID_TLV_Size + 4]);
+
+											(*Module_Calling_Struct.Module_Status.Net_Measurement := WORD_AS_DINT(wordtmp1, wordtmp2);*)
+
+										else
+
+											Module_Configuration_ST.Application_Status.Explicit_Pip_Error_Response := true;
+																																	
+										end_if;
+
+
+									(* Reading of Factory measurement value*)	
+									1050:
+										if (PIP_Current_Param_Type = 16#0E and PIP_Current_Param_Length = 16#04) then
+
+											wordtmp1 := BYTE_AS_WORD(Temp_Buffer_Data[10 + PIP_Previous_ID_TLV_Size + 1], Temp_Buffer_Data[10 + PIP_Previous_ID_TLV_Size + 2]);
+											wordtmp2 := BYTE_AS_WORD(Temp_Buffer_Data[10 + PIP_Previous_ID_TLV_Size + 3], Temp_Buffer_Data[10 + PIP_Previous_ID_TLV_Size + 4]);
+
+											(*Module_Calling_Struct.Module_Status.Factory_Measurement := WORD_AS_DINT(wordtmp1, wordtmp2);*)
+
+										else
+
+											Module_Configuration_ST.Application_Status.Explicit_Pip_Error_Response := true;
+																																	
+										end_if;
+
+
+									(* Reading of Tare value*)	
+									1051:
+										if (PIP_Current_Param_Type = 16#0E and PIP_Current_Param_Length = 16#04) then
+
+											wordtmp1 := BYTE_AS_WORD(Temp_Buffer_Data[10 + PIP_Previous_ID_TLV_Size + 1], Temp_Buffer_Data[10 + PIP_Previous_ID_TLV_Size + 2]);
+											wordtmp2 := BYTE_AS_WORD(Temp_Buffer_Data[10 + PIP_Previous_ID_TLV_Size + 3], Temp_Buffer_Data[10 + PIP_Previous_ID_TLV_Size + 4]);
+
+											(*Module_Calling_Struct.Module_Status.Tare_Value := WORD_AS_DINT(wordtmp1, wordtmp2);*)
+
+										else
+
+											Module_Configuration_ST.Application_Status.Explicit_Pip_Error_Response := true;
+																																	
+										end_if;
+
+
+									(* Reading of Flow rate value*)	
+									1052:
+										if (PIP_Current_Param_Type = 16#09 and PIP_Current_Param_Length = 16#04) then
+
+											wordtmp1 := BYTE_AS_WORD(Temp_Buffer_Data[10 + PIP_Previous_ID_TLV_Size + 1], Temp_Buffer_Data[10 + PIP_Previous_ID_TLV_Size + 2]);
+											wordtmp2 := BYTE_AS_WORD(Temp_Buffer_Data[10 + PIP_Previous_ID_TLV_Size + 3], Temp_Buffer_Data[10 + PIP_Previous_ID_TLV_Size + 4]);
+
+											(*Module_Calling_Struct.Module_Status.Flow_Rate_Value := WORD_AS_REAL(wordtmp1, wordtmp2);*)
+
+										else
+
+											Module_Configuration_ST.Application_Status.Explicit_Pip_Error_Response := true;
+																																	
+										end_if;
+
+
+									(* Reading of measurement status value*)	
+									1054:
+										if (PIP_Current_Param_Type = 16#02 and PIP_Current_Param_Length = 16#02) then
+
+											(*Module_Calling_Struct.Module_Status.Measurement_Status := WORD_TO_UINT(BYTE_AS_WORD(Temp_Buffer_Data[10 + PIP_Previous_ID_TLV_Size + 1], Temp_Buffer_Data[10 + PIP_Previous_ID_TLV_Size + 2]));*)
+											;
+										else
+
+											Module_Configuration_ST.Application_Status.Explicit_Pip_Error_Response := true;
+																																	
+										end_if;
+
+
+									(* Reading of device status *)	
+									1055:
+										if (PIP_Current_Param_Type = 16#02 and PIP_Current_Param_Length = 16#02) then
+
+											(*Module_Calling_Struct.Module_Status.Device_Status := BYTE_AS_WORD(Temp_Receive_Data[10 + PIP_Previous_ID_TLV_Size + 1], Temp_Receive_Data[10 + PIP_Previous_ID_TLV_Size + 2]);*)
+											;
+										else
+
+											Module_Configuration_ST.Application_Status.Explicit_Pip_Error_Response := true;
+																																	
+										end_if;
+
+
+									(* Reading of Command register *)
+									1056:
+										if (PIP_Current_Param_Type = 16#02 and PIP_Current_Param_Length = 16#02) then
+
+											Module_Configuration_ST.Application_Status.Explicit_Cde_Register_RetCode := WORD_TO_UINT(BYTE_AS_WORD(Temp_Buffer_Data[10 + PIP_Previous_ID_TLV_Size + 1], Temp_Buffer_Data[10 + PIP_Previous_ID_TLV_Size + 2]));
+										else
+
+											Module_Configuration_ST.Application_Status.Explicit_Pip_Error_Response := true;
+																																	
+										end_if;
+																		
+									(* Reading of Response register *)
+									1057:
+										if (PIP_Current_Param_Type = 16#02 and PIP_Current_Param_Length = 16#02) then
+
+											Module_Configuration_ST.Application_Status.Implicit_Response_Register := WORD_TO_UINT(BYTE_AS_WORD(Temp_Buffer_Data[10 + PIP_Previous_ID_TLV_Size + 1], Temp_Buffer_Data[10 + PIP_Previous_ID_TLV_Size + 2]));
+										else
+
+											Module_Configuration_ST.Application_Status.Explicit_Pip_Error_Response := true;
+																																	
+										end_if;
+
+									(* Reading of Load cell wiring mode and Terminaison resistor  *)
+									1058:
+										if (PIP_Current_Param_Type = 16#0C and PIP_Current_Param_Length = 16#01) then
+
+											Module_Configuration_ST.Application_Configuration.LegalFor_Trade.LoadCell_Terminal_Resistor := Temp_Buffer_Data[10 + PIP_Previous_ID_TLV_Size + 1];
+										else
+
+											Module_Configuration_ST.Application_Status.Explicit_Pip_Error_Response := true;
+																																	
+										end_if;
+							
+									(* Reading of Nb divisions value*)	
+									(*1059:*)
+
+									(* Reading of Restoring calibration status *)
+									1060:
+										if (PIP_Current_Param_Type = 16#0C and PIP_Current_Param_Length = 16#01) then
+
+											Module_Configuration_ST.Application_Configuration.Calibration.Calibration_Restoring_status := Temp_Buffer_Data[10 + PIP_Previous_ID_TLV_Size + 1];
+										else
+
+											Module_Configuration_ST.Application_Status.Explicit_Pip_Error_Response := true;
+																																	
+										end_if;
+
+									(* Reading of fdr calibration and config usage options *)
+									1061:
+										bytetmp1 := 0;			
+
+										if (PIP_Current_Param_Type = 16#0C and PIP_Current_Param_Length = 16#01) then
+
+											bytetmp1 := Temp_Buffer_Data[10 + PIP_Previous_ID_TLV_Size + 1];
+
+											Module_Configuration_ST.Application_Configuration.Calibration.Ignored_DTM_Calibration := bytetmp1.0;
+											Module_Configuration_ST.Application_Configuration.Ignored_DTM_Configuration := bytetmp1.1;
+										else
+
+											Module_Configuration_ST.Application_Status.Explicit_Pip_Error_Response := true;
+																																	
+										end_if;
+
+								end_case;
+
+								PIP_Previous_ID_TLV_Size := PIP_Previous_ID_TLV_Size + 4 + BYTE_TO_INT(PIP_Current_Param_Length);
+
+							end_for;							
+						end_if;
+					end_if;
+				else 
+				(* PIP Write explicit request *)
+
+					(* Error in PIP response *)
+					if ((DataExch_Tx_Rx_Buffer[2] and 16#FF00) &lt;&gt; 0) then
+
+					 	Module_Configuration_ST.Application_Status.Explicit_Pip_Error_Response := true;
+
+					else 
+
+						Module_Configuration_ST.Application_Status.Explicit_Pip_Error_Response := false;
+
+					end_if;
+
+					if (not Module_Configuration_ST.Application_Status.Explicit_Pip_Error_Response) then 
+
+						(* Explicit request on command register *)
+						if (Explicit_Write_Cde_Register_flag) then
+
+							Explicit_Write_Cde_Register_flag := false;
+
+							Module_Configuration_ST.Application_Status.Explicit_Cde_Register_RetCode := WORD_TO_UINT(Module_Configuration_ST.Application_Commands.Explicit_Command_Register_Code);
+
+							if (Module_Configuration_ST.Application_Status.Explicit_Cde_Register_RetCode = 208) then
+
+								Upload_RuntimeCfg_Done := false;
+							end_if;
+
+						end_if;									
+					end_if;
+				end_if;								
+			end_if;
+		end_if;
+		CIP_X01 := false;
+		CIP_X02 := true;
+	end_if;
+elsif (CIP_X02) then
+
+	if (not Module_Configuration_ST.Application_Commands.Execute_Explicit_Request) then
+
+		CIP_X02 := false;
+		CIP_X00 := true;
+		PIP_Previous_ID_TLV_Size := 0;
+		PIP_Current_Param_ID := 0;
+		PIP_Current_Param_Length := 0;
+		i:=0;
+		j:=0;
+
+		Module_Configuration_ST.Application_Status.Data_Exch_Error := 0;
+		Module_Configuration_ST.Application_Status.Explicit_Error_Request := 0;
+		Module_Configuration_ST.Application_Status.Explicit_Error_Sys := 0;
+		Module_Configuration_ST.Application_Status.Explicit_Error_Cip := 0;
+		Module_Configuration_ST.Application_Status.Data_Exch_Com_Report := 0;
+		Module_Configuration_ST.Application_Status.Data_Exch_Operation_Report := 0;
+		Module_Configuration_ST.Application_Status.Explicit_SysError := 0;
+		Module_Configuration_ST.Application_Status.Explicit_Pip_Error_Request := 0;
+		Module_Configuration_ST.Application_Status.Explicit_Pip_Error_Response := 0;
+
+		Save_CIP_Execute := false;
+		Invalid_ID := false;
+
+	end_if;
+
+	if ((Module_Configuration_ST.Application_Status.Module_RUN_State) and (Module_Configuration_ST.Application_Commands.Upload_Runtime_Config) and not (Module_Configuration_ST.Application_Status.Explicit_Pip_Error_Response) and not (Upload_RuntimeCfg_Done)) then
+
+		Upload_RuntimeCfg_Done :=  true;
+
+		PIP_Previous_ID_TLV_Size := 0;
+		PIP_Current_Param_ID := 0;
+		PIP_Current_Param_Length := 0;
+		i:=0;
+		j:=0;
+		Invalid_ID := false;
+
+	end_if;
+end_if;
+
+if (CIP_X01) then
+
+	DATA_EXCH (ADR := CIP_Address,
+		TYP  := 1, (* Tranmit CIP Explicit request and Wait for Toolkit response *)
+		EMIS := DataExch_Tx_Rx_Buffer,
+		GEST := Management_Param,
+		RECP =&gt; DataExch_Tx_Rx_Buffer);
+end_if;
+
+Module_Configuration_ST.Application_Status.Explicit_Request_Done := CIP_X02;
+</STSource>
+		</FBProgram>
+	</FBSource>
+</FBDExchangeFile>

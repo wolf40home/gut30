@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<DDTExchangeFile>
+	<DDTSource DDTName="T_WEIGHING_PMESWT_ST_30" version="0.20" dateTime="dt#2016-06-13-14:59:18">
+		<comment>Structure type for Weighing Module PMESWT DFB Inputs/Outputs </comment>
+		<attribute name="TypeSignatureCheckSumString" value="3AAF"></attribute>
+		<structure>
+			<variables name="Initialization" typeName="BOOL">
+				<comment>To initialize DFB function</comment>
+			</variables>
+			<variables name="Application_Commands" typeName="T_SCAIME_COMMAND_SETTING_30"></variables>
+			<variables name="Application_Configuration" typeName="T_SCAIME_CFGPARAMS_30"></variables>
+			<variables name="Application_Status" typeName="T_SCAIME_STATUS_PARAMS_30"></variables>
+		</structure>
+	</DDTSource>
+</DDTExchangeFile>

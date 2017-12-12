@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<FBDExchangeFile>
+	<FBSource nameOfFBType="SIMU_DREIECK" version="11.02" dateTime="dt#2017-05-08-08:03:50">
+		<comment>Baustein: Dreieck Simulation</comment>
+		<attribute name="TypeCodeCheckSumString" value="F236"></attribute>
+		<attribute name="TypeSignatureCheckSumString" value="5074"></attribute>
+		<inputParameters>
+			<variables name="OUT_MIN" typeName="REAL">
+				<comment>Out Minimum</comment>
+				<attribute name="PositionPin" value="1"></attribute>
+			</variables>
+			<variables name="OUT_MAX" typeName="REAL">
+				<comment>Out Maximum</comment>
+				<attribute name="PositionPin" value="2"></attribute>
+			</variables>
+			<variables name="HP" typeName="TIME">
+				<comment>Perioden Halbzeit</comment>
+				<attribute name="PositionPin" value="3"></attribute>
+				<variableInit value="20s"></variableInit>
+			</variables>
+		</inputParameters>
+		<outputParameters>
+			<variables name="OUT" typeName="REAL">
+				<attribute name="PositionPin" value="1"></attribute>
+			</variables>
+			<variables name="OUT_INT" typeName="INT">
+				<attribute name="PositionPin" value="2"></attribute>
+			</variables>
+		</outputParameters>
+		<publicLocalVariables>
+			<variables name="PARA_FGEN" typeName="Para_FGEN">
+				<instanceElementDesc name="func_no">
+					<value>4</value>
+				</instanceElementDesc>
+				<instanceElementDesc name="unipolar">
+					<value>1</value>
+				</instanceElementDesc>
+				<instanceElementDesc name="halfperiod">
+					<value>20s</value>
+				</instanceElementDesc>
+			</variables>
+		</publicLocalVariables>
+		<privateLocalVariables>
+			<variables name="FGEN_1" typeName="FGEN"></variables>
+		</privateLocalVariables>
+		<FBProgram name="PROG">
+			<FBDSource nbRows="24" nbColumns="36">
+				<networkFBD>
+					<FFBBlock instanceName="FGEN_1" typeName="FGEN" additionnalPinNumber="0" enEnO="true" width="10" height="8">
+						<objPosition posX="63" posY="6"></objPosition>
+						<descriptionFFB execAfter="">
+							<inputVariable invertedPin="false" formalParameter="EN"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="R"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="START" effectiveParameter="1"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="PARA" effectiveParameter="PARA_FGEN"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="YOFF" effectiveParameter="OUT_MIN"></inputVariable>
+							<outputVariable invertedPin="false" formalParameter="ENO"></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="Y" effectiveParameter="OUT"></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="ACTIVE"></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="N"></outputVariable>
+						</descriptionFFB>
+					</FFBBlock>
+					<FFBBlock instanceName=".1" typeName="SUB_REAL" additionnalPinNumber="0" enEnO="true" width="7" height="6">
+						<objPosition posX="15" posY="6"></objPosition>
+						<descriptionFFB execAfter="">
+							<inputVariable invertedPin="false" formalParameter="EN" effectiveParameter="1"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN1" effectiveParameter="OUT_MAX"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN2" effectiveParameter="OUT_MIN"></inputVariable>
+							<outputVariable invertedPin="false" formalParameter="ENO"></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="OUT" effectiveParameter="PARA_FGEN.amplitude"></outputVariable>
+						</descriptionFFB>
+					</FFBBlock>
+					<FFBBlock instanceName=".2" typeName="MOVE" additionnalPinNumber="0" enEnO="true" width="7" height="5">
+						<objPosition posX="39" posY="6"></objPosition>
+						<descriptionFFB execAfter="">
+							<inputVariable invertedPin="false" formalParameter="EN"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN" effectiveParameter="HP"></inputVariable>
+							<outputVariable invertedPin="false" formalParameter="ENO"></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="OUT" effectiveParameter="PARA_FGEN.halfperiod"></outputVariable>
+						</descriptionFFB>
+					</FFBBlock>
+					<FFBBlock instanceName=".3" typeName="REAL_TO_INT" additionnalPinNumber="0" enEnO="false" width="9" height="5">
+						<objPosition posX="83" posY="7"></objPosition>
+						<descriptionFFB execAfter="">
+							<inputVariable invertedPin="false" formalParameter="EN"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN"></inputVariable>
+							<outputVariable invertedPin="false" formalParameter="ENO"></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="OUT" effectiveParameter="OUT_INT"></outputVariable>
+						</descriptionFFB>
+					</FFBBlock>
+					<linkFB>
+						<linkSource parentObjectName="FGEN_1" pinName="Y">
+							<objPosition posX="72" posY="11"></objPosition>
+						</linkSource>
+						<linkDestination parentObjectName=".3" pinName="IN">
+							<objPosition posX="83" posY="11"></objPosition>
+						</linkDestination>
+					</linkFB>
+					<linkFB>
+						<linkSource parentObjectName=".1" pinName="ENO">
+							<objPosition posX="21" posY="9"></objPosition>
+						</linkSource>
+						<linkDestination parentObjectName=".2" pinName="EN">
+							<objPosition posX="39" posY="9"></objPosition>
+						</linkDestination>
+					</linkFB>
+					<linkFB>
+						<linkSource parentObjectName=".2" pinName="ENO">
+							<objPosition posX="45" posY="9"></objPosition>
+						</linkSource>
+						<linkDestination parentObjectName="FGEN_1" pinName="EN">
+							<objPosition posX="63" posY="9"></objPosition>
+						</linkDestination>
+					</linkFB>
+				</networkFBD>
+			</FBDSource>
+		</FBProgram>
+	</FBSource>
+</FBDExchangeFile>

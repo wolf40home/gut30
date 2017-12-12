@@ -1,0 +1,1 @@
+"C:\Program Files (x86)\Schneider Electric\Unity Pro\SetupEF.exe" "%~dp0family.dsc" -i -h

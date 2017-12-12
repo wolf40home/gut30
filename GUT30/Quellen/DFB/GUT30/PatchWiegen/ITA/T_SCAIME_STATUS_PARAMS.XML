@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<DDTExchangeFile>
+	<DDTSource DDTName="T_SCAIME_STATUS_PARAMS" version="0.30" dateTime="dt#2014-12-10-14:46:33">
+		<attribute name="TypeSignatureCheckSumString" value="BDC6"></attribute>
+		<structure>
+			<variables name="Dfb_Initialization_Done" typeName="BOOL"></variables>
+			<variables name="Module_RUN_State" typeName="BOOL"></variables>
+			<variables name="Explicit_Cde_Register_RetCode" typeName="UINT">
+				<comment>Parameter ID: 1056 Access : R/W (values supported functionals commands list : see in user manual/help file)</comment>
+			</variables>
+			<variables name="Implicit_Response_Register" typeName="UINT">
+				<comment>Parameter ID: 1057 Access : RO (values supported 0 : IDLE, 1 : Command in progress, 2 : Command complet on success and 3 : Command complet on failure)</comment>
+			</variables>
+			<variables name="Gross_Measurement" typeName="DINT"></variables>
+			<variables name="Net_Measurement" typeName="DINT"></variables>
+			<variables name="Tare_Value" typeName="DINT"></variables>
+			<variables name="Flow_Rate_Value" typeName="REAL"></variables>
+			<variables name="Factory_Measurement" typeName="DINT"></variables>
+			<variables name="Stability_flag" typeName="BOOL"></variables>
+			<variables name="Measurement_Ok" typeName="BOOL"></variables>
+			<variables name="Tare_Process_flag" typeName="BOOL"></variables>
+			<variables name="ZeroTare_Process_flag" typeName="BOOL"></variables>
+			<variables name="Preset_Tare_Process_flag" typeName="BOOL"></variables>
+			<variables name="Flash_Memory_Status" typeName="BOOL"></variables>
+			<variables name="Input_I0_State" typeName="BOOL"></variables>
+			<variables name="Input_I1_State" typeName="BOOL"></variables>
+			<variables name="Output_S0_State" typeName="BOOL"></variables>
+			<variables name="Output_S1_State" typeName="BOOL"></variables>
+			<variables name="Output_S2_State" typeName="BOOL"></variables>
+			<variables name="Output_S3_State" typeName="BOOL"></variables>
+			<variables name="Dosing_Cycle_Status" typeName="BOOL"></variables>
+			<variables name="Calibration_Done_Status" typeName="BOOL"></variables>
+			<variables name="Calibration_Sequence_Code" typeName="BYTE"></variables>
+			<variables name="Calibration_Sequence_dfb_Message" typeName="string[40]"></variables>
+			<variables name="Calibration_Error_Status" typeName="BOOL"></variables>
+			<variables name="App_Firmware_Version" typeName="UINT"></variables>
+			<variables name="Legal_ForTrade_Counter" typeName="UINT"></variables>
+			<variables name="Legal_ForTrade_Checksum" typeName="UINT"></variables>
+			<variables name="Explicit_Request_Done" typeName="BOOL"></variables>
+			<variables name="Data_Exch_Error" typeName="BOOL"></variables>
+			<variables name="Explicit_Error_Request" typeName="BOOL"></variables>
+			<variables name="Explicit_Error_Sys" typeName="BOOL"></variables>
+			<variables name="Explicit_Error_Cip" typeName="BOOL"></variables>
+			<variables name="Data_Exch_Com_Report" typeName="BYTE"></variables>
+			<variables name="Data_Exch_Operation_Report" typeName="BYTE"></variables>
+			<variables name="Explicit_SysError" typeName="INT"></variables>
+			<variables name="Explicit_CipEtatGal" typeName="BYTE"></variables>
+			<variables name="Explicit_CipEtatEtenduLen" typeName="BYTE"></variables>
+			<variables name="Explicit_Pip_Error_Request" typeName="BOOL"></variables>
+			<variables name="Explicit_Pip_Error_Response" typeName="BOOL"></variables>
+		</structure>
+	</DDTSource>
+</DDTExchangeFile>

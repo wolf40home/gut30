@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<DDTExchangeFile>
+	<DDTSource DDTName="SEQCTL1_SC_DDT" version="8.00" dateTime="dt#2008-05-29-11:54:17">
+		<attribute name="TypeSignatureCheckSumString" value="5672"></attribute>
+		<structure>
+			<variables name="STATE" typeName="UINT">
+				<comment>Current sequential state</comment>
+			</variables>
+			<variables name="CSTEP" typeName="INT">
+				<comment>Current sequential step</comment>
+			</variables>
+			<variables name="OWNER" typeName="BOOL">
+				<comment>Owner (0: Program, 1: Operator)</comment>
+			</variables>
+			<variables name="START" typeName="BOOL">
+				<comment>Sets (ON) sequenice to start (RUNNING)</comment>
+			</variables>
+			<variables name="STOP" typeName="BOOL">
+				<comment>Sets (ON) sequence to stop (STOPPING)</comment>
+			</variables>
+			<variables name="HOLD" typeName="BOOL">
+				<comment>Sets (ON) sequence to hold (HOLDING)</comment>
+			</variables>
+			<variables name="PAUSE" typeName="BOOL">
+				<comment>Waits (ON) RUNNING sequence arrives to an stable step and pause (PAUSING)</comment>
+			</variables>
+			<variables name="RESTART" typeName="BOOL">
+				<comment>Sets (ON) sequence to restart (RUNNING)</comment>
+			</variables>
+			<variables name="ABORT" typeName="BOOL">
+				<comment>Sets (ON) sequence to abort (ABORTING)</comment>
+			</variables>
+			<variables name="RESET" typeName="BOOL">
+				<comment>Resets (ON) sequence after complete, stop or abort.</comment>
+			</variables>
+			<variables name="RESUME" typeName="BOOL">
+				<comment>Continues (ON) sequence RUNNING after PAUSED</comment>
+			</variables>
+			<variables name="ONENTRY" typeName="BOOL">
+				<comment>Indicates if it's the first execution cycle of the current step</comment>
+			</variables>
+			<variables name="ONEXIT" typeName="BOOL">
+				<comment>Indicates if it's the last execution cycle of the current step</comment>
+			</variables>
+			<variables name="STABLESTEP" typeName="BOOL">
+				<comment>Sets the current step as the stable step (1)</comment>
+			</variables>
+			<variables name="COMPLETED" typeName="BOOL">
+				<comment>Control Sub sequence completed (81)</comment>
+			</variables>
+			<variables name="FAIL" typeName="BOOL">
+				<comment>Fail detected while the sequence was on RUNNING.</comment>
+			</variables>
+			<variables name="NEXTSTEP" typeName="INT">
+				<comment>Next Step</comment>
+			</variables>
+			<variables name="MODE" typeName="INT">
+				<comment>Mode: 0:AUTO, 1: SEMI, 2: MANUAL</comment>
+			</variables>
+			<variables name="DEST" typeName="ARRAY[1..6] OF INT">
+				<comment>Destinations steps after transitions</comment>
+			</variables>
+			<variables name="DESTW" typeName="WORD">
+				<comment>Transitions Conditions word</comment>
+			</variables>
+			<variables name="ETIME" typeName="UDINT">
+				<comment>Elapsed time in the current stepl (dsec)</comment>
+			</variables>
+			<variables name="IDLE" typeName="BOOL">
+				<comment>Idle</comment>
+			</variables>
+			<variables name="RUNNING" typeName="BOOL">
+				<comment>Running</comment>
+			</variables>
+			<variables name="COMPLETE" typeName="BOOL">
+				<comment>Complete</comment>
+			</variables>
+			<variables name="PAUSING" typeName="BOOL">
+				<comment>Pausing</comment>
+			</variables>
+			<variables name="PAUSED" typeName="BOOL">
+				<comment>Paused</comment>
+			</variables>
+			<variables name="HOLDING" typeName="BOOL">
+				<comment>Holding</comment>
+			</variables>
+			<variables name="HOLDINGFE" typeName="BOOL">
+				<comment>Holding for error</comment>
+			</variables>
+			<variables name="HELD" typeName="BOOL">
+				<comment>Held</comment>
+			</variables>
+			<variables name="HELDFE" typeName="BOOL">
+				<comment>Held for error</comment>
+			</variables>
+			<variables name="RESTARTING" typeName="BOOL">
+				<comment>Restarting</comment>
+			</variables>
+			<variables name="STOPPING" typeName="BOOL">
+				<comment>Stopping</comment>
+			</variables>
+			<variables name="STOPPED" typeName="BOOL">
+				<comment>Stopped</comment>
+			</variables>
+			<variables name="ABORTING" typeName="BOOL">
+				<comment>Aborting</comment>
+			</variables>
+			<variables name="ABORTED" typeName="BOOL">
+				<comment>Aborted</comment>
+			</variables>
+			<variables name="RUNNINGX" typeName="BOOL">
+				<comment>Running or Pausing</comment>
+			</variables>
+			<variables name="HOLDINGX" typeName="BOOL">
+				<comment>Holding o Holding for error</comment>
+			</variables>
+			<variables name="CURRENTITEM" typeName="INT">
+				<comment>Current item of the step list (-1:sets mode to change; -2: mode has changed, &gt;= 0:position)</comment>
+			</variables>
+			<variables name="NEWCYCLE" typeName="BOOL">
+				<comment>New cycle execution</comment>
+			</variables>
+			<variables name="UPDATESTEPD" typeName="BOOL">
+				<comment>Updates step descriptions</comment>
+			</variables>
+		</structure>
+	</DDTSource>
+</DDTExchangeFile>

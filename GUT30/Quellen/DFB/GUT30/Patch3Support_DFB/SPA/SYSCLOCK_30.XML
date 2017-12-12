@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<FBDExchangeFile>
+	<FBSource nameOfFBType="SYSCLOCK_30" version="8.00" dateTime="dt#2006-03-10-16:52:25">
+		<comment>System clock</comment>
+		<attribute name="TypeCodeCheckSumString" value="8357"></attribute>
+		<attribute name="TypeSignatureCheckSumString" value="C241"></attribute>
+		<outputParameters>
+			<variables name="CLK1" typeName="BOOL">
+				<comment>Pulse frequency 0.3125 Hz (Pulse 3.2 s)</comment>
+				<attribute name="PositionPin" value="1"></attribute>
+			</variables>
+			<variables name="CLK2" typeName="BOOL">
+				<comment>Pulse frequency 0.6250 Hz (Pulse 1.6 s)</comment>
+				<attribute name="PositionPin" value="2"></attribute>
+			</variables>
+			<variables name="CLK3" typeName="BOOL">
+				<comment>Pulse frequency 1.25 Hz (Pulse 800 ms)</comment>
+				<attribute name="PositionPin" value="3"></attribute>
+			</variables>
+			<variables name="CLK4" typeName="BOOL">
+				<comment>Pulse frequency 2.5 Hz (Pulse 400 ms)</comment>
+				<attribute name="PositionPin" value="4"></attribute>
+			</variables>
+			<variables name="CLK5" typeName="BOOL">
+				<comment>Pulse frequency 5 Hz (Pulse 200 ms)</comment>
+				<attribute name="PositionPin" value="5"></attribute>
+			</variables>
+			<variables name="TIMER" typeName="TIME">
+				<comment>Accumulated time since system start up</comment>
+				<attribute name="PositionPin" value="6"></attribute>
+			</variables>
+		</outputParameters>
+		<privateLocalVariables>
+			<variables name="clk1bas" typeName="UINT"></variables>
+			<variables name="clk2bas" typeName="UINT"></variables>
+			<variables name="clk3bas" typeName="UINT"></variables>
+			<variables name="clk4bas" typeName="UINT"></variables>
+			<variables name="clk5bas" typeName="UINT"></variables>
+			<variables name="run" typeName="BOOL">
+				<variableInit value="FALSE"></variableInit>
+			</variables>
+		</privateLocalVariables>
+		<FBProgram name="st_s1">
+			<STSource>if %S13 = TRUE then
+run := FALSE;
+end_if;
+if (int_to_uint(%SW18) - clk1bas) &gt;= 20 then
+run := FALSE;
+end_if;
+if run = FALSE then
+clk1bas := int_to_uint(%SW18);
+clk2bas := clk1bas;
+clk3bas := clk1bas;
+clk4bas := clk1bas;
+clk5bas := clk1bas;
+run := TRUE;
+end_if;
+
+if (int_to_uint(%SW18) - clk1bas) &gt;= 16 then
+clk1bas := clk1bas + 16;
+clk1 := not clk1;
+end_if;
+
+if (int_to_uint(%SW18) - clk2bas) &gt;= 8 then
+clk2bas := clk2bas + 8;
+clk2 := not clk2;
+end_if;
+if (int_to_uint(%SW18) - clk3bas) &gt;= 4 then
+clk3bas := clk3bas + 4;
+clk3 := not clk3;
+end_if;
+if (int_to_uint(%SW18) - clk4bas) &gt;= 2 then
+clk4bas := clk4bas + 2;
+clk4 := not clk4;
+end_if;
+if (int_to_uint(%SW18) - clk5bas) &gt;= 1 then
+clk5bas := clk5bas + 1;
+clk5 := not clk5;
+end_if;
+
+TIMER := UDINT_TO_TIME (MUL_UDINT (DWORD_TO_UDINT(OR_DWORD(SHL_DWORD(WORD_TO_DWORD(int_to_word(%SW19)),16),
+               WORD_TO_DWORD(int_to_word(%SW18)))), 100));
+</STSource>
+		</FBProgram>
+	</FBSource>
+</FBDExchangeFile>

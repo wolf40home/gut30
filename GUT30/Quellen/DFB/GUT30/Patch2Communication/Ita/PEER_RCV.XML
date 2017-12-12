@@ -1,0 +1,263 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<FBDExchangeFile xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="FBDExchangeFile.xsd">
+	<FBSource nameOfFBType="PEER_RCV" version="1.01" dateTime="dt#2003-07-16-14:53:08">
+		<inputParameters>
+			<variables name="TR1" typeName="peer_Table">
+				<comment>Table first communication path</comment>
+				<attribute name="PositionPin" value="1"></attribute>
+			</variables>
+			<variables name="TIMEOUT1" typeName="TIME">
+				<comment>Timeout of communication path 1</comment>
+				<attribute name="PositionPin" value="2"></attribute>
+				<variableInit value="t#2s"></variableInit>
+			</variables>
+			<variables name="TR2" typeName="peer_Table">
+				<comment>Table second communication path</comment>
+				<attribute name="PositionPin" value="3"></attribute>
+			</variables>
+			<variables name="TIMEOUT2" typeName="TIME">
+				<comment>Timeout of communication path 2</comment>
+				<attribute name="PositionPin" value="4"></attribute>
+				<variableInit value="t#2s"></variableInit>
+			</variables>
+			<variables name="TFLD" typeName="peer_Table">
+				<comment>Table if communication failed</comment>
+				<attribute name="PositionPin" value="5"></attribute>
+			</variables>
+		</inputParameters>
+		<outputParameters>
+			<variables name="Table" typeName="peer_Table">
+				<comment>valid Variable values</comment>
+				<attribute name="PositionPin" value="1"></attribute>
+			</variables>
+			<variables name="ERR1" typeName="BOOL">
+				<comment>detect error in communication path 1</comment>
+				<attribute name="PositionPin" value="2"></attribute>
+			</variables>
+			<variables name="ERR2" typeName="BOOL">
+				<comment>detect error in communication path 2</comment>
+				<attribute name="PositionPin" value="3"></attribute>
+			</variables>
+		</outputParameters>
+		<privateLocalVariables>
+			<variables name="FBI_1" typeName="TON"></variables>
+			<variables name="FBI_2" typeName="TON"></variables>
+			<variables name="mem_life1" typeName="INT">
+				<comment>memory of counter "life" for first communication path</comment>
+			</variables>
+			<variables name="mem_life2" typeName="INT">
+				<comment>memory of counter "life" for second communication path</comment>
+			</variables>
+		</privateLocalVariables>
+		<FBProgram name="Receive_table">
+			<FBDSource>
+				<networkFBD>
+					<FFBBlock instanceName=".11" typeName="GE_INT" additionnalPinNumber="0" enEnO="false" width="7" height="6">
+						<objPosition posX="9" posY="21"></objPosition>
+						<descriptionFFB execAfter="">
+							<inputVariable invertedPin="false" formalParameter="EN" effectiveParameter=""></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN1" effectiveParameter="mem_life1"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN2" effectiveParameter="TR1.life"></inputVariable>
+							<outputVariable invertedPin="false" formalParameter="ENO" effectiveParameter=""></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="OUT" effectiveParameter=""></outputVariable>
+						</descriptionFFB>
+						<comment>Greater than or equal to</comment>
+					</FFBBlock>
+					<FFBBlock instanceName=".5" typeName="EQ_INT" additionnalPinNumber="0" enEnO="false" width="7" height="6">
+						<objPosition posX="9" posY="12"></objPosition>
+						<descriptionFFB execAfter="">
+							<inputVariable invertedPin="false" formalParameter="EN" effectiveParameter=""></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN1" effectiveParameter="TR1.life"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN2" effectiveParameter="0"></inputVariable>
+							<outputVariable invertedPin="false" formalParameter="ENO" effectiveParameter=""></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="OUT" effectiveParameter=""></outputVariable>
+						</descriptionFFB>
+						<comment>Equal to</comment>
+					</FFBBlock>
+					<FFBBlock instanceName=".9" typeName="SEL" additionnalPinNumber="0" enEnO="false" width="7" height="7">
+						<objPosition posX="28" posY="56"></objPosition>
+						<descriptionFFB execAfter="">
+							<inputVariable invertedPin="false" formalParameter="EN" effectiveParameter=""></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="G" effectiveParameter="ERR1"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN0" effectiveParameter="TR1"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN1" effectiveParameter=""></inputVariable>
+							<outputVariable invertedPin="false" formalParameter="ENO" effectiveParameter=""></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="OUT" effectiveParameter="Table"></outputVariable>
+						</descriptionFFB>
+						<comment>Binary selection</comment>
+					</FFBBlock>
+					<FFBBlock instanceName=".2" typeName="EQ_INT" additionnalPinNumber="0" enEnO="false" width="7" height="6">
+						<objPosition posX="9" posY="33"></objPosition>
+						<descriptionFFB execAfter="">
+							<inputVariable invertedPin="false" formalParameter="EN" effectiveParameter=""></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN1" effectiveParameter="TR2.life"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN2" effectiveParameter="0"></inputVariable>
+							<outputVariable invertedPin="false" formalParameter="ENO" effectiveParameter=""></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="OUT" effectiveParameter=""></outputVariable>
+						</descriptionFFB>
+						<comment>Equal to</comment>
+					</FFBBlock>
+					<FFBBlock instanceName=".7" typeName="MOVE" additionnalPinNumber="0" enEnO="false" width="7" height="5">
+						<objPosition posX="41" posY="37"></objPosition>
+						<descriptionFFB execAfter="">
+							<inputVariable invertedPin="false" formalParameter="EN" effectiveParameter=""></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN" effectiveParameter="TR2.life"></inputVariable>
+							<outputVariable invertedPin="false" formalParameter="ENO" effectiveParameter=""></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="OUT" effectiveParameter="mem_life2"></outputVariable>
+						</descriptionFFB>
+						<comment>Assignment</comment>
+					</FFBBlock>
+					<FFBBlock instanceName=".4" typeName="OR_BOOL" additionnalPinNumber="0" enEnO="false" width="7" height="6">
+						<objPosition posX="29" posY="12"></objPosition>
+						<descriptionFFB execAfter="">
+							<inputVariable invertedPin="false" formalParameter="EN" effectiveParameter=""></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN1" effectiveParameter=""></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN2" effectiveParameter=""></inputVariable>
+							<outputVariable invertedPin="false" formalParameter="ENO" effectiveParameter=""></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="OUT" effectiveParameter="ERR1"></outputVariable>
+						</descriptionFFB>
+						<comment>OR function</comment>
+					</FFBBlock>
+					<FFBBlock instanceName=".8" typeName="OR_BOOL" additionnalPinNumber="0" enEnO="false" width="7" height="6">
+						<objPosition posX="29" posY="33"></objPosition>
+						<descriptionFFB execAfter="">
+							<inputVariable invertedPin="false" formalParameter="EN" effectiveParameter=""></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN1" effectiveParameter=""></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN2" effectiveParameter=""></inputVariable>
+							<outputVariable invertedPin="false" formalParameter="ENO" effectiveParameter=""></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="OUT" effectiveParameter="ERR2"></outputVariable>
+						</descriptionFFB>
+						<comment>OR function</comment>
+					</FFBBlock>
+					<FFBBlock instanceName=".1" typeName="GE_INT" additionnalPinNumber="0" enEnO="false" width="7" height="6">
+						<objPosition posX="9" posY="42"></objPosition>
+						<descriptionFFB execAfter="">
+							<inputVariable invertedPin="false" formalParameter="EN" effectiveParameter=""></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN1" effectiveParameter="mem_life2"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN2" effectiveParameter="TR2.life"></inputVariable>
+							<outputVariable invertedPin="false" formalParameter="ENO" effectiveParameter=""></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="OUT" effectiveParameter=""></outputVariable>
+						</descriptionFFB>
+						<comment>Greater than or equal to</comment>
+					</FFBBlock>
+					<FFBBlock instanceName=".10" typeName="SEL" additionnalPinNumber="0" enEnO="false" width="7" height="7">
+						<objPosition posX="10" posY="58"></objPosition>
+						<descriptionFFB execAfter="">
+							<inputVariable invertedPin="false" formalParameter="EN" effectiveParameter=""></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="G" effectiveParameter="ERR2"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN0" effectiveParameter="TR2"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN1" effectiveParameter="TFLD"></inputVariable>
+							<outputVariable invertedPin="false" formalParameter="ENO" effectiveParameter=""></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="OUT" effectiveParameter=""></outputVariable>
+						</descriptionFFB>
+						<comment>Binary selection</comment>
+					</FFBBlock>
+					<FFBBlock instanceName=".3" typeName="MOVE" additionnalPinNumber="0" enEnO="false" width="7" height="5">
+						<objPosition posX="41" posY="16"></objPosition>
+						<descriptionFFB execAfter="">
+							<inputVariable invertedPin="false" formalParameter="EN" effectiveParameter=""></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN" effectiveParameter="TR1.life"></inputVariable>
+							<outputVariable invertedPin="false" formalParameter="ENO" effectiveParameter=""></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="OUT" effectiveParameter="mem_life1"></outputVariable>
+						</descriptionFFB>
+						<comment>Assignment</comment>
+					</FFBBlock>
+					<FFBBlock instanceName="FBI_2" typeName="TON" additionnalPinNumber="0" enEnO="false" width="7" height="6">
+						<objPosition posX="20" posY="42"></objPosition>
+						<descriptionFFB execAfter="">
+							<inputVariable invertedPin="false" formalParameter="EN" effectiveParameter=""></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN" effectiveParameter=""></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="PT" effectiveParameter="TIMEOUT2"></inputVariable>
+							<outputVariable invertedPin="false" formalParameter="ENO" effectiveParameter=""></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="Q" effectiveParameter=""></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="ET" effectiveParameter=""></outputVariable>
+						</descriptionFFB>
+						<comment>On delay</comment>
+					</FFBBlock>
+					<FFBBlock instanceName="FBI_1" typeName="TON" additionnalPinNumber="0" enEnO="false" width="7" height="6">
+						<objPosition posX="20" posY="21"></objPosition>
+						<descriptionFFB execAfter="">
+							<inputVariable invertedPin="false" formalParameter="EN" effectiveParameter=""></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN" effectiveParameter=""></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="PT" effectiveParameter="TIMEOUT1"></inputVariable>
+							<outputVariable invertedPin="false" formalParameter="ENO" effectiveParameter=""></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="Q" effectiveParameter=""></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="ET" effectiveParameter=""></outputVariable>
+						</descriptionFFB>
+						<comment>On delay</comment>
+					</FFBBlock>
+					<linkFB>
+						<linkSource parentObjectName=".10" pinName="OUT">
+							<objPosition posX="16" posY="62"></objPosition>
+						</linkSource>
+						<linkDestination parentObjectName=".9" pinName="IN1">
+							<objPosition posX="28" posY="62"></objPosition>
+						</linkDestination>
+					</linkFB>
+					<linkFB>
+						<linkSource parentObjectName=".5" pinName="OUT">
+							<objPosition posX="15" posY="16"></objPosition>
+						</linkSource>
+						<linkDestination parentObjectName=".4" pinName="IN1">
+							<objPosition posX="29" posY="16"></objPosition>
+						</linkDestination>
+					</linkFB>
+					<linkFB>
+						<linkSource parentObjectName=".1" pinName="OUT">
+							<objPosition posX="15" posY="46"></objPosition>
+						</linkSource>
+						<linkDestination parentObjectName="FBI_2" pinName="IN">
+							<objPosition posX="20" posY="46"></objPosition>
+						</linkDestination>
+					</linkFB>
+					<linkFB>
+						<linkSource parentObjectName="FBI_1" pinName="Q">
+							<objPosition posX="26" posY="25"></objPosition>
+						</linkSource>
+						<linkDestination parentObjectName=".4" pinName="IN2">
+							<objPosition posX="29" posY="17"></objPosition>
+						</linkDestination>
+						<gridObjPosition posX="28" posY="25"></gridObjPosition>
+						<gridObjPosition posX="28" posY="17"></gridObjPosition>
+					</linkFB>
+					<linkFB>
+						<linkSource parentObjectName="FBI_2" pinName="Q">
+							<objPosition posX="26" posY="46"></objPosition>
+						</linkSource>
+						<linkDestination parentObjectName=".8" pinName="IN2">
+							<objPosition posX="29" posY="38"></objPosition>
+						</linkDestination>
+						<gridObjPosition posX="28" posY="46"></gridObjPosition>
+						<gridObjPosition posX="28" posY="38"></gridObjPosition>
+					</linkFB>
+					<linkFB>
+						<linkSource parentObjectName=".11" pinName="OUT">
+							<objPosition posX="15" posY="25"></objPosition>
+						</linkSource>
+						<linkDestination parentObjectName="FBI_1" pinName="IN">
+							<objPosition posX="20" posY="25"></objPosition>
+						</linkDestination>
+					</linkFB>
+					<linkFB>
+						<linkSource parentObjectName=".2" pinName="OUT">
+							<objPosition posX="15" posY="37"></objPosition>
+						</linkSource>
+						<linkDestination parentObjectName=".8" pinName="IN1">
+							<objPosition posX="29" posY="37"></objPosition>
+						</linkDestination>
+					</linkFB>
+					<textBox width="39" height="3">Test if TR1.life will be increased; for first communicationpath ----------------<objPosition posX="2" posY="9"></objPosition>
+					</textBox>
+					<textBox width="32" height="6">PEER_RCV //
+Detect a communication failure in communication table if counter of receiving table will not be increased 
+and switch to next table and last to failure table<objPosition posX="1" posY="1"></objPosition>
+					</textBox>
+					<textBox width="40" height="2">Select valid table  -----------------------------------------------------------<objPosition posX="2" posY="52"></objPosition>
+					</textBox>
+					<textBox width="40" height="4">Test if TR2.life will be increased; for second communicationpath ----------------<objPosition posX="2" posY="29"></objPosition>
+					</textBox>
+				</networkFBD>
+			</FBDSource>
+		</FBProgram>
+	</FBSource>
+</FBDExchangeFile>

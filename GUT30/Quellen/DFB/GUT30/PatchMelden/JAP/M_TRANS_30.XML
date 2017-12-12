@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<FBDExchangeFile>
+	<FBSource nameOfFBType="M_TRANS_30" version="11.10" dateTime="dt#2017-08-10-11:57:13">
+		<comment>Baustein : Meld_16 16 Bit in 1 Wort</comment>
+		<attribute name="TypeProtectionLevel" value="2#0000_0000"></attribute>
+		<attribute name="TypeCodeCheckSumString" value="A085"></attribute>
+		<attribute name="TypeSignatureCheckSumString" value="6E3F"></attribute>
+		<inputParameters>
+			<variables name="B1" typeName="BOOL">
+				<attribute name="PositionPin" value="2"></attribute>
+			</variables>
+			<variables name="B2" typeName="BOOL">
+				<attribute name="PositionPin" value="3"></attribute>
+			</variables>
+			<variables name="B3" typeName="BOOL">
+				<attribute name="PositionPin" value="4"></attribute>
+			</variables>
+			<variables name="B4" typeName="BOOL">
+				<attribute name="PositionPin" value="5"></attribute>
+			</variables>
+			<variables name="B5" typeName="BOOL">
+				<attribute name="PositionPin" value="6"></attribute>
+			</variables>
+			<variables name="B6" typeName="BOOL">
+				<attribute name="PositionPin" value="7"></attribute>
+			</variables>
+			<variables name="B7" typeName="BOOL">
+				<attribute name="PositionPin" value="8"></attribute>
+			</variables>
+			<variables name="B8" typeName="BOOL">
+				<attribute name="PositionPin" value="9"></attribute>
+			</variables>
+			<variables name="B9" typeName="BOOL">
+				<attribute name="PositionPin" value="10"></attribute>
+			</variables>
+			<variables name="B10" typeName="BOOL">
+				<attribute name="PositionPin" value="11"></attribute>
+			</variables>
+			<variables name="B11" typeName="BOOL">
+				<attribute name="PositionPin" value="12"></attribute>
+			</variables>
+			<variables name="B12" typeName="BOOL">
+				<attribute name="PositionPin" value="13"></attribute>
+			</variables>
+			<variables name="B13" typeName="BOOL">
+				<attribute name="PositionPin" value="14"></attribute>
+			</variables>
+			<variables name="B14" typeName="BOOL">
+				<attribute name="PositionPin" value="15"></attribute>
+			</variables>
+			<variables name="B15" typeName="BOOL">
+				<attribute name="PositionPin" value="16"></attribute>
+			</variables>
+			<variables name="B0" typeName="BOOL">
+				<attribute name="PositionPin" value="1"></attribute>
+			</variables>
+			<variables name="Neg" typeName="TYPVG_UNI">
+				<attribute name="PositionPin" value="20"></attribute>
+			</variables>
+			<variables name="TYPVG" typeName="TYPVG_UNI">
+				<attribute name="PositionPin" value="19"></attribute>
+			</variables>
+			<variables name="ERROR" typeName="BOOL">
+				<attribute name="PositionPin" value="17"></attribute>
+			</variables>
+		</inputParameters>
+		<outputParameters>
+			<variables name="M" typeName="DWORD">
+				<attribute name="PositionPin" value="1"></attribute>
+			</variables>
+			<variables name="TYP" typeName="DWORD">
+				<attribute name="PositionPin" value="19"></attribute>
+			</variables>
+		</outputParameters>
+		<privateLocalVariables></privateLocalVariables>
+		<FBProgram name="Proc">
+			<FBDSource nbRows="24" nbColumns="36">
+				<networkFBD>
+					<FFBBlock instanceName=".1" typeName="BIT_AS_DWORD" additionnalPinNumber="14" enEnO="false" width="10" height="21">
+						<objPosition posX="27" posY="11"></objPosition>
+						<descriptionFFB execAfter="">
+							<inputVariable invertedPin="false" formalParameter="EN"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="B0" effectiveParameter="B0"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="B1" effectiveParameter="B1"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="B2" effectiveParameter="B2"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="B3" effectiveParameter="B3"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="B4" effectiveParameter="B4"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="B5" effectiveParameter="B5"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="B6" effectiveParameter="B6"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="B7" effectiveParameter="B7"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="B8" effectiveParameter="B8"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="B9" effectiveParameter="B9"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="B10" effectiveParameter="B10"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="B11" effectiveParameter="B11"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="B12" effectiveParameter="B12"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="B13" effectiveParameter="B13"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="B14" effectiveParameter="B14"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="B15" effectiveParameter="B15"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="B16" effectiveParameter="ERROR"></inputVariable>
+							<outputVariable invertedPin="false" formalParameter="ENO"></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="A" effectiveParameter="M"></outputVariable>
+						</descriptionFFB>
+					</FFBBlock>
+					<FFBBlock instanceName=".2" typeName="BIT_AS_DWORD" additionnalPinNumber="29" enEnO="false" width="10" height="36">
+						<objPosition posX="61" posY="11"></objPosition>
+						<descriptionFFB execAfter="">
+							<inputVariable invertedPin="false" formalParameter="EN"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="B0" effectiveParameter="Neg.B1"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="B1" effectiveParameter="Neg.B2"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="B2" effectiveParameter="Neg.B3"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="B3" effectiveParameter="Neg.B4"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="B4" effectiveParameter="Neg.B5"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="B5" effectiveParameter="Neg.B6"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="B6" effectiveParameter="Neg.B7"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="B7" effectiveParameter="Neg.B8"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="B8" effectiveParameter="Neg.B9"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="B9" effectiveParameter="Neg.B10"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="B10" effectiveParameter="Neg.B11"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="B11" effectiveParameter="Neg.B12"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="B12" effectiveParameter="Neg.B13"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="B13" effectiveParameter="Neg.B14"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="B14" effectiveParameter="Neg.B15"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="B15" effectiveParameter="Neg.B16"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="B16" effectiveParameter="TYPVG.B1"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="B17" effectiveParameter="TYPVG.B2"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="B18" effectiveParameter="TYPVG.B3"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="B19" effectiveParameter="TYPVG.B4"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="B20" effectiveParameter="TYPVG.B5"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="B21" effectiveParameter="TYPVG.B6"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="B22" effectiveParameter="TYPVG.B7"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="B23" effectiveParameter="TYPVG.B8"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="B24" effectiveParameter="TYPVG.B9"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="B25" effectiveParameter="TYPVG.B10"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="B26" effectiveParameter="TYPVG.B11"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="B27" effectiveParameter="TYPVG.B12"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="B28" effectiveParameter="TYPVG.B13"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="B29" effectiveParameter="TYPVG.B14"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="B30" effectiveParameter="TYPVG.B15"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="B31" effectiveParameter="TYPVG.B16"></inputVariable>
+							<outputVariable invertedPin="false" formalParameter="ENO"></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="A" effectiveParameter="TYP"></outputVariable>
+						</descriptionFFB>
+					</FFBBlock>
+				</networkFBD>
+			</FBDSource>
+		</FBProgram>
+	</FBSource>
+</FBDExchangeFile>

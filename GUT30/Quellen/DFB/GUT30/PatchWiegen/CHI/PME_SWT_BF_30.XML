@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<DDTExchangeFile>
+	<DDTSource DDTName="PME_SWT_BF_30" version="8.05" dateTime="dt#2015-01-29-16:38:24">
+		<comment>Datenstruktur: PME_SWT Meldungen</comment>
+		<attribute name="TypeSignatureCheckSumString" value="816B"></attribute>
+		<structure>
+			<variables name="MD" typeName="INT">
+				<comment>Informationen über den Messwert</comment>
+			</variables>
+			<variables name="MT" typeName="INT">
+				<comment>Maskenzeit für niedrigen Durchsatz</comment>
+			</variables>
+			<variables name="FLOWM" typeName="INT">
+				<comment>Anzahl der für die Berechnung der Durchsatzrate verwendeten Messungen</comment>
+			</variables>
+			<variables name="CMD_ANZ" typeName="UINT">
+				<comment>Befehlstypen</comment>
+			</variables>
+			<variables name="CMD_RESP" typeName="UINT">
+				<comment>Austauschstatus</comment>
+			</variables>
+			<variables name="CHFLT" typeName="UINT">
+				<comment>Kanalfehler Wort</comment>
+			</variables>
+			<variables name="DN" typeName="DINT">
+				<comment>Digits bei Totlast</comment>
+			</variables>
+			<variables name="DSL" typeName="DINT">
+				<comment>Digits bei Standard Load</comment>
+			</variables>
+			<variables name="SL" typeName="DINT">
+				<comment>Standardlast für Kalibrierungsbefehl</comment>
+			</variables>
+			<variables name="DN0" typeName="DINT">
+				<comment>Eigengewicht</comment>
+			</variables>
+			<variables name="DSL0" typeName="DINT">
+				<comment>Eichgewicht</comment>
+			</variables>
+			<variables name="DN0THEO" typeName="DINT"></variables>
+			<variables name="GAINTT" typeName="DINT">
+				<comment>Soll Steilheit</comment>
+			</variables>
+			<variables name="GAIN2" typeName="DINT">
+				<comment>Ist Steilheit</comment>
+			</variables>
+			<variables name="GMAZ" typeName="DINT">
+				<comment>Gewicht mal Anzahl Zellen</comment>
+			</variables>
+			<variables name="BERJUST" typeName="REAL">
+				<comment>Berechnete Justage</comment>
+			</variables>
+			<variables name="HF" typeName="REAL">
+				<comment>Abschaltwert für hohen Durchsatz</comment>
+			</variables>
+			<variables name="LF" typeName="REAL">
+				<comment>Abschaltwert für niedrigen Durchsatz</comment>
+			</variables>
+			<variables name="MM" typeName="REAL">
+				<comment>Max Messbereich</comment>
+			</variables>
+			<variables name="GAIN" typeName="REAL">
+				<comment>TJ Gain</comment>
+			</variables>
+			<variables name="S" typeName="REAL">
+				<comment>TJ Offset</comment>
+			</variables>
+			<variables name="GAINANZ" typeName="REAL">
+				<comment>Gain Anzeige</comment>
+			</variables>
+			<variables name="STABIZEIT" typeName="REAL">
+				<comment>Stabilitäts Zeit</comment>
+			</variables>
+			<variables name="OFFANZ" typeName="REAL">
+				<comment>Eigengewicht</comment>
+			</variables>
+			<variables name="STABI" typeName="REAL">
+				<comment>Stabilitätsbereich</comment>
+			</variables>
+		</structure>
+	</DDTSource>
+</DDTExchangeFile>

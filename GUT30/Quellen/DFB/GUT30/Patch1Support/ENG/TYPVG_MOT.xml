@@ -1,0 +1,73 @@
+﻿<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<DDTExchangeFile>
+<DDTSource DDTName="TYPVG_MOT" version="11.0" dateTime="dt#2017-08-10-08:17:48">
+<attribute name="IsTypeLocked" value="TRUE">
+</attribute>
+<attribute name="IsTypeHidden" value="FALSE">
+</attribute>
+<comment>Datenstruktur: Typvorgabe Motor und Ventil PLS</comment>
+<attribute name="TypeDescriptiveForm" value="Default descriptive form TYPVG_MOT">
+</attribute>
+<structure>
+<variables name="SNR" typeName="BYTE">
+<attribute name="IsVariableHidden" value="FALSE">
+</attribute>
+<comment>Typvorgabe</comment>
+</variables>
+<variables name="B5" typeName="BOOL">
+<attribute name="IsVariableHidden" value="FALSE">
+</attribute>
+<comment>ohne Auto/Hand</comment>
+</variables>
+<variables name="B6" typeName="BOOL">
+<attribute name="IsVariableHidden" value="FALSE">
+</attribute>
+<comment>ohne Interlog</comment>
+</variables>
+<variables name="B7" typeName="BOOL">
+<attribute name="IsVariableHidden" value="FALSE">
+</attribute>
+<comment>ohne Meldesperre</comment>
+</variables>
+<variables name="B8" typeName="BOOL">
+<attribute name="IsVariableHidden" value="FALSE">
+</attribute>
+<comment>ohne Alarmsperre</comment>
+</variables>
+<variables name="B9" typeName="BOOL">
+<attribute name="IsVariableHidden" value="FALSE">
+</attribute>
+<comment>ohne Leitsperre</comment>
+</variables>
+<variables name="B10" typeName="BOOL">
+<attribute name="IsVariableHidden" value="FALSE">
+</attribute>
+<comment>mit Störung Hardware</comment>
+</variables>
+<variables name="B11" typeName="BOOL">
+<attribute name="IsVariableHidden" value="FALSE">
+</attribute>
+<comment>Leitsperre 1</comment>
+</variables>
+<variables name="B12" typeName="BOOL">
+<attribute name="IsVariableHidden" value="FALSE">
+</attribute>
+<comment>Leitsperre 2</comment>
+</variables>
+<variables name="B13" typeName="BOOL">
+<attribute name="IsVariableHidden" value="FALSE">
+</attribute>
+<comment>Leitsperre 3</comment>
+</variables>
+<variables name="B14" typeName="BOOL">
+<attribute name="IsVariableHidden" value="FALSE">
+</attribute>
+<comment>Leitsperre 4</comment>
+</variables>
+<variables name="B15" typeName="BOOL">
+<attribute name="IsVariableHidden" value="FALSE">
+</attribute>
+<comment>STOER schaltet BA ab</comment>
+</variables>
+</structure></DDTSource>
+</DDTExchangeFile>

@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<DDTExchangeFile>
+	<DDTSource DDTName="MELD_AS" version="8.00" dateTime="dt#2009-01-25-21:18:59">
+		<comment>Datenstruktur: Ausgänge der Grenzwertverarbeitung</comment>
+		<attribute name="TypeSignatureCheckSumString" value="A4C4"></attribute>
+		<structure>
+			<variables name="AHH" typeName="BOOL">
+				<comment>A++</comment>
+			</variables>
+			<variables name="AH" typeName="BOOL">
+				<comment>A+</comment>
+			</variables>
+			<variables name="AL" typeName="BOOL">
+				<comment>A-</comment>
+			</variables>
+			<variables name="ALL" typeName="BOOL">
+				<comment>A--</comment>
+			</variables>
+			<variables name="SHH" typeName="BOOL">
+				<comment>S++</comment>
+			</variables>
+			<variables name="SH" typeName="BOOL">
+				<comment>S+</comment>
+			</variables>
+			<variables name="SL" typeName="BOOL">
+				<comment>S-</comment>
+			</variables>
+			<variables name="SLL" typeName="BOOL">
+				<comment>S--</comment>
+			</variables>
+		</structure>
+	</DDTSource>
+</DDTExchangeFile>

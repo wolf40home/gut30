@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<FBDExchangeFile>
+	<FBSource nameOfFBType="SIMU_RM3W" version="11.04" dateTime="dt#2017-06-28-09:41:40">
+		<comment>Baustein: Simulation Rückmeldung 3 Wegeventil</comment>
+		<attribute name="TypeCodeCheckSumString" value="A41B"></attribute>
+		<attribute name="TypeSignatureCheckSumString" value="BDD3"></attribute>
+		<inputParameters>
+			<variables name="BA_AUF1" typeName="BOOL">
+				<comment>Ansteuerung Auf1</comment>
+				<attribute name="PositionPin" value="1"></attribute>
+			</variables>
+			<variables name="T" typeName="TIME">
+				<comment>Wartezeit</comment>
+				<attribute name="PositionPin" value="3"></attribute>
+				<variableInit value="2s"></variableInit>
+			</variables>
+			<variables name="BA_AUF2" typeName="BOOL">
+				<comment>Ansteuerung Auf 2</comment>
+				<attribute name="PositionPin" value="2"></attribute>
+			</variables>
+		</inputParameters>
+		<outputParameters>
+			<variables name="RM_AUF1" typeName="BOOL">
+				<comment>Rückmeldung Auf1</comment>
+				<attribute name="PositionPin" value="1"></attribute>
+			</variables>
+			<variables name="RM_AUF2" typeName="BOOL">
+				<comment>Rückmeldung Auf 2</comment>
+				<attribute name="PositionPin" value="2"></attribute>
+			</variables>
+			<variables name="RM_ZU" typeName="BOOL">
+				<comment>Rückmeldung Zu</comment>
+				<attribute name="PositionPin" value="3"></attribute>
+			</variables>
+		</outputParameters>
+		<privateLocalVariables>
+			<variables name="Verz_Auf" typeName="TON"></variables>
+			<variables name="TON_1" typeName="TON"></variables>
+			<variables name="TON_2" typeName="TON"></variables>
+		</privateLocalVariables>
+		<FBProgram name="PROG">
+			<FBDSource nbRows="24" nbColumns="36">
+				<networkFBD>
+					<FFBBlock instanceName="Verz_Auf" typeName="TON" additionnalPinNumber="0" enEnO="false" width="7" height="6">
+						<objPosition posX="25" posY="9"></objPosition>
+						<descriptionFFB execAfter="">
+							<inputVariable invertedPin="false" formalParameter="EN"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN" effectiveParameter="BA_AUF1"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="PT" effectiveParameter="T"></inputVariable>
+							<outputVariable invertedPin="false" formalParameter="ENO"></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="Q" effectiveParameter="RM_AUF1"></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="ET"></outputVariable>
+						</descriptionFFB>
+					</FFBBlock>
+					<FFBBlock instanceName="TON_1" typeName="TON" additionnalPinNumber="0" enEnO="false" width="7" height="6">
+						<objPosition posX="25" posY="16"></objPosition>
+						<descriptionFFB execAfter="">
+							<inputVariable invertedPin="false" formalParameter="EN"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN" effectiveParameter="BA_AUF2"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="PT" effectiveParameter="T"></inputVariable>
+							<outputVariable invertedPin="false" formalParameter="ENO"></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="Q" effectiveParameter="RM_AUF2"></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="ET"></outputVariable>
+						</descriptionFFB>
+					</FFBBlock>
+					<FFBBlock instanceName=".1" typeName="AND_BOOL" additionnalPinNumber="0" enEnO="false" width="8" height="6">
+						<objPosition posX="44" posY="12"></objPosition>
+						<descriptionFFB execAfter="">
+							<inputVariable invertedPin="false" formalParameter="EN"></inputVariable>
+							<inputVariable invertedPin="true" formalParameter="IN1"></inputVariable>
+							<inputVariable invertedPin="true" formalParameter="IN2"></inputVariable>
+							<outputVariable invertedPin="false" formalParameter="ENO"></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="OUT"></outputVariable>
+						</descriptionFFB>
+					</FFBBlock>
+					<FFBBlock instanceName="TON_2" typeName="TON" additionnalPinNumber="0" enEnO="false" width="7" height="6">
+						<objPosition posX="61" posY="12"></objPosition>
+						<descriptionFFB execAfter="">
+							<inputVariable invertedPin="false" formalParameter="EN"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="PT" effectiveParameter="T"></inputVariable>
+							<outputVariable invertedPin="false" formalParameter="ENO"></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="Q" effectiveParameter="RM_ZU"></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="ET"></outputVariable>
+						</descriptionFFB>
+					</FFBBlock>
+					<linkFB>
+						<linkSource parentObjectName="Verz_Auf" pinName="Q">
+							<objPosition posX="31" posY="13"></objPosition>
+						</linkSource>
+						<linkDestination parentObjectName=".1" pinName="IN1">
+							<objPosition posX="44" posY="16"></objPosition>
+						</linkDestination>
+						<gridObjPosition posX="38" posY="13"></gridObjPosition>
+						<gridObjPosition posX="38" posY="16"></gridObjPosition>
+					</linkFB>
+					<linkFB>
+						<linkSource parentObjectName="TON_1" pinName="Q">
+							<objPosition posX="31" posY="20"></objPosition>
+						</linkSource>
+						<linkDestination parentObjectName=".1" pinName="IN2">
+							<objPosition posX="44" posY="17"></objPosition>
+						</linkDestination>
+						<gridObjPosition posX="38" posY="20"></gridObjPosition>
+						<gridObjPosition posX="38" posY="17"></gridObjPosition>
+					</linkFB>
+					<linkFB>
+						<linkSource parentObjectName=".1" pinName="OUT">
+							<objPosition posX="51" posY="16"></objPosition>
+						</linkSource>
+						<linkDestination parentObjectName="TON_2" pinName="IN">
+							<objPosition posX="61" posY="16"></objPosition>
+						</linkDestination>
+					</linkFB>
+				</networkFBD>
+			</FBDSource>
+		</FBProgram>
+	</FBSource>
+</FBDExchangeFile>

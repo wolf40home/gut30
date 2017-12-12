@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<DDTExchangeFile>
+	<DDTSource DDTName="ISPYINF" version="8.00" dateTime="dt#2010-05-19-09:52:30">
+		<comment>Datenstruktur: ISPY Fenster</comment>
+		<attribute name="TypeSignatureCheckSumString" value="1505"></attribute>
+		<structure>
+			<variables name="UNIT" typeName="string[4]">
+				<comment>Einheit</comment>
+			</variables>
+			<variables name="JA" typeName="BOOL">
+				<comment>Justierung Aktiv</comment>
+			</variables>
+			<variables name="STILL" typeName="BOOL">
+				<comment>Stillstand</comment>
+			</variables>
+			<variables name="AKEIGEN" typeName="BOOL">
+				<comment>Kalibriermodus</comment>
+			</variables>
+			<variables name="AKEICH" typeName="BOOL"></variables>
+		</structure>
+	</DDTSource>
+</DDTExchangeFile>

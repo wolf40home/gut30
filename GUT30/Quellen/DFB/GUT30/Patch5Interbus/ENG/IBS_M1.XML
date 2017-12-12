@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<FBDExchangeFile>
+	<FBSource nameOfFBType="IBS_M1" version="1.01" dateTime="dt#2016-06-24-09:29:08">
+		<attribute name="TypeCodeCheckSumString" value="7718"></attribute>
+		<attribute name="TypeSignatureCheckSumString" value="D8D3"></attribute>
+		<inputParameters>
+			<variables name="OFF_3X" typeName="INT">
+				<attribute name="PositionPin" value="1"></attribute>
+			</variables>
+			<variables name="OFF_4X" typeName="INT">
+				<attribute name="PositionPin" value="2"></attribute>
+			</variables>
+		</inputParameters>
+		<outputParameters>
+			<variables name="IBS_OUT" typeName="DINT">
+				<attribute name="PositionPin" value="1"></attribute>
+			</variables>
+		</outputParameters>
+		<privateLocalVariables>
+			<variables name="Zählreg_MSTR" typeName="INT"></variables>
+			<variables name="Zählreg_MSTR_Anfangswert" typeName="EBOOL"></variables>
+		</privateLocalVariables>
+		<FBProgram name="S1">
+			<FBDSource nbRows="24" nbColumns="36">
+				<networkFBD>
+					<FFBBlock instanceName=".5" typeName="INT_AS_DINT" additionnalPinNumber="0" enEnO="false" width="9" height="6">
+						<objPosition posX="15" posY="5"></objPosition>
+						<descriptionFFB execAfter="">
+							<inputVariable invertedPin="false" formalParameter="EN"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="LOW" effectiveParameter="OFF_4X"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="HIGH" effectiveParameter="OFF_3X"></inputVariable>
+							<outputVariable invertedPin="false" formalParameter="ENO"></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="OUT" effectiveParameter="IBS_OUT"></outputVariable>
+						</descriptionFFB>
+					</FFBBlock>
+				</networkFBD>
+			</FBDSource>
+		</FBProgram>
+	</FBSource>
+</FBDExchangeFile>

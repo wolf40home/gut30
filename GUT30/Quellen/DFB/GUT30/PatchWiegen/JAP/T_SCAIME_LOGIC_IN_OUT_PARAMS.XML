@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<DDTExchangeFile>
+	<DDTSource DDTName="T_SCAIME_LOGIC_IN_OUT_PARAMS" version="0.09" dateTime="dt#2014-12-10-14:46:32">
+		<attribute name="TypeSignatureCheckSumString" value="3C45"></attribute>
+		<structure>
+			<variables name="Input_I0_Settings" typeName="BYTE">
+				<comment>Parameter ID: 1004 Access : R/W bit b0-b3 (input I0 function code) and bit b4 (input I0 logic) </comment>
+			</variables>
+			<variables name="Input_I1_Settings" typeName="BYTE">
+				<comment>Parameter ID: 1005 Access : R/W  bit b0-b3 (input I1 function code) and bit b4 (input I1 logic)</comment>
+			</variables>
+			<variables name="Inputs_Holding_Time_ms" typeName="UINT">
+				<comment>Parameter ID: 1006 Access : R/W </comment>
+			</variables>
+			<variables name="Outputs_S0S1_Settings" typeName="WORD">
+				<comment>Parameter ID: 1007 Access : R/W (see in device user manual/help file for bit fields details)</comment>
+			</variables>
+			<variables name="Coarse_Feed_CutOff_Point" typeName="DINT">
+				<comment>Parameter ID: 1008 Access : R/W </comment>
+			</variables>
+			<variables name="Fine_Feed_CutOff_Point" typeName="DINT">
+				<comment>Parameter ID: 1009 Access : R/W </comment>
+			</variables>
+			<variables name="Fine_Feed_Mask_Time_ms" typeName="UINT">
+				<comment>Parameter ID: 1010 Access : R/W </comment>
+			</variables>
+			<variables name="Output_S2_Setting" typeName="BYTE">
+				<comment>Parameter ID: 1011 Access : R/W (see in device user manual/help file for bit fields details)</comment>
+			</variables>
+			<variables name="S2_Set_Point_Low_Value" typeName="DINT">
+				<comment>Parameter ID: 1012 Access : R/W </comment>
+			</variables>
+			<variables name="S2_Set_Point_High_Value" typeName="DINT">
+				<comment>Parameter ID: 1013 Access : R/W </comment>
+			</variables>
+			<variables name="Output_S3_Setting" typeName="BYTE">
+				<comment>Parameter ID: 1014 Access : R/W (see in device user manual/help file for bit fields details)</comment>
+			</variables>
+			<variables name="S3_Set_Point_Low_Value" typeName="DINT">
+				<comment>Parameter ID: 1015 Access : R/W </comment>
+			</variables>
+			<variables name="S3_Set_Point_High_Value" typeName="DINT">
+				<comment>Parameter ID: 1016 Access : R/W </comment>
+			</variables>
+		</structure>
+	</DDTSource>
+</DDTExchangeFile>

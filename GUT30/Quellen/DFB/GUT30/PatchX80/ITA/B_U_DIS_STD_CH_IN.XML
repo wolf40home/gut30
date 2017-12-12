@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<DDTExchangeFile>
+	<DDTSource DDTName="B_U_DIS_STD_CH_IN" version="11.00" dateTime="dt#2016-01-19-16:49:24">
+		<attribute name="TypeSignatureCheckSumString" value="7529"></attribute>
+		<structure>
+			<variables name="CH_HEALT" typeName="BOOL"></variables>
+			<variables name="VALUE" typeName="BOOL"></variables>
+		</structure>
+	</DDTSource>
+</DDTExchangeFile>

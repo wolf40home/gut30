@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<DDTExchangeFile>
+	<DDTSource DDTName="TYPVG_UNIold" version="8.00" dateTime="dt#2007-10-20-16:20:13">
+		<comment>Datenstruktur Typvorgabe Allgemeinin PLS</comment>
+		<attribute name="TypeSignatureCheckSumString" value="1624"></attribute>
+		<structure>
+			<variables name="B1" typeName="BOOL"></variables>
+			<variables name="B2" typeName="BOOL"></variables>
+			<variables name="B3" typeName="BOOL"></variables>
+			<variables name="B4" typeName="BOOL"></variables>
+			<variables name="B5" typeName="BOOL"></variables>
+			<variables name="B6" typeName="BOOL"></variables>
+			<variables name="B7" typeName="BOOL"></variables>
+			<variables name="B8" typeName="BOOL"></variables>
+			<variables name="B9" typeName="BOOL"></variables>
+			<variables name="B10" typeName="BOOL"></variables>
+			<variables name="B11" typeName="BOOL"></variables>
+			<variables name="B12" typeName="BOOL"></variables>
+			<variables name="B13" typeName="BOOL"></variables>
+			<variables name="B14" typeName="BOOL"></variables>
+			<variables name="B15" typeName="BOOL"></variables>
+			<variables name="B16" typeName="BOOL"></variables>
+		</structure>
+	</DDTSource>
+</DDTExchangeFile>

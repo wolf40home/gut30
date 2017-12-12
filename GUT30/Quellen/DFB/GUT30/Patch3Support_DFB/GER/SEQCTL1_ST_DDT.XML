@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<DDTExchangeFile>
+	<DDTSource DDTName="SEQCTL1_ST_DDT" version="8.00" dateTime="dt#2008-09-02-16:06:48">
+		<attribute name="TypeSignatureCheckSumString" value="661D"></attribute>
+		<structure>
+			<variables name="STATE" typeName="UINT">
+				<comment>Current sequential state </comment>
+			</variables>
+			<variables name="COMMAND" typeName="UINT">
+				<comment>Sequence commands</comment>
+			</variables>
+			<variables name="STW" typeName="WORD">
+				<comment>Status word</comment>
+			</variables>
+			<variables name="CFGW" typeName="WORD">
+				<comment>Configuration word</comment>
+			</variables>
+			<variables name="ETIME" typeName="UDINT">
+				<comment>Elapsed time in the current step (dsec)</comment>
+			</variables>
+			<variables name="CSTEPD" typeName="string[22]">
+				<comment>Current step description (3 characters for step number +17 characters for description)</comment>
+			</variables>
+			<variables name="reserve" typeName="WORD"></variables>
+		</structure>
+	</DDTSource>
+</DDTExchangeFile>

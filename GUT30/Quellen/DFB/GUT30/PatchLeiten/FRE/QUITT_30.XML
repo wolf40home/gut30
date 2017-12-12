@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<FBDExchangeFile>
+	<FBSource nameOfFBType="QUITT_30" version="11.10" dateTime="dt#2017-06-28-09:41:42">
+		<comment>Baustein : Störung Quitieren</comment>
+		<attribute name="TypeDescriptiveForm" value="&lt;pre&gt;Baustein : QUITT01 Section  : Quittierung Quittierung von Leitsystem&#xA; ____________________________________________________________ &#xA;Version 001     08.08.2006  Ersterstellung &#xA;____________________________________________________________ &#xA;Quittierung mit einstellbarer Impulsdauer und Rückmeldung an LS&lt;/pre&gt;"></attribute>
+		<attribute name="TypeProtectionLevel" value="2#0000_0000"></attribute>
+		<attribute name="TypeCodeCheckSumString" value="2CA4"></attribute>
+		<attribute name="TypeSignatureCheckSumString" value="D5F6"></attribute>
+		<inputParameters>
+			<variables name="SQ_IMP" typeName="TIME">
+				<comment>Zeitdauer Quittierimpuls</comment>
+				<attribute name="PositionPin" value="3"></attribute>
+				<variableInit value="t#1s0ms"></variableInit>
+			</variables>
+		</inputParameters>
+		<inOutParameters>
+			<variables name="LW" typeName="WORD">
+				<comment>Leitwort</comment>
+				<attribute name="PositionPin" value="1"></attribute>
+			</variables>
+		</inOutParameters>
+		<outputParameters>
+			<variables name="SQ" typeName="BOOL">
+				<comment>Quittierung</comment>
+				<attribute name="PositionPin" value="3"></attribute>
+			</variables>
+		</outputParameters>
+		<privateLocalVariables>
+			<variables name="FBI_1_1" typeName="TP"></variables>
+		</privateLocalVariables>
+		<FBProgram name="Quittierung">
+			<FBDSource nbRows="24" nbColumns="36">
+				<networkFBD>
+					<FFBBlock instanceName="FBI_1_1" typeName="TP" additionnalPinNumber="0" enEnO="false" width="7" height="6">
+						<objPosition posX="7" posY="5"></objPosition>
+						<descriptionFFB execAfter="">
+							<inputVariable invertedPin="false" formalParameter="EN"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN" effectiveParameter="LW.0"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="PT" effectiveParameter="SQ_IMP"></inputVariable>
+							<outputVariable invertedPin="false" formalParameter="ENO"></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="Q" effectiveParameter="SQ"></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="ET"></outputVariable>
+						</descriptionFFB>
+					</FFBBlock>
+					<FFBBlock instanceName=".1" typeName="MOVE" additionnalPinNumber="0" enEnO="false" width="7" height="5">
+						<objPosition posX="7" posY="18"></objPosition>
+						<descriptionFFB execAfter="">
+							<inputVariable invertedPin="false" formalParameter="EN"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN" effectiveParameter="0"></inputVariable>
+							<outputVariable invertedPin="false" formalParameter="ENO"></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="OUT" effectiveParameter="LW"></outputVariable>
+						</descriptionFFB>
+					</FFBBlock>
+				</networkFBD>
+			</FBDSource>
+		</FBProgram>
+	</FBSource>
+</FBDExchangeFile>

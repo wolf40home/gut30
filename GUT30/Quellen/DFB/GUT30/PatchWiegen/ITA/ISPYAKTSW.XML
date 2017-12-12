@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<DDTExchangeFile>
+	<DDTSource DDTName="ISPYAKTSW" version="8.00" dateTime="dt#2010-09-07-11:01:13">
+		<comment>Datenstruktur: Aktuelle Sollwertgruppe</comment>
+		<attribute name="TypeSignatureCheckSumString" value="4B48"></attribute>
+		<structure>
+			<variables name="GROB" typeName="REAL">
+				<comment>AKT_SW_Gruppe / Grobstromabschaltpunkt in kg</comment>
+			</variables>
+			<variables name="GRWER" typeName="REAL">
+				<comment>AKT_SW_ Gruppe / Grobstromwert für Analogausgang ( 0-100%)</comment>
+			</variables>
+			<variables name="DURCHFL" typeName="REAL">
+				<comment>AKT_SW_Gruppe / Durchflusswert kg/min</comment>
+			</variables>
+			<variables name="FEIN" typeName="REAL">
+				<comment>AKT_SW_Gruppe / Feinstromabschaltpunkt in kg</comment>
+			</variables>
+			<variables name="FEWER" typeName="REAL">
+				<comment>AKT_SW_Gruppe / Feinstromwert für Analogausgang (0-100%)</comment>
+			</variables>
+			<variables name="TBER" typeName="REAL">
+				<comment>AKT_SW_Gruppe / Beruhigungszeit in sec</comment>
+			</variables>
+			<variables name="TO1" typeName="REAL">
+				<comment>AKT_SW-Gruppe / Toleranz oben (Plus) Wert 1 in kg</comment>
+			</variables>
+			<variables name="TO2" typeName="REAL">
+				<comment>AKT_SW-Gruppe / Toleranz oben (Plus) Wert 2 in kg</comment>
+			</variables>
+			<variables name="TU1" typeName="REAL">
+				<comment>AKT_SW_Gruppe / Toleranz unten (Minus) Wert 1 in kg</comment>
+			</variables>
+			<variables name="TU2" typeName="REAL">
+				<comment>AKT_SW_Gruppe / Toleranz unten (Minus) Wert 2 in kg</comment>
+			</variables>
+			<variables name="KEVF" typeName="REAL">
+				<comment>AKT_SW_Gruppe / Kurve Ende vor Feinstromabschaltpunkt</comment>
+			</variables>
+			<variables name="TIMP" typeName="REAL">
+				<comment>AKT_SW_Gruppe / Zeit für Ansteuerung des Impuls in sec</comment>
+			</variables>
+			<variables name="WIMP" typeName="REAL">
+				<comment>AKT_SW_Gruppe / Impulswert in (0-100%)</comment>
+			</variables>
+			<variables name="TVERG" typeName="REAL">
+				<comment>AKT_SW_Gruppe / Verzögerungszeit Überwachung Grobstrom in sec</comment>
+			</variables>
+			<variables name="FLWGR" typeName="REAL">
+				<comment>AKT_SW_Gruppe / Materialflussüberwachungswert Grobstrom in kg</comment>
+			</variables>
+			<variables name="FLTGR" typeName="REAL">
+				<comment>AKT_SW_Gruppe / Materialflussüberwachungszeit Grobstrom in sec</comment>
+			</variables>
+			<variables name="TVEFE" typeName="REAL">
+				<comment>AKT_SW_Gruppe / Verzögerungszeit Überwachung in sec</comment>
+			</variables>
+			<variables name="FLWFE" typeName="REAL">
+				<comment>AKT_SW_Gruppe / Materialflussüberwachungswert Feinstrom in kg</comment>
+			</variables>
+			<variables name="FLTFE" typeName="REAL">
+				<comment>AKT_SW_Gruppe / Materialflussüberwachungszeit in sec</comment>
+			</variables>
+			<variables name="BINSIG" typeName="WORD">
+				<comment>AKT_SW_Gruppe / Binärsignale</comment>
+			</variables>
+			<variables name="BINRES" typeName="WORD">
+				<comment>AKT_SW_Gruppe / Wort zum auffüllen der Struktur</comment>
+			</variables>
+		</structure>
+	</DDTSource>
+</DDTExchangeFile>

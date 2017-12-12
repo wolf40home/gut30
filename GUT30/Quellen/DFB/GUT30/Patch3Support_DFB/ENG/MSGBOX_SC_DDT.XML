@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<DDTExchangeFile>
+	<DDTSource DDTName="MSGBOX_SC_DDT" version="8.00" dateTime="dt#2008-05-28-10:01:40">
+		<comment>Public variables of message management  (DFB MSGBOX)</comment>
+		<attribute name="TypeSignatureCheckSumString" value="4911"></attribute>
+		<structure>
+			<variables name="MSG" typeName="string[40]">
+				<comment>Main message</comment>
+			</variables>
+			<variables name="MSG1" typeName="string[40]">
+				<comment>Complementary message 1</comment>
+			</variables>
+			<variables name="MSG2" typeName="string[40]">
+				<comment>Complementary message 2</comment>
+			</variables>
+			<variables name="MODE" typeName="UINT">
+				<comment>Low Byte: 1:OK,2:OK+Cancel, 4:Data1, 8: Data2,16:Stop icon,32: Question Icon,48:Exclam. icon, 64: Info icon</comment>
+			</variables>
+			<variables name="DATA1" typeName="REAL">
+				<comment>Data 1 (Read/ write)</comment>
+			</variables>
+			<variables name="DATA2" typeName="REAL">
+				<comment>Data 2 (Read/ write)</comment>
+			</variables>
+			<variables name="SHOW" typeName="BOOL">
+				<comment>To show message</comment>
+			</variables>
+			<variables name="ABORT" typeName="BOOL">
+				<comment>To abort message</comment>
+			</variables>
+			<variables name="INPROGRESS" typeName="BOOL">
+				<comment>Message in progress (ON)</comment>
+			</variables>
+			<variables name="DONE" typeName="BOOL">
+				<comment>Message finalized with Accept button (ON)</comment>
+			</variables>
+			<variables name="CANCELLED" typeName="BOOL">
+				<comment>Message finalized with Cancel button (ON)</comment>
+			</variables>
+		</structure>
+	</DDTSource>
+</DDTExchangeFile>

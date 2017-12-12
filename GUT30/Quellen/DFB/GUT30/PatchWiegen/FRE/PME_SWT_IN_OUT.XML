@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<DDTExchangeFile>
+	<DDTSource DDTName="PME_SWT_IN_OUT" version="0.04" dateTime="dt#2015-03-04-13:23:47">
+		<attribute name="TypeSignatureCheckSumString" value="6334"></attribute>
+		<structure>
+			<variables name="Sensor_Sensitivity" typeName="REAL">
+				<comment>Parameter ID: 1035 Access : R/W </comment>
+			</variables>
+			<variables name="Calibration_Load_1" typeName="UDINT">
+				<comment>Parameter ID: 1038 Access : R/W </comment>
+			</variables>
+			<variables name="Calibration_Load_2" typeName="UDINT">
+				<comment>Parameter ID: 1039 Access : R/W </comment>
+			</variables>
+			<variables name="Calibration_Load_3" typeName="UDINT">
+				<comment>Parameter ID: 1040 Access : R/W </comment>
+			</variables>
+			<variables name="Maximum_Capacity" typeName="UDINT">
+				<comment>Parameter ID: 1031 Access : R/W </comment>
+			</variables>
+		</structure>
+	</DDTSource>
+</DDTExchangeFile>

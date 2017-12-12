@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<DDTExchangeFile>
+	<DDTSource DDTName="T_SCAIME_SERIAL_HMI_SETTING" version="0.04" dateTime="dt#2014-12-10-14:46:33">
+		<attribute name="TypeSignatureCheckSumString" value="4794"></attribute>
+		<structure>
+			<variables name="HMI_Address" typeName="BYTE">
+				<comment>Parameter ID: 1000 Access : R/W</comment>
+			</variables>
+			<variables name="HMI_Baudrate" typeName="UDINT">
+				<comment>Parameter ID: 1001 Access : R/W (Values supported : 9600, 19200, 38400)</comment>
+			</variables>
+			<variables name="HMI_Panel_Settings" typeName="WORD">
+				<comment>Parameter ID: 1002 Access : R/W (see in device user manual/help file for bit fields details)</comment>
+			</variables>
+			<variables name="HMI_PassWord" typeName="string[4]">
+				<comment>Parameter ID: 1003 Access : R/W</comment>
+			</variables>
+		</structure>
+	</DDTSource>
+</DDTExchangeFile>

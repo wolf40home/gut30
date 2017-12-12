@@ -1,0 +1,13 @@
+﻿<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<DDTExchangeFile>
+<DDTSource DDTName="ADaten" version="11.1" dateTime="dt#2017-08-10-08:16:44">
+<attribute name="IsTypeLocked" value="TRUE">
+</attribute>
+<attribute name="IsTypeHidden" value="FALSE">
+</attribute>
+<comment>Datenstruktur: Trenddaten</comment>
+<attribute name="TypeDescriptiveForm" value="Default descriptive form otto">
+</attribute>
+<array>Array [1..60] of REAL</array>
+</DDTSource>
+</DDTExchangeFile>

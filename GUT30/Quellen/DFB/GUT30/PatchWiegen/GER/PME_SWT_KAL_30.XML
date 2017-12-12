@@ -1,0 +1,479 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<FBDExchangeFile>
+	<FBSource nameOfFBType="PME_SWT_KAL_30" version="8.10" dateTime="dt#2015-01-29-14:01:11">
+		<comment>Baustein: PME_SWT Kalibrierung</comment>
+		<attribute name="TypeProtectionLevel" value="2#0000_0000"></attribute>
+		<attribute name="TypeCodeCheckSumString" value="030B"></attribute>
+		<attribute name="TypeSignatureCheckSumString" value="4DAF"></attribute>
+		<inputParameters>
+			<variables name="EIGEN" typeName="BOOL">
+				<comment>Eigengewicht</comment>
+				<attribute name="PositionPin" value="3"></attribute>
+			</variables>
+			<variables name="EICH" typeName="BOOL">
+				<comment>Nachkalibrieren</comment>
+				<attribute name="PositionPin" value="6"></attribute>
+			</variables>
+			<variables name="Eichgewicht" typeName="DINT">
+				<comment>Justieren</comment>
+				<attribute name="PositionPin" value="5"></attribute>
+			</variables>
+			<variables name="Lesen" typeName="BOOL">
+				<comment>Daten lesen</comment>
+				<attribute name="PositionPin" value="8"></attribute>
+			</variables>
+			<variables name="Scheiben" typeName="BOOL">
+				<comment>Daten schreiben</comment>
+				<attribute name="PositionPin" value="9"></attribute>
+			</variables>
+			<variables name="EIGEN_THEOR" typeName="BOOL">
+				<comment>Eigengewicht für Theoretische Justage</comment>
+				<attribute name="PositionPin" value="2"></attribute>
+			</variables>
+		</inputParameters>
+		<inOutParameters>
+			<variables name="ZL" typeName="REAL">
+				<comment>Steigung</comment>
+				<attribute name="PositionPin" value="10"></attribute>
+			</variables>
+			<variables name="SL" typeName="REAL">
+				<comment>Eigengewicht</comment>
+				<attribute name="PositionPin" value="11"></attribute>
+			</variables>
+			<variables name="CH" typeName="T_PME_SWT_0100">
+				<attribute name="PositionPin" value="1"></attribute>
+			</variables>
+		</inOutParameters>
+		<outputParameters>
+			<variables name="OK" typeName="BOOL">
+				<comment>Fertig</comment>
+				<attribute name="PositionPin" value="12"></attribute>
+			</variables>
+			<variables name="Nach_kal_OK" typeName="BOOL">
+				<comment>Nachkalibrieren fertig</comment>
+				<attribute name="PositionPin" value="13"></attribute>
+			</variables>
+			<variables name="Null_setzen_OK" typeName="BOOL">
+				<comment>Null setzen fertig</comment>
+				<attribute name="PositionPin" value="3"></attribute>
+			</variables>
+			<variables name="Eigen_theo_OK" typeName="BOOL">
+				<comment>Eigengewicht ermitteln fertig</comment>
+				<attribute name="PositionPin" value="2"></attribute>
+			</variables>
+			<variables name="MPD" typeName="ARRAY[1..2] OF DWORD">
+				<comment>Datenübergabe</comment>
+				<attribute name="PositionPin" value="8"></attribute>
+			</variables>
+		</outputParameters>
+		<privateLocalVariables>
+			<variables name="Eigengewicht_fertig" typeName="BOOL"></variables>
+			<variables name="Modul_gespeichert" typeName="BOOL"></variables>
+			<variables name="CPU_gespeichert" typeName="BOOL"></variables>
+			<variables name="Flanke_Eigengewicht" typeName="BOOL"></variables>
+			<variables name="R_TRIG_1" typeName="R_TRIG"></variables>
+			<variables name="Eigengewicht_bestimmen" typeName="BOOL"></variables>
+			<variables name="Nachkalibrieren" typeName="BOOL"></variables>
+			<variables name="Nachkalibrieren_fertig" typeName="BOOL"></variables>
+			<variables name="Befehlsabbruch" typeName="BOOL"></variables>
+			<variables name="R_TRIG_2" typeName="R_TRIG"></variables>
+			<variables name="Flanke_Nachkalibrieren" typeName="BOOL"></variables>
+			<variables name="FBI_1" typeName="R_TRIG"></variables>
+			<variables name="FBI_2" typeName="R_TRIG"></variables>
+			<variables name="OPER" typeName="BYTE"></variables>
+			<variables name="SL_Betrag" typeName="REAL"></variables>
+			<variables name="ZL_Kehrwert" typeName="REAL"></variables>
+			<variables name="FBI_3" typeName="TP"></variables>
+			<variables name="FBI_4" typeName="F_TRIG"></variables>
+			<variables name="Flanke_Eigen_theor" typeName="BOOL"></variables>
+			<variables name="R_TRIG_3" typeName="R_TRIG"></variables>
+			<variables name="Eigen_theor_fertig" typeName="BOOL"></variables>
+			<variables name="Eigen_theor_bestimmen" typeName="BOOL"></variables>
+			<variables name="Eigen_theo_Modul_gespeichert" typeName="BOOL"></variables>
+			<variables name="Eigen_Theo_CPU_gespeichert" typeName="BOOL"></variables>
+			<variables name="CMD_IN_PROGR" typeName="BOOL"></variables>
+			<variables name="PME_SWT_CMD_30_1" typeName="PME_SWT_CMD_30"></variables>
+			<variables name="CMD" typeName="UINT"></variables>
+			<variables name="CMD_OK" typeName="BOOL"></variables>
+			<variables name="CMD_ERR" typeName="BOOL"></variables>
+		</privateLocalVariables>
+		<FBProgram name="Eichen">
+			<STSource>R_TRIG_1 (EIGEN,Flanke_Eigengewicht);
+R_TRIG_2 (EICH,Flanke_Nachkalibrieren);
+R_TRIG_3 (EIGEN_Theor,Flanke_Eigen_theor);
+
+
+CMD_IN_PROGR:=  EQ_UINT (IN1 := CH.Inputs.RespRegister,  IN2 := 1);
+(*Justage mit Eichgewicht d. h. zuerst Nullsetzen dann mit Eichgewicht*)
+
+IF Eigengewicht_bestimmen AND NOT Eigengewicht_fertig AND NOT CMD_IN_PROGR and CMD_OK THEN
+	CMD:=16#da;
+	Eigengewicht_fertig:=1;  (* dauert mit Speichern ca. 10s *)
+	
+END_IF;
+
+IF Flanke_Eigengewicht THEN
+	Eigengewicht_fertig:=0;
+	Nachkalibrieren_fertig:=0;
+	Nachkalibrieren:=0;
+	Eigengewicht_bestimmen:=1;
+	Modul_gespeichert:=0;
+	CPU_gespeichert:=0;
+	CMD:=16#d9;
+	OK:=0;
+END_IF;
+
+IF Flanke_Nachkalibrieren THEN
+	Nachkalibrieren_fertig:=0;
+	Nachkalibrieren:=1;
+	Modul_gespeichert:=0;
+	CPU_gespeichert:=0;
+	Nach_kal_ok:=0;
+END_IF;
+
+
+IF Nachkalibrieren AND NOT Nachkalibrieren_fertig AND NOT CMD_IN_PROGR THEN
+(*	CH.CMD_TYPE:=0;
+	CH.STD_LOAD:=Eichgewicht;
+	CH.DG_CAL_CMD:=1; (* bei Kalibriergewicht &lt;70% des max. Gewichts, sonst STD_LOAD_CAL_CMD verwenden *)
+	Nachkalibrieren_fertig:=1; (* dauert mit Speichern ca. 10s *)
+END_IF;	
+
+
+
+(* bei Fehler die beim Senden des Befehls auftreten reagieren mit Abbruch
+ des Befehls, aber hier beim Test keine Auswertung *)
+IF  (CH.Inputs.RespRegister=3) THEN 
+	
+	CH.Outputs.CdeRegister:=0;
+
+	IF ((Nachkalibrieren AND Nachkalibrieren_fertig) and 
+     	   (Eigengewicht_bestimmen AND Eigengewicht_fertig))
+      	   AND NOT Modul_gespeichert AND NOT CMD_IN_PROGR AND (CH.Inputs.RespRegister=1) THEN
+		CH.Outputs.CdeRegister:=16#d1;
+		Modul_gespeichert:=1;
+		CPU_gespeichert:=1;
+	END_IF;
+End_if;
+
+
+IF Modul_gespeichert AND CPU_gespeichert AND NOT CMD_IN_PROGR THEN
+		OK:=1;
+		Nach_kal_ok:=1;
+
+	ELSE 
+	Befehlsabbruch:=1;
+END_IF;
+
+
+(*Eigengewichtermittlung für die Theoretische Justage*)
+IF Flanke_Eigen_theor THEN 
+	Eigen_theor_fertig:=0;
+	Eigen_theor_bestimmen:=1;
+	Eigen_Theo_Modul_gespeichert:=0;
+	Eigen_Theo_CPU_gespeichert:=0;
+	Eigen_Theo_OK:=0;
+END_IF;
+
+IF Eigen_theor_bestimmen AND NOT Eigen_theor_fertig AND NOT CMD_IN_PROGR THEN
+	CH.Outputs.CdeRegister:=211;
+	Eigen_theor_fertig:=1;  (* dauert mit Speichern ca. 10s *)
+	
+END_IF;
+
+IF NOT (CH.Inputs.RespRegister=3) THEN 
+	
+	(* CH.CMD_TYPE:=0;*)
+
+	IF Eigen_theor_bestimmen AND Eigen_theor_fertig
+      	   AND NOT Eigen_Theo_Modul_gespeichert AND NOT CMD_IN_PROGR AND (CH.Inputs.RespRegister=1) THEN
+		CH.Outputs.CdeRegister:=16#d1;
+		Eigen_Theo_Modul_gespeichert:=1;
+		Eigen_Theo_CPU_gespeichert:=1;
+	END_IF;
+End_if;
+
+
+
+IF Eigen_Theo_Modul_gespeichert AND Eigen_Theo_CPU_gespeichert AND NOT CMD_IN_PROGR THEN
+		Eigen_Theo_OK:=1;
+
+	ELSE 
+	Befehlsabbruch:=1;
+END_IF;
+
+</STSource>
+		</FBProgram>
+		<FBProgram name="CPU">
+			<FBDSource nbRows="24" nbColumns="36">
+				<networkFBD>
+					<FFBBlock instanceName="FBI_1" typeName="R_TRIG" additionnalPinNumber="0" enEnO="false" width="7" height="5">
+						<objPosition posX="20" posY="16"></objPosition>
+						<descriptionFFB execAfter="">
+							<inputVariable invertedPin="false" formalParameter="EN"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="CLK" effectiveParameter="Lesen"></inputVariable>
+							<outputVariable invertedPin="false" formalParameter="ENO"></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="Q"></outputVariable>
+						</descriptionFFB>
+					</FFBBlock>
+					<FFBBlock instanceName="FBI_2" typeName="R_TRIG" additionnalPinNumber="0" enEnO="false" width="7" height="5">
+						<objPosition posX="20" posY="21"></objPosition>
+						<descriptionFFB execAfter="">
+							<inputVariable invertedPin="false" formalParameter="EN"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="CLK" effectiveParameter="Scheiben"></inputVariable>
+							<outputVariable invertedPin="false" formalParameter="ENO"></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="Q"></outputVariable>
+						</descriptionFFB>
+					</FFBBlock>
+					<FFBBlock instanceName=".2" typeName="OR_BOOL" additionnalPinNumber="1" enEnO="false" width="7" height="7">
+						<objPosition posX="41" posY="29"></objPosition>
+						<descriptionFFB execAfter="">
+							<inputVariable invertedPin="false" formalParameter="EN"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN1"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN2"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN3" effectiveParameter="%S21"></inputVariable>
+							<outputVariable invertedPin="false" formalParameter="ENO"></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="OUT"></outputVariable>
+						</descriptionFFB>
+					</FFBBlock>
+					<FFBBlock instanceName=".3" typeName="MOVE" additionnalPinNumber="0" enEnO="true" width="7" height="5">
+						<objPosition posX="34" posY="14"></objPosition>
+						<descriptionFFB execAfter="">
+							<inputVariable invertedPin="false" formalParameter="EN"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN" effectiveParameter="0"></inputVariable>
+							<outputVariable invertedPin="false" formalParameter="ENO"></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="OUT" effectiveParameter="OPER"></outputVariable>
+						</descriptionFFB>
+					</FFBBlock>
+					<FFBBlock instanceName=".4" typeName="MOVE" additionnalPinNumber="0" enEnO="true" width="7" height="5">
+						<objPosition posX="44" posY="22"></objPosition>
+						<descriptionFFB execAfter="">
+							<inputVariable invertedPin="false" formalParameter="EN"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN" effectiveParameter="1"></inputVariable>
+							<outputVariable invertedPin="false" formalParameter="ENO"></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="OUT" effectiveParameter="OPER"></outputVariable>
+						</descriptionFFB>
+					</FFBBlock>
+					<FFBBlock instanceName=".7" typeName="REAL_TO_DWORD" additionnalPinNumber="0" enEnO="false" width="11" height="5">
+						<objPosition posX="14" posY="0"></objPosition>
+						<descriptionFFB execAfter="">
+							<inputVariable invertedPin="false" formalParameter="EN"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN" effectiveParameter="ZL"></inputVariable>
+							<outputVariable invertedPin="false" formalParameter="ENO"></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="OUT" effectiveParameter="MPD[1]"></outputVariable>
+						</descriptionFFB>
+					</FFBBlock>
+					<FFBBlock instanceName=".8" typeName="REAL_TO_DWORD" additionnalPinNumber="0" enEnO="false" width="11" height="5">
+						<objPosition posX="35" posY="1"></objPosition>
+						<descriptionFFB execAfter="">
+							<inputVariable invertedPin="false" formalParameter="EN"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN" effectiveParameter="SL"></inputVariable>
+							<outputVariable invertedPin="false" formalParameter="ENO"></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="OUT" effectiveParameter="MPD[2]"></outputVariable>
+						</descriptionFFB>
+					</FFBBlock>
+					<FFBBlock instanceName=".5" typeName="DWORD_TO_REAL" additionnalPinNumber="0" enEnO="false" width="11" height="5">
+						<objPosition posX="56" posY="41"></objPosition>
+						<descriptionFFB execAfter="">
+							<inputVariable invertedPin="false" formalParameter="EN"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN" effectiveParameter="MPD[1]"></inputVariable>
+							<outputVariable invertedPin="false" formalParameter="ENO"></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="OUT" effectiveParameter="ZL"></outputVariable>
+						</descriptionFFB>
+					</FFBBlock>
+					<FFBBlock instanceName=".6" typeName="DWORD_TO_REAL" additionnalPinNumber="0" enEnO="false" width="11" height="5">
+						<objPosition posX="56" posY="47"></objPosition>
+						<descriptionFFB execAfter="">
+							<inputVariable invertedPin="false" formalParameter="EN"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN" effectiveParameter="MPD[2]"></inputVariable>
+							<outputVariable invertedPin="false" formalParameter="ENO"></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="OUT" effectiveParameter="SL"></outputVariable>
+						</descriptionFFB>
+					</FFBBlock>
+					<FFBBlock instanceName=".9" typeName="MUL" additionnalPinNumber="0" enEnO="false" width="7" height="6">
+						<objPosition posX="36" posY="6"></objPosition>
+						<descriptionFFB execAfter="">
+							<inputVariable invertedPin="false" formalParameter="EN"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN1" effectiveParameter="SL"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN2" effectiveParameter="-1.0"></inputVariable>
+							<outputVariable invertedPin="false" formalParameter="ENO"></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="OUT" effectiveParameter="SL_Betrag"></outputVariable>
+						</descriptionFFB>
+					</FFBBlock>
+					<FFBBlock instanceName=".10" typeName="DIV" additionnalPinNumber="0" enEnO="false" width="7" height="6">
+						<objPosition posX="15" posY="5"></objPosition>
+						<descriptionFFB execAfter="">
+							<inputVariable invertedPin="false" formalParameter="EN"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN1" effectiveParameter="1.0"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN2" effectiveParameter="ZL"></inputVariable>
+							<outputVariable invertedPin="false" formalParameter="ENO"></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="OUT" effectiveParameter="ZL_Kehrwert"></outputVariable>
+						</descriptionFFB>
+					</FFBBlock>
+					<FFBBlock instanceName="FBI_3" typeName="TP" additionnalPinNumber="0" enEnO="false" width="7" height="6">
+						<objPosition posX="62" posY="56"></objPosition>
+						<descriptionFFB execAfter="">
+							<inputVariable invertedPin="false" formalParameter="EN"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="PT" effectiveParameter="time#1s"></inputVariable>
+							<outputVariable invertedPin="false" formalParameter="ENO"></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="Q"></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="ET"></outputVariable>
+						</descriptionFFB>
+					</FFBBlock>
+					<FFBBlock instanceName=".11" typeName="AND" additionnalPinNumber="0" enEnO="false" width="7" height="6">
+						<objPosition posX="51" posY="56"></objPosition>
+						<descriptionFFB execAfter="">
+							<inputVariable invertedPin="false" formalParameter="EN"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN1"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN2"></inputVariable>
+							<outputVariable invertedPin="false" formalParameter="ENO"></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="OUT"></outputVariable>
+						</descriptionFFB>
+					</FFBBlock>
+					<FFBBlock instanceName="FBI_4" typeName="F_TRIG" additionnalPinNumber="0" enEnO="false" width="7" height="5">
+						<objPosition posX="74" posY="56"></objPosition>
+						<descriptionFFB execAfter="">
+							<inputVariable invertedPin="false" formalParameter="EN"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="CLK"></inputVariable>
+							<outputVariable invertedPin="false" formalParameter="ENO"></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="Q"></outputVariable>
+						</descriptionFFB>
+					</FFBBlock>
+					<FFBBlock instanceName=".12" typeName="MOVE" additionnalPinNumber="0" enEnO="true" width="7" height="5">
+						<objPosition posX="88" posY="57"></objPosition>
+						<descriptionFFB execAfter="">
+							<inputVariable invertedPin="false" formalParameter="EN"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN" effectiveParameter="0"></inputVariable>
+							<outputVariable invertedPin="false" formalParameter="ENO"></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="OUT"></outputVariable>
+						</descriptionFFB>
+					</FFBBlock>
+					<FFBBlock instanceName=".13" typeName="MOVE" additionnalPinNumber="0" enEnO="true" width="7" height="5">
+						<objPosition posX="88" posY="62"></objPosition>
+						<descriptionFFB execAfter="">
+							<inputVariable invertedPin="false" formalParameter="EN"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN" effectiveParameter="1"></inputVariable>
+							<outputVariable invertedPin="false" formalParameter="ENO"></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="OUT"></outputVariable>
+						</descriptionFFB>
+					</FFBBlock>
+					<linkFB>
+						<linkSource parentObjectName=".2" pinName="OUT">
+							<objPosition posX="47" posY="33"></objPosition>
+						</linkSource>
+						<linkDestination parentObjectName=".11" pinName="IN1">
+							<objPosition posX="51" posY="60"></objPosition>
+						</linkDestination>
+						<gridObjPosition posX="50" posY="33"></gridObjPosition>
+						<gridObjPosition posX="50" posY="60"></gridObjPosition>
+					</linkFB>
+					<linkFB>
+						<linkSource parentObjectName="FBI_1" pinName="Q">
+							<objPosition posX="26" posY="20"></objPosition>
+						</linkSource>
+						<linkDestination parentObjectName=".2" pinName="IN1">
+							<objPosition posX="41" posY="33"></objPosition>
+						</linkDestination>
+						<gridObjPosition posX="34" posY="20"></gridObjPosition>
+						<gridObjPosition posX="34" posY="33"></gridObjPosition>
+					</linkFB>
+					<linkFB>
+						<linkSource parentObjectName="FBI_2" pinName="Q">
+							<objPosition posX="26" posY="25"></objPosition>
+						</linkSource>
+						<linkDestination parentObjectName=".2" pinName="IN2">
+							<objPosition posX="41" posY="34"></objPosition>
+						</linkDestination>
+						<gridObjPosition posX="33" posY="25"></gridObjPosition>
+						<gridObjPosition posX="33" posY="34"></gridObjPosition>
+					</linkFB>
+					<linkFB>
+						<linkSource parentObjectName=".11" pinName="OUT">
+							<objPosition posX="57" posY="60"></objPosition>
+						</linkSource>
+						<linkDestination parentObjectName="FBI_3" pinName="IN">
+							<objPosition posX="62" posY="60"></objPosition>
+						</linkDestination>
+					</linkFB>
+					<linkFB>
+						<linkSource parentObjectName="FBI_4" pinName="Q">
+							<objPosition posX="80" posY="60"></objPosition>
+						</linkSource>
+						<linkDestination parentObjectName=".12" pinName="EN">
+							<objPosition posX="88" posY="60"></objPosition>
+						</linkDestination>
+					</linkFB>
+					<linkFB>
+						<linkSource parentObjectName="FBI_2" pinName="Q">
+							<objPosition posX="26" posY="25"></objPosition>
+						</linkSource>
+						<linkDestination parentObjectName=".11" pinName="IN2">
+							<objPosition posX="51" posY="61"></objPosition>
+						</linkDestination>
+						<gridObjPosition posX="30" posY="25"></gridObjPosition>
+						<gridObjPosition posX="30" posY="61"></gridObjPosition>
+					</linkFB>
+					<linkFB>
+						<linkSource parentObjectName="FBI_4" pinName="Q">
+							<objPosition posX="80" posY="60"></objPosition>
+						</linkSource>
+						<linkDestination parentObjectName=".13" pinName="EN">
+							<objPosition posX="88" posY="65"></objPosition>
+						</linkDestination>
+						<gridObjPosition posX="85" posY="60"></gridObjPosition>
+						<gridObjPosition posX="85" posY="65"></gridObjPosition>
+					</linkFB>
+					<linkFB>
+						<linkSource parentObjectName="FBI_3" pinName="Q">
+							<objPosition posX="68" posY="60"></objPosition>
+						</linkSource>
+						<linkDestination parentObjectName="FBI_4" pinName="CLK">
+							<objPosition posX="74" posY="60"></objPosition>
+						</linkDestination>
+					</linkFB>
+					<linkFB>
+						<linkSource parentObjectName="FBI_1" pinName="Q">
+							<objPosition posX="26" posY="20"></objPosition>
+						</linkSource>
+						<linkDestination parentObjectName=".3" pinName="EN">
+							<objPosition posX="34" posY="17"></objPosition>
+						</linkDestination>
+						<gridObjPosition posX="31" posY="20"></gridObjPosition>
+						<gridObjPosition posX="31" posY="17"></gridObjPosition>
+					</linkFB>
+					<linkFB>
+						<linkSource parentObjectName="FBI_2" pinName="Q">
+							<objPosition posX="26" posY="25"></objPosition>
+						</linkSource>
+						<linkDestination parentObjectName=".4" pinName="EN">
+							<objPosition posX="44" posY="25"></objPosition>
+						</linkDestination>
+					</linkFB>
+					<textBox width="10" height="1">Schreiben ins Modul
+    <objPosition posX="86" posY="56"></objPosition>
+					</textBox>
+				</networkFBD>
+			</FBDSource>
+		</FBProgram>
+		<FBProgram name="Eigengewicht">
+			<FBDSource nbRows="24" nbColumns="36">
+				<networkFBD>
+					<FFBBlock instanceName="PME_SWT_CMD_30_1" typeName="PME_SWT_CMD_30" additionnalPinNumber="0" enEnO="false" width="11" height="8">
+						<objPosition posX="60" posY="34"></objPosition>
+						<descriptionFFB execAfter="">
+							<inputVariable invertedPin="false" formalParameter="EN"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="CH" effectiveParameter="CH"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="CMD" effectiveParameter="CMD"></inputVariable>
+							<outputVariable invertedPin="false" formalParameter="ENO"></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="CH"></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="OK" effectiveParameter="CMD_OK"></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="ERR" effectiveParameter="CMD_ERR"></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="CMD"></outputVariable>
+						</descriptionFFB>
+					</FFBBlock>
+				</networkFBD>
+			</FBDSource>
+		</FBProgram>
+	</FBSource>
+</FBDExchangeFile>

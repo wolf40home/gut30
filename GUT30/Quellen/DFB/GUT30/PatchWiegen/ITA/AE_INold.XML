@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<DDTExchangeFile>
+	<DDTSource DDTName="AE_INold" version="8.00" dateTime="dt#2009-02-01-10:40:07">
+		<comment>Datenstruktur:  Analogeingabe</comment>
+		<attribute name="TypeSignatureCheckSumString" value="3DFA"></attribute>
+		<structure>
+			<variables name="X" typeName="REAL">
+				<comment>Istwert</comment>
+			</variables>
+			<variables name="m" typeName="DWORD">
+				<comment>Statusmeldung</comment>
+			</variables>
+			<variables name="ska" typeName="REAL">
+				<comment>Skalenanfang</comment>
+			</variables>
+			<variables name="ske" typeName="REAL">
+				<comment>Skalenende</comment>
+			</variables>
+			<variables name="typ" typeName="WORD">
+				<comment>Typvorgabe PLS von Messung</comment>
+			</variables>
+			<variables name="typ2" typeName="WORD">
+				<comment>reserve zum auffüllen</comment>
+			</variables>
+		</structure>
+	</DDTSource>
+</DDTExchangeFile>

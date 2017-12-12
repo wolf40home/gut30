@@ -1,0 +1,294 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<FBDExchangeFile>
+	<FBSource nameOfFBType="AA_3STEP_30" version="11.10" dateTime="dt#2017-08-10-11:26:08">
+		<comment>Baustein : Analogausgabe 3 Punkt Regler</comment>
+		<attribute name="TypeProtectionLevel" value="2#0000_0000"></attribute>
+		<attribute name="TypeCodeCheckSumString" value="87B2"></attribute>
+		<attribute name="TypeSignatureCheckSumString" value="E79B"></attribute>
+		<inputParameters>
+			<variables name="AE" typeName="AE_IN">
+				<comment>Rückmeldung Stellung</comment>
+				<attribute name="PositionPin" value="2"></attribute>
+			</variables>
+			<variables name="DEV_LL" typeName="REAL">
+				<comment>Untere Schwelle der Abweichung (= 0) </comment>
+				<attribute name="PositionPin" value="8"></attribute>
+			</variables>
+			<variables name="DEV_HH" typeName="REAL">
+				<comment>Obere Schwelle der Abweichung (= 0) </comment>
+				<attribute name="PositionPin" value="9"></attribute>
+			</variables>
+			<variables name="HYS" typeName="REAL">
+				<comment>Hysterese</comment>
+				<attribute name="PositionPin" value="10"></attribute>
+			</variables>
+			<variables name="BE_MAX" typeName="BOOL">
+				<comment>Max Ereicht</comment>
+				<attribute name="PositionPin" value="4"></attribute>
+			</variables>
+			<variables name="BE_MIN" typeName="BOOL">
+				<comment>Min Erreicht</comment>
+				<attribute name="PositionPin" value="6"></attribute>
+			</variables>
+			<variables name="IN" typeName="REG_OUT">
+				<comment>von Regler</comment>
+				<attribute name="PositionPin" value="1"></attribute>
+			</variables>
+			<variables name="AE_OFF" typeName="REAL">
+				<comment>Offset für AE</comment>
+				<attribute name="PositionPin" value="3"></attribute>
+				<variableInit value="0.0"></variableInit>
+			</variables>
+		</inputParameters>
+		<outputParameters>
+			<variables name="AN" typeName="BOOL">
+				<comment>negative Abweichung</comment>
+				<attribute name="PositionPin" value="6"></attribute>
+			</variables>
+			<variables name="AP" typeName="BOOL">
+				<comment>positive Abweichung</comment>
+				<attribute name="PositionPin" value="4"></attribute>
+			</variables>
+			<variables name="STA" typeName="WORD">
+				<comment>Status</comment>
+				<attribute name="PositionPin" value="9"></attribute>
+			</variables>
+			<variables name="STOER" typeName="BOOL">
+				<comment>Fehlerausgang</comment>
+				<attribute name="PositionPin" value="10"></attribute>
+			</variables>
+			<variables name="Y" typeName="REAL">
+				<comment>Stellgröße</comment>
+				<attribute name="PositionPin" value="1"></attribute>
+			</variables>
+		</outputParameters>
+		<privateLocalVariables>
+			<variables name="FBI_111_4" typeName="STEP3"></variables>
+			<variables name="PARA" typeName="Para_STEP3">
+				<instanceElementDesc name="dev_ll">
+					<comment>Untere Schwelle der Abweichung (= 0) </comment>
+				</instanceElementDesc>
+				<instanceElementDesc name="dev_hl">
+					<comment>Obere Schwelle der Abweichung (= 0) </comment>
+				</instanceElementDesc>
+			</variables>
+		</privateLocalVariables>
+		<FBProgram name="PROG">
+			<FBDSource nbRows="24" nbColumns="36">
+				<networkFBD>
+					<FFBBlock instanceName="FBI_111_4" typeName="STEP3" additionnalPinNumber="0" enEnO="true" width="13" height="11">
+						<objPosition posX="65" posY="28"></objPosition>
+						<descriptionFFB execAfter="">
+							<inputVariable invertedPin="false" formalParameter="EN" effectiveParameter="1"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="PV"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="SP"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="MAN_AUTO" effectiveParameter="1"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="PARA" effectiveParameter="PARA"></inputVariable>
+							<outputVariable invertedPin="false" formalParameter="ENO"></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="OUT_NEG"></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="OUT_POS"></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="DEV"></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="MA_O"></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="STATUS" effectiveParameter="STA"></outputVariable>
+						</descriptionFFB>
+					</FFBBlock>
+					<FFBBlock instanceName=".1" typeName="ADD_REAL" additionnalPinNumber="0" enEnO="false" width="8" height="6">
+						<objPosition posX="42" posY="28"></objPosition>
+						<descriptionFFB execAfter="">
+							<inputVariable invertedPin="false" formalParameter="EN"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN1" effectiveParameter="AE.X"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN2" effectiveParameter="AE_OFF"></inputVariable>
+							<outputVariable invertedPin="false" formalParameter="ENO"></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="OUT"></outputVariable>
+						</descriptionFFB>
+					</FFBBlock>
+					<FFBBlock instanceName=".2" typeName="MOVE" additionnalPinNumber="0" enEnO="false" width="7" height="5">
+						<objPosition posX="9" posY="2"></objPosition>
+						<descriptionFFB execAfter="">
+							<inputVariable invertedPin="false" formalParameter="EN"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN" effectiveParameter="AE.ska"></inputVariable>
+							<outputVariable invertedPin="false" formalParameter="ENO"></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="OUT" effectiveParameter="PARA.pv_inf"></outputVariable>
+						</descriptionFFB>
+					</FFBBlock>
+					<FFBBlock instanceName=".3" typeName="MOVE" additionnalPinNumber="0" enEnO="false" width="7" height="5">
+						<objPosition posX="29" posY="2"></objPosition>
+						<descriptionFFB execAfter="">
+							<inputVariable invertedPin="false" formalParameter="EN"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN" effectiveParameter="AE.ske"></inputVariable>
+							<outputVariable invertedPin="false" formalParameter="ENO"></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="OUT" effectiveParameter="PARA.pv_sup"></outputVariable>
+						</descriptionFFB>
+					</FFBBlock>
+					<FFBBlock instanceName=".4" typeName="MOVE" additionnalPinNumber="0" enEnO="false" width="7" height="5">
+						<objPosition posX="9" posY="8"></objPosition>
+						<descriptionFFB execAfter="">
+							<inputVariable invertedPin="false" formalParameter="EN"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN" effectiveParameter="DEV_LL"></inputVariable>
+							<outputVariable invertedPin="false" formalParameter="ENO"></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="OUT" effectiveParameter="PARA.dev_ll"></outputVariable>
+						</descriptionFFB>
+					</FFBBlock>
+					<FFBBlock instanceName=".5" typeName="MOVE" additionnalPinNumber="0" enEnO="false" width="7" height="5">
+						<objPosition posX="29" posY="8"></objPosition>
+						<descriptionFFB execAfter="">
+							<inputVariable invertedPin="false" formalParameter="EN"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN" effectiveParameter="DEV_HH"></inputVariable>
+							<outputVariable invertedPin="false" formalParameter="ENO"></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="OUT" effectiveParameter="PARA.dev_hl"></outputVariable>
+						</descriptionFFB>
+					</FFBBlock>
+					<FFBBlock instanceName=".6" typeName="MOVE" additionnalPinNumber="0" enEnO="false" width="7" height="5">
+						<objPosition posX="9" posY="17"></objPosition>
+						<descriptionFFB execAfter="">
+							<inputVariable invertedPin="false" formalParameter="EN"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN" effectiveParameter="HYS"></inputVariable>
+							<outputVariable invertedPin="false" formalParameter="ENO"></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="OUT" effectiveParameter="PARA.hyst"></outputVariable>
+						</descriptionFFB>
+					</FFBBlock>
+					<FFBBlock instanceName=".7" typeName="MOVE" additionnalPinNumber="0" enEnO="false" width="7" height="5">
+						<objPosition posX="85" posY="27"></objPosition>
+						<descriptionFFB execAfter="">
+							<inputVariable invertedPin="false" formalParameter="EN"></inputVariable>
+							<inputVariable invertedPin="true" formalParameter="IN"></inputVariable>
+							<outputVariable invertedPin="false" formalParameter="ENO"></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="OUT" effectiveParameter="STOER"></outputVariable>
+						</descriptionFFB>
+					</FFBBlock>
+					<FFBBlock instanceName=".10" typeName="MOVE" additionnalPinNumber="0" enEnO="false" width="7" height="5">
+						<objPosition posX="29" posY="15"></objPosition>
+						<descriptionFFB execAfter="">
+							<inputVariable invertedPin="false" formalParameter="EN"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN" effectiveParameter="IN.Y"></inputVariable>
+							<outputVariable invertedPin="false" formalParameter="ENO"></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="OUT" effectiveParameter="Y"></outputVariable>
+						</descriptionFFB>
+					</FFBBlock>
+					<FFBBlock instanceName=".11" typeName="SEL" additionnalPinNumber="0" enEnO="false" width="7" height="7">
+						<objPosition posX="14" posY="33"></objPosition>
+						<descriptionFFB execAfter="">
+							<inputVariable invertedPin="false" formalParameter="EN"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="G" effectiveParameter="IN.M1.3"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN0" effectiveParameter="AE.ska"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN1" effectiveParameter="AE.ske"></inputVariable>
+							<outputVariable invertedPin="false" formalParameter="ENO"></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="OUT"></outputVariable>
+						</descriptionFFB>
+					</FFBBlock>
+					<FFBBlock instanceName=".12" typeName="SEL" additionnalPinNumber="0" enEnO="false" width="7" height="7">
+						<objPosition posX="15" posY="40"></objPosition>
+						<descriptionFFB execAfter="">
+							<inputVariable invertedPin="false" formalParameter="EN"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="G" effectiveParameter="IN.M1.3"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN0" effectiveParameter="AE.ske"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN1" effectiveParameter="AE.ska"></inputVariable>
+							<outputVariable invertedPin="false" formalParameter="ENO"></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="OUT"></outputVariable>
+						</descriptionFFB>
+					</FFBBlock>
+					<FFBBlock instanceName=".17" typeName="AND_BOOL" additionnalPinNumber="0" enEnO="false" width="8" height="6">
+						<objPosition posX="107" posY="29"></objPosition>
+						<descriptionFFB execAfter="">
+							<inputVariable invertedPin="false" formalParameter="EN"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN1"></inputVariable>
+							<inputVariable invertedPin="true" formalParameter="IN2" effectiveParameter="BE_MAX"></inputVariable>
+							<outputVariable invertedPin="false" formalParameter="ENO"></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="OUT" effectiveParameter="AP"></outputVariable>
+						</descriptionFFB>
+					</FFBBlock>
+					<FFBBlock instanceName=".18" typeName="AND_BOOL" additionnalPinNumber="0" enEnO="false" width="8" height="6">
+						<objPosition posX="107" posY="36"></objPosition>
+						<descriptionFFB execAfter="">
+							<inputVariable invertedPin="false" formalParameter="EN"></inputVariable>
+							<inputVariable invertedPin="true" formalParameter="IN1" effectiveParameter="BE_MIN"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN2"></inputVariable>
+							<outputVariable invertedPin="false" formalParameter="ENO"></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="OUT" effectiveParameter="AN"></outputVariable>
+						</descriptionFFB>
+					</FFBBlock>
+					<FFBBlock instanceName=".8" typeName="SCAL" additionnalPinNumber="0" enEnO="false" width="9" height="10">
+						<objPosition posX="41" posY="36"></objPosition>
+						<descriptionFFB execAfter="">
+							<inputVariable invertedPin="false" formalParameter="EN"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN" effectiveParameter="IN.Y"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="SKA"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="SKE"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN_MIN" effectiveParameter="IN.Ymin"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN_MAX" effectiveParameter="IN.Ymax"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="CLIP" effectiveParameter="1"></inputVariable>
+							<outputVariable invertedPin="false" formalParameter="ENO"></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="OUT"></outputVariable>
+						</descriptionFFB>
+					</FFBBlock>
+					<linkFB>
+						<linkSource parentObjectName="FBI_111_4" pinName="ENO">
+							<objPosition posX="77" posY="31"></objPosition>
+						</linkSource>
+						<linkDestination parentObjectName=".7" pinName="IN">
+							<objPosition posX="85" posY="31"></objPosition>
+						</linkDestination>
+					</linkFB>
+					<linkFB>
+						<linkSource parentObjectName=".11" pinName="OUT">
+							<objPosition posX="20" posY="37"></objPosition>
+						</linkSource>
+						<linkDestination parentObjectName=".8" pinName="SKA">
+							<objPosition posX="41" posY="41"></objPosition>
+						</linkDestination>
+						<gridObjPosition posX="31" posY="37"></gridObjPosition>
+						<gridObjPosition posX="31" posY="41"></gridObjPosition>
+					</linkFB>
+					<linkFB>
+						<linkSource parentObjectName="FBI_111_4" pinName="OUT_POS">
+							<objPosition posX="77" posY="35"></objPosition>
+						</linkSource>
+						<linkDestination parentObjectName=".18" pinName="IN2">
+							<objPosition posX="107" posY="41"></objPosition>
+						</linkDestination>
+						<gridObjPosition posX="93" posY="35"></gridObjPosition>
+						<gridObjPosition posX="93" posY="41"></gridObjPosition>
+					</linkFB>
+					<linkFB>
+						<linkSource parentObjectName="FBI_111_4" pinName="OUT_NEG">
+							<objPosition posX="77" posY="34"></objPosition>
+						</linkSource>
+						<linkDestination parentObjectName=".17" pinName="IN1">
+							<objPosition posX="107" posY="33"></objPosition>
+						</linkDestination>
+						<gridObjPosition posX="93" posY="34"></gridObjPosition>
+						<gridObjPosition posX="93" posY="33"></gridObjPosition>
+					</linkFB>
+					<linkFB>
+						<linkSource parentObjectName=".12" pinName="OUT">
+							<objPosition posX="21" posY="44"></objPosition>
+						</linkSource>
+						<linkDestination parentObjectName=".8" pinName="SKE">
+							<objPosition posX="41" posY="42"></objPosition>
+						</linkDestination>
+						<gridObjPosition posX="32" posY="44"></gridObjPosition>
+						<gridObjPosition posX="32" posY="42"></gridObjPosition>
+					</linkFB>
+					<linkFB>
+						<linkSource parentObjectName=".8" pinName="OUT">
+							<objPosition posX="49" posY="40"></objPosition>
+						</linkSource>
+						<linkDestination parentObjectName="FBI_111_4" pinName="SP">
+							<objPosition posX="65" posY="33"></objPosition>
+						</linkDestination>
+						<gridObjPosition posX="58" posY="40"></gridObjPosition>
+						<gridObjPosition posX="58" posY="33"></gridObjPosition>
+					</linkFB>
+					<linkFB>
+						<linkSource parentObjectName=".1" pinName="OUT">
+							<objPosition posX="49" posY="32"></objPosition>
+						</linkSource>
+						<linkDestination parentObjectName="FBI_111_4" pinName="PV">
+							<objPosition posX="65" posY="32"></objPosition>
+						</linkDestination>
+					</linkFB>
+				</networkFBD>
+			</FBDSource>
+		</FBProgram>
+	</FBSource>
+</FBDExchangeFile>

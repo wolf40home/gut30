@@ -1,0 +1,305 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<FBDExchangeFile>
+	<FBSource nameOfFBType="ISPY_AESWGR_30" version="8.00" dateTime="dt#2015-08-06-11:52:14">
+		<comment>ISPY_SYS Baustein : Sollwertvorgabe Gruppe x für Dosierung</comment>
+		<attribute name="TypeProtectionLevel" value="2#0000_0000"></attribute>
+		<attribute name="TypeCodeCheckSumString" value="DEAF"></attribute>
+		<attribute name="TypeSignatureCheckSumString" value="FC52"></attribute>
+		<inputParameters>
+			<variables name="GROB" typeName="REAL">
+				<comment>SW_Gruppe x / Grobstromabschaltpunkt in kg</comment>
+				<attribute name="PositionPin" value="1"></attribute>
+			</variables>
+			<variables name="GRWER" typeName="REAL">
+				<comment>SW_Gruppe x / Grobstromwert für Analogausgang (0-100%)</comment>
+				<attribute name="PositionPin" value="2"></attribute>
+			</variables>
+			<variables name="DURCHFL" typeName="REAL">
+				<comment>SW_Gruppe x / Durchflusswert in kg</comment>
+				<attribute name="PositionPin" value="3"></attribute>
+			</variables>
+			<variables name="FEIN" typeName="REAL">
+				<comment>SW_Gruppe x / Feinstromabschaltpunkt </comment>
+				<attribute name="PositionPin" value="4"></attribute>
+			</variables>
+			<variables name="FEWER" typeName="REAL">
+				<comment>SW_Gruppe x / Feinstromwert für Analogausgang (0-100%)</comment>
+				<attribute name="PositionPin" value="5"></attribute>
+			</variables>
+			<variables name="TBER" typeName="REAL">
+				<comment>SW_Gruppe x / Beruhigungszeit in seq</comment>
+				<attribute name="PositionPin" value="6"></attribute>
+			</variables>
+			<variables name="TO1" typeName="REAL">
+				<comment>SW_Gruppe x / Toleranz oben (Plus) Wert 1 in kg</comment>
+				<attribute name="PositionPin" value="7"></attribute>
+			</variables>
+			<variables name="TO2" typeName="REAL">
+				<comment>SW_Gruppe x / Toleranz oben (Plus) Wert 2 in kg</comment>
+				<attribute name="PositionPin" value="8"></attribute>
+			</variables>
+			<variables name="TU1" typeName="REAL">
+				<comment>SW_Gruppe x / Toleranz unten (Minus) Wert 1 in kg</comment>
+				<attribute name="PositionPin" value="9"></attribute>
+			</variables>
+			<variables name="TU2" typeName="REAL">
+				<comment>SW_Gruppe x / Toleranz unten (Minus) Wert 2 in kg</comment>
+				<attribute name="PositionPin" value="10"></attribute>
+			</variables>
+			<variables name="KEVF" typeName="REAL">
+				<comment>SW_Gruppe x / Kurve Ende vor Feinstromabschaltpunkt in kg</comment>
+				<attribute name="PositionPin" value="11"></attribute>
+			</variables>
+			<variables name="RAMPE" typeName="BOOL">
+				<comment>SW_Gruppe x / Rampe einschalten</comment>
+				<attribute name="PositionPin" value="20"></attribute>
+			</variables>
+			<variables name="TIMP" typeName="REAL">
+				<comment>SW_Gruppe x / Zeit für Ansteuerung des Impuls in sec</comment>
+				<attribute name="PositionPin" value="12"></attribute>
+			</variables>
+			<variables name="WIMP" typeName="REAL">
+				<comment>SW_Gruppe x / Impulswert (0-100%)</comment>
+				<attribute name="PositionPin" value="13"></attribute>
+			</variables>
+			<variables name="IMPE" typeName="BOOL">
+				<comment>SW_Gruppe x / Einschaltimpuls einschalten</comment>
+				<attribute name="PositionPin" value="21"></attribute>
+			</variables>
+			<variables name="TVEGR" typeName="REAL">
+				<comment>SW_Gruppe x / Verzögerungszeit Überwachung Grobstrom in sec</comment>
+				<attribute name="PositionPin" value="14"></attribute>
+			</variables>
+			<variables name="FLWGR" typeName="REAL">
+				<comment>SW_Gruppe x / Materialflussüberwachungswert Grobstrom in kg</comment>
+				<attribute name="PositionPin" value="15"></attribute>
+			</variables>
+			<variables name="FLTGR" typeName="REAL">
+				<comment>SW_Gruppe x / Materialflussüberwachungszeit Grobstrom n sec</comment>
+				<attribute name="PositionPin" value="16"></attribute>
+			</variables>
+			<variables name="TVEFE" typeName="REAL">
+				<comment>SW_Gruppe x / Verzögerungszeit Überwachung Grobstrom in sec</comment>
+				<attribute name="PositionPin" value="17"></attribute>
+			</variables>
+			<variables name="FLWFE" typeName="REAL">
+				<comment>SW_Gruppe x / Materialflussüberwachungszeit Feinstrom in kg</comment>
+				<attribute name="PositionPin" value="18"></attribute>
+			</variables>
+			<variables name="FLTFE" typeName="REAL">
+				<comment>SW_Gruppe x / Materialflussüberwachungszeit Feinstrom in sec</comment>
+				<attribute name="PositionPin" value="19"></attribute>
+			</variables>
+		</inputParameters>
+		<outputParameters>
+			<variables name="SWGRAA" typeName="ISPY_SWGR">
+				<attribute name="PositionPin" value="1"></attribute>
+			</variables>
+		</outputParameters>
+		<privateLocalVariables></privateLocalVariables>
+		<FBProgram name="SW_MOVE">
+			<FBDSource nbRows="24" nbColumns="36">
+				<networkFBD>
+					<FFBBlock instanceName=".1" typeName="MOVE" additionnalPinNumber="0" enEnO="false" width="7" height="5">
+						<objPosition posX="22" posY="5"></objPosition>
+						<descriptionFFB execAfter="">
+							<inputVariable invertedPin="false" formalParameter="EN"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN" effectiveParameter="GROB"></inputVariable>
+							<outputVariable invertedPin="false" formalParameter="ENO"></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="OUT" effectiveParameter="SWGRAA.GROB"></outputVariable>
+						</descriptionFFB>
+					</FFBBlock>
+					<FFBBlock instanceName=".2" typeName="MOVE" additionnalPinNumber="0" enEnO="false" width="7" height="5">
+						<objPosition posX="22" posY="10"></objPosition>
+						<descriptionFFB execAfter="">
+							<inputVariable invertedPin="false" formalParameter="EN"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN" effectiveParameter="GRWER"></inputVariable>
+							<outputVariable invertedPin="false" formalParameter="ENO"></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="OUT" effectiveParameter="SWGRAA.GRWER"></outputVariable>
+						</descriptionFFB>
+					</FFBBlock>
+					<FFBBlock instanceName=".3" typeName="MOVE" additionnalPinNumber="0" enEnO="false" width="7" height="5">
+						<objPosition posX="22" posY="15"></objPosition>
+						<descriptionFFB execAfter="">
+							<inputVariable invertedPin="false" formalParameter="EN"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN" effectiveParameter="DURCHFL"></inputVariable>
+							<outputVariable invertedPin="false" formalParameter="ENO"></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="OUT" effectiveParameter="SWGRAA.DURCHFL"></outputVariable>
+						</descriptionFFB>
+					</FFBBlock>
+					<FFBBlock instanceName=".4" typeName="MOVE" additionnalPinNumber="0" enEnO="false" width="7" height="5">
+						<objPosition posX="22" posY="20"></objPosition>
+						<descriptionFFB execAfter="">
+							<inputVariable invertedPin="false" formalParameter="EN"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN" effectiveParameter="FEIN"></inputVariable>
+							<outputVariable invertedPin="false" formalParameter="ENO"></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="OUT" effectiveParameter="SWGRAA.FEIN"></outputVariable>
+						</descriptionFFB>
+					</FFBBlock>
+					<FFBBlock instanceName=".5" typeName="MOVE" additionnalPinNumber="0" enEnO="false" width="7" height="5">
+						<objPosition posX="22" posY="25"></objPosition>
+						<descriptionFFB execAfter="">
+							<inputVariable invertedPin="false" formalParameter="EN"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN" effectiveParameter="FEWER"></inputVariable>
+							<outputVariable invertedPin="false" formalParameter="ENO"></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="OUT" effectiveParameter="SWGRAA.FEWER"></outputVariable>
+						</descriptionFFB>
+					</FFBBlock>
+					<FFBBlock instanceName=".6" typeName="MOVE" additionnalPinNumber="0" enEnO="false" width="7" height="5">
+						<objPosition posX="22" posY="30"></objPosition>
+						<descriptionFFB execAfter="">
+							<inputVariable invertedPin="false" formalParameter="EN"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN" effectiveParameter="TBER"></inputVariable>
+							<outputVariable invertedPin="false" formalParameter="ENO"></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="OUT" effectiveParameter="SWGRAA.TBER"></outputVariable>
+						</descriptionFFB>
+					</FFBBlock>
+					<FFBBlock instanceName=".7" typeName="MOVE" additionnalPinNumber="0" enEnO="false" width="7" height="5">
+						<objPosition posX="22" posY="35"></objPosition>
+						<descriptionFFB execAfter="">
+							<inputVariable invertedPin="false" formalParameter="EN"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN" effectiveParameter="TO1"></inputVariable>
+							<outputVariable invertedPin="false" formalParameter="ENO"></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="OUT" effectiveParameter="SWGRAA.TO1"></outputVariable>
+						</descriptionFFB>
+					</FFBBlock>
+					<FFBBlock instanceName=".8" typeName="MOVE" additionnalPinNumber="0" enEnO="false" width="7" height="5">
+						<objPosition posX="22" posY="40"></objPosition>
+						<descriptionFFB execAfter="">
+							<inputVariable invertedPin="false" formalParameter="EN"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN" effectiveParameter="TO2"></inputVariable>
+							<outputVariable invertedPin="false" formalParameter="ENO"></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="OUT" effectiveParameter="SWGRAA.TO2"></outputVariable>
+						</descriptionFFB>
+					</FFBBlock>
+					<FFBBlock instanceName=".9" typeName="MOVE" additionnalPinNumber="0" enEnO="false" width="7" height="5">
+						<objPosition posX="22" posY="45"></objPosition>
+						<descriptionFFB execAfter="">
+							<inputVariable invertedPin="false" formalParameter="EN"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN" effectiveParameter="TU1"></inputVariable>
+							<outputVariable invertedPin="false" formalParameter="ENO"></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="OUT" effectiveParameter="SWGRAA.TU1"></outputVariable>
+						</descriptionFFB>
+					</FFBBlock>
+					<FFBBlock instanceName=".10" typeName="MOVE" additionnalPinNumber="0" enEnO="false" width="7" height="5">
+						<objPosition posX="22" posY="50"></objPosition>
+						<descriptionFFB execAfter="">
+							<inputVariable invertedPin="false" formalParameter="EN"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN" effectiveParameter="TU2"></inputVariable>
+							<outputVariable invertedPin="false" formalParameter="ENO"></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="OUT" effectiveParameter="SWGRAA.TU2"></outputVariable>
+						</descriptionFFB>
+					</FFBBlock>
+					<FFBBlock instanceName=".11" typeName="MOVE" additionnalPinNumber="0" enEnO="false" width="7" height="5">
+						<objPosition posX="22" posY="55"></objPosition>
+						<descriptionFFB execAfter="">
+							<inputVariable invertedPin="false" formalParameter="EN"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN" effectiveParameter="KEVF"></inputVariable>
+							<outputVariable invertedPin="false" formalParameter="ENO"></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="OUT" effectiveParameter="SWGRAA.KEVF"></outputVariable>
+						</descriptionFFB>
+					</FFBBlock>
+					<FFBBlock instanceName=".12" typeName="MOVE" additionnalPinNumber="0" enEnO="false" width="7" height="5">
+						<objPosition posX="22" posY="62"></objPosition>
+						<descriptionFFB execAfter="">
+							<inputVariable invertedPin="false" formalParameter="EN"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN" effectiveParameter="RAMPE"></inputVariable>
+							<outputVariable invertedPin="false" formalParameter="ENO"></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="OUT" effectiveParameter="SWGRAA.BINSIG.1"></outputVariable>
+						</descriptionFFB>
+					</FFBBlock>
+					<FFBBlock instanceName=".13" typeName="MOVE" additionnalPinNumber="0" enEnO="false" width="7" height="5">
+						<objPosition posX="22" posY="68"></objPosition>
+						<descriptionFFB execAfter="">
+							<inputVariable invertedPin="false" formalParameter="EN"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN" effectiveParameter="TIMP"></inputVariable>
+							<outputVariable invertedPin="false" formalParameter="ENO"></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="OUT" effectiveParameter="SWGRAA.TIMP"></outputVariable>
+						</descriptionFFB>
+					</FFBBlock>
+					<FFBBlock instanceName=".14" typeName="MOVE" additionnalPinNumber="0" enEnO="false" width="7" height="5">
+						<objPosition posX="22" posY="73"></objPosition>
+						<descriptionFFB execAfter="">
+							<inputVariable invertedPin="false" formalParameter="EN"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN" effectiveParameter="WIMP"></inputVariable>
+							<outputVariable invertedPin="false" formalParameter="ENO"></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="OUT" effectiveParameter="SWGRAA.WIMP"></outputVariable>
+						</descriptionFFB>
+					</FFBBlock>
+					<FFBBlock instanceName=".15" typeName="MOVE" additionnalPinNumber="0" enEnO="false" width="7" height="5">
+						<objPosition posX="22" posY="80"></objPosition>
+						<descriptionFFB execAfter="">
+							<inputVariable invertedPin="false" formalParameter="EN"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN" effectiveParameter="IMPE"></inputVariable>
+							<outputVariable invertedPin="false" formalParameter="ENO"></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="OUT" effectiveParameter="SWGRAA.BINSIG.2"></outputVariable>
+						</descriptionFFB>
+					</FFBBlock>
+					<FFBBlock instanceName=".16" typeName="MOVE" additionnalPinNumber="0" enEnO="false" width="7" height="5">
+						<objPosition posX="22" posY="86"></objPosition>
+						<descriptionFFB execAfter="">
+							<inputVariable invertedPin="false" formalParameter="EN"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN" effectiveParameter="TVEGR"></inputVariable>
+							<outputVariable invertedPin="false" formalParameter="ENO"></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="OUT" effectiveParameter="SWGRAA.TVERG"></outputVariable>
+						</descriptionFFB>
+					</FFBBlock>
+					<FFBBlock instanceName=".17" typeName="MOVE" additionnalPinNumber="0" enEnO="false" width="7" height="5">
+						<objPosition posX="22" posY="91"></objPosition>
+						<descriptionFFB execAfter="">
+							<inputVariable invertedPin="false" formalParameter="EN"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN" effectiveParameter="FLWGR"></inputVariable>
+							<outputVariable invertedPin="false" formalParameter="ENO"></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="OUT" effectiveParameter="SWGRAA.FLWGR"></outputVariable>
+						</descriptionFFB>
+					</FFBBlock>
+					<FFBBlock instanceName=".18" typeName="MOVE" additionnalPinNumber="0" enEnO="false" width="7" height="5">
+						<objPosition posX="22" posY="96"></objPosition>
+						<descriptionFFB execAfter="">
+							<inputVariable invertedPin="false" formalParameter="EN"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN" effectiveParameter="FLTGR"></inputVariable>
+							<outputVariable invertedPin="false" formalParameter="ENO"></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="OUT" effectiveParameter="SWGRAA.FLTGR"></outputVariable>
+						</descriptionFFB>
+					</FFBBlock>
+					<FFBBlock instanceName=".19" typeName="MOVE" additionnalPinNumber="0" enEnO="false" width="7" height="5">
+						<objPosition posX="22" posY="101"></objPosition>
+						<descriptionFFB execAfter="">
+							<inputVariable invertedPin="false" formalParameter="EN"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN" effectiveParameter="TVEFE"></inputVariable>
+							<outputVariable invertedPin="false" formalParameter="ENO"></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="OUT" effectiveParameter="SWGRAA.TVEFE"></outputVariable>
+						</descriptionFFB>
+					</FFBBlock>
+					<FFBBlock instanceName=".20" typeName="MOVE" additionnalPinNumber="0" enEnO="false" width="7" height="5">
+						<objPosition posX="22" posY="106"></objPosition>
+						<descriptionFFB execAfter="">
+							<inputVariable invertedPin="false" formalParameter="EN"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN" effectiveParameter="FLWFE"></inputVariable>
+							<outputVariable invertedPin="false" formalParameter="ENO"></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="OUT" effectiveParameter="SWGRAA.FLWFE"></outputVariable>
+						</descriptionFFB>
+					</FFBBlock>
+					<FFBBlock instanceName=".21" typeName="MOVE" additionnalPinNumber="0" enEnO="false" width="7" height="5">
+						<objPosition posX="22" posY="111"></objPosition>
+						<descriptionFFB execAfter="">
+							<inputVariable invertedPin="false" formalParameter="EN"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN" effectiveParameter="FLTFE"></inputVariable>
+							<outputVariable invertedPin="false" formalParameter="ENO"></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="OUT" effectiveParameter="SWGRAA.FLTFE"></outputVariable>
+						</descriptionFFB>
+					</FFBBlock>
+					<textBox width="10" height="16">Eingänge dem Struct Übergabe zur Weiterverarbeitung übergeben
+    <objPosition posX="3" posY="7"></objPosition>
+					</textBox>
+					<textBox width="40" height="7">Binärsignal Vorbesetzung = 1  "Einschaltimpuls ein aktiviert
+    <objPosition posX="2" posY="79"></objPosition>
+					</textBox>
+					<textBox width="40" height="7">Binärsignal Vorbesetzung Konstante =1  "Rampe einschalten"
+    <objPosition posX="2" posY="61"></objPosition>
+					</textBox>
+				</networkFBD>
+			</FBDSource>
+		</FBProgram>
+	</FBSource>
+</FBDExchangeFile>

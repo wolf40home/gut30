@@ -1,0 +1,187 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<FBDExchangeFile>
+	<FBSource nameOfFBType="AA_SERVO_30" version="11.10" dateTime="dt#2017-08-10-11:26:15">
+		<comment>Baustein: Analogausgabe mit Servo Baustein</comment>
+		<attribute name="TypeCodeCheckSumString" value="91C4"></attribute>
+		<attribute name="TypeSignatureCheckSumString" value="760F"></attribute>
+		<inputParameters>
+			<variables name="IN" typeName="REG_OUT">
+				<comment>OUT vom Regler</comment>
+				<attribute name="PositionPin" value="1"></attribute>
+			</variables>
+			<variables name="TMOTOR" typeName="TIME">
+				<comment>Motorlaufzeit</comment>
+				<attribute name="PositionPin" value="7"></attribute>
+				<variableInit value="t#30s"></variableInit>
+			</variables>
+			<variables name="TMIN" typeName="TIME">
+				<comment>Mindestlaufzeit</comment>
+				<attribute name="PositionPin" value="8"></attribute>
+				<variableInit value="t#1s"></variableInit>
+			</variables>
+			<variables name="RCPY_REV" typeName="BOOL">
+				<comment>Invertierung von RCPY </comment>
+				<attribute name="PositionPin" value="9"></attribute>
+			</variables>
+			<variables name="RSTOP" typeName="BOOL">
+				<comment>Stopendschalter Rechts</comment>
+				<attribute name="PositionPin" value="3"></attribute>
+			</variables>
+			<variables name="LSTOP" typeName="BOOL">
+				<comment>Stopendschalter Links</comment>
+				<attribute name="PositionPin" value="5"></attribute>
+			</variables>
+			<variables name="RST" typeName="BOOL">
+				<comment>Reset</comment>
+				<attribute name="PositionPin" value="10"></attribute>
+			</variables>
+		</inputParameters>
+		<outputParameters>
+			<variables name="AP" typeName="BOOL">
+				<comment>Positiver Ausgang</comment>
+				<attribute name="PositionPin" value="3"></attribute>
+			</variables>
+			<variables name="AN" typeName="BOOL">
+				<comment>Negativer Ausgang</comment>
+				<attribute name="PositionPin" value="5"></attribute>
+			</variables>
+			<variables name="STA" typeName="WORD">
+				<comment>Statuswort </comment>
+				<attribute name="PositionPin" value="9"></attribute>
+			</variables>
+			<variables name="STOER" typeName="BOOL">
+				<comment>Fehlerausgang</comment>
+				<attribute name="PositionPin" value="10"></attribute>
+			</variables>
+			<variables name="Y" typeName="REAL">
+				<comment>Stellgröße</comment>
+				<attribute name="PositionPin" value="1"></attribute>
+			</variables>
+		</outputParameters>
+		<privateLocalVariables>
+			<variables name="SERVO_1" typeName="SERVO"></variables>
+			<variables name="PARA" typeName="Para_SERVO"></variables>
+		</privateLocalVariables>
+		<FBProgram name="PROG">
+			<FBDSource nbRows="24" nbColumns="36">
+				<networkFBD>
+					<FFBBlock instanceName="SERVO_1" typeName="SERVO" additionnalPinNumber="0" enEnO="true" width="11" height="13">
+						<objPosition posX="77" posY="17"></objPosition>
+						<descriptionFFB execAfter="">
+							<inputVariable invertedPin="false" formalParameter="EN" effectiveParameter="1"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="SEN"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN" effectiveParameter="IN.Y"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="INPD" effectiveParameter="IN.Yd"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="MA_I" effectiveParameter="IN.M1.1"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="RCPY" effectiveParameter="IN.RMY"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="RST" effectiveParameter="RST"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="R_STOP" effectiveParameter="RSTOP"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="L_STOP" effectiveParameter="LSTOP"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="PARA" effectiveParameter="PARA"></inputVariable>
+							<outputVariable invertedPin="false" formalParameter="ENO"></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="RAISE" effectiveParameter="AP"></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="LOWER" effectiveParameter="AN"></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="STATUS" effectiveParameter="STA"></outputVariable>
+						</descriptionFFB>
+					</FFBBlock>
+					<FFBBlock instanceName=".1" typeName="MOVE" additionnalPinNumber="0" enEnO="true" width="7" height="5">
+						<objPosition posX="10" posY="3"></objPosition>
+						<descriptionFFB execAfter="">
+							<inputVariable invertedPin="false" formalParameter="EN" effectiveParameter="IN.M1.0"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN" effectiveParameter="IN.M1.2"></inputVariable>
+							<outputVariable invertedPin="false" formalParameter="ENO"></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="OUT" effectiveParameter="PARA.en_rcpy"></outputVariable>
+						</descriptionFFB>
+					</FFBBlock>
+					<FFBBlock instanceName=".4" typeName="MOVE" additionnalPinNumber="0" enEnO="true" width="7" height="5">
+						<objPosition posX="28" posY="3"></objPosition>
+						<descriptionFFB execAfter="">
+							<inputVariable invertedPin="false" formalParameter="EN"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN" effectiveParameter="TMOTOR"></inputVariable>
+							<outputVariable invertedPin="false" formalParameter="ENO"></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="OUT" effectiveParameter="PARA.t_motor"></outputVariable>
+						</descriptionFFB>
+					</FFBBlock>
+					<FFBBlock instanceName=".5" typeName="MOVE" additionnalPinNumber="0" enEnO="true" width="7" height="5">
+						<objPosition posX="47" posY="3"></objPosition>
+						<descriptionFFB execAfter="">
+							<inputVariable invertedPin="false" formalParameter="EN"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN" effectiveParameter="RCPY_REV"></inputVariable>
+							<outputVariable invertedPin="false" formalParameter="ENO"></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="OUT" effectiveParameter="PARA.rcpy_rev"></outputVariable>
+						</descriptionFFB>
+					</FFBBlock>
+					<FFBBlock instanceName=".6" typeName="MOVE" additionnalPinNumber="0" enEnO="true" width="7" height="5">
+						<objPosition posX="64" posY="3"></objPosition>
+						<descriptionFFB execAfter="">
+							<inputVariable invertedPin="false" formalParameter="EN"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN" effectiveParameter="TMIN"></inputVariable>
+							<outputVariable invertedPin="false" formalParameter="ENO"></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="OUT" effectiveParameter="PARA.t_mini"></outputVariable>
+						</descriptionFFB>
+					</FFBBlock>
+					<FFBBlock instanceName=".2" typeName="MOVE" additionnalPinNumber="0" enEnO="false" width="7" height="5">
+						<objPosition posX="25" posY="24"></objPosition>
+						<descriptionFFB execAfter="">
+							<inputVariable invertedPin="false" formalParameter="EN"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN" effectiveParameter="IN.Y"></inputVariable>
+							<outputVariable invertedPin="false" formalParameter="ENO"></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="OUT" effectiveParameter="Y"></outputVariable>
+						</descriptionFFB>
+					</FFBBlock>
+					<FFBBlock instanceName=".3" typeName="MOVE" additionnalPinNumber="0" enEnO="false" width="7" height="5">
+						<objPosition posX="97" posY="16"></objPosition>
+						<descriptionFFB execAfter="">
+							<inputVariable invertedPin="false" formalParameter="EN"></inputVariable>
+							<inputVariable invertedPin="true" formalParameter="IN"></inputVariable>
+							<outputVariable invertedPin="false" formalParameter="ENO"></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="OUT" effectiveParameter="STOER"></outputVariable>
+						</descriptionFFB>
+					</FFBBlock>
+					<linkFB>
+						<linkSource parentObjectName=".1" pinName="ENO">
+							<objPosition posX="16" posY="6"></objPosition>
+						</linkSource>
+						<linkDestination parentObjectName=".4" pinName="EN">
+							<objPosition posX="28" posY="6"></objPosition>
+						</linkDestination>
+					</linkFB>
+					<linkFB>
+						<linkSource parentObjectName=".4" pinName="ENO">
+							<objPosition posX="34" posY="6"></objPosition>
+						</linkSource>
+						<linkDestination parentObjectName=".5" pinName="EN">
+							<objPosition posX="47" posY="6"></objPosition>
+						</linkDestination>
+					</linkFB>
+					<linkFB>
+						<linkSource parentObjectName="SERVO_1" pinName="ENO">
+							<objPosition posX="87" posY="20"></objPosition>
+						</linkSource>
+						<linkDestination parentObjectName=".3" pinName="IN">
+							<objPosition posX="97" posY="20"></objPosition>
+						</linkDestination>
+					</linkFB>
+					<linkFB>
+						<linkSource parentObjectName=".6" pinName="ENO">
+							<objPosition posX="70" posY="6"></objPosition>
+						</linkSource>
+						<linkDestination parentObjectName="SERVO_1" pinName="SEN">
+							<objPosition posX="77" posY="21"></objPosition>
+						</linkDestination>
+						<gridObjPosition posX="74" posY="6"></gridObjPosition>
+						<gridObjPosition posX="74" posY="21"></gridObjPosition>
+					</linkFB>
+					<linkFB>
+						<linkSource parentObjectName=".5" pinName="ENO">
+							<objPosition posX="53" posY="6"></objPosition>
+						</linkSource>
+						<linkDestination parentObjectName=".6" pinName="EN">
+							<objPosition posX="64" posY="6"></objPosition>
+						</linkDestination>
+					</linkFB>
+				</networkFBD>
+			</FBDSource>
+		</FBProgram>
+	</FBSource>
+</FBDExchangeFile>

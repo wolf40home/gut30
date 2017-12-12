@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<DDTExchangeFile>
+	<DDTSource DDTName="T_SCAIME_CFGPARAMS_30" version="0.26" dateTime="dt#2015-03-04-13:23:18">
+		<attribute name="TypeSignatureCheckSumString" value="2C8B"></attribute>
+		<structure>
+			<variables name="SWTouch" typeName="T_SCAIME_SERIAL_HMI_SETTING_30"></variables>
+			<variables name="LegalFor_Trade" typeName="T_SCAIME_LEGALTRADE_PARAMS_30"></variables>
+			<variables name="Calibration" typeName="T_SCAIME_CALIBRATION_PARAMS_30"></variables>
+			<variables name="Filtering" typeName="T_SCAIME_FILTERING_PARAMS_30"></variables>
+			<variables name="Logical_Inputs_Outputs" typeName="T_SCAIME_LOGIC_IN_OUT_PARAMS_30"></variables>
+			<variables name="Ignored_DTM_Configuration" typeName="BOOL">
+				<comment>Parameter ID: 1061 Access : R/W (bit b1) if bit is set to true, at power up device will keep user runtime configuration if saved in flash memory</comment>
+			</variables>
+		</structure>
+	</DDTSource>
+</DDTExchangeFile>

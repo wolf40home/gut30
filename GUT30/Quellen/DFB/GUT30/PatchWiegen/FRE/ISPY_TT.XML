@@ -1,0 +1,157 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<FBDExchangeFile>
+	<FBSource nameOfFBType="ISPY_TT" version="8.00" dateTime="dt#2010-08-26-14:36:34">
+		<comment>Theoretische Justage</comment>
+		<attribute name="TypeProtectionLevel" value="2#0000_0000"></attribute>
+		<attribute name="TypeCodeCheckSumString" value="9F7F"></attribute>
+		<attribute name="TypeSignatureCheckSumString" value="666E"></attribute>
+		<inputParameters>
+			<variables name="Mes" typeName="DINT">
+				<comment>Meßbereich einer Zelle</comment>
+				<attribute name="PositionPin" value="1"></attribute>
+			</variables>
+			<variables name="Menge" typeName="INT">
+				<comment>Anzahl der Zellen</comment>
+				<attribute name="PositionPin" value="2"></attribute>
+			</variables>
+			<variables name="S" typeName="REAL">
+				<comment>Kennwert</comment>
+				<attribute name="PositionPin" value="3"></attribute>
+			</variables>
+			<variables name="ZL" typeName="DINT">
+				<comment>Eigengewicht der Waage</comment>
+				<attribute name="PositionPin" value="4"></attribute>
+			</variables>
+		</inputParameters>
+		<outputParameters>
+			<variables name="Gain" typeName="REAL">
+				<comment>Steigung</comment>
+				<attribute name="PositionPin" value="1"></attribute>
+			</variables>
+			<variables name="Offset" typeName="REAL">
+				<comment>Eigengewicht</comment>
+				<attribute name="PositionPin" value="2"></attribute>
+			</variables>
+		</outputParameters>
+		<privateLocalVariables>
+			<variables name="Max" typeName="DINT"></variables>
+			<variables name="CDmax" typeName="REAL"></variables>
+		</privateLocalVariables>
+		<FBProgram name="Standard">
+			<FBDSource nbRows="24" nbColumns="36">
+				<networkFBD>
+					<FFBBlock instanceName=".1" typeName="MUL_DINT" additionnalPinNumber="0" enEnO="true" width="7" height="6">
+						<objPosition posX="11" posY="4"></objPosition>
+						<descriptionFFB execAfter="">
+							<inputVariable invertedPin="false" formalParameter="EN" effectiveParameter="1"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN1" effectiveParameter="Mes"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN2" effectiveParameter="INT_TO_DINT(Menge)"></inputVariable>
+							<outputVariable invertedPin="false" formalParameter="ENO"></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="OUT" effectiveParameter="Max"></outputVariable>
+						</descriptionFFB>
+					</FFBBlock>
+					<FFBBlock instanceName=".2" typeName="MUL_REAL" additionnalPinNumber="0" enEnO="true" width="8" height="6">
+						<objPosition posX="24" posY="4"></objPosition>
+						<descriptionFFB execAfter="">
+							<inputVariable invertedPin="false" formalParameter="EN"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN1" effectiveParameter="S"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN2" effectiveParameter="0.4"></inputVariable>
+							<outputVariable invertedPin="false" formalParameter="ENO"></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="OUT"></outputVariable>
+						</descriptionFFB>
+					</FFBBlock>
+					<FFBBlock instanceName=".3" typeName="MUL_REAL" additionnalPinNumber="0" enEnO="true" width="8" height="6">
+						<objPosition posX="38" posY="4"></objPosition>
+						<descriptionFFB execAfter="">
+							<inputVariable invertedPin="false" formalParameter="EN"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN1"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN2" effectiveParameter="1048576.0"></inputVariable>
+							<outputVariable invertedPin="false" formalParameter="ENO"></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="OUT" effectiveParameter="CDmax"></outputVariable>
+						</descriptionFFB>
+					</FFBBlock>
+					<FFBBlock instanceName=".4" typeName="DIV_REAL" additionnalPinNumber="0" enEnO="true" width="7" height="6">
+						<objPosition posX="35" posY="18"></objPosition>
+						<descriptionFFB execAfter="">
+							<inputVariable invertedPin="false" formalParameter="EN"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN1" effectiveParameter="DINT_TO_REAL (Max)"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN2" effectiveParameter="CDmax"></inputVariable>
+							<outputVariable invertedPin="false" formalParameter="ENO"></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="OUT" effectiveParameter="Gain"></outputVariable>
+						</descriptionFFB>
+					</FFBBlock>
+					<FFBBlock instanceName=".5" typeName="MUL_REAL" additionnalPinNumber="0" enEnO="false" width="8" height="6">
+						<objPosition posX="18" posY="31"></objPosition>
+						<descriptionFFB execAfter="">
+							<inputVariable invertedPin="false" formalParameter="EN"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN1" effectiveParameter="Gain"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN2" effectiveParameter="DINT_TO_REAL (ZL)"></inputVariable>
+							<outputVariable invertedPin="false" formalParameter="ENO"></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="OUT"></outputVariable>
+						</descriptionFFB>
+					</FFBBlock>
+					<FFBBlock instanceName=".6" typeName="MUL_REAL" additionnalPinNumber="0" enEnO="false" width="8" height="6">
+						<objPosition posX="39" posY="31"></objPosition>
+						<descriptionFFB execAfter="">
+							<inputVariable invertedPin="false" formalParameter="EN"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN1"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN2" effectiveParameter="-1.0"></inputVariable>
+							<outputVariable invertedPin="false" formalParameter="ENO"></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="OUT" effectiveParameter="Offset"></outputVariable>
+						</descriptionFFB>
+					</FFBBlock>
+					<linkFB>
+						<linkSource parentObjectName=".5" pinName="OUT">
+							<objPosition posX="25" posY="35"></objPosition>
+						</linkSource>
+						<linkDestination parentObjectName=".6" pinName="IN1">
+							<objPosition posX="39" posY="35"></objPosition>
+						</linkDestination>
+					</linkFB>
+					<linkFB>
+						<linkSource parentObjectName=".2" pinName="OUT">
+							<objPosition posX="31" posY="8"></objPosition>
+						</linkSource>
+						<linkDestination parentObjectName=".3" pinName="IN1">
+							<objPosition posX="38" posY="8"></objPosition>
+						</linkDestination>
+					</linkFB>
+					<linkFB>
+						<linkSource parentObjectName=".1" pinName="ENO">
+							<objPosition posX="17" posY="7"></objPosition>
+						</linkSource>
+						<linkDestination parentObjectName=".2" pinName="EN">
+							<objPosition posX="24" posY="7"></objPosition>
+						</linkDestination>
+					</linkFB>
+					<linkFB>
+						<linkSource parentObjectName=".3" pinName="ENO">
+							<objPosition posX="45" posY="7"></objPosition>
+						</linkSource>
+						<linkDestination parentObjectName=".4" pinName="EN">
+							<objPosition posX="35" posY="21"></objPosition>
+						</linkDestination>
+						<gridObjPosition posX="47" posY="7"></gridObjPosition>
+						<gridObjPosition posX="47" posY="18"></gridObjPosition>
+						<gridObjPosition posX="34" posY="18"></gridObjPosition>
+						<gridObjPosition posX="34" posY="21"></gridObjPosition>
+					</linkFB>
+					<linkFB>
+						<linkSource parentObjectName=".2" pinName="ENO">
+							<objPosition posX="31" posY="7"></objPosition>
+						</linkSource>
+						<linkDestination parentObjectName=".3" pinName="EN">
+							<objPosition posX="38" posY="7"></objPosition>
+						</linkDestination>
+					</linkFB>
+					<textBox width="54" height="15">Offset Berechnen
+    <objPosition posX="1" posY="29"></objPosition>
+					</textBox>
+					<textBox width="54" height="27">Gain berechnen
+    <objPosition posX="1" posY="1"></objPosition>
+					</textBox>
+				</networkFBD>
+			</FBDSource>
+		</FBProgram>
+	</FBSource>
+</FBDExchangeFile>

@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<FBDExchangeFile>
+	<FBSource nameOfFBType="ISPY_TARA" version="8.00" dateTime="dt#2010-08-26-14:37:35">
+		<comment>Baustein: Brutto Tara umschaltung</comment>
+		<attribute name="TypeCodeCheckSumString" value="39D2"></attribute>
+		<attribute name="TypeSignatureCheckSumString" value="4488"></attribute>
+		<inputParameters>
+			<variables name="Tara_CMD" typeName="BOOL">
+				<comment>Befehl Tara</comment>
+				<attribute name="PositionPin" value="1"></attribute>
+			</variables>
+			<variables name="Brutto_CMD" typeName="BOOL">
+				<comment>Befehl Brutto</comment>
+				<attribute name="PositionPin" value="2"></attribute>
+			</variables>
+		</inputParameters>
+		<inOutParameters>
+			<variables name="CH" typeName="T_WEIGHING_ISPY101">
+				<attribute name="PositionPin" value="4"></attribute>
+			</variables>
+		</inOutParameters>
+		<outputParameters>
+			<variables name="OK" typeName="BOOL">
+				<comment>Fertig</comment>
+				<attribute name="PositionPin" value="1"></attribute>
+			</variables>
+		</outputParameters>
+		<privateLocalVariables>
+			<variables name="Flanke_Tarieren" typeName="BOOL"></variables>
+			<variables name="R_TRIG_1" typeName="R_TRIG"></variables>
+			<variables name="Flanke_Ruecksetzen_Tarierung" typeName="BOOL"></variables>
+			<variables name="Tarieren_fertig" typeName="BOOL"></variables>
+			<variables name="Ruecksetzen_Tara_fertig" typeName="BOOL"></variables>
+			<variables name="R_TRIG_2" typeName="R_TRIG"></variables>
+			<variables name="Ruecksetzen_Tarierung" typeName="BOOL"></variables>
+			<variables name="Tarieren" typeName="BOOL"></variables>
+		</privateLocalVariables>
+		<FBProgram name="Tara">
+			<STSource>
+R_TRIG_1 (Tara_CMD,Flanke_Tarieren);
+R_TRIG_2 (Brutto_CMD,Flanke_Ruecksetzen_Tarierung);
+
+IF Flanke_Tarieren THEN 
+	Tarieren_fertig:=0;
+	Tarieren:=1;
+	OK:= 0;
+	Ruecksetzen_Tara_fertig:=1;
+		
+END_IF;
+
+IF Flanke_Ruecksetzen_Tarierung THEN 
+	Ruecksetzen_Tara_fertig:=0;
+	Ruecksetzen_Tarierung :=1;
+	OK:= 0;
+END_IF;
+
+IF Ruecksetzen_Tarierung AND NOT Ruecksetzen_Tara_fertig AND NOT CH.CMD_IN_PROGR THEN
+	CH.CMD_TYPE:=0;
+	CH.GROSS_CMD:=1;
+	WRITE_CMD (CH);
+	Ruecksetzen_Tara_fertig:=1;
+	Ruecksetzen_Tarierung :=0;
+END_IF;
+
+
+IF Tarieren  AND NOT Tarieren_fertig AND NOT CH.CMD_IN_PROGR AND  Ruecksetzen_Tara_fertig THEN
+	CH.CMD_TYPE:=0;
+	CH.TARE_CMD:=1;
+	WRITE_CMD (CH);
+	Tarieren_fertig:=1;
+	Tarieren:=0;
+	
+END_IF;
+
+IF Ruecksetzen_Tara_fertig  AND Tarieren_fertig  THEN
+	CH.CMD_TYPE:=0;
+	WRITE_CMD (CH);
+	OK:= 1;
+END_IF;
+</STSource>
+		</FBProgram>
+	</FBSource>
+</FBDExchangeFile>

@@ -1,0 +1,798 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<FBDExchangeFile>
+	<FBSource nameOfFBType="D_ODER" version="8.00" dateTime="dt#2016-11-09-12:07:51">
+		<comment>Baustein : Dynamisches ODER (z.B. für Hupenimpulsbildung) </comment>
+		<attribute name="TypeDescriptiveForm" value="&lt;pre&gt;Dynamisches ODER (Hupenimpulsbildung) &#xA;Eingang &quot;E_KASK&quot; wird mit dem Ausgang  eines vorgeschalteten Bausteins &quot;D_ODER&quot; verbunden. &#xA;Dieser Eingang wird beim ersten  Baustein nicht beschaltet.&#xA;Vorlage war Baustein &quot;D_ODER&quot;  aus N80&#xA;-------------------------------------------------------------------------------------------&#xA;Heinz Eßer / Cegelec AT Essen / Projekt : ALISECA N150&#xA;-------------------------------------------------------------------------------------------&#xA;Version    vom        von :  Änderungsbeschreibung&#xA;Vers. 1.00 29.10.2009 Eßer : Ersterstellung&#xA;&lt;/pre&gt;"></attribute>
+		<attribute name="TypeProtectionLevel" value="2#0000_0000"></attribute>
+		<attribute name="TypeCodeCheckSumString" value="04F0"></attribute>
+		<attribute name="TypeSignatureCheckSumString" value="A98C"></attribute>
+		<inputParameters>
+			<variables name="E_KASK" typeName="BOOL">
+				<comment>Eingang Reihenschaltung</comment>
+				<attribute name="PositionPin" value="1"></attribute>
+			</variables>
+			<variables name="E01" typeName="BOOL">
+				<attribute name="PositionPin" value="2"></attribute>
+			</variables>
+			<variables name="E02" typeName="BOOL">
+				<attribute name="PositionPin" value="3"></attribute>
+			</variables>
+			<variables name="E03" typeName="BOOL">
+				<attribute name="PositionPin" value="4"></attribute>
+			</variables>
+			<variables name="E04" typeName="BOOL">
+				<attribute name="PositionPin" value="5"></attribute>
+			</variables>
+			<variables name="E05" typeName="BOOL">
+				<attribute name="PositionPin" value="6"></attribute>
+			</variables>
+			<variables name="E06" typeName="BOOL">
+				<attribute name="PositionPin" value="7"></attribute>
+			</variables>
+			<variables name="E07" typeName="BOOL">
+				<attribute name="PositionPin" value="8"></attribute>
+			</variables>
+			<variables name="E08" typeName="BOOL">
+				<attribute name="PositionPin" value="9"></attribute>
+			</variables>
+			<variables name="E09" typeName="BOOL">
+				<attribute name="PositionPin" value="10"></attribute>
+			</variables>
+			<variables name="E10" typeName="BOOL">
+				<attribute name="PositionPin" value="11"></attribute>
+			</variables>
+			<variables name="E11" typeName="BOOL">
+				<attribute name="PositionPin" value="12"></attribute>
+			</variables>
+			<variables name="E12" typeName="BOOL">
+				<attribute name="PositionPin" value="13"></attribute>
+			</variables>
+			<variables name="E13" typeName="BOOL">
+				<attribute name="PositionPin" value="14"></attribute>
+			</variables>
+			<variables name="E14" typeName="BOOL">
+				<attribute name="PositionPin" value="15"></attribute>
+			</variables>
+			<variables name="E15" typeName="BOOL">
+				<attribute name="PositionPin" value="16"></attribute>
+			</variables>
+			<variables name="E16" typeName="BOOL">
+				<attribute name="PositionPin" value="17"></attribute>
+			</variables>
+			<variables name="E17" typeName="BOOL">
+				<attribute name="PositionPin" value="18"></attribute>
+			</variables>
+			<variables name="E18" typeName="BOOL">
+				<attribute name="PositionPin" value="19"></attribute>
+			</variables>
+			<variables name="E19" typeName="BOOL">
+				<attribute name="PositionPin" value="20"></attribute>
+			</variables>
+			<variables name="E20" typeName="BOOL">
+				<attribute name="PositionPin" value="21"></attribute>
+			</variables>
+			<variables name="E21" typeName="BOOL">
+				<attribute name="PositionPin" value="22"></attribute>
+			</variables>
+			<variables name="E22" typeName="BOOL">
+				<attribute name="PositionPin" value="23"></attribute>
+			</variables>
+			<variables name="E23" typeName="BOOL">
+				<attribute name="PositionPin" value="24"></attribute>
+			</variables>
+			<variables name="E24" typeName="BOOL">
+				<attribute name="PositionPin" value="25"></attribute>
+			</variables>
+			<variables name="E25" typeName="BOOL">
+				<attribute name="PositionPin" value="26"></attribute>
+			</variables>
+			<variables name="E26" typeName="BOOL">
+				<attribute name="PositionPin" value="27"></attribute>
+			</variables>
+			<variables name="E27" typeName="BOOL">
+				<attribute name="PositionPin" value="28"></attribute>
+			</variables>
+			<variables name="E28" typeName="BOOL">
+				<attribute name="PositionPin" value="29"></attribute>
+			</variables>
+			<variables name="E29" typeName="BOOL">
+				<attribute name="PositionPin" value="30"></attribute>
+			</variables>
+			<variables name="E30" typeName="BOOL">
+				<attribute name="PositionPin" value="31"></attribute>
+			</variables>
+		</inputParameters>
+		<outputParameters>
+			<variables name="A" typeName="BOOL">
+				<comment>Impuls Hupenansteuerung</comment>
+				<attribute name="PositionPin" value="1"></attribute>
+			</variables>
+		</outputParameters>
+		<privateLocalVariables>
+			<variables name="FBI_1_1" typeName="R_TRIG"></variables>
+			<variables name="FBI_1_2" typeName="R_TRIG"></variables>
+			<variables name="FBI_1_3" typeName="R_TRIG"></variables>
+			<variables name="FBI_1_4" typeName="R_TRIG"></variables>
+			<variables name="FBI_1_5" typeName="R_TRIG"></variables>
+			<variables name="FBI_1_6" typeName="R_TRIG"></variables>
+			<variables name="FBI_1_7" typeName="R_TRIG"></variables>
+			<variables name="FBI_1_8" typeName="R_TRIG"></variables>
+			<variables name="FBI_1_9" typeName="R_TRIG"></variables>
+			<variables name="FBI_1_10" typeName="R_TRIG"></variables>
+			<variables name="FBI_1_11" typeName="R_TRIG"></variables>
+			<variables name="FBI_1_12" typeName="R_TRIG"></variables>
+			<variables name="FBI_1_18" typeName="R_TRIG"></variables>
+			<variables name="FBI_1_14" typeName="R_TRIG"></variables>
+			<variables name="FBI_1_37" typeName="R_TRIG"></variables>
+			<variables name="FBI_1_19" typeName="R_TRIG"></variables>
+			<variables name="FBI_1_20" typeName="R_TRIG"></variables>
+			<variables name="FBI_1_21" typeName="R_TRIG"></variables>
+			<variables name="FBI_1_22" typeName="R_TRIG"></variables>
+			<variables name="FBI_1_23" typeName="R_TRIG"></variables>
+			<variables name="FBI_1_24" typeName="R_TRIG"></variables>
+			<variables name="FBI_1_25" typeName="R_TRIG"></variables>
+			<variables name="FBI_1_26" typeName="R_TRIG"></variables>
+			<variables name="FBI_1_27" typeName="R_TRIG"></variables>
+			<variables name="FBI_1_28" typeName="R_TRIG"></variables>
+			<variables name="FBI_1_29" typeName="R_TRIG"></variables>
+			<variables name="FBI_1_30" typeName="R_TRIG"></variables>
+			<variables name="FBI_1_31" typeName="R_TRIG"></variables>
+			<variables name="FBI_1_32" typeName="R_TRIG"></variables>
+			<variables name="FBI_1_33" typeName="R_TRIG"></variables>
+			<variables name="FBI_1_34" typeName="R_TRIG"></variables>
+		</privateLocalVariables>
+		<FBProgram name="Hupenansteuerung">
+			<FBDSource nbRows="24" nbColumns="36">
+				<networkFBD>
+					<FFBBlock instanceName="FBI_1_1" typeName="R_TRIG" additionnalPinNumber="0" enEnO="false" width="8" height="5">
+						<objPosition posX="13" posY="3"></objPosition>
+						<descriptionFFB execAfter="">
+							<inputVariable invertedPin="false" formalParameter="EN"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="CLK" effectiveParameter="E01"></inputVariable>
+							<outputVariable invertedPin="false" formalParameter="ENO"></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="Q"></outputVariable>
+						</descriptionFFB>
+					</FFBBlock>
+					<FFBBlock instanceName="FBI_1_2" typeName="R_TRIG" additionnalPinNumber="0" enEnO="false" width="8" height="5">
+						<objPosition posX="13" posY="8"></objPosition>
+						<descriptionFFB execAfter="">
+							<inputVariable invertedPin="false" formalParameter="EN"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="CLK" effectiveParameter="E02"></inputVariable>
+							<outputVariable invertedPin="false" formalParameter="ENO"></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="Q"></outputVariable>
+						</descriptionFFB>
+					</FFBBlock>
+					<FFBBlock instanceName="FBI_1_3" typeName="R_TRIG" additionnalPinNumber="0" enEnO="false" width="8" height="5">
+						<objPosition posX="13" posY="13"></objPosition>
+						<descriptionFFB execAfter="">
+							<inputVariable invertedPin="false" formalParameter="EN"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="CLK" effectiveParameter="E03"></inputVariable>
+							<outputVariable invertedPin="false" formalParameter="ENO"></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="Q"></outputVariable>
+						</descriptionFFB>
+					</FFBBlock>
+					<FFBBlock instanceName="FBI_1_4" typeName="R_TRIG" additionnalPinNumber="0" enEnO="false" width="8" height="5">
+						<objPosition posX="13" posY="18"></objPosition>
+						<descriptionFFB execAfter="">
+							<inputVariable invertedPin="false" formalParameter="EN"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="CLK" effectiveParameter="E04"></inputVariable>
+							<outputVariable invertedPin="false" formalParameter="ENO"></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="Q"></outputVariable>
+						</descriptionFFB>
+					</FFBBlock>
+					<FFBBlock instanceName="FBI_1_5" typeName="R_TRIG" additionnalPinNumber="0" enEnO="false" width="8" height="5">
+						<objPosition posX="13" posY="23"></objPosition>
+						<descriptionFFB execAfter="">
+							<inputVariable invertedPin="false" formalParameter="EN"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="CLK" effectiveParameter="E05"></inputVariable>
+							<outputVariable invertedPin="false" formalParameter="ENO"></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="Q"></outputVariable>
+						</descriptionFFB>
+					</FFBBlock>
+					<FFBBlock instanceName="FBI_1_6" typeName="R_TRIG" additionnalPinNumber="0" enEnO="false" width="8" height="5">
+						<objPosition posX="13" posY="28"></objPosition>
+						<descriptionFFB execAfter="">
+							<inputVariable invertedPin="false" formalParameter="EN"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="CLK" effectiveParameter="E06"></inputVariable>
+							<outputVariable invertedPin="false" formalParameter="ENO"></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="Q"></outputVariable>
+						</descriptionFFB>
+					</FFBBlock>
+					<FFBBlock instanceName="FBI_1_7" typeName="R_TRIG" additionnalPinNumber="0" enEnO="false" width="8" height="5">
+						<objPosition posX="13" posY="33"></objPosition>
+						<descriptionFFB execAfter="">
+							<inputVariable invertedPin="false" formalParameter="EN"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="CLK" effectiveParameter="E07"></inputVariable>
+							<outputVariable invertedPin="false" formalParameter="ENO"></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="Q"></outputVariable>
+						</descriptionFFB>
+					</FFBBlock>
+					<FFBBlock instanceName="FBI_1_8" typeName="R_TRIG" additionnalPinNumber="0" enEnO="false" width="8" height="5">
+						<objPosition posX="13" posY="38"></objPosition>
+						<descriptionFFB execAfter="">
+							<inputVariable invertedPin="false" formalParameter="EN"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="CLK" effectiveParameter="E08"></inputVariable>
+							<outputVariable invertedPin="false" formalParameter="ENO"></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="Q"></outputVariable>
+						</descriptionFFB>
+					</FFBBlock>
+					<FFBBlock instanceName="FBI_1_9" typeName="R_TRIG" additionnalPinNumber="0" enEnO="false" width="8" height="5">
+						<objPosition posX="13" posY="43"></objPosition>
+						<descriptionFFB execAfter="">
+							<inputVariable invertedPin="false" formalParameter="EN"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="CLK" effectiveParameter="E09"></inputVariable>
+							<outputVariable invertedPin="false" formalParameter="ENO"></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="Q"></outputVariable>
+						</descriptionFFB>
+					</FFBBlock>
+					<FFBBlock instanceName="FBI_1_10" typeName="R_TRIG" additionnalPinNumber="0" enEnO="false" width="8" height="5">
+						<objPosition posX="13" posY="48"></objPosition>
+						<descriptionFFB execAfter="">
+							<inputVariable invertedPin="false" formalParameter="EN"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="CLK" effectiveParameter="E10"></inputVariable>
+							<outputVariable invertedPin="false" formalParameter="ENO"></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="Q"></outputVariable>
+						</descriptionFFB>
+					</FFBBlock>
+					<FFBBlock instanceName="FBI_1_11" typeName="R_TRIG" additionnalPinNumber="0" enEnO="false" width="8" height="5">
+						<objPosition posX="13" posY="53"></objPosition>
+						<descriptionFFB execAfter="">
+							<inputVariable invertedPin="false" formalParameter="EN"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="CLK" effectiveParameter="E11"></inputVariable>
+							<outputVariable invertedPin="false" formalParameter="ENO"></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="Q"></outputVariable>
+						</descriptionFFB>
+					</FFBBlock>
+					<FFBBlock instanceName="FBI_1_12" typeName="R_TRIG" additionnalPinNumber="0" enEnO="false" width="8" height="5">
+						<objPosition posX="13" posY="58"></objPosition>
+						<descriptionFFB execAfter="">
+							<inputVariable invertedPin="false" formalParameter="EN"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="CLK" effectiveParameter="E12"></inputVariable>
+							<outputVariable invertedPin="false" formalParameter="ENO"></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="Q"></outputVariable>
+						</descriptionFFB>
+					</FFBBlock>
+					<FFBBlock instanceName="FBI_1_18" typeName="R_TRIG" additionnalPinNumber="0" enEnO="false" width="8" height="5">
+						<objPosition posX="13" posY="68"></objPosition>
+						<descriptionFFB execAfter="">
+							<inputVariable invertedPin="false" formalParameter="EN"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="CLK" effectiveParameter="E14"></inputVariable>
+							<outputVariable invertedPin="false" formalParameter="ENO"></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="Q"></outputVariable>
+						</descriptionFFB>
+					</FFBBlock>
+					<FFBBlock instanceName="FBI_1_14" typeName="R_TRIG" additionnalPinNumber="0" enEnO="false" width="8" height="5">
+						<objPosition posX="13" posY="63"></objPosition>
+						<descriptionFFB execAfter="">
+							<inputVariable invertedPin="false" formalParameter="EN"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="CLK" effectiveParameter="E13"></inputVariable>
+							<outputVariable invertedPin="false" formalParameter="ENO"></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="Q"></outputVariable>
+						</descriptionFFB>
+					</FFBBlock>
+					<FFBBlock instanceName=".1.15" typeName="OR_BOOL" additionnalPinNumber="28" enEnO="false" width="9" height="34">
+						<objPosition posX="42" posY="62"></objPosition>
+						<descriptionFFB execAfter="">
+							<inputVariable invertedPin="false" formalParameter="EN"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN1"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN2"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN3"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN4"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN5"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN6"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN7"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN8"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN9"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN10"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN11"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN12"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN13"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN14"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN15"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN16"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN17"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN18"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN19"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN20"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN21"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN22"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN23"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN24"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN25"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN26"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN27"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN28"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN29"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN30"></inputVariable>
+							<outputVariable invertedPin="false" formalParameter="ENO"></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="OUT"></outputVariable>
+						</descriptionFFB>
+					</FFBBlock>
+					<FFBBlock instanceName=".1.36" typeName="OR_BOOL" additionnalPinNumber="0" enEnO="false" width="9" height="6">
+						<objPosition posX="59" posY="61"></objPosition>
+						<descriptionFFB execAfter="">
+							<inputVariable invertedPin="false" formalParameter="EN"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN1"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN2"></inputVariable>
+							<outputVariable invertedPin="false" formalParameter="ENO"></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="OUT" effectiveParameter="A"></outputVariable>
+						</descriptionFFB>
+					</FFBBlock>
+					<FFBBlock instanceName="FBI_1_37" typeName="R_TRIG" additionnalPinNumber="0" enEnO="false" width="8" height="5">
+						<objPosition posX="49" posY="55"></objPosition>
+						<descriptionFFB execAfter="">
+							<inputVariable invertedPin="false" formalParameter="EN"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="CLK" effectiveParameter="E_KASK"></inputVariable>
+							<outputVariable invertedPin="false" formalParameter="ENO"></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="Q"></outputVariable>
+						</descriptionFFB>
+					</FFBBlock>
+					<FFBBlock instanceName="FBI_1_19" typeName="R_TRIG" additionnalPinNumber="0" enEnO="false" width="8" height="5">
+						<objPosition posX="13" posY="73"></objPosition>
+						<descriptionFFB execAfter="">
+							<inputVariable invertedPin="false" formalParameter="EN"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="CLK" effectiveParameter="E15"></inputVariable>
+							<outputVariable invertedPin="false" formalParameter="ENO"></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="Q"></outputVariable>
+						</descriptionFFB>
+					</FFBBlock>
+					<FFBBlock instanceName="FBI_1_20" typeName="R_TRIG" additionnalPinNumber="0" enEnO="false" width="8" height="5">
+						<objPosition posX="13" posY="78"></objPosition>
+						<descriptionFFB execAfter="">
+							<inputVariable invertedPin="false" formalParameter="EN"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="CLK" effectiveParameter="E16"></inputVariable>
+							<outputVariable invertedPin="false" formalParameter="ENO"></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="Q"></outputVariable>
+						</descriptionFFB>
+					</FFBBlock>
+					<FFBBlock instanceName="FBI_1_21" typeName="R_TRIG" additionnalPinNumber="0" enEnO="false" width="8" height="5">
+						<objPosition posX="13" posY="83"></objPosition>
+						<descriptionFFB execAfter="">
+							<inputVariable invertedPin="false" formalParameter="EN"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="CLK" effectiveParameter="E17"></inputVariable>
+							<outputVariable invertedPin="false" formalParameter="ENO"></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="Q"></outputVariable>
+						</descriptionFFB>
+					</FFBBlock>
+					<FFBBlock instanceName="FBI_1_22" typeName="R_TRIG" additionnalPinNumber="0" enEnO="false" width="8" height="5">
+						<objPosition posX="13" posY="88"></objPosition>
+						<descriptionFFB execAfter="">
+							<inputVariable invertedPin="false" formalParameter="EN"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="CLK" effectiveParameter="E18"></inputVariable>
+							<outputVariable invertedPin="false" formalParameter="ENO"></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="Q"></outputVariable>
+						</descriptionFFB>
+					</FFBBlock>
+					<FFBBlock instanceName="FBI_1_23" typeName="R_TRIG" additionnalPinNumber="0" enEnO="false" width="8" height="5">
+						<objPosition posX="13" posY="93"></objPosition>
+						<descriptionFFB execAfter="">
+							<inputVariable invertedPin="false" formalParameter="EN"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="CLK" effectiveParameter="E19"></inputVariable>
+							<outputVariable invertedPin="false" formalParameter="ENO"></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="Q"></outputVariable>
+						</descriptionFFB>
+					</FFBBlock>
+					<FFBBlock instanceName="FBI_1_24" typeName="R_TRIG" additionnalPinNumber="0" enEnO="false" width="8" height="5">
+						<objPosition posX="13" posY="98"></objPosition>
+						<descriptionFFB execAfter="">
+							<inputVariable invertedPin="false" formalParameter="EN"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="CLK" effectiveParameter="E20"></inputVariable>
+							<outputVariable invertedPin="false" formalParameter="ENO"></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="Q"></outputVariable>
+						</descriptionFFB>
+					</FFBBlock>
+					<FFBBlock instanceName="FBI_1_25" typeName="R_TRIG" additionnalPinNumber="0" enEnO="false" width="8" height="5">
+						<objPosition posX="13" posY="103"></objPosition>
+						<descriptionFFB execAfter="">
+							<inputVariable invertedPin="false" formalParameter="EN"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="CLK" effectiveParameter="E21"></inputVariable>
+							<outputVariable invertedPin="false" formalParameter="ENO"></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="Q"></outputVariable>
+						</descriptionFFB>
+					</FFBBlock>
+					<FFBBlock instanceName="FBI_1_26" typeName="R_TRIG" additionnalPinNumber="0" enEnO="false" width="8" height="5">
+						<objPosition posX="13" posY="108"></objPosition>
+						<descriptionFFB execAfter="">
+							<inputVariable invertedPin="false" formalParameter="EN"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="CLK" effectiveParameter="E22"></inputVariable>
+							<outputVariable invertedPin="false" formalParameter="ENO"></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="Q"></outputVariable>
+						</descriptionFFB>
+					</FFBBlock>
+					<FFBBlock instanceName="FBI_1_27" typeName="R_TRIG" additionnalPinNumber="0" enEnO="false" width="8" height="5">
+						<objPosition posX="13" posY="113"></objPosition>
+						<descriptionFFB execAfter="">
+							<inputVariable invertedPin="false" formalParameter="EN"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="CLK" effectiveParameter="E23"></inputVariable>
+							<outputVariable invertedPin="false" formalParameter="ENO"></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="Q"></outputVariable>
+						</descriptionFFB>
+					</FFBBlock>
+					<FFBBlock instanceName="FBI_1_28" typeName="R_TRIG" additionnalPinNumber="0" enEnO="false" width="8" height="5">
+						<objPosition posX="13" posY="118"></objPosition>
+						<descriptionFFB execAfter="">
+							<inputVariable invertedPin="false" formalParameter="EN"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="CLK" effectiveParameter="E24"></inputVariable>
+							<outputVariable invertedPin="false" formalParameter="ENO"></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="Q"></outputVariable>
+						</descriptionFFB>
+					</FFBBlock>
+					<FFBBlock instanceName="FBI_1_29" typeName="R_TRIG" additionnalPinNumber="0" enEnO="false" width="8" height="5">
+						<objPosition posX="13" posY="123"></objPosition>
+						<descriptionFFB execAfter="">
+							<inputVariable invertedPin="false" formalParameter="EN"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="CLK" effectiveParameter="E25"></inputVariable>
+							<outputVariable invertedPin="false" formalParameter="ENO"></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="Q"></outputVariable>
+						</descriptionFFB>
+					</FFBBlock>
+					<FFBBlock instanceName="FBI_1_30" typeName="R_TRIG" additionnalPinNumber="0" enEnO="false" width="8" height="5">
+						<objPosition posX="13" posY="128"></objPosition>
+						<descriptionFFB execAfter="">
+							<inputVariable invertedPin="false" formalParameter="EN"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="CLK" effectiveParameter="E26"></inputVariable>
+							<outputVariable invertedPin="false" formalParameter="ENO"></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="Q"></outputVariable>
+						</descriptionFFB>
+					</FFBBlock>
+					<FFBBlock instanceName="FBI_1_31" typeName="R_TRIG" additionnalPinNumber="0" enEnO="false" width="8" height="5">
+						<objPosition posX="13" posY="133"></objPosition>
+						<descriptionFFB execAfter="">
+							<inputVariable invertedPin="false" formalParameter="EN"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="CLK" effectiveParameter="E27"></inputVariable>
+							<outputVariable invertedPin="false" formalParameter="ENO"></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="Q"></outputVariable>
+						</descriptionFFB>
+					</FFBBlock>
+					<FFBBlock instanceName="FBI_1_32" typeName="R_TRIG" additionnalPinNumber="0" enEnO="false" width="8" height="5">
+						<objPosition posX="13" posY="138"></objPosition>
+						<descriptionFFB execAfter="">
+							<inputVariable invertedPin="false" formalParameter="EN"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="CLK" effectiveParameter="E28"></inputVariable>
+							<outputVariable invertedPin="false" formalParameter="ENO"></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="Q"></outputVariable>
+						</descriptionFFB>
+					</FFBBlock>
+					<FFBBlock instanceName="FBI_1_33" typeName="R_TRIG" additionnalPinNumber="0" enEnO="false" width="8" height="5">
+						<objPosition posX="13" posY="143"></objPosition>
+						<descriptionFFB execAfter="">
+							<inputVariable invertedPin="false" formalParameter="EN"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="CLK" effectiveParameter="E29"></inputVariable>
+							<outputVariable invertedPin="false" formalParameter="ENO"></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="Q"></outputVariable>
+						</descriptionFFB>
+					</FFBBlock>
+					<FFBBlock instanceName="FBI_1_34" typeName="R_TRIG" additionnalPinNumber="0" enEnO="false" width="8" height="5">
+						<objPosition posX="13" posY="148"></objPosition>
+						<descriptionFFB execAfter="">
+							<inputVariable invertedPin="false" formalParameter="EN"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="CLK" effectiveParameter="E30"></inputVariable>
+							<outputVariable invertedPin="false" formalParameter="ENO"></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="Q"></outputVariable>
+						</descriptionFFB>
+					</FFBBlock>
+					<linkFB>
+						<linkSource parentObjectName="FBI_1_2" pinName="Q">
+							<objPosition posX="20" posY="12"></objPosition>
+						</linkSource>
+						<linkDestination parentObjectName=".1.15" pinName="IN2">
+							<objPosition posX="42" posY="67"></objPosition>
+						</linkDestination>
+						<gridObjPosition posX="40" posY="12"></gridObjPosition>
+						<gridObjPosition posX="40" posY="67"></gridObjPosition>
+					</linkFB>
+					<linkFB>
+						<linkSource parentObjectName="FBI_1_32" pinName="Q">
+							<objPosition posX="20" posY="142"></objPosition>
+						</linkSource>
+						<linkDestination parentObjectName=".1.15" pinName="IN28">
+							<objPosition posX="42" posY="93"></objPosition>
+						</linkDestination>
+						<gridObjPosition posX="35" posY="142"></gridObjPosition>
+						<gridObjPosition posX="35" posY="93"></gridObjPosition>
+					</linkFB>
+					<linkFB>
+						<linkSource parentObjectName="FBI_1_28" pinName="Q">
+							<objPosition posX="20" posY="122"></objPosition>
+						</linkSource>
+						<linkDestination parentObjectName=".1.15" pinName="IN24">
+							<objPosition posX="42" posY="89"></objPosition>
+						</linkDestination>
+						<gridObjPosition posX="31" posY="122"></gridObjPosition>
+						<gridObjPosition posX="31" posY="89"></gridObjPosition>
+					</linkFB>
+					<linkFB>
+						<linkSource parentObjectName="FBI_1_22" pinName="Q">
+							<objPosition posX="20" posY="92"></objPosition>
+						</linkSource>
+						<linkDestination parentObjectName=".1.15" pinName="IN18">
+							<objPosition posX="42" posY="83"></objPosition>
+						</linkDestination>
+						<gridObjPosition posX="25" posY="92"></gridObjPosition>
+						<gridObjPosition posX="25" posY="83"></gridObjPosition>
+					</linkFB>
+					<linkFB>
+						<linkSource parentObjectName="FBI_1_9" pinName="Q">
+							<objPosition posX="20" posY="47"></objPosition>
+						</linkSource>
+						<linkDestination parentObjectName=".1.15" pinName="IN9">
+							<objPosition posX="42" posY="74"></objPosition>
+						</linkDestination>
+						<gridObjPosition posX="33" posY="47"></gridObjPosition>
+						<gridObjPosition posX="33" posY="74"></gridObjPosition>
+					</linkFB>
+					<linkFB>
+						<linkSource parentObjectName="FBI_1_11" pinName="Q">
+							<objPosition posX="20" posY="57"></objPosition>
+						</linkSource>
+						<linkDestination parentObjectName=".1.15" pinName="IN11">
+							<objPosition posX="42" posY="76"></objPosition>
+						</linkDestination>
+						<gridObjPosition posX="31" posY="57"></gridObjPosition>
+						<gridObjPosition posX="31" posY="76"></gridObjPosition>
+					</linkFB>
+					<linkFB>
+						<linkSource parentObjectName="FBI_1_20" pinName="Q">
+							<objPosition posX="20" posY="82"></objPosition>
+						</linkSource>
+						<linkDestination parentObjectName=".1.15" pinName="IN16">
+							<objPosition posX="42" posY="81"></objPosition>
+						</linkDestination>
+						<gridObjPosition posX="23" posY="82"></gridObjPosition>
+						<gridObjPosition posX="23" posY="81"></gridObjPosition>
+					</linkFB>
+					<linkFB>
+						<linkSource parentObjectName="FBI_1_27" pinName="Q">
+							<objPosition posX="20" posY="117"></objPosition>
+						</linkSource>
+						<linkDestination parentObjectName=".1.15" pinName="IN23">
+							<objPosition posX="42" posY="88"></objPosition>
+						</linkDestination>
+						<gridObjPosition posX="30" posY="117"></gridObjPosition>
+						<gridObjPosition posX="30" posY="88"></gridObjPosition>
+					</linkFB>
+					<linkFB>
+						<linkSource parentObjectName="FBI_1_25" pinName="Q">
+							<objPosition posX="20" posY="107"></objPosition>
+						</linkSource>
+						<linkDestination parentObjectName=".1.15" pinName="IN21">
+							<objPosition posX="42" posY="86"></objPosition>
+						</linkDestination>
+						<gridObjPosition posX="28" posY="107"></gridObjPosition>
+						<gridObjPosition posX="28" posY="86"></gridObjPosition>
+					</linkFB>
+					<linkFB>
+						<linkSource parentObjectName="FBI_1_1" pinName="Q">
+							<objPosition posX="20" posY="7"></objPosition>
+						</linkSource>
+						<linkDestination parentObjectName=".1.15" pinName="IN1">
+							<objPosition posX="42" posY="66"></objPosition>
+						</linkDestination>
+						<gridObjPosition posX="41" posY="7"></gridObjPosition>
+						<gridObjPosition posX="41" posY="66"></gridObjPosition>
+					</linkFB>
+					<linkFB>
+						<linkSource parentObjectName="FBI_1_37" pinName="Q">
+							<objPosition posX="56" posY="59"></objPosition>
+						</linkSource>
+						<linkDestination parentObjectName=".1.36" pinName="IN1">
+							<objPosition posX="59" posY="65"></objPosition>
+						</linkDestination>
+						<gridObjPosition posX="58" posY="59"></gridObjPosition>
+						<gridObjPosition posX="58" posY="65"></gridObjPosition>
+					</linkFB>
+					<linkFB>
+						<linkSource parentObjectName="FBI_1_5" pinName="Q">
+							<objPosition posX="20" posY="27"></objPosition>
+						</linkSource>
+						<linkDestination parentObjectName=".1.15" pinName="IN5">
+							<objPosition posX="42" posY="70"></objPosition>
+						</linkDestination>
+						<gridObjPosition posX="37" posY="27"></gridObjPosition>
+						<gridObjPosition posX="37" posY="70"></gridObjPosition>
+					</linkFB>
+					<linkFB>
+						<linkSource parentObjectName="FBI_1_4" pinName="Q">
+							<objPosition posX="20" posY="22"></objPosition>
+						</linkSource>
+						<linkDestination parentObjectName=".1.15" pinName="IN4">
+							<objPosition posX="42" posY="69"></objPosition>
+						</linkDestination>
+						<gridObjPosition posX="38" posY="22"></gridObjPosition>
+						<gridObjPosition posX="38" posY="69"></gridObjPosition>
+					</linkFB>
+					<linkFB>
+						<linkSource parentObjectName="FBI_1_18" pinName="Q">
+							<objPosition posX="20" posY="72"></objPosition>
+						</linkSource>
+						<linkDestination parentObjectName=".1.15" pinName="IN14">
+							<objPosition posX="42" posY="79"></objPosition>
+						</linkDestination>
+						<gridObjPosition posX="28" posY="72"></gridObjPosition>
+						<gridObjPosition posX="28" posY="79"></gridObjPosition>
+					</linkFB>
+					<linkFB>
+						<linkSource parentObjectName="FBI_1_29" pinName="Q">
+							<objPosition posX="20" posY="127"></objPosition>
+						</linkSource>
+						<linkDestination parentObjectName=".1.15" pinName="IN25">
+							<objPosition posX="42" posY="90"></objPosition>
+						</linkDestination>
+						<gridObjPosition posX="32" posY="127"></gridObjPosition>
+						<gridObjPosition posX="32" posY="90"></gridObjPosition>
+					</linkFB>
+					<linkFB>
+						<linkSource parentObjectName=".1.15" pinName="OUT">
+							<objPosition posX="50" posY="66"></objPosition>
+						</linkSource>
+						<linkDestination parentObjectName=".1.36" pinName="IN2">
+							<objPosition posX="59" posY="66"></objPosition>
+						</linkDestination>
+					</linkFB>
+					<linkFB>
+						<linkSource parentObjectName="FBI_1_24" pinName="Q">
+							<objPosition posX="20" posY="102"></objPosition>
+						</linkSource>
+						<linkDestination parentObjectName=".1.15" pinName="IN20">
+							<objPosition posX="42" posY="85"></objPosition>
+						</linkDestination>
+						<gridObjPosition posX="27" posY="102"></gridObjPosition>
+						<gridObjPosition posX="27" posY="85"></gridObjPosition>
+					</linkFB>
+					<linkFB>
+						<linkSource parentObjectName="FBI_1_33" pinName="Q">
+							<objPosition posX="20" posY="147"></objPosition>
+						</linkSource>
+						<linkDestination parentObjectName=".1.15" pinName="IN29">
+							<objPosition posX="42" posY="94"></objPosition>
+						</linkDestination>
+						<gridObjPosition posX="36" posY="147"></gridObjPosition>
+						<gridObjPosition posX="36" posY="94"></gridObjPosition>
+					</linkFB>
+					<linkFB>
+						<linkSource parentObjectName="FBI_1_23" pinName="Q">
+							<objPosition posX="20" posY="97"></objPosition>
+						</linkSource>
+						<linkDestination parentObjectName=".1.15" pinName="IN19">
+							<objPosition posX="42" posY="84"></objPosition>
+						</linkDestination>
+						<gridObjPosition posX="26" posY="97"></gridObjPosition>
+						<gridObjPosition posX="26" posY="84"></gridObjPosition>
+					</linkFB>
+					<linkFB>
+						<linkSource parentObjectName="FBI_1_12" pinName="Q">
+							<objPosition posX="20" posY="62"></objPosition>
+						</linkSource>
+						<linkDestination parentObjectName=".1.15" pinName="IN12">
+							<objPosition posX="42" posY="77"></objPosition>
+						</linkDestination>
+						<gridObjPosition posX="30" posY="62"></gridObjPosition>
+						<gridObjPosition posX="30" posY="77"></gridObjPosition>
+					</linkFB>
+					<linkFB>
+						<linkSource parentObjectName="FBI_1_6" pinName="Q">
+							<objPosition posX="20" posY="32"></objPosition>
+						</linkSource>
+						<linkDestination parentObjectName=".1.15" pinName="IN6">
+							<objPosition posX="42" posY="71"></objPosition>
+						</linkDestination>
+						<gridObjPosition posX="36" posY="32"></gridObjPosition>
+						<gridObjPosition posX="36" posY="71"></gridObjPosition>
+					</linkFB>
+					<linkFB>
+						<linkSource parentObjectName="FBI_1_26" pinName="Q">
+							<objPosition posX="20" posY="112"></objPosition>
+						</linkSource>
+						<linkDestination parentObjectName=".1.15" pinName="IN22">
+							<objPosition posX="42" posY="87"></objPosition>
+						</linkDestination>
+						<gridObjPosition posX="29" posY="112"></gridObjPosition>
+						<gridObjPosition posX="29" posY="87"></gridObjPosition>
+					</linkFB>
+					<linkFB>
+						<linkSource parentObjectName="FBI_1_31" pinName="Q">
+							<objPosition posX="20" posY="137"></objPosition>
+						</linkSource>
+						<linkDestination parentObjectName=".1.15" pinName="IN27">
+							<objPosition posX="42" posY="92"></objPosition>
+						</linkDestination>
+						<gridObjPosition posX="34" posY="137"></gridObjPosition>
+						<gridObjPosition posX="34" posY="92"></gridObjPosition>
+					</linkFB>
+					<linkFB>
+						<linkSource parentObjectName="FBI_1_7" pinName="Q">
+							<objPosition posX="20" posY="37"></objPosition>
+						</linkSource>
+						<linkDestination parentObjectName=".1.15" pinName="IN7">
+							<objPosition posX="42" posY="72"></objPosition>
+						</linkDestination>
+						<gridObjPosition posX="35" posY="37"></gridObjPosition>
+						<gridObjPosition posX="35" posY="72"></gridObjPosition>
+					</linkFB>
+					<linkFB>
+						<linkSource parentObjectName="FBI_1_21" pinName="Q">
+							<objPosition posX="20" posY="87"></objPosition>
+						</linkSource>
+						<linkDestination parentObjectName=".1.15" pinName="IN17">
+							<objPosition posX="42" posY="82"></objPosition>
+						</linkDestination>
+						<gridObjPosition posX="24" posY="87"></gridObjPosition>
+						<gridObjPosition posX="24" posY="82"></gridObjPosition>
+					</linkFB>
+					<linkFB>
+						<linkSource parentObjectName="FBI_1_30" pinName="Q">
+							<objPosition posX="20" posY="132"></objPosition>
+						</linkSource>
+						<linkDestination parentObjectName=".1.15" pinName="IN26">
+							<objPosition posX="42" posY="91"></objPosition>
+						</linkDestination>
+						<gridObjPosition posX="33" posY="132"></gridObjPosition>
+						<gridObjPosition posX="33" posY="91"></gridObjPosition>
+					</linkFB>
+					<linkFB>
+						<linkSource parentObjectName="FBI_1_8" pinName="Q">
+							<objPosition posX="20" posY="42"></objPosition>
+						</linkSource>
+						<linkDestination parentObjectName=".1.15" pinName="IN8">
+							<objPosition posX="42" posY="73"></objPosition>
+						</linkDestination>
+						<gridObjPosition posX="34" posY="42"></gridObjPosition>
+						<gridObjPosition posX="34" posY="73"></gridObjPosition>
+					</linkFB>
+					<linkFB>
+						<linkSource parentObjectName="FBI_1_19" pinName="Q">
+							<objPosition posX="20" posY="77"></objPosition>
+						</linkSource>
+						<linkDestination parentObjectName=".1.15" pinName="IN15">
+							<objPosition posX="42" posY="80"></objPosition>
+						</linkDestination>
+						<gridObjPosition posX="27" posY="77"></gridObjPosition>
+						<gridObjPosition posX="27" posY="80"></gridObjPosition>
+					</linkFB>
+					<linkFB>
+						<linkSource parentObjectName="FBI_1_10" pinName="Q">
+							<objPosition posX="20" posY="52"></objPosition>
+						</linkSource>
+						<linkDestination parentObjectName=".1.15" pinName="IN10">
+							<objPosition posX="42" posY="75"></objPosition>
+						</linkDestination>
+						<gridObjPosition posX="32" posY="52"></gridObjPosition>
+						<gridObjPosition posX="32" posY="75"></gridObjPosition>
+					</linkFB>
+					<linkFB>
+						<linkSource parentObjectName="FBI_1_34" pinName="Q">
+							<objPosition posX="20" posY="152"></objPosition>
+						</linkSource>
+						<linkDestination parentObjectName=".1.15" pinName="IN30">
+							<objPosition posX="42" posY="95"></objPosition>
+						</linkDestination>
+						<gridObjPosition posX="37" posY="152"></gridObjPosition>
+						<gridObjPosition posX="37" posY="95"></gridObjPosition>
+					</linkFB>
+					<linkFB>
+						<linkSource parentObjectName="FBI_1_14" pinName="Q">
+							<objPosition posX="20" posY="67"></objPosition>
+						</linkSource>
+						<linkDestination parentObjectName=".1.15" pinName="IN13">
+							<objPosition posX="42" posY="78"></objPosition>
+						</linkDestination>
+						<gridObjPosition posX="22" posY="67"></gridObjPosition>
+						<gridObjPosition posX="22" posY="66"></gridObjPosition>
+						<gridObjPosition posX="29" posY="66"></gridObjPosition>
+						<gridObjPosition posX="29" posY="78"></gridObjPosition>
+					</linkFB>
+					<linkFB>
+						<linkSource parentObjectName="FBI_1_3" pinName="Q">
+							<objPosition posX="20" posY="17"></objPosition>
+						</linkSource>
+						<linkDestination parentObjectName=".1.15" pinName="IN3">
+							<objPosition posX="42" posY="68"></objPosition>
+						</linkDestination>
+						<gridObjPosition posX="39" posY="17"></gridObjPosition>
+						<gridObjPosition posX="39" posY="68"></gridObjPosition>
+					</linkFB>
+				</networkFBD>
+			</FBDSource>
+		</FBProgram>
+	</FBSource>
+</FBDExchangeFile>

@@ -1,0 +1,53 @@
+﻿<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<DDTExchangeFile>
+<DDTSource DDTName="MELD_AS" version="11.0" dateTime="dt#2017-08-10-08:17:09">
+<attribute name="IsTypeLocked" value="TRUE">
+</attribute>
+<attribute name="IsTypeHidden" value="FALSE">
+</attribute>
+<comment>Datenstruktur: Ausgänge der Grenzwertverarbeitung</comment>
+<attribute name="TypeDescriptiveForm" value="Default descriptive form MELD_AS">
+</attribute>
+<structure>
+<variables name="AHH" typeName="BOOL">
+<attribute name="IsVariableHidden" value="FALSE">
+</attribute>
+<comment>A++</comment>
+</variables>
+<variables name="AH" typeName="BOOL">
+<attribute name="IsVariableHidden" value="FALSE">
+</attribute>
+<comment>A+</comment>
+</variables>
+<variables name="AL" typeName="BOOL">
+<attribute name="IsVariableHidden" value="FALSE">
+</attribute>
+<comment>A-</comment>
+</variables>
+<variables name="ALL" typeName="BOOL">
+<attribute name="IsVariableHidden" value="FALSE">
+</attribute>
+<comment>A--</comment>
+</variables>
+<variables name="SHH" typeName="BOOL">
+<attribute name="IsVariableHidden" value="FALSE">
+</attribute>
+<comment>S++</comment>
+</variables>
+<variables name="SH" typeName="BOOL">
+<attribute name="IsVariableHidden" value="FALSE">
+</attribute>
+<comment>S+</comment>
+</variables>
+<variables name="SL" typeName="BOOL">
+<attribute name="IsVariableHidden" value="FALSE">
+</attribute>
+<comment>S-</comment>
+</variables>
+<variables name="SLL" typeName="BOOL">
+<attribute name="IsVariableHidden" value="FALSE">
+</attribute>
+<comment>S--</comment>
+</variables>
+</structure></DDTSource>
+</DDTExchangeFile>

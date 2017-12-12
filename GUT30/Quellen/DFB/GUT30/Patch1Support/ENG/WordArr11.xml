@@ -1,0 +1,13 @@
+﻿<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<DDTExchangeFile>
+<DDTSource DDTName="WordArr11" version="11.0" dateTime="dt#2017-08-10-08:23:13">
+<attribute name="IsTypeLocked" value="TRUE">
+</attribute>
+<attribute name="IsTypeHidden" value="FALSE">
+</attribute>
+<comment>Array mit 11 Word</comment>
+<attribute name="TypeDescriptiveForm" value="2017 Steiner für Concept Import">
+</attribute>
+<array>Array [1..11] of WORD</array>
+</DDTSource>
+</DDTExchangeFile>

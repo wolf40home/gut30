@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<FBDExchangeFile>
+	<FBSource nameOfFBType="PT3" version="11.01" dateTime="dt#2017-05-08-16:36:08">
+		<attribute name="TypeCodeCheckSumString" value="5300"></attribute>
+		<attribute name="TypeSignatureCheckSumString" value="C63E"></attribute>
+		<inputParameters>
+			<variables name="IN" typeName="REAL">
+				<comment>Eingang</comment>
+				<attribute name="PositionPin" value="1"></attribute>
+			</variables>
+			<variables name="tmLAG1" typeName="TIME">
+				<comment>Zeitkonstante für das erste PT1-Glied (in Sekunden)</comment>
+				<attribute name="PositionPin" value="2"></attribute>
+				<variableInit value="1s"></variableInit>
+			</variables>
+			<variables name="tmLAG2" typeName="TIME">
+				<comment>Zeitkonstante für das erste PT2-Glied (in Sekunden)</comment>
+				<attribute name="PositionPin" value="3"></attribute>
+				<variableInit value="1s"></variableInit>
+			</variables>
+			<variables name="tmLAG3" typeName="TIME">
+				<comment>Zeitkonstante für das erste PT3-Glied (in Sekunden)</comment>
+				<attribute name="PositionPin" value="4"></attribute>
+				<variableInit value="1s"></variableInit>
+			</variables>
+			<variables name="gain" typeName="REAL">
+				<comment>Verstärkungsfaktor</comment>
+				<attribute name="PositionPin" value="5"></attribute>
+				<variableInit value="1"></variableInit>
+			</variables>
+		</inputParameters>
+		<outputParameters>
+			<variables name="OUT" typeName="REAL">
+				<attribute name="PositionPin" value="1"></attribute>
+			</variables>
+		</outputParameters>
+		<privateLocalVariables>
+			<variables name="LAG1_1" typeName="LAG1"></variables>
+			<variables name="LAG1_2" typeName="LAG1"></variables>
+			<variables name="LAG1_3" typeName="LAG1"></variables>
+		</privateLocalVariables>
+		<FBProgram name="PROG">
+			<FBDSource nbRows="24" nbColumns="36">
+				<networkFBD>
+					<FFBBlock instanceName="LAG1_1" typeName="LAG1" additionnalPinNumber="0" enEnO="false" width="8" height="10">
+						<objPosition posX="20" posY="17"></objPosition>
+						<descriptionFFB execAfter="">
+							<inputVariable invertedPin="false" formalParameter="EN"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="MAN"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="HALT"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="X"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="GAIN" effectiveParameter="1.0"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="LAG" effectiveParameter="tmLAG1"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="YMAN"></inputVariable>
+							<outputVariable invertedPin="false" formalParameter="ENO"></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="Y"></outputVariable>
+						</descriptionFFB>
+					</FFBBlock>
+					<FFBBlock instanceName="LAG1_2" typeName="LAG1" additionnalPinNumber="0" enEnO="false" width="8" height="10">
+						<objPosition posX="32" posY="17"></objPosition>
+						<descriptionFFB execAfter="">
+							<inputVariable invertedPin="false" formalParameter="EN"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="MAN"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="HALT"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="X"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="GAIN" effectiveParameter="1.0"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="LAG" effectiveParameter="tmLAG2"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="YMAN"></inputVariable>
+							<outputVariable invertedPin="false" formalParameter="ENO"></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="Y"></outputVariable>
+						</descriptionFFB>
+					</FFBBlock>
+					<FFBBlock instanceName="LAG1_3" typeName="LAG1" additionnalPinNumber="0" enEnO="false" width="8" height="10">
+						<objPosition posX="45" posY="17"></objPosition>
+						<descriptionFFB execAfter="">
+							<inputVariable invertedPin="false" formalParameter="EN"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="MAN"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="HALT"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="X"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="GAIN" effectiveParameter="1.0"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="LAG" effectiveParameter="tmLAG3"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="YMAN"></inputVariable>
+							<outputVariable invertedPin="false" formalParameter="ENO"></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="Y" effectiveParameter="OUT"></outputVariable>
+						</descriptionFFB>
+					</FFBBlock>
+					<FFBBlock instanceName=".1" typeName="MUL_REAL" additionnalPinNumber="0" enEnO="false" width="8" height="6">
+						<objPosition posX="10" posY="9"></objPosition>
+						<descriptionFFB execAfter="">
+							<inputVariable invertedPin="false" formalParameter="EN"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN1" effectiveParameter="IN"></inputVariable>
+							<inputVariable invertedPin="false" formalParameter="IN2" effectiveParameter="gain"></inputVariable>
+							<outputVariable invertedPin="false" formalParameter="ENO"></outputVariable>
+							<outputVariable invertedPin="false" formalParameter="OUT"></outputVariable>
+						</descriptionFFB>
+					</FFBBlock>
+					<linkFB>
+						<linkSource parentObjectName="LAG1_2" pinName="Y">
+							<objPosition posX="39" posY="23"></objPosition>
+						</linkSource>
+						<linkDestination parentObjectName="LAG1_3" pinName="X">
+							<objPosition posX="45" posY="23"></objPosition>
+						</linkDestination>
+					</linkFB>
+					<linkFB>
+						<linkSource parentObjectName="LAG1_1" pinName="Y">
+							<objPosition posX="27" posY="23"></objPosition>
+						</linkSource>
+						<linkDestination parentObjectName="LAG1_2" pinName="X">
+							<objPosition posX="32" posY="23"></objPosition>
+						</linkDestination>
+					</linkFB>
+					<linkFB>
+						<linkSource parentObjectName=".1" pinName="OUT">
+							<objPosition posX="17" posY="13"></objPosition>
+						</linkSource>
+						<linkDestination parentObjectName="LAG1_1" pinName="X">
+							<objPosition posX="20" posY="23"></objPosition>
+						</linkDestination>
+						<gridObjPosition posX="19" posY="13"></gridObjPosition>
+						<gridObjPosition posX="19" posY="23"></gridObjPosition>
+					</linkFB>
+				</networkFBD>
+			</FBDSource>
+		</FBProgram>
+	</FBSource>
+</FBDExchangeFile>

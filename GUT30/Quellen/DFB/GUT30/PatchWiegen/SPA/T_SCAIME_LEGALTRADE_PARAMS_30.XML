@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<DDTExchangeFile>
+	<DDTSource DDTName="T_SCAIME_LEGALTRADE_PARAMS_30" version="0.20" dateTime="dt#2014-12-10-14:46:33">
+		<attribute name="TypeSignatureCheckSumString" value="8406"></attribute>
+		<structure>
+			<variables name="Legal_Mode_Sealing_Switchs" typeName="BYTE">
+				<comment>Parameter ID: 1023 Access : R/W (see in device user manual/help file for bit fields details)</comment>
+			</variables>
+			<variables name="LegalForTrade_SW_Version" typeName="BYTE">
+				<comment>Parameter ID: 1024 Access : RO</comment>
+			</variables>
+			<variables name="LegalForTrade_Counter" typeName="UINT">
+				<comment>Parameter ID: 1025 Access : RO</comment>
+			</variables>
+			<variables name="LegalForTrade_Checksum" typeName="UINT">
+				<comment>Parameter ID: 1026 Access : RO</comment>
+			</variables>
+			<variables name="Zero_functions" typeName="UINT">
+				<comment>Parameter ID: 1027 Access : R/W (see in device user manual/help file for bit fields details)</comment>
+			</variables>
+			<variables name="Zero_Tare_Specified_Time_ms" typeName="UINT">
+				<comment>Parameter ID: 1029 Access : R/W</comment>
+			</variables>
+			<variables name="Preset_Tare_Value" typeName="UDINT">
+				<comment>Parameter ID: 1030 Access : R/W</comment>
+			</variables>
+			<variables name="Stability_Criterion" typeName="BYTE">
+				<comment>Parameter ID: 1028 Access : R/W (see in device user manual/help file for bit fields details)</comment>
+			</variables>
+			<variables name="Decimal_Point_Position" typeName="BYTE">
+				<comment>Parameter ID: 1034 Access : R/W (see in device user manual/help file for bit fields details)</comment>
+			</variables>
+			<variables name="Unit" typeName="string[4]">
+				<comment>Parameter ID: 1032 Access : R/W</comment>
+			</variables>
+			<variables name="LoadCell_Terminal_Resistor" typeName="BYTE">
+				<comment>Parameter ID: 1058 Access : R/W (see in device user manual/help file for bit fields details)</comment>
+			</variables>
+		</structure>
+	</DDTSource>
+</DDTExchangeFile>
