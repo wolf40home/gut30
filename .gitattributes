@@ -1,0 +1,6 @@
+GUT30_P4\pgdynobj.DBF filter=lfs diff=lfs merge=lfs -text
+GUT30_P3\pgdynobj.DBF filter=lfs diff=lfs merge=lfs -text
+GUT30_Bild19HD\pgdynobj.DBF filter=lfs diff=lfs merge=lfs -text
+GUT30_Bild19HDP4\pgdynobj.DBF filter=lfs diff=lfs merge=lfs -text
+GUT30_Demo_Unity_OFS\pgdynobj.DBF filter=lfs diff=lfs merge=lfs -text
+GUT30_Demo_Unity_OFS_P4\pgdynobj.DBF filter=lfs diff=lfs merge=lfs -text

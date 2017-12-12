@@ -1,0 +1,10 @@
+/Tools
+*.tmp
+*.bpl
+*.gwl
+*.RDB
+*.BAK
+*.CDK
+*.ztx
+errs
+*.deploy
