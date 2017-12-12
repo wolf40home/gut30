@@ -1,0 +1,354 @@
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//	
+// 	FILE:	GUT_Faceplate_30.ci
+//
+//	Beschreibung:
+//
+//		Enthält Funktionen zum aufschalten der neue Oberfläche
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	29.08.2017	/	Schneider Electrik GmbH
+//	Version				75.33.11.08
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	//	
+//
+//	PUBLIC FUNCTIONS:
+//
+//			GUT_GWOH_30
+//			GUT_SNMP_Trap_30
+//			GUT_SNMP_30
+//			GUT_SIMU_ET722
+//			GUT_TREND_STEP3
+//			GUT_Interlock
+//			GUT_Freigabe
+//			GUT_P_Meld_I
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+
+// MODULE VARIABLES
+INT 		miMonitor;
+
+
+
+
+//	FUNCTION UAG_ISPY_GWOH_20()
+//	Übergabeparameter:	Branch Messung  als String    
+//                       
+//	Rückgabewert:		
+//	Beschreibung:	Alarme und Schaltpunkte für ISPY
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	09.12.11	/	Schneider Electrik GmbH
+//	Version				75.33.11.08
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	
+//	
+//		Beispiel für Aufruf
+//		TaskNew("UAG_ISPY_GWOH_20", "^"%TAG%^"", 8)
+//		TaskNew("UAG_ISPY_GWOH_20", "^"%TAG%^",2", 8) 
+
+
+FUNCTION GUT_GWOH_30(STRING sTag, INT imode=1)
+		
+	miMonitor = GUT_PopupNewAt("!p_meld_gwoh_30",giMODE,imode )
+	IF miMonitor <> -1 THEN
+		Ass(-3,1,"'" + sTag + "'",0);
+		_Ass(-3,2,sTag + "_M");
+		_Ass(-3,3,sTag + "_TYP");
+		_Ass(-3,4,sTag + "_LW");
+		_Ass(-3,5,sTag + "_LT");
+		_Ass(-3,6,sTag + "_X");			
+		_Ass(-3,7,sTag + "_AHHE");
+		_Ass(-3,8,sTag + "_AHHA");
+		_Ass(-3,9,sTag + "_AHE");    					
+		_Ass(-3,10,sTag + "_AHA");
+		_Ass(-3,11,sTag + "_ALE");		
+		_Ass(-3,12,sTag + "_ALA");		
+		_Ass(-3,13,sTag + "_ALLE");
+		_Ass(-3,14,sTag + "_ALLA");
+		_Ass(-3,15,sTag + "_SHHE");
+		_Ass(-3,16,sTag + "_SHHA");
+		_Ass(-3,17,sTag + "_SHE");    					
+		_Ass(-3,18,sTag + "_SHA");
+		_Ass(-3,19,sTag + "_SLE");		
+		_Ass(-3,20,sTag + "_SLA");		
+		_Ass(-3,21,sTag + "_SLLE");
+		_Ass(-3,22,sTag + "_SLLA");
+		UAG_LoadUI( sTag + "_KT", 60,7,-3);
+		PageGoto("!p_meld_gwoh_30");
+		_WinTitle(sTag);
+	ELSE
+		UAG_Status("@(Too many windows open)","","1");	
+	END
+		
+END 
+
+//	FUNCTION GUT_SNMP_30()
+//	Übergabeparameter:	Branch  als String      
+//                       
+//	Rückgabewert:		
+//	Beschreibung:	SNMP Info Aufschalten	
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	31.07.17	/	Schneider Electrik GmbH
+//	Version				75.33.11.08
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+
+//		Beispiel für Aufruf
+//		TaskNew("GUT_SNMP_30", "^"%TAG%^",1,", 8)
+//		TaskNew("GUT_SNMP_30", "^"%TAG%^",2,", 8) 
+
+FUNCTION GUT_SNMP_30(STRING sTag, INT imode=1)
+	
+	miMonitor = GUT_PopupNewAt("!p_SNMP_30",giMODE,imode );
+	IF miMonitor <> -1 THEN
+		// Messstelle
+		Ass(-3,1,"'" + sTag + "'",0);
+		_Ass(-3,5,sTag + "_LT");
+		_Ass(-3,6,sTag + "_SNAME");
+		_Ass(-3,7,sTag + "_SDESC");
+		_Ass(-3,8,sTag + "_SLOC");
+		_Ass(-3,9,sTag + "_SCON");
+		_Ass(-3,10,sTag + "_SUPT");
+		_Ass(-3,11,sTag + "_IPIR");
+		_Ass(-3,12,sTag + "_IPDTT");
+		_Ass(-3,13,sTag + "_IPOR");
+		UAG_LoadUI( sTag + "_KT", 60,7,-3)
+		PageGoto("!p_SNMP_30");
+		_WinTitle(sTag);
+	ELSE
+		UAG_Status("@(Too many windows open)","","1");	
+	END
+		
+END
+
+
+
+//	FUNCTION GUT_SNMP_Trap_30()
+//	Übergabeparameter:	Branch  als String      
+//                       
+//	Rückgabewert:		
+//	Beschreibung:	SNMP Info Aufschalten	
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	01.08.17	/	Schneider Electrik GmbH
+//	Version				75.33.11.08
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+
+//		Beispiel für Aufruf
+//		TaskNew("GUT_SNMP_Trap_30", "^"%TAG%^",1,", 8)
+//		TaskNew("GUT_SNMP_Trap_30", "^"%TAG%^",2,", 8) 
+
+FUNCTION GUT_SNMP_Trap_30(INT imode=1)
+
+	miMonitor = GUT_PopupNewAt("!p_SNMP_Trap_30",giMODE,imode );
+	IF miMonitor <> -1 THEN
+		// Messstelle
+		Ass(-3,5,"'Trapanzeige'",0);
+//		_Ass(-3,5,sTag + "_LT");
+		_Ass(-3,6,"TrapEnterprise");
+		_Ass(-3,7,"TrapIPAddress");
+		_Ass(-3,8,"TrapGenericType");
+		_Ass(-3,9,"TrapSpecificType");
+		_Ass(-3,10,"TrapTimeStamp");
+		_Ass(-3,11,"TrapFirstVarbindName");
+		_Ass(-3,12,"TrapFirstVarbindValue");
+		_Ass(-3,13,"TrapForward");
+		_Ass(-3,14,"TrapNumber");
+		_Ass(-3,15,"TrapTNVB");
+		PageGoto("!p_SNMP_Trap_30");
+
+	ELSE
+		UAG_Status("@(Too many windows open)","","1");	
+	END
+		
+END 
+
+//	GUT_TREND_STEP3()
+//	Übergabeparameter:	 ---     
+//                       
+//	Rückgabewert:		 
+//	Beschreibung:		Prozessanalyst mit x, GW und Alarm aufschalten	
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	19.05.17	/	Schneider Electrik GmbH
+//	Version				75.33.11.06
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	
+
+FUNCTION GUT_TREND_STEP3(STRING sTagAe , STRING sTagReg,INT imode)
+	STRING sTemp
+
+	Ass(-2,1,"'" +"@(Regler Trend): "  + sTagReg + "'",0);
+	giPosX =StrToInt(PageInfo(14)) + StrToInt(PageInfo(12) );
+	giPosY= StrToInt(PageInfo(15)); 
+	IF UAG_MM_WinNewAt("!p_reg_trend_21",giPosX,giPosY,giMODE,imode )> 0 THEN
+		SleepMS(200);
+	GUT_PA_STEP3(sTagAe,sTagReg)
+
+	END
+END
+
+
+//	GUT_TREND_STEP3()
+//	Übergabeparameter:	 ---     
+//                       
+//	Rückgabewert:		 
+//	Beschreibung:		Prozessanalyst mit x, GW und Alarm aufschalten	
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	24.05.17	/	Schneider Electrik GmbH
+//	Version				75.33.11.08
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	
+
+FUNCTION GUT_SIMU_ET722(STRING sTag ,INT imode=1)
+	
+	miMonitor = GUT_PopupNewAt("!p_simu_et_30",giMODE,imode );
+	IF miMonitor <> -1 THEN
+		// Messstelle
+		Ass(-3,1,"'" + sTag + "'",0);
+		_Ass(-3,2,sTag + "_M");
+		_Ass(-3,5,sTag + "_LT");
+		_Ass(-3,4,sTag + "_LW");
+		_Ass(-3,6,sTag + "_TX");			
+		_Ass(-3,7,sTag + "_FX");
+		_Ass(-3,8,sTag + "_W01");
+		_Ass(-3,9,sTag + "_W02");
+		_Ass(-3,10,sTag + "_RMY1");    					
+		_Ass(-3,11,sTag + "_RMY2");
+		_Ass(-3,12,sTag + "_SH");		
+		Ass(-3,21,"'-'",0);
+		PageGoto("!p_simu_et_30")
+		SleepMS(200);
+		TrnSetPen(518, 1, sTag + "_FX");
+		_WinTitle(sTag);
+	ELSE
+		UAG_Status("@(Too many windows open)","","1");	
+	END
+END
+
+//	GUT_Interlock(STRING sTag)
+//	Übergabeparameter:	Tagname als String      
+//                       
+//	Rückgabewert:		
+//	Beschreibung:	Interlock Pannel aufschalten	
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	07.09.17	/	Schneider Electrik GmbH
+//	Version				75.33.11.08
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//
+FUNCTION GUT_Interlock(STRING sTag, INT imode=1)
+	TaskNew("_GUT_Interlock", "^""+sTag +"^"," + IntToStr (imode) , 8)
+
+END
+
+FUNCTION _GUT_Interlock(STRING sTag, INT imode=1)
+
+	miMonitor = GUT_PopupNewAt("!P_Interlock_20",giMODE,imode )
+	IF miMonitor <> -1 THEN
+		Ass(-3,1,"'" + sTag + "'",0);
+		_Ass(-3,2,sTag + "_MI");
+		_Ass(-3,4,sTag + "_LW");
+		_Ass(-3,5,sTag + "_LT");
+
+		UAG_LoadInterlock(sTag + "_MI", 21, 15,-3);
+		UAG_LoadUI( sTag + "_KT", 60,-3)
+		PageGoto("!P_Interlock_20")	
+		_WinTitle(sTag);
+	ELSE
+		UAG_Status("@(Too many windows open)","","1");	
+	END
+
+END
+
+//	GUT_Freigabe(STRING sTag)
+//	Übergabeparameter:	Tagname als String      
+//                       
+//	Rückgabewert:		
+//	Beschreibung:	Freiganbe Pannel aufschalten	
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	07.09.17	/	Schneider Electrik GmbH
+//	Version				75.33.11.08
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//
+
+
+FUNCTION GUT_Freigabe(STRING sTag, INT imode=1)
+	TaskNew("_GUT_Freigabe", "^""+sTag +"^"," + IntToStr (imode) , 8)
+
+END
+FUNCTION _GUT_Freigabe(STRING sTag, INT imode=1)
+
+	miMonitor = GUT_PopupNewAt("!P_Freigabe_20",giMODE,imode )
+	IF miMonitor <> -1 THEN
+		Ass(-3,1,"'" + sTag + "'",0);
+		_Ass(-3,2,sTag + "_MI");
+		_Ass(-3,4,sTag + "_LW");
+		_Ass(-3,5,sTag + "_LT");
+
+		UAG_LoadInterlock(sTag + "_MI", 21, 15,-3);
+		UAG_LoadUI( sTag + "_KT", 60,-3)
+		PageGoto("!P_Freigabe_20")	
+		_WinTitle(sTag);
+	ELSE
+		UAG_Status("@(Too many windows open)","","1");	
+	END
+
+END
+
+//	GUT_P_Meld_I(STRING sTag, Int Mode)
+//	Übergabeparameter:	Tagname als String      
+//                       
+//	Rückgabewert:		
+//	Beschreibung:	Info Pannel aufschalten	die Texte werden am Baustein Meld16 Projektiert
+//					zur Zeit max 2 Worte
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	06.10.17	/	Schneider Electrik GmbH
+//	Version				72.33.70.08
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	
+FUNCTION GUT_P_Meld_I(STRING sTag, INT imode=1)
+	TaskNew("_GUT_P_Meld_I", "^""+sTag +"^"," + IntToStr (imode) , 8)
+
+END
+
+FUNCTION _GUT_P_Meld_I(STRING sTag,INT iMode=False)
+
+	Ass(-2,1,"'" + sTag + "_M"+ "'",0);
+	_Ass(-2,6, sTag + "_M");
+	Ass(-2,2,"'0'",0);
+	Ass(-2,3,"'-'",0);
+	UAG_LoadInterlock(sTag + "_M", 10, 16);
+	Ass(-2,5,"'0'",0);
+	IF iMode THEN
+		UAG_MM_PopUP("!p_anzeig_rot20")
+	ELSE
+		UAG_MM_PopUP("!p_anzeig_20")
+	END
+	
+	_WinTitle(sTag);
+
+END
+
