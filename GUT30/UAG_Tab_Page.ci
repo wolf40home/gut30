@@ -1,0 +1,612 @@
+//-----------------------------------------------------------------------------
+//	Copyright © 2009 Schneider Electric (Australia) Pty Ltd.
+//	All rights reserved.
+//
+// 	FILE:		UAG_Tab_Page.ci
+//
+//	CREATED:	03/08/2009
+//
+//	AUTHOR:		Michael Yip
+//
+//	SUMMARY:
+//
+//		Contains related functions for page navigation specific to the tab menu templates.
+//
+//	PUBLIC FUNCTIONS:
+//
+//		PageParent
+//		PagePrint
+//
+//		PageHomeGetName
+//		PageParentGetName
+//		PagePrintGetName
+//
+//		PageDspLoginMenu
+//		PageDspConfigMenu
+//		PageGetConfigMenuHnd
+//
+//		PageInitEvents
+//
+//	REMARKS:
+//
+//		When equivalent functions are also used on the CSV_Include templates, the new
+//		functions try to maintain configuration compatibility by:
+//			- reading the equivalent Citect.ini parameters in the [Page] section
+//			  (instead of [Navigation] used in the CSV_Include project)
+//			- reading the same page environment variables.
+//		and execute the retrieved commands in equivalent fashion as CSV_Include project does.
+//
+//	DEPENDENCY:
+//		Tabmenu.ci
+//
+//-----------------------------------------------------------------------------
+
+
+//-----------------------------------------------------------------------------
+//
+//	Constants
+//
+//-----------------------------------------------------------------------------
+
+STRING	c_STR_PARA_NOT_INITIALISED	= "N/A";	// string parameter not initialised
+INT		c_INT_PARA_NOT_INITIALISED = -1;		// integer parameter not initialised
+STRING	c_TEMPLATE_PAGE_NAME = "Template";		// page name in the menu config that is reserved for template menu (concept inherited from CSV)
+
+
+//-----------------------------------------------------------------------------
+//
+//	Module Variables
+//
+//-----------------------------------------------------------------------------
+
+STRING	m_PageHomePage	= "N/A";				// value of parameter [Page] HomePage
+STRING	m_PagePrintPage	= "N/A";				// value of parameter [Page] PrintPage
+INT		m_PrivilegeUserEdit = -1;				// value of parameter [Privilege] UserEdit
+INT		m_PrivilegeShutdown = -1;				// value of parameter [Privilege] Shutdown
+INT		m_Shutdown_Confirm_OnEvent = -1;		// handler for processing shutdown confirmation event
+INT		m_Shutdown_Confirm_ChainEvent = -1;		// handler for shutdown confirmation event setup by other task 
+
+
+//-----------------------------------------------------------------------------
+//
+//	Page Navigation Related Functions
+//
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		PageParent
+//
+//	SUMMARY:
+//		Function to display the parent page of the current page
+//			
+//	PARAMS:
+//		None
+//			
+//	RETURNS: 
+//		0 if successful or error code if failed
+//
+//	REMARKS:
+//		Please see the remarks in PagePrintGetName() for how to configure
+//		a page specific print command.
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION UAG_PageParent()
+	STRING pageCommand;
+	
+	pageCommand = UAG_PageParentGetName();
+	IF ("" <> pageCommand) THEN
+		_UAG_PageExecuteLegacyCommand(pageCommand);
+	END
+	RETURN 0;
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		PagePrint
+//
+//	SUMMARY:
+//		Function to print the current page
+//			
+//	PARAMS:
+//		None
+//			
+//	RETURNS: 
+//		0 if successful or error code if failed
+//
+//	REMARKS:
+//		Please see the remarks in PagePrintGetName() for how to configure
+//		a page specific print command.
+//
+//		If no specific print command is defined, it will do a screen dump of
+//		the currently displayed page to the	selected printer.
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION UAG_PagePrint()
+	STRING printCommand;
+	STRING printer;
+
+	printCommand = UAG_PagePrintGetName();
+	IF ("" <> printCommand) THEN
+		_UAG_PageExecuteLegacyCommand(printCommand);
+	ELSE
+		printer = FormSelectPrinter();
+		IF ("" <> printer) THEN
+			WinPrint(printer, 0, 0, 0);
+		END
+	END
+	RETURN 0;
+END
+
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		UAG_PageHomeGetName
+//
+//	SUMMARY:
+//		Function to get the name of the home page
+//			
+//	PARAMS:
+//		None
+//			
+//	RETURNS: 
+//		The name of the home page if successful or empty string if undefined
+//
+//	REMARKS:
+//		The home page is defined under under Citect.ini / project parameter
+// 		[Page] HomePage.
+//
+//-----------------------------------------------------------------------------
+
+STRING FUNCTION UAG_PageHomeGetName()
+	INT errLevelOld;
+
+	IF (m_PageHomePage = c_STR_PARA_NOT_INITIALISED) THEN
+		m_PageHomePage = ParameterGet("Page", "HomePage", "");
+		errLevelOld = ErrSetLevel(1);
+		// check if page exist
+		IF (PageFileInfo(m_PageHomePage, 0) < 1) THEN
+			m_PageHomePage = "";
+		END
+		ErrSetLevel(errLevelOld);
+	END
+	RETURN m_PageHomePage;
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		UAG_PageParentGetName
+//
+//	SUMMARY:
+//		Function to get the page name of / command that displays the parent page of the
+//		current page
+//			
+//	PARAMS:
+//		None
+//			
+//	RETURNS: 
+//		The command / name of the parent page if successful or empty string if undefined
+//
+//	REMARKS:
+//		The parent page is configured in page environment variable "ParentPage".
+//		To maintain compatibility with CSV_Include project, the user can specify Cicode
+//		function call using the "?function argument_CSV_list" syntax
+//
+//-----------------------------------------------------------------------------
+
+STRING FUNCTION UAG_PageParentGetName()
+	RETURN DspGetEnv("ParentPage");
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		UAG_PagePrintGetName
+//
+//	SUMMARY:
+//		Function to get the page name of / command that prints the current page
+//			
+//	PARAMS:
+//		None
+//			
+//	RETURNS: 
+//		The name of the parent page if successful or empty string if undefined
+//
+//	REMARKS:
+//		The print command can be configured in page environment variable "PrintPage".
+//		To maintain compatibility with CSV_Include project, the user can specify Cicode
+//		function call using the "?function argument_CSV_list" syntax
+//
+//		The user can also define the print command under Citect.ini / project
+// 		parameter [Page] PrintPage all other generic pages.
+//
+//		If no specific print command is defined, it will do a screen dump to a
+//		selected printer.
+//
+//-----------------------------------------------------------------------------
+
+STRING FUNCTION UAG_PagePrintGetName()
+	STRING fnPrint = DspGetEnv("PrintPage");
+	IF ("" = fnPrint) THEN
+		IF (m_PagePrintPage = c_STR_PARA_NOT_INITIALISED) THEN
+			m_PagePrintPage = ParameterGet("Page", "PrintPage", "");
+		END
+		fnPrint = m_PagePrintPage;
+	END
+	RETURN fnPrint;
+END
+
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		UAG_PageDspLoginMenu
+//
+//	SUMMARY:
+//		Function to display pop-up menu for screen login
+//			
+//	PARAMS:
+//		None
+//			
+//	RETURNS: 
+//		0 (zero) if successful, otherwise an error is returned.
+//
+//	REMARKS:
+//		Login popup menu is defined by the "Template" page and "Login" menu in the 
+//		Menu Config database.  If no "Login" menu has been defined in this section of the menu database then
+//		a default menu is displayed.
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION UAG_PageDspLoginMenu()
+	INT retValue = 256;
+	INT AN;
+	INT xPos = -1;
+	INT yPos = -1;
+
+	// Get menu position from calling AN
+	AN = KeyGetCursor();
+	IF (AN > 0) THEN
+		xPos = DspGetAnLeft(AN);
+		yPos = DspGetAnBottom(AN) + 1;
+	END
+
+	IF (m_PrivilegeUserEdit = c_INT_PARA_NOT_INITIALISED) THEN
+		m_PrivilegeUserEdit = StrToInt(ParameterGet("Privilege", "EditUser", 8));
+	END	
+
+	retValue = UAG_PageDspConfigMenu(c_TEMPLATE_PAGE_NAME, "Login", xPos, yPos);
+	IF (0 <> retValue) THEN
+		// only default to default login menu if no items are defined in specific menu config node
+		IF (UAG_PageGetConfigMenuHnd(c_TEMPLATE_PAGE_NAME, "Login", 1) < 0) THEN
+			retValue = _UAG_PageDspLoginDefaultMenu(xPos, yPos, m_PrivilegeUserEdit);
+		END
+	END
+
+	RETURN retValue;
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		UAG_PageDspConfigMenu
+//
+//	SUMMARY:
+//		Function to display pop-up menu according to menu configuration defined
+//		under a specific page name
+//			
+//	PARAMS:
+//		pageName	- The page name of the menu configuration defined in menu config database
+//		menuName	- The menu (Level 1) name of the menu configuation defined in database
+//		xPos		- The x position of menu. Set to -1 to show menu at mouse cursor position
+//		yPos		- The y position of menu. Set to -1 to show menu at mouse cursor position
+//			
+//	RETURNS: 
+//		0 (zero) if successful, otherwise an error is returned.
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION UAG_PageDspConfigMenu(STRING pageName, STRING menuName, INT xPos = -1, INT yPos = -1)
+	INT specifiedMenuNode = -1;								// Node handle for the specified menuName in the menu config tree
+
+	// find the specific Level 1 menu config node under the specified page
+	specifiedMenuNode = UAG_PageGetConfigMenuHnd(pageName, menuName, 1);
+	IF (specifiedMenuNode < 0) THEN
+		// specific menu is not found or empty for the specified page, return invalid argument error
+		RETURN 274;
+	END
+
+	// show pop-up in pos. relative to an AN, as command may not be fired from mouse
+	RETURN DspPopupConfigMenu(specifiedMenuNode, 0, xPos, yPos);
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		UAG_PageGetConfigMenuHnd
+//
+//	SUMMARY:
+//		Function to get the menu configuration node handle for the specified
+//		page name and menu (Level 1) name
+//			
+//	PARAMS:
+//		pageName	- The page name of the menu configuration defined in menu config database
+//		menuName	- The menu (Level 1) name of the menu configuation defined in database
+//		ignoreEmpty	- Indicate whether to treat empty menu node as invalid, default is false (0)
+//			
+//	RETURNS: 
+//		The menu handle for the specified menu (level 1) node, otherwise -1 is returned.
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION UAG_PageGetConfigMenuHnd(STRING pageName, STRING menuName, INT ignoreEmpty = 0)
+	INT baseNode;
+	INT specifiedMenuNode = -1;								// Node handle for the specified menuName in the menu config tree
+
+	// find the specific Level 1 menu config node under the specified page
+	baseNode = MenuGetPageNode(pageName);
+	IF (baseNode < 0) THEN
+		// unable to retrive menu for specific page, return invalid handle
+		RETURN -1;
+	END
+	specifiedMenuNode = MenuGetChild(baseNode,menuName);
+//	WHILE ((baseNode > -1) AND (specifiedMenuNode < 0)) DO
+//		IF (MenuNodeGetProperty(baseNode, 0) = menuName) THEN
+//			specifiedMenuNode = baseNode;
+//		END
+//		baseNode = MenuGetNextChild(baseNode);
+//	END
+//	IF (ignoreEmpty) THEN
+//		IF (specifiedMenuNode > -1) THEN
+//			IF (MenuGetFirstChild(specifiedMenuNode) < 0) THEN
+//				specifiedMenuNode = -1;
+//			END
+//		END
+//	END
+	RETURN specifiedMenuNode;
+END
+
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		UAG_PageInitEvents
+//
+//	SUMMARY:
+//		Function to initialise the Tab Style specific events
+//			
+//	PARAMS:
+//		None
+//			
+//	RETURNS: 
+//		0 if executed successfully, else return error code.
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION UAG_PageInitEvents()
+	INT error = 0;
+
+	// Initialise Main window close confirmation event
+	IF (m_Shutdown_Confirm_OnEvent < 0) THEN
+		m_Shutdown_Confirm_ChainEvent = GetEvent(35);
+		error = OnEvent(35, _UAG_PageShutdownConfirmation);
+		IF (0 = error) THEN
+			m_Shutdown_Confirm_OnEvent = GetEvent(35);
+		END
+	END
+	RETURN error;
+END
+
+
+//-----------------------------------------------------------------------------
+//
+//	Private Helper Functions
+//
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		_UAG_PageDspLoginDefaultMenu
+//
+//	SUMMARY:
+//		Function to pop-up a login default menu.
+//			
+//	PARAMS:
+//		xPos				- The x position of menu. Set to -1 to show menu at mouse cursor position
+//		yPos				- The y position of menu. Set to -1 to show menu at mouse cursor position
+//		userEditPrivilege	- The privilege required to show menu items for editing user database
+//			
+//	RETURNS: 
+//		0 (zero) if successful, otherwise an error is returned.
+//
+//-----------------------------------------------------------------------------
+
+PRIVATE
+INT FUNCTION _UAG_PageDspLoginDefaultMenu(INT xPos = -1, INT yPos = -1, INT userEditPrivilege = 8)
+	INT		retValue = 0;
+	INT		selection = 0;
+	STRING	menuItems = "";
+	STRING	logOutDisable;
+	STRING	changePasswordDisable;
+	STRING	editUserDisable;
+	STRING	createUserDisable;
+
+	menuItems = StrToLocalText("@(Login)");
+
+	IF (UserInfo(6) <> "1") THEN
+		logOutDisable = "!";
+		changePasswordDisable = "!";
+		editUserDisable = "!";
+		createUserDisable = "!";
+	END
+
+	IF NOT (GetPriv(userEditPrivilege, 0)) THEN
+		changePasswordDisable = "!";
+		editUserDisable = "!";
+		createUserDisable = "!";
+	END
+
+	menuItems = menuItems + "," + logOutDisable + StrToLocalText("@(Logout)");
+	menuItems = menuItems + "," + changePasswordDisable + StrToLocalText("@(Change Password)");
+	menuItems = menuItems + ",," + editUserDisable + StrToLocalText("@(Edit User)");
+	menuItems = menuItems + "," + createUserDisable + StrToLocalText("@(Create User)");
+	
+	DspPopupMenu(0, menuItems);
+	selection = DspPopupMenu(-1, "", xPos, yPos);
+
+	SELECT CASE selection
+	CASE 1
+		retValue = LoginForm();
+	CASE 2
+		retValue = Logout();
+	CASE 3
+		retValue = UserPasswordForm();
+	CASE 4
+		retValue = UserEditForm();
+	CASE 5
+		retValue = UserCreateForm();
+	END SELECT
+
+	RETURN retValue;
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		_UAG_PageExecuteLegacyCommand
+//
+//	SUMMARY:
+//		Execute the command specified in the legacy syntax used by the
+//		CSV_Include project:
+//			?function arg_list
+//
+//	PARAMS:
+//		command		- user specified command in legacy CSV format
+//			
+//	RETURNS: 
+//		The task handle of the executed command or -1 if failed
+//
+//-----------------------------------------------------------------------------
+
+PRIVATE
+INT FUNCTION _UAG_PageExecuteLegacyCommand(STRING command = "")
+	STRING functionName;
+	STRING arguments;
+	INT returnValue = -1;
+	INT qualifierPos;
+	INT	separatorPos;
+	INT	commandLen;
+
+	// Check if user specify a page / command
+	SELECT CASE (StrLeft(command, 1))
+	CASE "?"
+		// Cicode command
+		// Format: ?Fn arg1 arg2 "arg3 "arg4"		
+		// Strip the question mark
+		command = StrRight(command, StrLength(command) - 1);
+		// Split function name and argument list
+		functionName = StrWord(command);
+		command = StrTrim(command);
+		WHILE ("" <> command) DO
+			commandLen = StrLength(command);
+			IF ("^"" <> StrLeft(command, 1)) THEN
+				// search for next comma for argument separator
+				separatorPos = StrSearch(0, command, ",");
+				IF (separatorPos >= 0) THEN
+					arguments = arguments + "^"" + StrLeft(command, separatorPos) + "^",";
+					command = StrRight(command, commandLen - separatorPos - 1);
+				ELSE
+					// use space as argument separator
+					arguments = arguments + "^"" + StrWord(command) + "^",";
+				END
+			ELSE
+				// search for the ending "^"" if opening "^"" is found
+				qualifierPos = StrSearch(1, command, "^"");
+				IF (qualifierPos > 0) THEN
+					arguments = arguments + StrLeft(command, qualifierPos + 1) + ",";
+
+					// search for next comma for argument separator
+					separatorPos = StrSearch(qualifierPos, command, ",");
+					IF (separatorPos > 0) THEN
+						commandLen = commandLen - separatorPos - 1;
+					ELSE
+						commandLen = commandLen - qualifierPos - 1;
+					END
+				ELSE
+					// take the rest of command as a single argument
+					arguments = arguments + command + "^",";
+					commandLen = 0;
+				END
+				command = StrRight(command, commandLen);
+			END
+			command = StrTrim(command);
+		END
+		IF ("," = StrRight(arguments, 1)) THEN
+			arguments = StrLeft(arguments, StrLength(arguments) - 1);
+		END
+		returnValue = TaskNew(functionName, arguments, 4);
+	CASE "!"
+		// Comment, ignore
+		;
+	CASE ELSE
+		// page name
+		// Format: pagename
+		returnValue = PageDisplay(command);
+	END SELECT
+	RETURN returnValue;
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		_UAG_PageShutdownConfirmation
+//
+//	SUMMARY:
+//		Callback event to confirm if the user has sufficient privilege to shut
+//		down Citect.
+//
+//	PARAMS:
+//		None
+//			
+//	RETURNS: 
+//		0 to continue with closing window or 1 to abort process
+//
+//-----------------------------------------------------------------------------
+
+PRIVATE
+INT FUNCTION _UAG_PageShutdownConfirmation()
+	// Bypass this if user confirmation events: main window close, shutdown, are in use
+	IF ((GetEvent(43) <> -1) OR (GetEvent(49) <> -1)) THEN
+		IF (m_Shutdown_Confirm_ChainEvent > -1) THEN
+			RETURN ChainEvent(m_Shutdown_Confirm_ChainEvent);
+		ELSE
+			RETURN 0;
+		END
+	END
+
+	// read INI parameters
+	IF (m_PrivilegeShutdown < 0) THEN
+		m_PrivilegeShutdown = ParameterGet("Privilege", "Shutdown", 0);
+	END
+	IF (NOT GetPriv(m_PrivilegeShutdown, 0)) THEN
+		IF (ProcessIsClient()) THEN
+			Prompt(StrToLocalText("@(No Privilege for Action)"));
+			TaskNew("Message", "^"@(Shutdown)" + " " + ProductInfo(0) + "^",^"@(No Privilege for Action)^",64", 2);
+		END
+		// abort shutdown
+		RETURN 1;
+	END
+	// continue with the default process
+	IF (m_Shutdown_Confirm_ChainEvent > -1) THEN
+		RETURN ChainEvent(m_Shutdown_Confirm_ChainEvent);
+	ELSE
+		RETURN 0;
+	END
+END

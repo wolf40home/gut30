@@ -1,0 +1,193 @@
+
+///////////////////////////////////////////////////////////////////////////////////
+//	
+// 	FILE:	UAG_Speech.ci
+//
+//	Beschreibung:
+//
+//		Enhält Funktionen für die Sprachausgabe.
+//		
+//	Autor:				Frank Däbritz
+//	Erstellungsdatum:	02.09.08	/	Schneider Electric GmbH
+//	Version				75.33.11.06
+//
+//	PUBLIC FUNCTIONS:
+//
+//			UAG_Speak(()
+//			UAG_Speak_TD()
+//
+///////////////////////////////////////////////////////////////////////////////////
+
+
+
+GLOBAL OBJECT goVoice;
+
+// MODULE VARIABLES
+
+INT    miSpeakInitialized = 0;
+
+// Die sapi.dll V5.1 ist in XP integriert unter C:\Programme\Gemeinsame Dateien\Microsoft Shared\Speech
+// Habe ich aber leider nicht zum Laufen gebracht!
+//STRING sProgID = "SAPI.SpVoice";
+//STRING sClassID = "{96749377-3391-11D2-9EE3-00C04F797396}";
+
+// Das haben wir in der Citect Knowledgebase gefunden, bezieht sich aber auf die SAPI V4.0
+// Kann man bei MS downloaden und muss zusätzlich installiert werden
+
+// genutzte AktivX
+
+
+STRING sClassID = "{2398E32F-5C6E-11D1-8C65-0060081841DE}";
+
+
+
+
+//	UAG_Speak()
+//	Übergabeparameter:	Auszugebender Text      
+//                       
+//	Rückgabewert:		--      
+//	Beschreibung:		Text Vorlesen
+//
+//	Autor:				Frank Däbritz
+//	Erstellungsdatum:	03.09.08	/	Schneider Electric GmbH
+//	Version				3.0.0.1
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//
+//  
+
+PUBLIC STRING FUNCTION 
+UAG_Speak(STRING sText)
+	INT iError = 0;
+	
+	ErrSet(1);
+	
+	IF NOT miSpeakInitialized THEN
+		goVoice = CreateObject(sClassID);
+		iError = IsError();
+		IF iError > 0 THEN
+			UAG_SystemInfo("UAG_Speak", "System","Kann das Sprachobjekt nicht erzeugen!","-","-","-",TaskCluster(),_UAG_Fehler)
+//			CSV_MessageBox("Fehler (" + IntToStr(iError) + ")", "Kann das Sprachobjekt nicht erzeugen!", 16); 
+			RETURN "";
+		ELSE
+			miSpeakInitialized = 1;
+		END
+	END
+	IF StrLength(sText) > 0 THEN
+		_ObjectCallMethod(goVoice, "Speak", sText);
+	END
+	ErrSet(0);
+	RETURN "";
+END
+
+//	FUNCTION UAG_Speak_TD()
+//	Übergabeparameter:	Dateiname, TAG, iBit     
+//                      iBit = 16 oder 32 oder 48 
+//	Rückgabewert:		---
+//	Beschreibung:		Sucht die zu einem gesetzten Bit passenden Texte in einer Datei..
+//						Der Name der Variablen ist DIAG1,DIAG2,DIAG3 die erste muss vorhanden sein.	
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	03.09.08	/	Schneider Electrik GmbH
+//	Version				3.0.0.1
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	
+
+
+
+STRING msDatei;
+
+FUNCTION UAG_Speak_TD(STRING sDatei, STRING sTag,INT iBit=16)
+	INT hDev;
+	INT i,it1,it2,it3;
+	STRING	sBuf,stemp,sText;
+	INT 	hCursor = -1;
+	INT		hWnd;
+
+	
+	ErrSet(1);
+	it1 = TagRead(sTag+ "DIAG1");
+	it2 = TagRead(sTag+ "DIAG2");
+	it3 = TagRead(sTag+ "DIAG3");
+	msDatei=sDatei;
+
+
+
+	hDev = FileOpen(PathToStr(gsUAGVersionPath)+ sDatei + ".Txt","r");
+	
+	IF hDev >= 0 THEN
+		SELECT CASE iBit
+		CASE 16
+			FOR i = 1 TO 16 DO
+			
+				IF FileEOF(hDev) = 0 THEN
+					stemp = StrClean(FileReadLn(hDev));
+				ELSE
+					stemp = "-";
+				END
+				IF it1 BITAND Pow(2,i-1) THEN sText = stemp END;
+			END
+		CASE 32
+			FOR i = 1 TO 16 DO
+			
+				IF FileEOF(hDev) = 0 THEN
+					stemp = StrClean(FileReadLn(hDev));
+				ELSE
+					stemp = "-";
+				END
+				IF it1 BITAND Pow(2,i-1) THEN sText = stemp END;
+			END
+
+			FOR i = 17 TO 32 DO
+			
+				IF FileEOF(hDev) = 0 THEN
+					stemp = StrClean(FileReadLn(hDev));
+				ELSE
+					stemp = "-";
+				END
+				IF it2 BITAND Pow(2,i-17) THEN sText = stemp END;
+			END
+		CASE 48
+			FOR i = 1 TO 16 DO
+			
+				IF FileEOF(hDev) = 0 THEN
+					stemp = StrClean(FileReadLn(hDev));
+				ELSE
+					stemp = "-";
+				END
+				IF it1 BITAND Pow(2,i-1) THEN sText = stemp END;
+			END
+			FOR i = 17 TO 32 DO
+			
+				IF FileEOF(hDev) = 0 THEN
+					stemp = StrClean(FileReadLn(hDev));
+				ELSE
+					stemp = "-";
+				END
+				IF it2 BITAND Pow(2,i-17) THEN sText = stemp END;
+			END
+			FOR i = 33 TO 48 DO
+			
+				IF FileEOF(hDev) = 0 THEN
+					stemp = StrClean(FileReadLn(hDev));
+				ELSE
+					stemp = "-";
+				END
+				IF it3 BITAND Pow(2,i-33) THEN sText = stemp END;
+			END
+		END SELECT	
+	ELSE
+		DspError(sDatei +" @(can not be opened)");
+		
+	END
+	
+	FileClose(hDev);
+	UAG_Speak(sText);
+	ErrSet(0);
+	
+END
+
+

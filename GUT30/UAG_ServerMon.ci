@@ -1,0 +1,1901 @@
+///////////////////////////////////////////////////////////////////////////////////
+//	
+// 	FILE:	UAG_ServerMon.ci
+//
+//	Beschreibung:
+//
+//		Contains functions used by the Server Monitoring Genies.
+//		
+//	Autor:				Schneider Electric (Australia) Pty Ltd.
+//	Erstellungsdatum:	18.08.09	/	Schneider Electric GmbH
+//	Version				75.33.11.06
+//
+//
+//	PUBLIC FUNCTIONS:
+//
+//		ServerMonAllState
+//		ServerMonAllStateLabel
+//
+//		ServerMonCluster
+//		ServerMonClusterCount
+//		ServerMonClusterSelect
+//		ServerMonClusterSelected
+//		ServerMonClusterState
+//		ServerMonClusterStateLabel
+//		ServerMonClusterActive
+//
+//		ServerMonPgFirstCluster
+//		ServerMonPgFirstIo
+//		ServerMonPgLastCluster
+//		ServerMonPgLastIo
+//
+//		ServerMonScrollCluster
+//		ServerMonScrollIo
+//
+//		ServerMonServerCount
+//		ServerMonServerName
+//		ServerMonServerOnline
+//		ServerMonServerStatus
+
+//		ServerMonPropertyPageClose
+//		ServerMonPropertyPagePopup
+//
+// 	REMARKS: 
+//
+//	USAGE:
+//
+//-----------------------------------------------------------------------------
+
+
+//-----------------------------------------------------------------------------
+//
+//	Constants
+//
+//-----------------------------------------------------------------------------
+
+INT 		c_MAX_CLUSTER_COUNT		= 	128;
+INT 		c_MAX_CLUSTER_ON_PAGE	= 	20;
+INT 		c_MAX_IO_SERVER_COUNT	= 	249;
+INT 		c_MAX_IO_ON_PAGE		= 	8;
+
+INT			c_RAT_SERVER_INDEX_SLOT	=	6;	// 6 = 2 * 3
+INT			c_IO_SERVER_BASE_INDEX	=	6;	// 6 = c_RAT_SERVER_INDEX_SLOT
+
+INT			c_Monitor_Sacn_Interval	=	1000;
+
+
+
+// Server Type Identifiers CITECT_RUN_MODE_*
+// --------------------------
+INT 		c_SERVER_TYPE_REPORT	=	0;
+INT 		c_SERVER_TYPE_ALARM		=	1;
+INT 		c_SERVER_TYPE_TREND		=	2;
+INT 		c_SERVER_TYPE_IO		=	3;
+
+STRING 		c_clusterLabel[5]	=	"@(all offline)", "@(some online)", "@(all online)", "@(inactive)", "@(error)";
+STRING 		c_serverLabel[2]	=	"@(offline)", "@(online)";
+
+//-----------------------------------------------------------------------------
+//
+//	Global variables
+//
+//-----------------------------------------------------------------------------
+INT 		m_clusterCount 		= 0;	// total number of clusters discovered
+INT			m_clusterActive 	= 0;	// cluster at selection
+
+INT			m_pageStartCluster	= 0;	// cluster listbox starting offset 
+INT			m_pageStartIo 		= 0;	// I/O server listbox starting offset 
+
+STRING 		m_clusterName[128];			// 128 = c_MAX_CLUSTER_COUNT
+STRING 		m_clusterOnline[128];		// String coded cluster and server status:
+										//
+										// Format: "CrrTTaaI..."
+										//
+										// Or in words:
+										//
+										// 0 FOR cluster, multi-state: 0,1,2,3 
+										//  (refer ServerMonClusterState() for state info
+										//
+										// 1-2 Repor, multi-state ' ' for not present, 
+										//				0 OR 1, offline/online
+										// 3-4 trend, multi-state ' ' for not present, 
+										//				0 OR 1, offline/online
+										// 5-6 alarm, multi-state ' ' for not present, 
+										//				0 OR 1, offline/online
+										//
+										// 7-N ... I/O, binary 0 or 1
+
+STRING 		m_serverName[255];			// 3 (report, trend, alarm) pairs of servers,
+										// plus maxmimum 249 I/O servers on each
+										// cluster
+
+INT			hServerProperty = -1;		// Server property popup window handle
+
+//-----------------------------------------------------------------------------
+//
+//	Public Functions
+//
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		ServerMonAllState
+//
+//	SUMMARY:
+//		Check if all the configured servers of the site/project are online
+//
+//	PARAMS:
+//
+//		N/A
+//
+//	RETURNS: 
+//
+//		3	- if none of the cluster is active
+//		2	- if all the servers are online
+//		1	- if some servers are online
+//		0	- if no server in the site is online
+//
+//	REMARKS:
+//		If a cluster is inactive, it is always done by choice (either via INI or ClusterDeactivate cicode),
+//		therefore a inactive cluster will be ignored in contributing to the overall status of
+//		a site unless all configured clusters are inactive which makes the overall status be inactive.
+//
+//-----------------------------------------------------------------------------
+INT FUNCTION ServerMonAllState()
+	INT		i;
+	INT		nOffline = 0;
+	INT		nDisconnect = 0;
+	INT		nSomeOnline = 0;
+	INT		nError = 0;
+	STRING	sOnline;
+	_ServerMonInit();
+	
+	// reset server names
+	FOR i = 0 TO m_clusterCount - 1 DO
+		sOnline = m_clusterOnline[i];
+		// check for cluster without any online server
+		SELECT CASE StrLeft(sOnline, 1)
+		CASE "0"
+			// no good if any cluster has an offline server
+			nOffline = nOffline + 1;
+		CASE "1"
+			// only some servers are online
+			nSomeOnline = nSomeOnline + 1;
+		CASE "3"
+			// cluster not active
+			nDisconnect = nDisconnect + 1;
+		CASE "4"
+			// cluster cannot be browsed
+			nError = nError + 1;
+		END SELECT
+	END
+
+	IF nDisconnect = m_clusterCount THEN
+		// none of the clusters is active
+		RETURN 3;
+	END
+
+	IF nError = m_clusterCount - nDisconnect THEN
+		// none of the active clusters can be browsed
+		RETURN 4;
+	END
+
+	IF nOffline + nError = m_clusterCount - nDisconnect THEN
+		// bad, all active clusters offline
+		RETURN 0;
+	ELSE IF (nOffline = 0) AND (nSomeOnline = 0) AND (nError = 0) THEN
+		// good, all active clusters online
+		RETURN 2;
+	ELSE
+		// only some active clusters online
+		RETURN 1;
+	END END
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		ServerMonAllStateLabel
+//
+//	SUMMARY:
+//		Provide text label for site/project state.
+//
+//	PARAMS:
+//
+//	RETURNS: 
+//
+//		s	- the text string describing the state of cluster
+//
+//	REMARKS:
+//
+//-----------------------------------------------------------------------------
+
+STRING FUNCTION ServerMonAllStateLabel()
+	INT		state = ServerMonAllState();
+	// state definition is the same for cluster and over all
+	RETURN	c_clusterLabel[state];
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		ServerMonCluster
+//
+//	SUMMARY:
+//		Retrieve name of the addressed cluster.
+//
+//	PARAMS:
+//
+//		index		- index in the cluster list
+//
+//	RETURNS: 
+//
+//		name string of the cluster
+//
+//-----------------------------------------------------------------------------
+STRING FUNCTION ServerMonCluster(INT index)
+INT hQue,i;
+STRING sTemp;
+	ErrSet(1);
+	hQue=QueOpen("m_clusterName",0);
+	_ServerMonInit();
+	i=m_pageStartCluster + index;
+	QuePeek(hQue,i,sTemp,16);
+	ErrSet(0);
+	RETURN  sTemp
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		ServerMonClusterCount
+//
+//	SUMMARY:
+//		Total number of clusters in the site.
+//
+//	PARAMS:
+//
+//		N/A
+//
+//	RETURNS: 
+//
+//		number of clusters in the site project
+//
+//-----------------------------------------------------------------------------
+INT FUNCTION ServerMonClusterCount()
+	_ServerMonInit();
+	RETURN m_clusterCount;
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		ServerMonClusterSelect
+//
+//	SUMMARY:
+//		Event handler for cluster select operation
+//
+//	PARAMS:
+//
+//		index	- index in the cluster list, [0, c_MAX_CLUSTER_ON_PAGE-1]
+//
+//	RETURNS: 
+//
+//		N/A
+//
+//-----------------------------------------------------------------------------
+FUNCTION ServerMonClusterSelect(INT index)
+	STRING	clusterIndex = IntToStr(index);
+	INT		i;
+	INT		serverCount = ServerMonServerCount(c_SERVER_TYPE_IO) + c_RAT_SERVER_INDEX_SLOT;
+
+	// reset server names
+	FOR i = 0 TO serverCount - 1 DO
+		m_serverName[i] = "";
+	END;
+	
+	// set cluster array index of current cluster
+	m_clusterActive = m_pageStartCluster + index;
+
+	// set listbox index of current I/O server
+	m_pageStartIo = 0;
+	
+	TaskNew("_ServerMonScanClusterForServerNames", "", 8 + 2);
+END
+
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		ServerMonClusterSelected
+//
+//	SUMMARY:
+//		Checking if the given cluster is currently selected.
+//
+//	PARAMS:
+//
+//		index		- index in the cluster list
+//
+//	RETURNS: 
+//
+//		1	- if the given indexed cluster is seleted
+//		0	- if the given indexed cluster is not selecte
+//
+//	REMARKS:
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION ServerMonClusterSelected(INT index)
+	IF (index + m_pageStartCluster) = m_clusterActive THEN
+		RETURN 1;
+	ELSE
+		RETURN 0;
+	END
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		ServerMonClusterState
+//
+//	SUMMARY:
+//		Checking if all servers of the cluster is online.
+//
+//	PARAMS:
+//
+//		index		- index in the cluster listbox
+//
+//	RETURNS: 
+//
+//		4	- if the cluster can not be browsed
+//		3	- if the cluster is not active
+//		2	- if all servers are online
+//		1	- if some servers are online
+//		0	- if no server in the cluster is online
+//
+//	REMARKS:
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION ServerMonClusterState(INT index)
+	STRING	sOnline = m_clusterOnline[m_pageStartCluster + index];
+	STRING	rCode = StrLeft(sOnline, 1);
+	RETURN	StrToInt(rCode);
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		ServerMonClusterStateLabel
+//
+//	SUMMARY:
+//		Provide text label for cluster state.
+//
+//	PARAMS:
+//
+//		index		- index in the cluster listbox
+//
+//	RETURNS: 
+//
+//		s	- the text string describing the state of cluster
+//
+//	REMARKS:
+//
+//-----------------------------------------------------------------------------
+
+STRING FUNCTION ServerMonClusterStateLabel(INT index)
+	INT		state = ServerMonClusterState(index);
+	RETURN	c_clusterLabel[state];
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		ServerMonClusterActive
+//
+//	SUMMARY:
+//		Return the name of the cluster that is actively selected for display.
+//
+//	PARAMS:
+//
+//		N/A
+//
+//	RETURNS: 
+//
+//		s	- the active cluster name
+//
+//	REMARKS:
+//
+//-----------------------------------------------------------------------------
+
+STRING FUNCTION ServerMonClusterActive()
+INT hQue;
+STRING sTemp;
+	ErrSet(1);
+
+	hQue=QueOpen("m_clusterName",0);
+
+	IF (m_clusterActive > -1) THEN
+		QuePeek(hQue,m_clusterActive,sTemp,16)
+		RETURN sTemp
+	END
+	ErrSet(0);
+	RETURN "";
+
+	
+END
+
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		ServerMonServerCount
+//
+//	SUMMARY:
+//		Count the number of servers of the given type in the active cluster
+//
+//	PARAMS:
+//
+//		serverType	- Type of the server, alarm, trend, report, io
+//						ref #define	CITECT_RUN_MODE_*
+//		
+//	RETURNS: 
+//		number of servers
+//
+//	REMARKS:
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION ServerMonServerCount(INT serverType)
+	STRING	sClusterOverview;
+	STRING	sStateCode;
+	INT		serverCount = 0;
+	_ServerMonInit();
+
+	sClusterOverview = m_clusterOnline[m_clusterActive];
+	IF serverType = c_SERVER_TYPE_IO THEN
+		RETURN StrLength(sClusterOverview) - c_RAT_SERVER_INDEX_SLOT - 1;
+	END
+
+	sStateCode = StrMid(sClusterOverview, serverType * 2 + 1, 2);
+	// get the two charactor server coding out of the string,
+	// for example: 	" 0" for no standby and offline primary
+	//					"1 " for online standby but no primary, or
+	//					"00" for both standby & primary offline etc.
+
+	IF StrLeft(sStateCode, 1) <> " " THEN
+		serverCount = serverCount + 1;
+	END;
+
+	IF StrRight(sStateCode, 1) <> " " THEN
+		serverCount = serverCount + 1;
+	END;
+
+	RETURN serverCount;
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		ServerMonServerName
+//
+//	SUMMARY:
+//		Displays a Process Analyst page (in the same window) preloaded with 
+//		the pre-defined Process Analyst View (PAV) file.
+//
+//	PARAMS:
+//
+//		serverType	- Type of the server, alarm, trend, report, io
+//						ref #define	CITECT_RUN_MODE_*
+//		
+//		index		- serial number of the server of this type, 
+//						FOR I/O servers, it is the sequential number in the project
+//						FOR non-I/O servers, 0 is standby, 1 is primary
+//		
+//	RETURNS: 
+//		The name of the server
+//
+//	REMARKS:
+//
+//-----------------------------------------------------------------------------
+
+STRING FUNCTION ServerMonServerName(INT serverType, INT index)
+
+	SELECT CASE serverType
+	CASE  c_SERVER_TYPE_IO
+		// I/O server
+		RETURN m_serverName[c_RAT_SERVER_INDEX_SLOT + index + m_pageStartIo];
+	CASE c_SERVER_TYPE_REPORT TO c_SERVER_TYPE_TREND
+		// Report, Trend, Alarm Server
+		RETURN m_serverName[serverType * 2 + index];
+	CASE ELSE
+		RETURN "";
+	END SELECT
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		ServerMonServerOnline
+//
+//	SUMMARY:
+//		Checking if the addressed server is online.
+//
+//	PARAMS:
+//
+//		serverType	- Type of the server, alarm, trend, report, io
+//						ref #define	CITECT_RUN_MODE_*
+//		
+//		index		- serial number of the server of this type
+//						Please see the parameter description in ServerMonServerName()
+//						for details
+//
+//	RETURNS: 
+//
+//		1	- if the all servers are online
+//		0	- if any server in the cluster is offline
+//
+//	REMARKS:
+//
+//-----------------------------------------------------------------------------
+INT FUNCTION ServerMonServerOnline(INT serverType, INT index)
+	STRING	sOnline = m_clusterOnline[m_clusterActive];
+	ErrSet(1);
+	IF StrMid(sOnline, serverType * 2 + index + 1, 1) = "1" THEN
+		ErrSet(0)
+		RETURN 1;
+	END
+	ErrSet(0);
+	RETURN 0;
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		ServerMonServerStatus
+//
+//	SUMMARY:
+//		Return server online status text string
+//
+//	PARAMS:
+//
+//		serverType	- Type of the server, alarm, trend, report, io
+//						ref #define	CITECT_RUN_MODE_*
+//		
+//		index		- index in the server listbox
+//
+//	RETURNS: 
+//
+//		servers online status text string
+//
+//	REMARKS:
+//
+//-----------------------------------------------------------------------------
+STRING FUNCTION ServerMonServerStatus(INT serverType, INT index)
+	INT	nOnline = ServerMonServerOnline(serverType, index);
+	RETURN c_serverLabel[nOnline];
+END
+
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		ServerMonScrollCluster
+//
+//	SUMMARY:
+//		Scrolling the cluster listnbox by the given offset
+//
+//	PARAMS:
+//
+//		cmdCode	- which is either positive (for down), or negative (UP)
+//					-1, 1 for one item
+//					-2, 2 for one page
+//					-3, 3 for home or end
+//
+//	RETURNS: 
+//
+//		N/A
+//
+//-----------------------------------------------------------------------------
+FUNCTION ServerMonScrollCluster(INT cmdCode)
+	INT		refreshRequired = 1;
+	SELECT CASE cmdCode
+	CASE -3
+		// scroll to home/begin
+		m_pageStartCluster = 0;
+	CASE 3
+		// scroll to end
+		m_pageStartCluster = m_clusterCount - c_MAX_CLUSTER_ON_PAGE;
+	CASE -2
+		// scroll page up
+		m_pageStartCluster = Max(0, m_pageStartCluster - c_MAX_CLUSTER_ON_PAGE);
+	CASE 2
+		// scroll page down
+		m_pageStartCluster = Min(m_clusterCount - c_MAX_CLUSTER_ON_PAGE, m_pageStartCluster + c_MAX_CLUSTER_ON_PAGE)
+	CASE -1
+		// scroll one item up
+		m_pageStartCluster = Max(0, m_pageStartCluster - 1);
+		IF (m_clusterActive < (m_pageStartCluster + c_MAX_CLUSTER_ON_PAGE)) THEN
+			// previous select cluster still in the view
+			refreshRequired = 0;
+		END
+	CASE 1
+		// scroll one item down
+		m_pageStartCluster = Min(m_clusterCount - 1, m_pageStartCluster + 1);
+		IF (m_clusterActive >= m_pageStartCluster) THEN
+			// previous select cluster still in the view
+			refreshRequired = 0;
+		END
+	END SELECT
+	
+	IF refreshRequired THEN
+		ServerMonClusterSelect(0);
+	END
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		ServerMonScrollIo
+//
+//	SUMMARY:
+//		Scrolling the I/O server listnbox by the given offset
+//
+//	PARAMS:
+//
+//		cmdCode	- which is either positive (for down), or negative (UP)
+//					-1, 1 for one item
+//					-2, 2 for one page
+//					-3, 3 for home or end
+//
+//	RETURNS: 
+//
+//		N/A
+//
+//-----------------------------------------------------------------------------
+FUNCTION ServerMonScrollIo(INT cmdCode)
+	INT ioServerCount = ServerMonServerCount(c_SERVER_TYPE_IO);
+
+	SELECT CASE cmdCode
+	CASE -3
+		// scroll to home/begin
+		m_pageStartIo = 0;
+	CASE 3
+		// scroll to end
+		m_pageStartIo = ioServerCount - c_MAX_IO_ON_PAGE;
+	CASE -2
+		// scroll page up
+		m_pageStartIo = Max(0, m_pageStartIo - c_MAX_IO_ON_PAGE);
+	CASE 2
+		// scroll page down
+		m_pageStartIo = Min(ioServerCount - c_MAX_IO_ON_PAGE, m_pageStartIo + c_MAX_IO_ON_PAGE)
+	CASE -1
+		// scroll one item up
+		m_pageStartIo = Max(0, m_pageStartIo - 1);
+	CASE 1
+		// scroll one item up
+		m_pageStartIo = Min(ioServerCount - 1, m_pageStartIo + 1);
+	END SELECT
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		ServerMonPgFirstCluster
+//
+//	SUMMARY:
+//		Check if the cluster listbox is on the 1st page what implies
+//		it is impossible to scroll back
+//
+//	PARAMS:
+//
+//		N/A
+//
+//	RETURNS: 
+//
+//		1	- yes, the listbox is on page 1
+//		0	- no, the listbox is not on page 1
+//
+//-----------------------------------------------------------------------------
+INT FUNCTION ServerMonPgFirstCluster()
+	IF m_pageStartCluster = 0 THEN
+		RETURN 1;
+	ELSE
+		RETURN 0;
+	END
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		ServerMonPgFirstIo
+//
+//	SUMMARY:
+//		Check if the I/O server listbox is on the 1st page what implies
+//		it is impossible to scroll back
+//
+//	PARAMS:
+//
+//		N/A
+//
+//	RETURNS: 
+//
+//		1	- yes, the listbox is on page 1
+//		0	- no, the listbox is not on page 1
+//
+//-----------------------------------------------------------------------------
+INT FUNCTION ServerMonPgFirstIo()
+	IF m_pageStartIo = 0 THEN
+		RETURN 1;
+	ELSE
+		RETURN 0;
+	END
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		ServerMonPgLastCluster
+//
+//	SUMMARY:
+//		Check if the cluster listbox is on the last page what implies
+//		it is impossible to scroll back
+//
+//	PARAMS:
+//
+//		N/A
+//
+//	RETURNS: 
+//
+//		1	- yes, the listbox is on page 1
+//		0	- no, the listbox is not on page 1
+//
+//-----------------------------------------------------------------------------
+INT FUNCTION ServerMonPgLastCluster()
+	IF (m_clusterCount - m_pageStartCluster) <= c_MAX_CLUSTER_ON_PAGE THEN
+		RETURN 1;
+	ELSE
+		RETURN 0;
+	END
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		ServerMonPgLastIo
+//
+//	SUMMARY:
+//		Check if the I/O server listbox is on the last page what implies
+//		it is impossible to scroll back
+//
+//	PARAMS:
+//
+//		N/A
+//
+//	RETURNS: 
+//
+//		1	- yes, the listbox is on page 1
+//		0	- no, the listbox is not on page 1
+//
+//-----------------------------------------------------------------------------
+INT FUNCTION ServerMonPgLastIo()
+	INT ioServerCount = ServerMonServerCount(c_SERVER_TYPE_IO);
+	IF (ioServerCount - m_pageStartIo) <= c_MAX_IO_ON_PAGE THEN
+		RETURN 1;
+	ELSE
+		RETURN 0;
+	END
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		ServerMonPropertyPageClose
+//
+//	SUMMARY:
+//		Reset the popup window handle for server properties
+//
+//	PARAMS:
+//
+//		N/A
+//
+//	RETURNS: 
+//
+//		N/A
+//
+//-----------------------------------------------------------------------------
+FUNCTION ServerMonPropertyPageClose()
+	hServerProperty = -1;
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		ServerMonPropertyPagePopup
+//
+//	SUMMARY:
+//		Popup the server properties page
+//
+//	PARAMS:
+//
+//		server		- server name
+//
+//		serverType	- Type of the server: alarm, trend, report
+//						ref #define	CITECT_RUN_MODE_*
+//
+//		cluster		- cluster name, if not specified, it assumes current cluster
+//
+//	RETURNS: 
+//
+//		N/A
+//
+//-----------------------------------------------------------------------------
+FUNCTION ServerMonPropertyPagePopup(STRING server, INT serverType, STRING cluster = "")
+	INT winNumberOld = WinNumber();
+
+	IF server <> "" THEN
+	 	IF -1 = hServerProperty THEN
+			PagePopUp("!p_ServerProperties");
+			hServerProperty = WinNumber();
+
+			PageSetInt("type", serverType, hServerProperty);
+			PageSetStr("cluster", cluster + " ", hServerProperty);	// build 171 has trouble setting empty string
+			PageSetStr("server", server, hServerProperty);
+			WinTitle("@(Server) : " + cluster + "." + server);
+
+			TaskNew("_ServerMonPropertyPageUpdate","",1);
+		ELSE
+			WinSelect(hServerProperty);
+			
+			PageSetInt("type", serverType, hServerProperty);
+			PageSetStr("cluster", cluster + " ", hServerProperty);	// build 171 has trouble setting empty string
+			PageSetStr("server", server, hServerProperty);
+			WinTitle("@(Server) : " + cluster + "." + server);
+		END
+	END
+
+	WinSelect(winNumberOld);
+END
+
+
+//-----------------------------------------------------------------------------
+//
+//	Private Functions
+//
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		_ServerMonCheckOnline
+//
+//	SUMMARY:
+//		Check if the addressed server is online
+//
+//	PARAMS:
+//
+//		sName		- Name of the server
+//		
+//		sCluster	- Name of the cluster
+//
+//	RETURNS: 
+//
+//		1	- yes, the server is online
+//		0	- no, the server is offline
+//
+//-----------------------------------------------------------------------------
+PRIVATE
+INT	FUNCTION _ServerMonCheckOnline(STRING sName, STRING sCluster)
+	INT 	rc;
+	INT		Error;
+	
+	ErrSet(1);
+	
+	rc = ServerIsOnline(sName, sCluster);
+	Error = IsError(); // pick up any error
+	ErrSet(0);
+
+	RETURN rc;
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		_ServerMonClusterAdd
+//
+//	SUMMARY:
+//		Add a cluster to the cluster array
+//
+//	PARAMS:
+//
+//		sCluster	- Name of the cluster
+//
+//	RETURNS: 
+//
+//		N/A
+//
+//-----------------------------------------------------------------------------
+PRIVATE
+FUNCTION _ServerMonClusterAdd(STRING sCluster)
+	INT i,hQue;
+	STRING sStr;
+	ErrSet(1);
+	hQue=QueOpen("m_clusterName",2);
+	sStr= QuePeek(hQue,i,sCluster,1);
+	IF sStr = "0" THEN	// the cluster name is already in the list
+		ErrSet(0)
+		RETURN;
+	END
+	IF m_clusterCount >= c_MAX_CLUSTER_COUNT THEN
+		// overflow limit
+		ErrSet(0)
+		RETURN;
+	END
+	
+	// A new cluster name is found
+	i = QueWrite(hQue,m_clusterCount,sCluster);
+
+	ErrSet(0);
+	m_clusterCount = m_clusterCount + 1;
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		_ServerMonInit
+//
+//	SUMMARY:
+//		Initialize the server monitoring sub-system by launching
+//		a site scan (server browsing) task
+//
+//	PARAMS:
+//
+//		N/A
+//
+//	RETURNS: 
+//
+//		N/A
+//
+//-----------------------------------------------------------------------------
+FUNCTION _ServerMonInit()
+	IF m_clusterCount < 1 THEN
+		TaskNew("_ServerMonScanSite", "",  8 + 2);
+	END
+
+	// allow the window that returns server status to be closed and reopened
+	IF TaskHnd("_ServerMonMonitor") < 0 THEN
+		// launch the background process
+		TaskNew("_ServerMonMonitor", "", 8 + 2);
+	END
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		_ServerMonScanClusterForServerNames
+//
+//	SUMMARY:
+//		Browse the active cluster to retrieve server names in the cluster
+//
+//	PARAMS:
+//
+//		N/A
+//
+//	RETURNS: 
+//
+//		N/A
+//
+//	REMARKS:
+//		Background task, cannot be set to PRIVATE scope
+//
+//-----------------------------------------------------------------------------
+FUNCTION _ServerMonScanClusterForServerNames()
+	INT 	i,hQue;
+	INT		numServers 	= 0;
+	INT 	numIoServer	= 0;
+	STRING 	sCluster;
+	ErrSet(1);
+	hQue=QueOpen("m_clusterName",0);
+	QuePeek(hQue,m_clusterActive,sCluster,16);
+	INT 	handle 		= ServerBrowseOpen("", "", sCluster);
+	IF (handle <> -1) THEN
+		numServers = ServerBrowseNumRecords(handle);
+	
+		ServerBrowseFirst(handle);
+		FOR i = 1 TO numServers DO
+			// numIoServer may be ibcreased by 1 in the function we call
+			numIoServer = _ServerMonServerAdd(handle, numIoServer);
+			IF i < numServers THEN
+				ServerBrowseNext(handle)
+			END
+		END
+		ServerBrowseClose(handle);
+	END
+
+	ErrSet(0);
+	
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		_ServerMonScanServers
+//
+//	SUMMARY:
+//		Browse the addressed cluster to retrieve server status
+//
+//	PARAMS:
+//
+//		clusterIdx	- index to the cluster array
+//
+//	RETURNS: 
+//
+//		coded string of cluster and server on/off line status,
+//		for example "0010111011"
+//
+//		Pos	0	-	cluster, multi-state, value is in the range of "0"-"4"
+//		Pos	1	-	standby report server
+//		Pos	2	-	primary report server
+//		Pos	3	-	standby trend server
+//		Pos	4	-	primary trend server
+//		Pos	5	-	standby alarm server
+//		Pos	6	-	primary alarm server
+//		Pos	7	-	1st I/O server
+//		...
+//
+//-----------------------------------------------------------------------------
+PRIVATE
+STRING FUNCTION _ServerMonScanServers(INT clusterIdx)
+	STRING 	sOnline = "3      ";	// assuming cluster not active, no servers
+
+	INT 	i,hQue;
+	INT		numServer;
+	STRING 	sCluster;
+	INT 	handle;
+	INT		statusIndex	= 0;
+	STRING	sName 		= "";
+	INT		serverOffline	= 0;
+
+	ErrSet(1);
+
+	hQue=QueOpen("m_clusterName",0);
+	QuePeek(hQue,clusterIdx,sCluster,16);
+	handle 	= ServerBrowseOpen("", "", sCluster);
+	
+	IF (handle = -1) THEN
+		// browsing not possible
+		StrSetChar(sOnline, 0, 52);	// 52 = ASCII(4)
+		ErrSet(0)
+		RETURN sOnline;
+	END
+	
+	numServer = ServerBrowseNumRecords(handle);
+		
+	ServerBrowseFirst(handle);
+	FOR i = 1 TO numServer DO
+		sName = ServerBrowseGetField(handle, "Name");
+		statusIndex = _ServerMonStatusStringIndex(handle);		
+		
+		IF _ServerMonCheckOnline(sName, sCluster) THEN
+			IF statusIndex = c_IO_SERVER_BASE_INDEX THEN
+				// attach an online I/O server
+				sOnline = sOnline + "1";
+			ELSE
+				// change state from ' ' to '1'
+				StrSetChar(sOnline, statusIndex + 1, 49);
+			END
+		ELSE
+			IF statusIndex = c_IO_SERVER_BASE_INDEX THEN
+				// attach an offline I/O server
+				sOnline = sOnline + "0";
+			ELSE
+				// change state from ' ' to '0'
+				StrSetChar(sOnline, statusIndex + 1, 48);
+			END
+			serverOffline = serverOffline + 1;
+		END
+
+		IF i < numServer THEN
+			ServerBrowseNext(handle)
+		END
+	END
+		
+	ServerBrowseClose(handle);
+
+	IF ClusterIsActive(sCluster) THEN
+		// cluster is actively connected
+		SELECT CASE serverOffline
+		CASE numServer
+			// all offline
+			StrSetChar(sOnline, 0, 48);
+		CASE 0
+			// none offline
+			StrSetChar(sOnline, 0, 50);
+		CASE ELSE
+			// some offline
+			StrSetChar(sOnline, 0, 49);
+		END SELECT
+	END
+	ErrSet(0)	
+	RETURN sOnline;
+
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		_ServerMonMonitor
+//
+//	SUMMARY:
+//		Making snapshot of online status of the site
+//
+//	PARAMS:
+//
+//		N/A
+//
+//	RETURNS: 
+//
+//		N/A
+//
+//	REMARKS:
+//		Background task, cannot be set to PRIVATE scope
+//
+//-----------------------------------------------------------------------------
+FUNCTION _ServerMonMonitor()
+	INT 	i;
+	WHILE 1 DO
+		FOR i = 0 TO m_clusterCount - 1 DO
+			m_clusterOnline[i] = _ServerMonScanServers(i);
+			Sleep(0);
+		END
+		// idle for a while
+		SleepMS(c_Monitor_Sacn_Interval);
+		ClientStatus()
+	END
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		_ServerMonScanSite
+//
+//	SUMMARY:
+//		Browse all servers in the site and then launch the monitoring task
+//
+//	PARAMS:
+//
+//		N/A
+//
+//	RETURNS: 
+//
+//		N/A
+//
+//	REMARKS:
+//		Background task, cannot be set to PRIVATE scope
+//
+//-----------------------------------------------------------------------------
+FUNCTION _ServerMonScanSite()
+	INT 	i;
+	INT		numServers;
+	STRING	sCluster;
+	INT handle = ServerBrowseOpen()
+	IF (handle = -1) THEN
+		RETURN;
+	END
+
+	// populate the cluster name array
+	numServers = ServerBrowseNumRecords(handle)
+	ServerBrowseFirst(handle)
+	FOR i = 1 TO numServers DO
+		sCluster = ServerBrowseGetField(handle, "Cluster");
+		_ServerMonClusterAdd(sCluster);
+		IF i < numServers THEN
+			ServerBrowseNext(handle)
+		END
+	END
+	ServerBrowseClose(handle);
+
+	// launch the background process
+	TaskNew("_ServerMonMonitor", "", 8 + 2);
+	
+	ServerMonClusterSelect(0);
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		_ServerMonServerAdd
+//
+//	SUMMARY:
+//		Browse all servers in the site and then launch the monitoring task
+//
+//	PARAMS:
+//
+//		handle		-	handle for the ServerBrowse*() functions
+//		numIoServer	-	known number of I/O servers
+//
+//	RETURNS: 
+//
+//		known number of I/O servers which can be either
+//		numIoServer if the server we added is not an I/O server
+//		or numIoServer + 1 if it is an I/O server
+//
+//-----------------------------------------------------------------------------
+PRIVATE
+INT FUNCTION _ServerMonServerAdd(INT handle, INT numIoServer)
+	STRING	sName = ServerBrowseGetField(handle, "Name");
+	INT	serverIndex = _ServerMonStatusStringIndex(handle);
+	INT hQue,hQueio;
+	hQue=QueOpen("m_serverName",2);
+	hQueio=QueOpen("m_serverNameIo",2);
+	IF serverIndex = c_RAT_SERVER_INDEX_SLOT THEN
+		serverIndex = c_RAT_SERVER_INDEX_SLOT + numIoServer;
+		QueWrite(hQueio,serverIndex,sName);
+		numIoServer = numIoServer + 1;
+		END
+	m_serverName[serverIndex] = sName;
+	QueWrite(hQue,serverIndex,sName);
+	RETURN numIoServer;
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		_ServerMonStatusStringIndex
+//
+//	SUMMARY:
+//		Calculate the type of the the server at the browse handle which
+//		is used to make the index into the cluster status string
+//
+//	PARAMS:
+//
+//		handle		-	handle for the ServerBrowse*() functions
+//
+//	RETURNS: 
+//
+//		the internal server type offset for saving server name and 
+//		online status of the server in the global data area
+//
+//-----------------------------------------------------------------------------
+PRIVATE
+INT FUNCTION _ServerMonStatusStringIndex(INT handle)
+	STRING	sMode;
+	INT		index;
+	
+	SELECT CASE ServerBrowseGetField(handle, "Type")
+	CASE "I/O"
+		RETURN c_IO_SERVER_BASE_INDEX;
+
+	CASE "Report"
+		index = 0;
+	CASE "Trend"
+		index = 2;
+	CASE "Alarm"
+		index = 4;
+	CASE ELSE
+		// error	
+		RETURN c_IO_SERVER_BASE_INDEX;
+	END SELECT
+
+	sMode = ServerBrowseGetField(handle, "Mode");
+	index = index + StrToInt(sMode);
+	RETURN index;
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		_ServerMonServerGetProperty
+//
+//	SUMMARY:
+//		Get property value for the cluster.server on the server property page
+//
+//	PARAMS:
+//
+//		propertyName	-	ID of the property as supported by ServerGetProperty()
+//
+//	RETURNS: 
+//
+//		string value of the property
+//
+//-----------------------------------------------------------------------------
+PRIVATE
+STRING FUNCTION _ServerMonServerGetProperty(STRING propertyName)
+	STRING  cluster = StrTrim(PageGetStr("cluster", hServerProperty));
+	STRING  server = PageGetStr("server", hServerProperty);
+	RETURN 	ServerGetProperty(server, propertyName, cluster);
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		_ServerMonStrUpdate
+//
+//	SUMMARY:
+//		Update the page variables on the server property page using their
+//		matching server property value
+//
+//	PARAMS:
+//
+//		propertyName	-	ID of the property as supported by ServerGetProperty()
+//
+//	RETURNS: 
+//
+//		N/A
+//
+//-----------------------------------------------------------------------------
+PRIVATE
+STRING FUNCTION _ServerMonStrUpdate(STRING propertyName)
+	STRING propertyValue = _ServerMonServerGetProperty(propertyName);
+	PageSetStr(propertyName, propertyValue, hServerProperty);
+	RETURN propertyValue;
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		_ServerMonPropertyPageUpdate
+//
+//	SUMMARY:
+//		Update the page variables of the server properties page
+//
+//	PARAMS:
+//
+//		N/A
+//
+//	RETURNS: 
+//
+//		N/A
+//
+//	REMARKS:
+//		Background task, cannot be set to PRIVATE scope
+//
+//-----------------------------------------------------------------------------
+FUNCTION _ServerMonPropertyPageUpdate()
+	STRING	syncState;
+	INT		syncStatus;
+	INT		syncProgress = 0;
+	STRING	rdbDisk;
+	STRING	rdbRAM;
+	STRING	reloadStatus;
+	STRING	rdbStatus;
+	INT		serverReloadError = 0;
+	WHILE 1 DO
+		rdbRAM = _ServerMonStrUpdate("RDBMemTime");
+		rdbDisk = _ServerMonStrUpdate("RDBDiskTime");
+		reloadStatus = _ServerMonStrUpdate("ReloadStatus");
+		// translate internal state into text string
+		IF rdbRAM = rdbDisk THEN
+			IF reloadStatus = "0" THEN
+				rdbStatus = StrToLocalText("@(up to date)");
+			ELSE
+				rdbStatus = StrToLocalText("@(reload failed)");
+			END
+		ELSE
+			rdbStatus = StrToLocalText("@(reload available)");
+		END
+		PageSetStr("RDB Status", rdbStatus, hServerProperty);
+		
+		SELECT CASE PageGetInt("type", hServerProperty)
+		CASE c_SERVER_TYPE_REPORT
+			syncState = StrToLocalText("@(Not applicable for report servers)");
+		CASE c_SERVER_TYPE_ALARM, c_SERVER_TYPE_TREND
+			serverReloadError = PageGetInt("reloadError");
+			IF serverReloadError <> 0 THEN
+				syncState = ErrMsg(serverReloadError);
+			ELSE
+				syncStatus = StrToInt(_ServerMonServerGetProperty("SyncStatus"));
+				// Alarm or Trend server, no sync
+				IF syncStatus = 0 THEN
+					// Sync completed, so the sync progress is 100%
+					syncState = StrToLocalText("@(Completed)");
+					syncProgress = 100;
+				ELSE 
+					IF syncStatus = 1 THEN
+						// Sync pending, either because there is no redundant server or sync has not started.
+						syncState = StrToLocalText("@(Pending)");
+						syncProgress = 0;
+					ELSE
+						syncProgress = StrToInt(_ServerMonServerGetProperty("SyncProgress"));
+						syncState = IntToStr(syncProgress);
+					END
+				END
+			END
+		CASE ELSE
+			syncState = StrToLocalText("@(Updating ...)");
+		END SELECT
+		
+		PageSetStr("syncState", syncState, hServerProperty);
+		PageSetInt("syncProgress", syncProgress, hServerProperty);
+		
+		// idle for a while
+		SleepMS(c_Monitor_Sacn_Interval);
+	END
+END
+
+///////////////////////////////////////////////////////////////////////////////////
+//	FUNCTION uag_IOServer()
+//  
+//
+//	Übergabeparameter:	Index des I/O Servers
+//                       
+//	Rückgabewert:		Name des I/O Servers
+//	Beschreibung:		
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	13.01.11	/	Schneider Electric GmbH
+//	Version				7.2.0.1
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//
+///////////////////////////////////////////////////////////////////////////////////
+
+STRING FUNCTION
+uag_IOServer(INT iServer)
+INT i,hQue,iTemp;
+STRING sTemp;
+
+	iTemp=6+iServer;
+	hQue=QueOpen("m_serverNameIo",0);
+	i=QuePeek(hQue,iTemp,sTemp,2);
+	IF i = 0 THEN
+		RETURN sTemp
+	ELSE
+		RETURN ""
+	END
+END
+
+//	FUNCTION UAG_MSGBOX_SUB_Server()
+//	Übergabeparameter:	---
+//                                             
+//	Rückgabewert:		---
+//	Beschreibung:		Ereignis ausgelöst durch MSGBOX20 Baustein
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	14.01.2011	/	Schneider Electrik GmbH
+//	Version				7.2.0.1
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+
+
+FUNCTION UAG_MSGBOX_SUB_Server(INT subsHandle)
+
+	STRING sTag,sTemp;
+	INT imode=1;
+	ErrSet(1);
+	IF (StrToInt (SubscriptionGetAttribute(subsHandle, "Value")) BITAND Pow(2,0)) =  Pow(2,0) THEN
+		Ass(-2,1,"'uag_Server_Error'",0);
+		_Ass(-2,2,"Server1_ServerME");
+		_Ass(-2,3,"uag_Server_Error_TYP");
+		_Ass(-2,4,"Server1_ServerLW");
+		Ass(-2,5,"'Server Ausfall'",0);	
+		Ass(-2,6,"'"+ServerMonAllStateLabel()+"'",0);
+		UAG_LoadZT(	sTag + "_ZT",7,2);
+//		_Ass(-2,10,sTag + "_DATA1");
+//		_Ass(-2,11,sTag + "_DATA2");
+		UAG_LoadUI( sTag + "_KT", 60)
+		uag_Server_Error_TYP =36;
+		UAG_GetMousePos_mitte(71,20);
+//		UAG_MM_WinNewAt("!p_msgbox2_20",giPosX,giPosY,giMODE,imode )
+//		_WinTitle(sTag);
+//
+	END	
+	ErrSet(0);
+END
+
+////////////////////////////////////////////////////////////////////////////////////////
+// To get the name of Server that provides a determined Service of one Client
+// This info will be utilized at Genie sgc_Client_10
+// Input Parameters:
+//					  ClientName: Name of Client that Service provides to
+//					  Service: Name of Server that must be searched
+// Return:
+//                    Name of Server or "-" if it is not in Services table
+///////////////////////////////////////////////////////////////////////////////////////
+STRING FUNCTION
+uag_GetInfoForService(STRING ClientNode, STRING Services)
+INT hQue,iTemp,i;
+STRING ServerNode;
+
+	hQue=QueOpen(UAG_String_PCName_Queue("m_"+ClientNode),0);
+	SELECT CASE Services
+		CASE "Alarm"
+			iTemp=1;
+		CASE "Trend"
+			iTemp=2;
+		CASE "Report"
+			iTemp=3;
+		CASE ELSE
+			iTemp=0;
+	END	SELECT	
+	
+	i=QuePeek(hQue,iTemp,ServerNode,16);
+	IF i = 0 THEN
+
+		RETURN ServerNode;
+	ELSE
+		RETURN "-";
+	END
+END
+
+///////////////////////////////////////////////////////////////////////////////////////
+// It always inserts one new register to Service table when the table is not full
+// Input parameters:
+//                    ServerNode: Name of Server node
+//					  ClientNode: Name of Client node
+//					  Services: Name of services (as defined at the primitive function of Vijeo Citect)
+//                    StatusService: Service status (as defined at the primitive function of Vijeo Citect)
+//                    LoginClient: Short name of current user at the client node
+//					  ClientType: License type of the node
+// Return:
+//					  0: If the table is full and the register can not been inserted
+//					  1: If the register had been inserted sucessfully
+///////////////////////////////////////////////////////////////////////////////////////
+INT FUNCTION
+uag_InsertServices(STRING ServerNode, STRING ClientNode, STRING Services, STRING StatusService, STRING LoginClient, STRING ClientType)
+	INT hQue,hQue2,hQue3,hQue4,hQue5;
+	INT i,iTemp;
+	hQue=QueOpen(UAG_String_PCName_Queue("m_"+ClientNode),2);
+	SELECT CASE Services
+		CASE "Alarm"
+			iTemp=1;
+			i=QuePeek(hQue,iTemp,ServerNode,3);
+			IF i <> 0 AND StatusService = "1" THEN
+				QueWrite(hQue,iTemp,ServerNode);
+			END
+		CASE "Trend"
+			iTemp=2;
+			i=QuePeek(hQue,iTemp,ServerNode,3);
+			IF i <> 0  AND StatusService = "1" THEN
+				QueWrite(hQue,iTemp,ServerNode);
+			END
+		CASE "Report"
+			iTemp=3;
+			i=QuePeek(hQue,iTemp,ServerNode,3);
+			IF i <> 0 AND StatusService = "1" THEN
+				QueWrite(hQue,iTemp,ServerNode);
+			END
+			iTemp=4;
+			i=QuePeek(hQue,iTemp,LoginClient,3);
+			IF i <> 0 THEN
+				QueWrite(hQue,iTemp,LoginClient);
+			END
+			iTemp=3;
+		CASE ELSE
+			iTemp=0;
+			i=QuePeek(hQue,iTemp,ServerNode,3);
+			IF i <> 0 THEN
+				QueWrite(hQue,iTemp,ServerNode);
+			END
+	END	SELECT	
+	hQue2=QueOpen(UAG_String_PCName_Queue("m_"+ServerNode+IntToStr(iTemp)),2);
+	
+	i=QuePeek(hQue2,iTemp,ClientNode,3);
+	IF i <> 0 THEN
+		QueWrite(hQue2,iTemp,ClientNode);
+	END
+	RETURN 1;	
+END
+
+////////////////////////////////////////////////////////////////////////////////////////
+// To get the name of current user of client node
+// This info will be utilized at Genie sgc_Client_10
+// Input Parameters:
+//					  ClientName: Name of current Client that will be searched by user
+// Retorna:
+//                    Name of User or "-" if it is not in Services table
+///////////////////////////////////////////////////////////////////////////////////////
+STRING
+FUNCTION
+uag_GetInfoForLogin(STRING ClientNode)	
+INT hQue,iTemp,i;
+STRING ServerNode;
+
+	hQue=QueOpen(UAG_String_PCName_Queue("m_"+ClientNode),0);
+	iTemp=4;
+	
+	i=QuePeek(hQue,iTemp,ServerNode,16);
+	IF i = 0 THEN
+
+		RETURN ServerNode;
+	ELSE
+		RETURN "-";
+	END
+END
+
+///////////////////////////////////////////////////////////////////////////////////////
+// To convert the name of node to "<Standalone>" if the name of node is "" as instance of Server or Client Genie
+// Input Parameters:
+//                    ComputerName: Name of node to be processed
+//								"ServerNode": Name of Server node that serves the service
+// Return:
+//					  The same value with Input parameter or "<Standalone>" if input parameter was blank
+///////////////////////////////////////////////////////////////////////////////////////
+STRING FUNCTION
+uag_GetComputerName(STRING ComputerName)
+
+	IF (ComputerName = "") THEN
+		RETURN StrToLocalText("@(<standalone>)");
+	ELSE
+		RETURN ComputerName;
+	END
+END
+
+////////////////////////////////////////////////////////////////////////////////////////
+// To calculate the number of inputs/records at Service table relating to one server and one service
+// The data is utilized for representating results at Genie (sgc_Server_10)
+// The pointer of register has already been previously posicionated through function FindServiceFirst or FindServiceNext
+// Input Parameters:
+//                    ServerName: Name of Server node
+//					  Service: Name of service (as defined at the primitive of Vijeo Citect)
+// Return:
+//					  Number of found registers that meet the searching criteria
+///////////////////////////////////////////////////////////////////////////////////////
+INT FUNCTION
+uag_GetNumberClients(STRING ServerName, STRING Services)                                          
+	INT hQue;
+	INT i,iTemp,iNr,x;
+	SELECT CASE Services
+		CASE "Alarm"
+			iTemp=1;
+		CASE "Trend"
+			iTemp=2;
+		CASE "Report"
+			iTemp=3;
+		CASE ELSE
+			iTemp=0;
+	END	SELECT	
+	hQue=QueOpen(UAG_String_PCName_Queue("m_"+ServerName+IntToStr(iTemp)),0);
+	RETURN QueLength(hQue)	
+END
+
+////////////////////////////////////////////////////////////////////////////////////////
+// To generate one list with all data that meet the criteria at Services table
+// Each item at the list contains the name of Client followed by the current User
+// This info is displayed at Supergenie of diagnostic
+// Input Parameters:
+//					  ServerName: Server name that will be used to search the data
+//					  Service: Service Name that will be used to search all clients that are using the service
+///////////////////////////////////////////////////////////////////////////////////////
+FUNCTION
+uag_ListInfo(STRING ServerName, STRING Services)
+STRING List,sTemp;
+INT i,iTemp,hQue,x,iNr;
+OBJECT hListBox;
+	ErrSet(1);
+	
+	hListBox = ObjectByName("ListBox"+Services);
+//	_ObjectCallMethod(hListBox,"Clear");
+	SELECT CASE Services
+		CASE "Alarm"
+			iTemp=1;
+		CASE "Trend"
+			iTemp=2;
+		CASE "Report"
+			iTemp=3;
+		CASE ELSE
+			iTemp=0;
+	END	SELECT
+	sTemp=UAG_String_PCName_Queue("m_"+ServerName+IntToStr(iTemp));	
+	hQue=QueOpen(UAG_String_PCName_Queue("m_"+ServerName+IntToStr(iTemp)),0);
+	iNr=QueLength(hQue)-1;
+	IF hQue <> -1 THEN
+		List="";
+		FOR x = 0 TO  iNr DO
+			iTemp=x;
+			i=QuePeek(hQue,iTemp,ServerName,16);
+			IF i = 0 THEN
+				List = List +ServerName+CharToStr(13);
+		 	END
+		END	
+		 _ObjectSetProperty(hListBox,"Text", List);
+		 
+	END
+	ErrSet(0);
+
+END
+
+////////////////////////////////////////////////////////////////////////////////////////
+// To insert the new client into Clients table if this client is not registrated yet at the table
+// Input Parameters:
+//                    ClientName: Name of Client node
+///////////////////////////////////////////////////////////////////////////////////////
+FUNCTION
+uag_InsertClient(STRING sClientName,INT iNr=1)	
+	INT i,hQue,iTemp;
+	IF sClientName <> "" THEN
+		hQue=QueOpen("m_ClientName",2);
+		i=QuePeek(hQue,iTemp,sClientName,1);
+		IF i <> 0 THEN	
+			GUT_NbrClients= GUT_NbrClients+1
+			QueWrite(hQue, GUT_NbrClients, sClientName);
+			ParameterPut("Client.Names",sClientName,iNr)
+		END
+	END	
+END
+
+
+////////////////////////////////////////////////////////////////////////////////////////
+// To discover the information relating to Services and I/O Devices in the system from the infomation provided
+// by Genies at Diagnostic system overview
+// By this call, the Services and I/O Devices tables are populated 
+// with data of the system and remain available to be consulted by Genies of diagnostic when accessing the diagnostic screen.
+///////////////////////////////////////////////////////////////////////////////////////
+FUNCTION
+uag_DiscoverServers()
+INT i,iTemp,hQue,hQue2,iAnz;
+STRING sServerName;
+//	FOR i = 0 TO cMAXSERVICES-1 DO
+//		ServicesTable[i][0] = "";
+//		ServicesTable[i][1] = "";
+//		ServicesTable[i][2] = "";
+//		ServicesTable[i][3] = "";
+//		ServicesTable[i][4] = "";
+//		ClientTypeTable[i] = "";
+//	END
+	hQue=QueOpen("m_ClientName",0);
+	FOR i=0 TO QueLength(hQue)-1 DO
+		iTemp=i;
+		QuePeek(hQue,iTemp,sServerName,16);
+		hQue2=QueOpen(UAG_String_PCName_Queue("m_"+sServerName),0);
+		QueClose(hQue2);
+	END
+	i=0;
+//	FOR i=0 TO cMAXIODevice-1 DO
+//		IODeviceTable[i][0] = "";
+//		IODeviceTable[i][1] = "";
+//		IODeviceTable[i][2] = "";
+//		IODeviceTable[i][3] = "";
+//		IODeviceTable[i][4] = "";
+//		IODeviceTable[i][5] = "";
+//	END
+//	
+//	NbrDiscoveredServices =0;
+//	NbrDiscoveredIODevices =0;
+	hQue = QueOpen("m_serverNameIo",0);
+	iAnz = QueLength(hQue);
+
+
+	FOR i = 6 TO iAnz+5 DO
+		QuePeek(hQue,i,sServerName,2);
+		uag_DiscoverServer(sServerName);
+//		uag_DiscoverIODevice(sServerName);
+	END
+END
+
+STRING FUNCTION
+UAG_Client_Name(INT iNr=1)	
+INT i,hQue;
+STRING sClientName;
+	hQue=QueOpen("m_ClientName",2);
+	i=QuePeek(hQue,iNr,sClientName,2);
+	IF i = 0 THEN	
+		RETURN sClientName
+	END
+END
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//		FUNCTION NAME	
+//						ClientStatus()
+//
+//		REV	DATE		WHO			DESCRIPTION
+//		0	09/11/05	Sichardt			
+//
+//     	GENERAL DESCRIPTION
+//			
+//			Ermittelt die Namen der Clients, die mit dem I/O-Server verbunden sind.
+//			
+//
+// 		ARGUMENTS:
+//
+//
+//		RETURNED VALUE: 
+//
+//
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+STRING sNameArray[c_Client_Max];
+
+FUNCTION ClientStatus()
+
+	STRING sName;
+	STRING Temp;
+	INT iCount;
+	INT iCountArray;
+	INT iClients;
+	INT Length1;
+	INT Length2;
+	INT MaxLength;
+	INT m = 0;
+	INT i;
+	INT k;
+	ErrSet(1)
+	iCount = 0;
+	iCountArray = 0;
+	iClients = ServerInfoEx("Report", 1, "Report");
+
+	WHILE ((iCount <= iClients) AND (iCountArray <= c_Client_Max)) DO
+		sName = StrUpper(ServerInfoEx(IntToStr(iCount), 2, "Report"));
+		sNameArray[iCountArray] = sName;
+		iCountArray = iCountArray + 1;
+		iCount = iCount + 1;	
+	END
+	
+	WHILE (iCountArray < c_Client_Max +1) DO
+		sNameArray[iCountArray] = "";
+		iCountArray = iCountArray + 1;
+	END
+	
+	//Sortierung
+	WHILE (m < c_Client_Max) DO
+		
+		k = m + 1;
+		
+		WHILE (k < c_Client_Max) DO
+		
+			Temp = sNameArray[m];
+			Length1 = StrLength(Temp);
+			Length2 = StrLength(sNameArray[k]);
+			
+			IF Length1 < Length2 THEN
+				MaxLength = Length1
+			ELSE
+				MaxLength = Length2
+			END
+			
+			i = 0;
+			
+			WHILE ((StrGetChar(Temp,i) = StrGetChar(sNameArray[k],i)) AND (i < MaxLength)) DO
+				i = i + 1;
+			END
+			
+			IF (MaxLength > 0) THEN
+				IF ((StrGetChar(Temp,i) = StrGetChar(sNameArray[k],i)) AND (i = MaxLength)) THEN
+					IF StrLength(sNameArray[k]) = MaxLength THEN
+						sNameArray[m] = sNameArray[k];
+						sNameArray[k] = Temp;
+					END
+				ELSE	
+					IF (StrGetChar(Temp,i) > StrGetChar(sNameArray[k],i)) THEN
+						sNameArray[m] = sNameArray[k];	
+						sNameArray[k] = Temp;
+					END
+				END
+			END
+			
+			k = k + 1;
+		END
+	
+		m = m + 1; 
+	END
+	FOR i=0 TO c_Client_Max DO
+		uag_InsertClient(sNameArray[i],i);
+	END	
+	ErrSet(0)
+END
+
+INT
+FUNCTION UAG_ClientStatus_30(INT iNr)
+	STRING sName
+	INT i
+	sName = UAG_Client_Name(iNr)
+	FOR i = 0 TO c_Client_Max DO
+		IF sNameArray[i] = sName THEN
+			RETURN 1
+		END
+	END
+	RETURN 0		
+END	
+
+FUNCTION UAG_Server_Reload()
+	STRING sServer,SCluster
+	INT iError
+	sServer = StrTrim(PageGetStr("server"));
+	SCluster = StrTrim(PageGetStr("cluster"));
+	iError = ServerReload(sServer, SCluster)
+	PageSetInt("reloadError",iError)
+END

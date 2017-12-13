@@ -1,0 +1,284 @@
+///////////////////////////////////////////////////////////////////////////////////
+//	
+// 	FILE:	UAG_SNMP.ci
+//
+//	Beschreibung:
+//
+//		Enhält Funktionen für SNMP.
+//		
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	04.05.08	/	Schneider Electric GmbH
+//	Version				75.33.11.07
+//
+//	PUBLIC FUNCTIONS:
+//
+//		UAG_GenerateTrap()
+//
+// 	NOTES:
+//		
+//
+//			
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+
+FUNCTION
+UAG_GenerateTrap()
+	
+	STRING sEnt, sIPAdd, sGen, sSpec, sTime, sVarName, sVarVal;
+	STRING sEnt1, sIPAdd1, sGen1, sSpec1, sTime1, sVarName1, sVarVal1;
+	
+	!!!Read Trap Tags
+	sEnt=_IFDEF("TrapEnterprise","Trapfehlt");
+	sIPAdd=_IFDEF("TrapIPAddress","Trapfehlt");
+	sGen=_IFDEF("TrapGenericType","Trapfehlt");
+	sSpec=_IFDEF("TrapSpecificType","Trapfehlt");
+	sTime=_IFDEF("TrapTimeStamp","Trapfehlt");
+	sVarName=_IFDEF("TrapFirstVarbindName","Trapfehlt");
+	sVarVal=_IFDEF("TrapFirstVarbindValue","Trapfehlt");
+	
+	sEnt1=sEnt;
+	sIPAdd1=sIPAdd;
+	sGen1=sGen;
+	sSpec1=sSpec;
+	sTime1=sTime;
+	sVarName1=sVarName;
+	sVarVal1=sVarVal;	
+	UAG_GetMousePos_mitte(281,326);		
+
+	!!! Create a form
+	FormNew("Trap Erzeugen",60,10,16);
+	FormPosition( giPosX,giPosY,0);
+	
+	!!! Create Input fields for Trap variables
+	FormInput(1,1,"TrapEnterprise       ",sEnt1,32);
+	FormInput(1,2,"TrapIPAddress        ",sIPAdd1,32);
+	FormInput(1,3,"TrapGenericType      ",sGen1,32);
+	FormInput(1,4,"TrapSpecificType     ",sSpec1,32);
+	FormInput(1,5,"TrapTimeStamp        ",sTime1,32);
+	FormInput(1,6,"TrapFirstVarbindName ",sVarName1,32);
+	FormInput(1,7,"TrapFirstVarbindValue",sVarVal1,32);
+	
+	!!! Create OK and Cancel buttons
+	FormButton(15,9,"    @(OK)    ",0,1);
+	FormButton(35,9," @(Cancel) ",0,2);
+
+	!!! Read form
+	FormRead(0);
+	
+	!!! If a new value for a trap varible has been enterred, write the Trap tag
+	IF sEnt1 <> sEnt THEN
+		_IFDEF("TrapEnterprise","Trapfehlt")=sEnt1;
+	END
+	IF sIPAdd1 <> sipAdd THEN
+		_IFDEF("TrapIPAddress","Trapfehlt")=sIPAdd1;
+	END
+	IF sGen1 <> sGen THEN
+		_IFDEF("TrapGenericType","Trapfehlt")=sGen1;
+	END
+	IF sSpec1 <> sSpec THEN
+		_IFDEF("TrapSpecificType","Trapfehlt")=sSpec1;
+	END
+	IF sTime1 <> sTime THEN
+		_IFDEF("TrapTimeStamp","Trapfehlt")=sTime1;
+	END
+	IF sVarName1 <> sVarName THEN
+		_IFDEF("TrapFirstVarbindName","Trapfehlt")=sVarName1;
+	END
+	IF sVarVal1 <> sVarVal THEN
+		_IFDEF("TrapFirstVarbindValue","Trapfehlt")=sVarVal1;
+	END
+	
+END
+
+//	int FUNCTION GUT_SNMP_Table()
+//	Übergabeparameter:	keine
+//                         
+//	Rückgabewert:		 
+//	Beschreibung:		Funktionen zum Anzeiger der SNMP Queue
+//						
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	27.07.2017	/	Schneider Electrik GmbH
+//	Version				75.33.11.07
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	
+INT FUNCTION 
+GUT_SNMP_Table_Ini(STRING sTable)
+	INT		hQue,hRdb,itemp;
+	STRING sCount
+	STRING	sName, sProt;
+	INT	iRecord;
+	ErrSet(1);
+	
+	hQue=QueOpen("SNMP", 0);
+	itemp=QueLength(hQue)
+
+	LibTable_AddColumn(sTable, "@(Device)", 200);
+	LibTable_AddColumn(sTable, "@(Description)", 500);
+	LibTable_AddColumn(sTable, "@(Uptime)", 300);
+	sCount = IntToStr(itemp);
+	LibTable_SetPropertyInt(sTable,"RowCount",sCount);
+	LibTable_SetDataTask(sTable, "Value", "_GUT_SNMP_Table", "^"#Name^",#Row,#Col");
+	ErrSet(0);
+	RETURN TRUE;
+
+END
+
+STRING FUNCTION 
+_GUT_SNMP_Table(STRING sTable,INT nRow,INT nCol)
+	STRING sReturn,sTag
+	INT		hQue,iValue
+	IF (nRow > LibTable_GetPropertyInt(sTable, "RowCount")) THEN
+		RETURN "";
+	END
+	hQue=QueOpen("SNMP", 0);
+	IF 	nRow = 0 THEN
+		SELECT CASE nCol
+			CASE 1
+				sReturn = StrToLocalText("@(Device)")
+			CASE 2
+				sReturn = StrToLocalText("@(Description)")
+			CASE 3
+				sReturn = StrToLocalText("@(Uptime)");
+	
+		END SELECT
+	ELSE
+		iValue=nRow-1
+		QuePeek(hQue,iValue,sTag,16)
+		SELECT CASE nCol 
+		CASE 1
+			sReturn =sTag
+			PageSetStr("SNMP"+ IntToStr(nRow ),sTag)
+		CASE 2
+			sReturn =TagRead (sTag+ "_SDESC")
+		CASE 3	
+			sReturn =TagRead (sTag+ "_SUPT")		
+		END SELECT
+	END	
+	RETURN sReturn 
+
+END
+
+INT FUNCTION
+GUT_SNMP_Table_Reload(STRING sTable)
+	STRING sCount
+	INT		hQue,itemp;
+	ErrSet(1);
+	hQue=QueOpen("SNMP", 0);
+	itemp=QueLength(hQue)
+	sCount = IntToStr(itemp);
+	LibTable_SetPropertyInt(sTable,"RowCount",sCount);
+	LibTable_SetDataTask(sTable, "Value", "_GUT_SNMP_Table", "^"#Name^",#Row,#Col");
+	ErrSet(0);
+	RETURN TRUE;
+
+END
+
+FUNCTION
+GUT_SNMP_Table_Click(STRING sTable, INT nRow)
+STRING 	sTag
+	sTag =PageGetStr("SNMP" + IntToStr(nRow))
+	UAG_SNMP(sTag)
+END
+
+INT
+FUNCTION
+GUT_SNMP_Sym(STRING sTable,INT nRow)
+INT		iValue,hQue,iRowFirst,itemp
+STRING	sTag
+	iRowFirst = LibTable_GetPropertyInt(sTable,"RowFirst")
+
+	hQue=QueOpen("SNMP", 0);
+	itemp=QueLength(hQue)
+	IF nRow -1 > itemp THEN
+		RETURN 0
+	END	
+	iValue=nRow + iRowFirst -1
+	QuePeek(hQue,iValue,sTag,16)
+	IF iValue  =0 THEN
+		RETURN 0
+	ELSE 	IF	iValue = 16 THEN 
+				RETURN 1
+			ELSE	IF 	iValue  =32 THEN
+						RETURN 2
+					ELSE 	IF iValue = 48 THEN
+								RETURN 1
+							END		
+					END
+			END	
+	END				
+
+END
+FUNCTION
+GUT_SNMP_List()
+	STRING	sName, sProt;
+	INT hRdb,hQue ;
+	INT	iRecord;
+
+	hRdb = RdbOpen("_UNITS");
+	IF (hRdb <> -1) THEN
+		iRecord = RdbFirstRec(hRdb);
+		WHILE (iRecord <> -1) DO
+			sProt= RdbGet(hRdb, "PROTOCOL");
+			IF (sProt= "SNMPII") THEN
+				hQue = QueOpen("SNMP", 2);
+				sName= RdbGet(hRdb, "NAME");
+				QueWrite(hQue, 0, sName);
+			END
+			iRecord = RdbNextRec(hRdb);
+		END
+	END
+	RdbClose(hRdb)
+END
+FUNCTION
+GUT_SNMP_TESTRUN ()
+	INT hQue,iValue,itemp,i,iAnz ;
+	STRING sTag
+	hQue=QueOpen("SNMP", 0);
+	iAnz=QueLength(hQue)
+	FOR i=0 TO iAnz-1 DO
+		itemp=i;
+		QueRead(hQue,itemp,sTag,0)
+		iValue =TagRead (sTag +"_SUPT")
+		IF 	iValue   <> itemp THEN
+			TagWrite( sTag +"_RUN",1)	// SPS-Programm läuft 
+		ELSE
+			TagWrite( sTag +"_RUN",0)	// SPS-Programm steht
+		END
+		QueWrite(hQue,iValue ,sTag)
+		Sleep(0)
+	END
+				
+END
+STRING
+FUNCTION GUT_SNMP_Trap_GenericType(STRING sTyp)
+	
+	SELECT CASE sTyp
+	CASE "0"
+		RETURN "@(cold start)"
+	CASE "1"
+		RETURN "@(warm start)"
+	CASE "2"
+		RETURN "@(link down)"
+	CASE "3"
+		RETURN "@(link up)"
+	CASE "4"
+		RETURN "@(authentication unsuccessful)"
+	CASE "5"
+		RETURN "@(egpNeighbor loss)"
+	CASE "6"
+		RETURN "@(enterprise-specific trap)"
+	END SELECT
+	RETURN  sTyp	
+END 
+
+STRING
+FUNCTION GUT_SNMP_Trap_Timestamp(STRING sTime)
+	IF sTime <> "" THEN
+		RETURN  TimeToStr(StrToInt(sTime)/100,5)
+	ELSE
+		RETURN ""
+	END	
+END 

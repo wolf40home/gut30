@@ -1,0 +1,563 @@
+
+//	Konstanten und Globale Variablen und INIT
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	14.02.08	/	Schneider Electrik GmbH
+//	Version				75.33.11.06
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	10.09.07	Steiner		ProjektStart verlagert
+//  27.10.07	Steiner		Alarmsystem überarbeitet
+//  29.10.07	Steiner		Parameter werden jetzt durch UAG_projektStart()in die INI geschrieben.
+//	25.09.08	Steiner		getrennte Funktionen für Server und Clientprojekte
+//	02.10.08	Steiner		Ereigniss für Breitbildmonitor
+//	12.12.08	Steiner		Ereignisse und Client Funktionen in das jeweilige Bildprojekt verlagert.
+//	18.06.09	Steiner		Kopieren neuer DBF und Startfunktion geändert
+//	18.06.10	Steiner		Neue Version für UAG 3.2 SP1
+//	19.04.12	Steiner		Variable für clienttyp eingefügt
+//	16.04.14	Steiner		Alle Funktionen auf 7.40 Page Funktionen umgestellt
+//	30.11.15	Steiner		Erweitert für PES
+
+// Globale Variablen
+
+GLOBAL INT 		gbUAGDebugOn=True;							! 0 = Citect überwacht fehler; 1 = nur in status
+GLOBAL INT 		gbUAGTagDebug=true;						! 0 = keine überwachung auf fehlende Tags; 1 = überwachung auf fehlende Tags
+//GLOBAL STRING  	gsUAGSQLOperLogDB;							! Name der Datenbank für den Log
+//GLOBAL STRING  	gsUAGSQLOperLogPrim;						! Primäres Verzeichnis für Log
+//GLOBAL STRING  	gsUAGSQLOperLogStand;						! Standby Verzeichnis für Log
+GLOBAL INT 		gbUAGClientMode=True;						! 1 = Normaler Client
+//GLOBAL INT 		gbUAGAlarmLogSum;							! 1 = Leiteingriffe werden in der Summary Eingetragen
+//GLOBAL INT 		gbUAGmitBedinStatus;						! 0 = Leiteingriffe werden nicht in der Statuszeile Angezeigt.
+GLOBAL STRING 	gsUAG_StationName;							! Name des StationsScott 
+GLOBAL STRING 	gsUAGClientName;							! Name des PC
+GLOBAL STRING 	gsUAGClientListe;							! Liste der an den Server angeschlossenen Client.
+GLOBAL STRING 	gsUAGClientNr;								! Nummer des Client aus Citect.ini
+//GLOBAL STRING 	gsUAGLibVersion;							! Speicher für Versionsnummer
+GLOBAL STRING 	gsUAGLibPath;								! Pfad für die Libary
+GLOBAL STRING 	gsUAGHelpPath;								! Pfad und Dateiname der Hilfe
+GLOBAL STRING 	gsUAGVersionLibPath;						! Pfad für Versionsdateien der LIB
+GLOBAL STRING 	gsUAGVersionPath;							! Pfad für Versionsdateien
+//GLOBAL STRING 	gsUAGInfoPath;								! Pfad für Infodateien   Enfällt ab 7.2 und liegt in Data2
+GLOBAL STRING 	gsUAGProjektUserPath;						! Installations Ort für das Projekt wenn nicht [User] angeben
+GLOBAL STRING 	gsUAGGenProjektPath;						! Pfad für das von UAG erzeugte Projekt
+GLOBAL STRING 	gsUAGBildProjektPath;						! Pfad für das Bild Projekt
+GLOBAL STRING	gsPageKom[6];								! Speicher für Seiten Kommentar
+GLOBAL INT 		giMODE;										! Modus für POP-UP
+GLOBAL INT 		giPosX,giPosY;								! Pos für POP-UP
+GLOBAL INT 		giUAGStatus2_l;								! Farbe für Status
+GLOBAL INT 		giScreenHigh;
+GLOBAL STRING	giUAGClientAnz;								! Anzahl Client
+GLOBAL STRING 	gsUAG_LIB_NAME = "GUT30";			! Name des Lib Projektes
+GLOBAL INT 		giCitSprache;								! Sprache der Installation
+GLOBAL INT		giAlarm_Kat_suchen=0;						! 1 = ja
+GLOBAL INT		giUAG_Anzahl_Fenster;						! die max Anzahl an gleichzeitig geöffneten Fenste
+GLOBAL INT		giLogOut;
+GLOBAL INT		giPointer;									! mit Anzeige Pfeil wenn auf 1
+GLOBAL INT		giSound_On_Off;								! mit Taste Hupe fest aus
+GLOBAL INT		giAlarmSpanDay;
+GLOBAL INT		giAlarmSpanHour;
+GLOBAL INT		giAlarmSpanMin;
+GLOBAL INT		giUI_Write=0;								! kein schreiben bei Befehl
+GLOBAL INT		gbPES=0;									! 0= UAG,1= PES,2= Equpment?
+// Globale Variablen Festlegen für DIAGFenster
+GLOBAL INT 		w_Type_l = 1;
+GLOBAL INT 		w_Type_r = 5;
+GLOBAL INT 		w_Type_lc = 1;
+GLOBAL INT 		w_Type_rc = 1;
+GLOBAL INT		giAnzMode;
+GLOBAL STRING 	w_Status [20] [17];
+GLOBAL STRING 	w_Status32 [10] [33];
+GLOBAL STRING 	w_Status_c [20] [17];
+GLOBAL STRING 	w_Status32_c [10] [33];
+GLOBAL STRING 	w_Status_td [49];
+GLOBAL INT 		giP2 =1;									!Neue Faceplate für Systemfunktionen nutzen
+GLOBAL INT Page_calc=-1;
+// Modul Variablen
+
+INT 			iError;
+INT 			miUAGClientInitial;
+STRING 			sTemp;
+
+
+// 
+//	UAG_Parameter_Server
+//	Übergabeparameter:	--      
+//                       
+//	Rückgabewert:		
+//	Beschreibung:	Parameter für den Server. Wird von Projektstart aufgerufen	
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	22.12.11	/	Schneider Electrik GmbH
+//	Version				74.33.70.00
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//
+
+FUNCTION UAG_Parameter_Server()
+	ParameterPut("ALARM" ,"HardHoldTime" ,"1800");  //Systemfehler 1 Tag Anzeigen
+	ParameterPut("MODNET" ,"MaxOutstanding" ,"10");
+	ParameterPut("MODNET" ,"MaxPending" ,"11");
+	ParameterPut("Animator","FullScreen","0"); 				// Seiten ohne Titelbar		
+	
+	giUAGClientAnz = ParameterGet(gsUAG_LIB_NAME,"ClientAnz","3"); // Max 30
+	gsUAG_StationName = ParameterGet(gsUAG_LIB_NAME,"StationName","Server1");
+	giCitSprache = StrToInt (ParameterGet(gsUAG_LIB_NAME,"CitSprache","1"));   ! 0= EN  1= DE
+	gsUAGClientName = GetEnv("COMPUTERNAME");
+	gsUAGClientNr = ParameterGet("Client.Names", gsUAGClientName, 1);
+	giMODE =2027; 							//für P2 hier eintragen für P0 die Funktion UAG_Parameter() eintragen
+	giP2 =1;
+//	gbUAGAlarmLogSum = 1;
+//	gbUAGmitBedinStatus = 0;
+//	gsUAGSQLOperLogDB  = ParameterGet(gsUAG_LIB_NAME,"OPERLOGdbName","OPERLOG");
+	gbUAGTagDebug=StrToInt (ParameterGet(gsUAG_LIB_NAME,"TagDebug","0"));   ! 0= Aus  1= Ein
+//	giPingProjekt=StrToInt (ParameterGet(gsUAG_LIB_NAME,"PingProjekt","0"));
+END
+
+STRING FUNCTION
+UAG_Stationsname()
+	RETURN gsUAG_StationName
+END
+
+STRING FUNCTION
+	UAG_Clientname()
+	RETURN gsUAGClientName
+END
+	
+// Parameter für alle Client.
+FUNCTION UAG_AllClient()
+	INT		iIDC = 0;
+	INT		hFtp = 0;
+	STRING	sRemotePath, sDestPath, sCopyPath,sTemp;
+
+	ErrSet(1);
+	IF ParameterGet("Client","ComputerRole","0") = "2" THEN
+		gbUAGClientMode = false
+//		gbUAGAlarmLogSum= false
+//	ELSE
+//		gbUAGAlarmLogSum = StrToInt (ParameterGet(gsUAG_LIB_NAME,"AlarmLogSum","1"));
+	END		
+
+	gsUAGLibPath = PathToStr (ParameterGet("Path","LIBPfad","[USER]:" + gsUAG_LIB_NAME));
+	gsUAGVersionPath = PathToStr (ParameterGet("Path","VERSIONPfad","[USER]\Include\"));
+	gsUAGVersionLibPath = gsUAGLibPath +"\uag\help21\Version\";
+	gsUAGProjektUserPath = ParameterGet("Path","ProjektUser",ParameterGet("CTEDIT","USER","C:\Citect\User"));
+	gsUAGGenProjektPath = ParameterGet("Path","GenPfad","[USER]:" + gsUAG_LIB_NAME+"gen");
+//	gsUAGInfoPath = ParameterGet("Path","InfoPfad","[USER]:" + gsUAG_LIB_NAME +"\uag\help20\Info\");
+	giScreenHigh = StrToInt (ParameterGet("MultiMonitors","ScreenHigh","1200"));
+	gsUAG_StationName = ParameterGet(gsUAG_LIB_NAME,"StationName","Server1");
+//	giPingProjekt=StrToInt (ParameterGet(gsUAG_LIB_NAME,"PingProjekt","0"));
+	
+//	gbUAGmitBedinStatus = StrToInt (ParameterGet(gsUAG_LIB_NAME,"mitBedinStatus","1"));
+//	gsUAGSQLOperLogDB  = ParameterGet(gsUAG_LIB_NAME,"OPERLOGdbName","OPERLOG");
+//	gsUAGSQLOperLogPrim = ParameterGet(gsUAG_LIB_NAME,"OPERLOGprim","D:\Schneider Application\Vijeo Citect\Data");
+//	gsUAGSQLOperLogStand = ParameterGet(gsUAG_LIB_NAME,"OPERLOGstand","D:\Schneider Application\Vijeo Citect\Data1");
+	giCitSprache = StrToInt (ParameterGet(gsUAG_LIB_NAME,"CitSprache","1"));   ! 0= EN  1= DE
+	giUAGClientAnz = ParameterGet(gsUAG_LIB_NAME,"ClientAnz","3"); // Max 30
+//	gsUAGLibVersion=UAG_CitectInfo(gsUAG_LIB_NAME,3) +"."+UAG_CitectInfo(gsUAG_LIB_NAME,4)
+	UAG_MM_Anzahl= StrToInt(ParameterGet("MultiMonitors", "Monitors", 1));
+	giUAG_Anzahl_Fenster = ParameterGet("Page","Windows",4);  //Maximum number of Windows open
+	giHAlarm = StrToInt(ParameterGet(gsUAG_LIB_NAME,"hoherAlarm","0")); // 0 =nein, 1= ja
+	giPointer = StrToInt(ParameterGet(gsUAG_LIB_NAME,"Pointer","1")); // Pointer ein oder aus
+	gbUAGTagDebug=StrToInt (ParameterGet(gsUAG_LIB_NAME,"TagDebug","0"));   ! 0= Aus  1= Ein
+//	ParameterPut("Page","DynamicSizing","0");
+	sTemp =	ParameterGet("_PSX","SystemGuid","")
+	IF sTemp <> "" THEN
+		gbPES =1
+	ELSE
+		gbPES = StrToInt(ParameterGet(gsUAG_LIB_NAME,"PES","0"));
+	END	
+	sTemp =	ParameterGet("Trend","defaultSpan","0 2 0");
+	
+	giAlarmSpanDay= StrToInt(StrWord(sTemp));
+	giAlarmSpanHour= StrToInt(StrWord(sTemp));;
+	giAlarmSpanMin= StrToInt(StrWord(sTemp));;
+	giUI_Write= StrToInt (ParameterGet(gsUAG_LIB_NAME,"UIwrite","0"));		!0= aus 1= Ein
+	
+	ParameterPut("General","WatermarkedPointCount","TRUE"); // warnung das die Lizenz bald ereicht ist
+	ParameterPut("General","PointCountHigh","90");
+	ParameterPut("Animator","FullScreen","0"); 				// Seiten ohne Titelbar	
+	ParameterPut("Backup","IncludedDBOn","0"); 				// keine Warunung bei Sichern von Projekten	
+	ParameterPut("CtEdit" ,"ANSIToOEM" ,"1");
+	ParameterPut("CtEdit" ,"IncrementalCompile" ,"0");
+	ParameterPut("CtEdit" ,"MaxHelpRec" ,"50000");
+	ParameterPut("ALARM" ,"HardHoldTime" ,1800);							//Zeit in Sekunden die ein Hardwarealarm ansteht
+	ParameterPut("ALARM" ,"SummarySort" ,1);								//Sortierung von Alarmsummary
+	ParameterPut("ALARM" ,"SummaryMode" ,2);								//Logging in OFF time order and remove from list)
+	ParameterPut("ALARM" ,"SetTimeOnAck" ,0);								//Zeit in Alarmliste ist ON Zeit
+	ParameterPut("ALARM" ,"SetTimeOnOff" ,0);								//Zeit in Alarmliste ist ON Zeit
+	ParameterPut("ALARM" ,"SaveStyle" ,4);									//ohne Alarmindex
+	ParameterPut("ALARM" ,"HwExclude" ,311);								//keine Warnung für ohne Alarmindex
+//	ParameterPut("Trend" ,"CursorColor" ,0);
+//	ParameterPut("AnmCursor" ,"Color" ,0xFFFF00);
+	ParameterPut("AnmCursor" ,"Height" ,2);
+	ParameterPut("AnmCursor" ,"Thickness" ,3);
+	ParameterPut("AnmCursor" ,"Width" ,4);
+	ParameterPut("Path","Logs",ParameterGet("CtEdit","Logs","[DATA]:"));
+	ParameterPut("Code" ,"Threads" ,256);
+	ParameterPut("Code" ,"Queue" ,1000000);
+	!ParameterPut("TabAlarm.Custom","Function.Row.ShowContextMenu","UAG_TabAlmTable_Row_ShowContextMenu")
+
+	ParameterPut(gsUAG_LIB_NAME,"OPERLOGdb","OPERLOGdb");
+
+	// Computernamen ermitteln und die Nummer aus der Parameter.dbf holen 
+	gsUAGClientName = GetEnv("COMPUTERNAME");
+	gsUAGClientNr = ParameterGet("Client.Names", gsUAGClientName, 1);
+	Trapfehlt = "Trap Variablen fehlen im Projekt";
+//	FileCopy(gsUAGLibPath + "\UAGHELP*", PathToStr("[BIN]:"), 1);
+//
+
+	UAG_MM_ConfigInit();
+	ErrSet(0);
+END
+
+
+FUNCTION UAG_Parameter()
+	ErrSet(1);
+	// Popup Modus festlegen
+	// The mode of the window: 
+	
+	// 0 - Normal page.
+	 giMODE = 0
+	// 1 - Page child window. The window IS closed when a new page IS displayed, e.g. when the PageDisplay() OR PageGoto() FUNCTION IS called. The parent IS the current active window.
+	 giMODE = giMODE +1
+	// 2 - Window child window. The window IS closed automatically when the parent window IS freed with the WinFree() FUNCTION. The parent IS the current active window.
+	 giMODE = giMODE +2
+	// 4 - No re-size. The window IS displayed with thin borders AND no maximize/minimize icons. The window cannot be re-sized.
+	  //giMODE = giMODE +4
+	//8 - No icons. The window IS displayed with thin borders AND no maximize/minimize OR system menu icons. The window cannot be re-sized.
+	 giMODE = giMODE +8
+	// 16 - No caption. The window IS displayed with thin borders, no caption, AND no maximize/minimize OR system menu icons. The window cannot be re-sized.
+	 //giMODE = giMODE +16
+	// 32 - Echo enabled. When enabled, all keyboard echo, prompts, AND error messages are displayed on the parent window. This mode should only be used with child windows (e.g. Mode 1 AND 2).
+	 giMODE = giMODE +32
+	// 64 - Always on top.
+	 giMODE = giMODE +64
+	// 128 - Open a unique window. This mode prevents this window from being opened more THEN once.
+	 giMODE = giMODE +128
+	// 256 - Display the entire window. This mode ensures that no parts of the window will appear off the screen
+	 giMODE = giMODE +256
+	// 512 - Open a unique Super Genie. This mode prevents a Super Genie from being opened more than once (at the same Time). However, the same Super Genie with different associations can be opened.
+	 giMODE = giMODE +512
+	// 1024 - Disables dynamic resizing of the new window, overriding the setting of the [Page]DynamicSizing parameter.
+	 giMODE = giMODE +1024
+	// 4096 - Allows the window TO be resized without maintaining the current aspect ratio. The aspect ratio defines the relationship between the width AND the height of the window, which means this setting allows you TO stretch OR compress the window TO any proportions. This option overrides the setting of the [Page]MaintainAspectRatio parameter.
+	 //giMODE = giMODE +4096
+	// 8192 - Text on a page will be resized in proportion with the maximum scale change FOR a resized window. FOR example, consider a page that IS resized TO three times the original width, AND half the original height. IF this mode IS set, the font size of the text on the page will be tripled (in proportion with the maximum scale). This option overrides the setting of the [Page] ScaleTextToMax parameter.
+	
+	// giMODE = giMODE +8192
+	
+	// INT giMODE = 2027;   // Modus für die Aufschaltung der Popups
+
+// Fenster ana_in Statustext festlegen
+        w_Status[1][1] = "-";
+        w_Status[1][2] = "Alarmunterdrückung SPS";
+        w_Status[1][3] = "Leitsperre";
+        w_Status[1][4] = "Alarmsperre";
+        w_Status[1][5] = "Messwert ok";
+        w_Status[1][6] = "Untere Schaltwert S-";
+        w_Status[1][7] = "Oberer Schaltwert S+";
+        w_Status[1][8] = "Unterer Warnwert   A-";
+        w_Status[1][9] = "Oberer Warnwert   A+";
+        w_Status[1][10] = "Unterer Grenzwert  A--";
+        w_Status[1][11] = "Oberer Grenzwert  A++";
+        w_Status[1][12] = "Drahtbruch";
+        w_Status[1][13] = "Meldesperre";
+        w_Status[1][14] = "Alarm Warnwerte";
+        w_Status[1][15] = "Alarm Grenzwerte";
+        w_Status[1][16] = "-";
+
+//Fenster reg02_ctrl Statustext festlegen
+        w_Status[2][1] = "Nach Kopplungsstart 1";
+        w_Status[2][2] = "SPS-Betrieb";
+        w_Status[2][3] = "Leitsperre";
+        w_Status[2][4] = "Y-Max erreicht";
+        w_Status[2][5] = "Y-Min ereicht";
+        w_Status[2][6] = "D-Anteil Regelgröße (X)";
+        w_Status[2][7] = "-";
+        w_Status[2][8] = "Reglersperre Ein";
+        w_Status[2][9] = "Nachführung Auto Ein";
+        w_Status[2][10] = "Nachführung Hand Ein";
+        w_Status[2][11] = "Regler Störung";
+        w_Status[2][12] = "Regler Kaskade";
+        w_Status[2][13] = "Regler Halt";
+        w_Status[2][14] = "Regler Hand";
+        w_Status[2][15] = "Regler Automatik";
+        w_Status[2][16] = "-";
+        
+// Fenster mot01_ctrl Statustext festlegen
+        w_Status[3][1] = "Reparatur";
+        w_Status[3][2] = "PLS - Betrieb";
+        w_Status[3][3] = "Leitsperre";
+        w_Status[3][4] = "Leitbit 1";
+        w_Status[3][5] = "Leitbit 2";
+        w_Status[3][6] = "Betriebsart Hand";
+        w_Status[3][7] = "Antrieb gesperrt";
+        w_Status[3][8] = "Freigabe Ausgang";
+        w_Status[3][9] = "Alarmsperre";
+        w_Status[3][10] = "RM0 [Zu  / Aus)";
+        w_Status[3][11] = "RM2 (Halt)";
+        w_Status[3][12] = "RM1 (Auf / Ein)";
+        w_Status[3][13] = "Meldesperre";
+        w_Status[3][14] = "Störung 1";
+        w_Status[3][15] = "Alarm";
+        w_Status[3][16] = "-";
+        
+// Fenster ana_in Typangaben festlegen
+        w_Status[4][1] = "ohne Anzeige OG";
+        w_Status[4][2] = "ohne Anzeige OW";
+        w_Status[4][3] = "ohne Anzeige OS";
+        w_Status[4][4] = "ohne Anzeige US";
+        w_Status[4][5] = "ohne Anzeige UW";
+        w_Status[4][6] = "ohne Anzeige UG";
+        w_Status[4][7] = "ohne Anzeige HYS";
+        w_Status[4][8] = "ohne Meldesperre";
+        w_Status[4][9] = "ohne Alarmsperre";
+        w_Status[4][10] = "ohne Leitsperre";
+        w_Status[4][11] = "OG/UG nicht leitbar";
+        w_Status[4][12] = "OW/UW nicht leitbar";
+        w_Status[4][13] = "OS/US nicht leitbar";
+        w_Status[4][14] = "Hyst. nicht leitbar";
+        w_Status[4][15] = "ohne Alarmierung PLS";
+        w_Status[4][16] = "mit Diagnose";
+
+// Fenster mot01_ctrl Typangaben festlegen
+        w_Status[5][1] = "Symbol X°0";
+        w_Status[5][2] = "Symbol X°1";
+        w_Status[5][3] = "Symbol X°2";
+        w_Status[5][4] = "Symbol X°3";
+        w_Status[5][5] = "Symbol X°4";
+        w_Status[5][6] = "ohne Automatik / Hand";
+        w_Status[5][7] = "ohne Quittierung";
+        w_Status[5][8] = "ohne Meldesperre";
+        w_Status[5][9] = "ohne Alarmsperre";
+        w_Status[5][10] = "ohne Leitsperre";
+        w_Status[5][11] = "-";
+        w_Status[5][12] = "-";
+        w_Status[5][13] = "-";
+        w_Status[5][14] = "-";
+        w_Status[5][15] = "-";
+        w_Status[5][16] = "-";
+  
+// Fenster Meld NA Statustext festlegen
+        w_Status[6][1] = "-";
+        w_Status[6][2] = "Alarmunterdrückung SPS";
+        w_Status[6][3] = "-";
+        w_Status[6][4] = "Alarmsperre";
+        w_Status[6][5] = "Messwert ok";
+        w_Status[6][6] = "Not Halt";
+        w_Status[6][7] = "Not Halt mit MSP";
+        w_Status[6][8] = "-";
+        w_Status[6][9] = "-";
+        w_Status[6][10] = "Not Halt Speicher";
+        w_Status[6][11] = "Not Halt Speicher";
+        w_Status[6][12] = "gestört";
+        w_Status[6][13] = "Meldesperre";
+        w_Status[6][14] = "-";
+        w_Status[6][15] = "Alarm Not Halt";
+        w_Status[6][16] = "-";
+
+// Fenster Leiten Statustext festlegen
+        w_Status[7][1] = "-";
+        w_Status[7][2] = "Leitsperre";
+        w_Status[7][3] = "-";
+        w_Status[7][4] = "-";
+        w_Status[7][5] = "-";
+        w_Status[7][6] = "-";
+        w_Status[7][7] = "-";
+        w_Status[7][8] = "-";
+        w_Status[7][9] = "-";
+        w_Status[7][10] = "RM Leiten Aus";
+        w_Status[7][11] = "-";
+        w_Status[7][12] = "RM Leiten Ein";
+        w_Status[7][13] = "-";
+        w_Status[7][14] = "-";
+        w_Status[7][15] = "-";
+        w_Status[7][16] = "-";
+  
+// Fenster reg02_ctrl Typangaben festlegen
+        w_Status32[0][1] = "ohne Anzeige OG";
+        w_Status32[0][2] = "ohne Anzeige OW";
+        w_Status32[0][3] = "ohne Anzeige OS";
+        w_Status32[0][4] = "ohne Anzeige US";
+        w_Status32[0][5] = "ohne Anzeige UW";
+        w_Status32[0][6] = "ohne Anzeige UG";
+        w_Status32[0][7] = "ohne Anzeige HYS";
+        w_Status32[0][8] = "ohne Meldesperre";
+        w_Status32[0][9] = "ohne Alarmsperre";
+        w_Status32[0][10] = "ohne Leitsperre";
+        w_Status32[0][11] = "OG/UG nicht leitbar";
+        w_Status32[0][12] = "OW/UW nicht leitbar";
+        w_Status32[0][13] = "OS/US nicht leitbar";
+        w_Status32[0][14] = "Hyst. nicht leitbar";
+        w_Status32[0][15] = "ohne Alarmierung PLS";
+        w_Status32[0][16] = "-";
+
+        w_Status32[0][17] = "ohne Extern";
+        w_Status32[0][18] = "ohne Anzeige Parameterdaten";
+        w_Status32[0][19] = "ohne Taste D-Anteil X/XD";
+        w_Status32[0][20] = "ohne LSP Regler";
+        w_Status32[0][21] = "ohne Nachfüheren WH";
+        w_Status32[0][22] = "ohne Nachfüheren YH";
+        w_Status32[0][23] = "Nachführung nicht leitbar";
+        w_Status32[0][24] = "Parameter nicht leitbar";
+        w_Status32[0][25] = "YMAX nicht leitbar";
+        w_Status32[0][26] = "YMIN nicht leitbar";
+        w_Status32[0][27] = "ohne RM für Y";
+        w_Status32[0][28] = "-";
+        w_Status32[0][29] = "Nachführung Auto intern";
+        w_Status32[0][30] = "Nachführung Hand intern";
+        w_Status32[0][31] = "Regler ist Folgeregler";
+        w_Status32[0][32] = "-";
+        
+// Fenster w_dosier Statustext festlegen
+        w_Status[8][1] = "-";
+        w_Status[8][2] = "Maxabschaltung";
+        w_Status[8][3] = "Leitsperre";
+        w_Status[8][4] = "Freigabe Dosierung";
+        w_Status[8][5] = "Halt Extern";
+        w_Status[8][6] = "LSP Halt/Weiter";
+        w_Status[8][7] = "Dosierung Abbruch";
+        w_Status[8][8] = "Dosierung beendet";
+        w_Status[8][9] = "Dosierung Start";
+        w_Status[8][10] = "Dosierung Ein";
+        w_Status[8][11] = "RM Halt";
+        w_Status[8][12] = "RM Reset";
+        w_Status[8][13] = "Meldesperre";
+        w_Status[8][14] = "-";
+        w_Status[8][15] = "Alarm";
+        w_Status[8][16] = "-";
+        
+// Fenster p_leiten01 Statustext festlegen
+        w_Status[9][1] = "-";
+        w_Status[9][2] = "Quitt. Leiten";
+        w_Status[9][3] = "Leitsperre";
+        w_Status[9][4] = "Leiten Ein";
+        w_Status[9][5] = "Leiten Aus";
+        w_Status[9][6] = "-";
+        w_Status[9][7] = "-";
+        w_Status[9][8] = "-";
+        w_Status[9][9] = "-";
+        w_Status[9][10] = "RM Leiten Aus";
+        w_Status[9][11] = "RM Res.";
+        w_Status[9][12] = "RM Leiten Ein";
+        w_Status[9][13] = "Meldesperre";
+        w_Status[9][14] = "-";
+        w_Status[9][15] = "-";
+        w_Status[9][16] = "-";
+        
+// Fenster Quantum Diagnose Statustext festlegen
+        w_Status[10][1] = "E/A Fehler";
+        w_Status[10][2] = "Uhrzeitverlust der Echtzeituhr";
+        w_Status[10][3] = "Batteriestatus der Anwendungsspeicherkarte";
+        w_Status[10][4] = "Status der Prozessorbatterie";
+        w_Status[10][5] = "Batteriestatus der Speicherkarte für die Datensicherung";
+        w_Status[10][6] = "Diagnosepuffer konfiguriert";
+        w_Status[10][7] = "Diagnosepuffer voll";
+        w_Status[10][8] = "Kaltstart";
+        w_Status[10][9] = "Warmstart";
+        w_Status[10][10] = "Sammelfehler";
+        w_Status[10][11] = "Watchdog-Überlauf";
+        w_Status[10][12] = "-";
+        w_Status[10][13] = "-";
+        w_Status[10][14] = "-";
+        w_Status[10][15] = "-";
+        w_Status[10][16] = "-";
+
+// Fenster NE107 Diagnose Statustext festlegen
+        w_Status[11][1] = "Diagnose passiv";
+        w_Status[11][2] = "Failure";
+        w_Status[11][3] = "Check Function";
+        w_Status[11][4] = "Out of Spec";
+        w_Status[11][5] = "Maintenance";
+        w_Status[11][6] = "Diagnose aktiv (good)";
+        w_Status[11][7] = "-";
+        w_Status[11][8] = "-";
+        w_Status[11][9] = "-";
+        w_Status[11][10] = "-";
+        w_Status[11][11] = "-";
+        w_Status[11][12] = "-";
+        w_Status[11][13] = "-";
+        w_Status[11][14] = "-";
+        w_Status[11][15] = "-";
+        w_Status[11][16] = "-";
+        
+// Fenster ana_in_ogw Typangaben festlegen
+        w_Status[12][1] = "-";
+        w_Status[12][2] = "-";
+        w_Status[12][3] = "-";
+        w_Status[12][4] = "-";
+        w_Status[12][5] = "-";
+        w_Status[12][6] = "-";
+        w_Status[12][7] = "-";
+        w_Status[12][8] = "ohne Meldesperre";
+        w_Status[12][9] = "ohne Alarmsperre";
+        w_Status[12][10] = "-";
+        w_Status[12][11] = "-";
+        w_Status[12][12] = "-";
+        w_Status[12][13] = "-";
+        w_Status[12][14] = "-";
+        w_Status[12][15] = "ohne Alarmierung PLS";
+        w_Status[12][16] = "-";
+
+// Fenster ana_ogw Statustext festlegen
+        w_Status[13][1] = "-";
+        w_Status[13][2] = "Alarmunterdrückung SPS";
+        w_Status[13][3] = "-";
+        w_Status[13][4] = "Alarmsperre";
+        w_Status[13][5] = "Messwert ok";
+        w_Status[13][6] = "-";
+        w_Status[13][7] = "-";
+        w_Status[13][8] = "-";
+        w_Status[13][9] = "-";
+        w_Status[13][10] = "-";
+        w_Status[13][11] = "-";
+        w_Status[13][12] = "Drahtbruch";
+        w_Status[13][13] = "Meldesperre";
+        w_Status[13][14] = "-";
+        w_Status[13][15] = "-";
+        w_Status[13][16] = "-";
+
+// Fenster SW_ls Typangaben festlegen
+        w_Status[14][1] = "Nachführung WH";
+        w_Status[14][2] = "ohne Taste Nachführung Auto (WH)";
+        w_Status[14][3] = "Leitsperre";
+        w_Status[14][4] = "-";
+        w_Status[14][5] = "-";
+        w_Status[14][6] = "-";
+        w_Status[14][7] = "-";
+        w_Status[14][8] = "-";
+        w_Status[14][9] = "ohne Leitsperre";
+        w_Status[14][10] = "-";
+        w_Status[14][11] = "-";
+        w_Status[14][12] = "-";
+        w_Status[14][13] = "-";
+        w_Status[14][14] = "-";
+        w_Status[14][15] = "-";
+        w_Status[14][16] = "-";
+
+// Fenster SW_ls Statustext festlegen
+        w_Status[15][1] = "Feste Eins";
+        w_Status[15][2] = "-";
+        w_Status[15][3] = "Leitsperre";
+        w_Status[15][4] = "Extern";
+        w_Status[15][5] = "-";
+        w_Status[15][6] = "-";
+        w_Status[15][7] = "-";
+        w_Status[15][8] = "-";
+        w_Status[15][9] = "Nachführung Automatik";
+        w_Status[15][10] = "-";
+        w_Status[15][11] = "-";
+        w_Status[15][12] = "-";
+        w_Status[15][13] = "-";
+        w_Status[15][14] = "Feste Null";
+        w_Status[15][15] = "-";
+        w_Status[15][16] = "-";
+
+	ErrSet(0);
+
+END
+
+
+

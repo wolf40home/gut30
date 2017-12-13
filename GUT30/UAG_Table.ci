@@ -1,0 +1,477 @@
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//	
+// 	FILE:	UAG_Table.ci
+//
+//	Beschreibung:
+//
+//		Enthält  Funktionen für den Datenbankzugriff. 
+//		Funktionen mit Version 3.1 sind freigegeben
+//
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	19.02.2016	/	Schneider Electrik GmbH
+//	Version				75.33.11.06
+//
+//	PUBLIC FUNCTIONS:
+//
+//			UAG_Table_Alarmcount_Ini()
+//			UAG_Table_Operlog_Ini()
+//			UAG_Table_Backup_dbf()
+//			UAG_Table_NE107_Ini()
+
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+// MODULE VARIABLES
+	INT		hDev;
+	STRING	msAlarmCountFild[6] = "","ZEIT1", "ZEIT2", "Tag", "Anzahl", "Comment";
+	STRING	msAlarmHistFild[6] = "","ZEIT1", "ZEIT2", "Tag", "Anzahl", "Comment";
+	STRING	msOperlogFild[10] = "","ZEIT", "BENUTZER", "WER", "Meldung", "TAGNAME", "ALTERWERT", "WERT", "EVNTYPE", "CLUSTER";
+
+
+//	int FUNCTION UAG_Table_Alarmcount()
+//	Übergabeparameter:	keine
+//                         
+//	Rückgabewert:		 
+//	Beschreibung:		Funktionen zum Anzeiger der Alarmcount.dbf
+//						
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	19.02.2016	/	Schneider Electrik GmbH
+//	Version				74.33.81.02
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	
+INT FUNCTION 
+UAG_Table_Alarmcount_Ini(STRING sTable)
+	STRING sCount,sPath
+	sPath=UAG_DevTest("Alarmcount.dbf");
+	PageSetStr(5,sPath)
+	DevModify("DB_Anzeige","{ZEIT1,22}{ZEIT2,22}{Tag,34}{Anzahl,10}{Comment,127}","*",sPath,-1)
+	hDev = DevOpen("DB_Anzeige",16);
+	LibTable_AddColumn(sTable, "ZEIT1", 170);
+	LibTable_AddColumn(sTable, "ZEIT2", 170);
+	LibTable_AddColumn(sTable, "Tag", 330);
+	LibTable_AddColumn(sTable, "Anzahl", 100);
+	LibTable_AddColumn(sTable, "Comment", 900);
+	sCount = StrTrim(DevSize(hDev));
+	LibTable_SetPropertyInt(sTable,"RowCount",sCount);
+	LibTable_SetDataTask(sTable, "Value", "_UAG_Table_Alarmcount", "^"#Name^",#Row,#Col");
+	DevClose(hDev,0)
+
+	RETURN TRUE;
+
+END
+
+STRING FUNCTION 
+_UAG_Table_Alarmcount(STRING sTable,INT nRow,INT nCol)
+	STRING sReturn
+	IF (nRow > LibTable_GetPropertyInt(sTable, "RowCount")) THEN
+		RETURN "";
+	END
+	hDev = DevOpen("DB_Anzeige",16);
+	IF 	nRow = 0 THEN
+		SELECT CASE nCol
+			CASE 1
+				sReturn = StrToLocalText("@(Start Time)")
+			CASE 2
+				sReturn = StrToLocalText("@(End Time)")
+			CASE 3
+				sReturn = StrToLocalText("@(TAG)")
+			CASE 4
+				sReturn = StrToLocalText("@(Count)")
+			CASE 5
+				sReturn = StrToLocalText("@(Description)")
+		END SELECT
+	ELSE
+				
+		DevSeek(hDev, nRow)
+		sReturn =DevGetField(hDev, msAlarmCountFild[nCol])
+	END
+	DevClose(hDev,0)
+	RETURN sReturn 
+
+END
+
+INT FUNCTION
+UAG_Table_Alarmcount_Reload(STRING sTable)
+	STRING sCount
+	hDev = DevOpen("DB_Anzeige",16)
+	sCount = StrTrim(DevSize(hDev));
+	LibTable_SetPropertyInt(sTable,"RowCount",sCount);
+	LibTable_SetDataTask(sTable, "Value", "_UAG_Table_Alarmcount", "^"#Name^",#Row,#Col");
+	DevClose(hDev,0)
+	RETURN TRUE;
+
+END
+
+FUNCTION
+UAG_Table_Alarmcount_Reset()
+		hDev = DevOpen("DB_Anzeige",0);
+		DevZap(hDev);
+		DevControl(hDev,1,"");
+		DevClose(hDev,0)
+END	
+
+//	int FUNCTION UAG_Table_Operlog()
+//	Übergabeparameter:	keine
+//                         
+//	Rückgabewert:		 
+//	Beschreibung:		Funktionen zum Anzeiger der Alarmcount.dbf
+//						
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	19.02.2016	/	Schneider Electrik GmbH
+//	Version				74.33.81.02
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	
+INT FUNCTION 
+UAG_Table_Operlog_Ini(STRING sTable)
+	STRING sCount,sPath
+	sPath=UAG_DevTest("Operlog.dbf");
+	PageSetStr(5,sPath)
+	DevModify("DB_Anzeige","{ZEIT,20}{BENUTZER,20}{WER,22}{Meldung,48}{TAGNAME,32}{ALTERWERT,20}{WERT,20}{EVNTYPE,12}{CLUSTER,20}","*",sPath,-1)
+	hDev = DevOpen("DB_Anzeige",16);
+	LibTable_AddColumn(sTable, "ZEIT", 160);
+	LibTable_AddColumn(sTable, "BENUTZER", 150);
+	LibTable_AddColumn(sTable, "WER", 230);
+	LibTable_AddColumn(sTable, "Meldung", 300);
+	LibTable_AddColumn(sTable, "TAGNAME", 200);
+	LibTable_AddColumn(sTable, "ALTERWERT", 170);
+	LibTable_AddColumn(sTable, "WERT", 170);
+	LibTable_AddColumn(sTable, "EVNTYPE", 110);
+	LibTable_AddColumn(sTable, "CLUSTER", 130);
+	sCount = StrTrim(DevSize(hDev));
+	LibTable_SetPropertyInt(sTable,"RowCount",sCount);
+	LibTable_SetDataTask(sTable, "Value", "_UAG_Table_Operlog", "^"#Name^",#Row,#Col");
+	DevClose(hDev,0)
+
+	RETURN TRUE;
+
+END
+
+STRING FUNCTION 
+_UAG_Table_Operlog(STRING sTable,INT nRow,INT nCol)
+	STRING sReturn
+	IF (nRow > LibTable_GetPropertyInt(sTable, "RowCount")) THEN
+		RETURN "";
+	END
+	hDev = DevOpen("DB_Anzeige",16);
+	IF 	nRow = 0 THEN
+		SELECT CASE nCol
+			CASE 1
+				sReturn = StrToLocalText("@(Time)")
+			CASE 2
+				sReturn = StrToLocalText("@(User)")
+			CASE 3
+				sReturn = StrToLocalText("@(Who)")
+			CASE 4
+				sReturn = StrToLocalText("@(Message)")
+			CASE 5
+				sReturn = StrToLocalText("@(Tag)")
+			CASE 6
+				sReturn = StrToLocalText("@(Old Value)")
+			CASE 7
+				sReturn = StrToLocalText("@(Value)")
+			CASE 8
+				sReturn = StrToLocalText("@(Type)")
+			CASE 9
+				sReturn = StrToLocalText("@(PC)")
+		END SELECT
+	ELSE
+				
+		DevSeek(hDev, nRow)
+		sReturn =DevGetField(hDev, msOperlogFild[nCol])
+	END
+	DevClose(hDev,0)
+	RETURN sReturn 
+
+END
+
+INT FUNCTION
+UAG_Table_Operlog_Reload(STRING sTable)
+	STRING sCount
+	hDev = DevOpen("DB_Anzeige",16)
+	sCount = StrTrim(DevSize(hDev));
+	LibTable_SetPropertyInt(sTable,"RowCount",sCount);
+	LibTable_SetDataTask(sTable, "Value", "_UAG_Table_Operlog", "^"#Name^",#Row,#Col");
+	DevClose(hDev,0)
+	RETURN TRUE;
+
+END
+
+
+//	FUNCTION UAG_Table_Backup_dbf()
+//	Übergabeparameter:	      
+//                       
+//	Rückgabewert:	---	
+//	Beschreibung:	Datenbank Auswählen	
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	06.01.09	/	Schneider Electrik GmbH
+//	Version				75.33.11.02
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	06.07.11	Steiner		Filefind klappt nicht richtig.
+//	19.02.2016	Steiner		An Table Angepasst
+
+FUNCTION UAG_Table_Backup_dbf()
+	STRING sPath,sDrive,sDir,sFile,sExt,sBuf,sPath2;
+	STRING sFullPath;
+	INT ihnd;
+	FormNew("@(Select History File)...", 38, 6, 16);
+	UAG_GetMousePos_mitte(300,300);
+	PageTransformCoords(WinNumber(), giPosX, giPosY, giPosX, giPosY, 0)	
+	FormPosition( giPosX,giPosY,0);
+	FormButton( 1, 5, "   @(OK)  ", 0, 1);
+	FormButton(17, 5, " @(Cancel) ", 0, 2);
+	FormListBox(1, 0, 36, 5, sBuf);
+
+	sFullPath = PageGetStr(5);
+	FileSplitPath(sFullPath, sDrive, sDir, sFile, sExt)
+	sFullPath = sDrive + sDir + sFile + ".*";
+	sPath = FileFind(sFullPath, 0);
+	WHILE StrLength(sPath) > 0 DO
+		FileSplitPath(sPath, sDrive, sDir, sFile, sExt);
+		FormAddList(sFile+sExt);
+
+		! Find the next file
+		sPath = FileFind("", 0);
+	END
+	IF FormRead(0) = 0 THEN
+		IF sBuf <> "" THEN
+			sPath2 = UAG_DevTest(sBuf);
+			DevModify("DB_Anzeige","*","*",sPath2,-1)
+			PageSetInt(3,0);
+			PageSetStr(5,sPath2)
+	 	END
+	END
+END
+
+//	int FUNCTION UAG_Table_NE107()
+//	Übergabeparameter:	keine
+//                         
+//	Rückgabewert:		 
+//	Beschreibung:		Funktionen zum Anzeiger der NE 107 Queue
+//						
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	27.04.2017	/	Schneider Electrik GmbH
+//	Version				75.33.11.05
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	
+INT FUNCTION 
+UAG_Table_NE107_Ini(STRING sTable)
+	INT		hQue,itemp;
+	STRING sCount
+	
+	ErrSet(1);
+	hQue=QueOpen("NE107_ALL", 0);
+	itemp=QueLength(hQue)
+
+	LibTable_AddColumn(sTable, "@(Tag)", 300);
+	LibTable_AddColumn(sTable, "@(Value)", 150);
+	LibTable_AddColumn(sTable, "@(Description)", 500);
+	sCount = IntToStr(itemp);
+	LibTable_SetPropertyInt(sTable,"RowCount",sCount);
+	LibTable_SetDataTask(sTable, "Value", "_UAG_Table_NE107", "^"#Name^",#Row,#Col");
+	ErrSet(0);
+	RETURN TRUE;
+
+END
+
+STRING FUNCTION 
+_UAG_Table_NE107(STRING sTable,INT nRow,INT nCol)
+	STRING sReturn,sTag
+	INT		hQue,iValue, iTemp 
+	IF (nRow > LibTable_GetPropertyInt(sTable, "RowCount")) THEN
+		RETURN "";
+	END
+	hQue=QueOpen("NE107_ALL", 0);
+	IF 	nRow = 0 THEN
+		SELECT CASE nCol
+			CASE 1
+				sReturn = StrToLocalText("@(Tag)")
+			CASE 2
+				sReturn = StrToLocalText("@(Value)")
+			CASE 3
+				sReturn = StrToLocalText("@(Description)")
+		END SELECT
+	ELSE
+		iValue=nRow-1
+		QuePeek(hQue,iValue,sTag,16)
+		iTemp = StrSearch(StrLength(sTag)-4, sTag, "_")
+
+		SELECT CASE nCol 
+		CASE 1
+			sReturn =sTag
+			PageSetStr("NE"+ IntToStr(nRow ),StrLeft(sTag, iTemp ))
+		CASE 2	
+			sReturn =IntToStr(iValue)
+		CASE 3
+			sReturn =TagInfo (sTag,16)		
+		END SELECT
+	END	
+	RETURN sReturn 
+
+END
+
+INT FUNCTION
+UAG_Table_NE107_Reload(STRING sTable)
+	STRING sCount
+	INT		hQue,itemp;
+	ErrSet(1);
+	hQue=QueOpen("NE107_ALL", 0);
+	itemp=QueLength(hQue)
+	sCount = IntToStr(itemp);
+	LibTable_SetPropertyInt(sTable,"RowCount",sCount);
+	LibTable_SetDataTask(sTable, "Value", "_UAG_Table_NE107", "^"#Name^",#Row,#Col");
+	ErrSet(0);
+	RETURN TRUE;
+
+END
+
+FUNCTION
+UAG_Table_NE107_Click(STRING sTable, INT nRow)
+STRING 	sTag
+	sTag =PageGetStr("NE" + IntToStr(nRow))
+	UAG_Ne107_20(sTag)
+END
+
+INT
+FUNCTION
+UAG_NE107_Sym(STRING sTable,INT nRow)
+INT		iValue,hQue,iRowFirst
+STRING	sTag
+	iRowFirst = LibTable_GetPropertyInt(sTable,"RowFirst")
+
+	hQue=QueOpen("NE107_ALL", 0);
+	iValue=nRow + iRowFirst -1
+	QuePeek(hQue,iValue,sTag,16)
+
+	!RETURN UAG_AtNE107GetSymbolindex(PageGetInt("NE"+ IntToStr(nRow + iRowDsp)))
+	RETURN UAG_AtNE107GetSymbolindex(iValue)
+END
+
+
+//	int FUNCTION UAG_Table_ASB()
+//	Übergabeparameter:	keine
+//                         
+//	Rückgabewert:		 
+//	Beschreibung:		Funktionen zum Anzeiger der NE 107 Queue
+//						
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	27.04.2017	/	Schneider Electrik GmbH
+//	Version				75.33.11.05
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	
+INT FUNCTION 
+UAG_Table_ASB_Ini(STRING sTable)
+	INT		hQue,itemp;
+	STRING sCount
+	
+	ErrSet(1);
+	hQue=QueOpen("NE107_ALL", 0);
+	itemp=QueLength(hQue)
+
+	LibTable_AddColumn(sTable, "@(Tag)", 300);
+	LibTable_AddColumn(sTable, "@(Description)", 500);
+	sCount = IntToStr(itemp);
+	LibTable_SetPropertyInt(sTable,"RowCount",sCount);
+	LibTable_SetDataTask(sTable, "Value", "_UAG_Table_ASB", "^"#Name^",#Row,#Col");
+	ErrSet(0);
+	RETURN TRUE;
+
+END
+
+STRING FUNCTION 
+_UAG_Table_ASB(STRING sTable,INT nRow,INT nCol)
+	STRING sReturn,sTag
+	INT		hQue,iValue, iTemp 
+	IF (nRow > LibTable_GetPropertyInt(sTable, "RowCount")) THEN
+		RETURN "";
+	END
+	hQue=QueOpen("ASB", 0);
+	IF 	nRow = 0 THEN
+		SELECT CASE nCol
+			CASE 1
+				sReturn = StrToLocalText("@(Tag)")
+			CASE 2
+				sReturn = StrToLocalText("@(Description)")
+		END SELECT
+	ELSE
+		iValue=nRow-1
+		QuePeek(hQue,iValue,sTag,16)
+		iTemp = StrSearch(StrLength(sTag)-4, sTag, "_")
+
+		SELECT CASE nCol 
+		CASE 1
+			sReturn =sTag
+			PageSetStr("ASB"+ IntToStr(nRow ),StrLeft(sTag, iTemp ))
+		CASE 2
+			sReturn =TagInfo (sTag,16)		
+		END SELECT
+	END	
+	RETURN sReturn 
+
+END
+
+INT FUNCTION
+UAG_Table_ASB_Reload(STRING sTable)
+	STRING sCount
+	INT		hQue,itemp;
+	ErrSet(1);
+	hQue=QueOpen("ASB", 0);
+	itemp=QueLength(hQue)
+	sCount = IntToStr(itemp);
+	LibTable_SetPropertyInt(sTable,"RowCount",sCount);
+	LibTable_SetDataTask(sTable, "Value", "_UAG_Table_ASB", "^"#Name^",#Row,#Col");
+	ErrSet(0);
+	RETURN TRUE;
+
+END
+
+FUNCTION
+UAG_Table_ASB_Click(STRING sTable, INT nRow)
+STRING 	sTag
+	sTag =PageGetStr("ASB" + IntToStr(nRow))
+	UAG_ASB_20(sTag)
+END
+
+INT
+FUNCTION
+UAG_ASB_Sym(STRING sTable,INT nRow)
+INT		iValue,hQue,iRowFirst,itemp
+STRING	sTag
+	iRowFirst = LibTable_GetPropertyInt(sTable,"RowFirst")
+
+	hQue=QueOpen("ASB", 0);
+	itemp=QueLength(hQue)
+	IF nRow -1 > itemp THEN
+		RETURN 0
+	END	
+	iValue=nRow + iRowFirst -1
+	QuePeek(hQue,iValue,sTag,16)
+	IF iValue  =0 THEN
+		RETURN 0
+	ELSE 	IF	iValue = 16 THEN 
+				RETURN 1
+			ELSE	IF 	iValue  =32 THEN
+						RETURN 2
+					ELSE 	IF iValue = 48 THEN
+								RETURN 1
+							END		
+					END
+			END	
+	END				
+
+END
+

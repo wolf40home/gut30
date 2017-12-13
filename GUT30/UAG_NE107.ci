@@ -1,0 +1,852 @@
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//	
+// 	FILE:	UAG_NE107.ci
+//
+//	Beschreibung:
+//
+//		Enthält Funktionen für NE107 Diagnose.
+//		Funktionen mit Version 3. sind freigegeben
+//
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	05.04.11	/	Schneider Electrik GmbH
+//	Version				75.33.11.08
+//
+//	PUBLIC FUNCTIONS:
+//
+//			UAG_Messwert_NE107()
+//			UAG_MELD_NE107()
+//			UAG_MELD2_NE107()
+//			UAG_Start_Test_NE107()
+//			UAG_Test_NE107()
+//			UAG_Test_ASB()
+//			UAG_NE107_PAGE()
+//			UAG_AT_NE107()
+//			UAG_AtNE107GetSymbolindex()
+//			UAG_Ne107_20()
+//			UAG_Initial_uagload()
+//			UAG_Initial_Save()
+
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+
+
+//	FUNCTION UAG_Ausfall_NE107()
+//	Übergabeparameter:	 M
+//                                             
+//	Rückgabewert:		1 oder 0
+//	Beschreibung:		
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	08.04.14	/	Schneider Electrik GmbH
+//	Version				7.2.33.70.05
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	
+
+INT FUNCTION 
+UAG_Ausfall_NE107(INT iM)
+
+	IF (HighByte(HighWord(iM )) BITAND Pow(2,4)) THEN
+		IF (HighByte(HighWord(iM )) BITAND Pow(2,6))THEN
+			RETURN 1
+		ELSE
+			RETURN 0
+		END			
+	ELSE
+		RETURN 1
+	END
+END	
+
+//	FUNCTION UAG_Messwert_NE107()
+//	Übergabeparameter:	Wert, M
+//                                             
+//	Rückgabewert:		Wert oder Störung
+//	Beschreibung:		
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	23.02.2009	/	Schneider Electrik GmbH
+//	Version				3.1.1.4
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	
+
+STRING FUNCTION 
+UAG_Messwert_NE107(STRING rWert,INT iM)
+
+	IF (HighByte(HighWord(iM )) BITAND Pow(2,4)) THEN
+		IF (HighByte(HighWord(iM )) BITAND Pow(2,6))THEN
+			RETURN rWert
+		ELSE
+			RETURN "XXX.X  "
+		END			
+	ELSE
+		RETURN rWert
+	END
+END	
+
+//	FUNCTION UAG_MELD_NE107()
+//	Übergabeparameter:	 M
+//                                             
+//	Rückgabewert:		Auswertung ob Simulation oder Auserhalb der Spec mit Meldesperre
+//	Beschreibung:		
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	23.02.2009	/	Schneider Electrik GmbH
+//	Version				3.1.1.0
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	
+
+
+INT FUNCTION		
+UAG_MELD_NE107(INT iM)
+INT iNE107;
+	iNE107=HighByte(HighWord(iM ));
+	
+	IF (iM BITAND Pow(2,15)) THEN // Meldesperre
+		RETURN 1
+	ELSE
+		IF (iNE107 BITAND Pow(2,6)) THEN
+			RETURN 3
+		ELSE
+			IF 	((iNE107 BITAND Pow(2,2))= Pow(2,2)) OR ((iNE107 BITAND Pow(2,3)) =Pow(2,3)) THEN
+				RETURN 2
+			ELSE
+				RETURN 0
+			END
+		END
+	END			
+END
+
+
+//	FUNCTION UAG_MELD2_NE107()
+//	Übergabeparameter:	M
+//                                             
+//	Rückgabewert:		Auswertung ob Simulation oder ausfall mit Meldesperre
+//	Beschreibung:		
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	23.02.2009	/	Schneider Electrik GmbH
+//	Version				3.1.1.0
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	
+
+
+INT FUNCTION		
+UAG_MELD2_NE107(INT iM)
+
+	IF (iM BITAND Pow(2,15)) THEN // Meldesperre
+		RETURN 1
+	ELSE
+		IF (HighByte(HighWord(iM )) BITAND Pow(2,6)) THEN
+			RETURN 3
+		ELSE
+			IF 	(HighByte(HighWord(iM )) BITAND Pow(2,4)) THEN
+				RETURN 2
+			ELSE
+				RETURN 0
+			END
+		END
+	END			
+END
+
+//	UAG_Start_Test_NE107()
+//	Übergabeparameter:	
+//                         
+//	Rückgabewert:		 
+//	Beschreibung:		NE107 Status Abfrage. 
+//						
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	18.03.11	/	Schneider Electric GmbH
+//	Version				72.33.70.03
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	24.08.11	Steiner		Eigenes Dev für die Abfrage
+//	04.11.11	Steiner		Summenbildung auf Bitor umgestellt
+//	23.04.12	Steiner		Änderung für Display Client.
+//
+FUNCTION
+UAG_Start_Test_NE107()
+	IF gbUAGClientMode=true THEN
+		UAG_Test_NE107_init();
+		WHILE true DO
+			UAG_Test_NE107();
+			UAG_Test_ASB();
+			SleepMS(5000)
+		END
+	END		
+END
+
+
+//	UAG_Test_NE107()
+//	Übergabeparameter:	
+//                         
+//	Rückgabewert:		 
+//	Beschreibung:		NE107 Status Abfrage. 
+//						
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	18.03.11	/	Schneider Electric GmbH
+//	Version				7.2.3.2
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+
+FUNCTION
+UAG_Test_NE107()
+
+	INT		iError,hQue,i,iTemp,iWert;
+	STRING 	sTag,sNE;
+	ErrSet(1);
+	NE107_SUM_M=0;
+	hQue = QueOpen("NE107_ALL", 2);
+	FOR i=0 TO QueLength(hQue) DO
+		iTemp=i;
+		QuePeek(hQue, iTemp, sTag, 16)
+		iWert =iTemp;
+		NE107_SUM_M = NE107_SUM_M BITOR (iWert *256*256*256);
+		SleepMS(10);
+	END	
+	ErrSet(0);
+END
+
+//	UAG_Test_ASB()
+//	Übergabeparameter:	
+//                         
+//	Rückgabewert:		 
+//	Beschreibung:		NE107 Status Abfrage. 
+//						
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	15.07.13	/	Schneider Electric GmbH
+//	Version				73.33.70.00
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+
+FUNCTION
+UAG_Test_ASB()
+
+	INT		iError,hQue,i,iTemp,iWert;
+	STRING 	sTag,sNE;
+	ErrSet(1);
+	ASB_SUM_M=0;
+	hQue = QueOpen("ASB", 2);
+	IF QueLength(hQue) <> 0 THEN
+		ASB_SUM_M = 1
+	ELSE	
+		ASB_SUM_M = 0
+	END	
+	ErrSet(0);
+END
+
+//	UAG_Test_NE107_init()
+//	Übergabeparameter:	
+//                         
+//	Rückgabewert:		 
+//	Beschreibung:		Liste der Tag  Subscriben
+//						
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	18.03.11	/	Schneider Electric GmbH
+//	Version				75.33.11.06
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	29.04.14	Steiner		Vereinheitlichung für Komponenten
+//	17.03.16	Steiner		An PES Angepasst
+FUNCTION
+UAG_Test_NE107_init()
+
+	INT		hDev,hQue,hQue2,iHandle;
+	STRING 	sTag,sNE,sSPS,sWert;
+	ErrSet(1);
+	SELECT CASE gbPES
+		CASE 0 !UAG
+			hDev=UAG_DevOpen("UAG_NE107P","UAG_NE107S")
+			hQue2 = QueOpen("NE107", 2);
+			IF hDev <> -1 THEN
+				WHILE NOT DevEOF(hDev) DO
+					sNE = DevGetField(hDev, "MCODE");
+					IF sNE = "1" THEN
+						sTag = DevGetField(hDev, "Name");
+						sSPS = DevGetField(hDev, "SPS");
+						hQue = QueOpen("NE107_" +sSPS, 2);
+						iHandle =TagSubscribe(sTag , 500, "Raw");
+						SubscriptionAddCallback(iHandle, "UAG_Test_NE107_callback")
+						sWert= IntToStr(iHandle);
+						QueWrite(hQue2, sWert, sTag);
+						QueWrite(hQue, sWert, sTag);
+					END
+					Sleep(0);
+					DevNext(hDev);
+				END	
+			END
+			DevClose(hDev);
+		
+		CASE 1 !PES
+			hDev=RdbOpen ("_Variabl");
+			RdbFirstRec(hDev);
+			WHILE NOT RdbEOF (hDev) DO
+				sNE = RdbGet(hDev, "Custom8");
+				IF sNE = "1" THEN
+					sTag = RdbGet(hDev, "TAG");	! Get name of variable
+					sSPS = RdbGet(hDev, "UNIT");
+					hQue = QueOpen("NE107_" +sSPS, 2);
+					iHandle =TagSubscribe(sTag , 500, "Raw");
+					SubscriptionAddCallback(iHandle, "UAG_Test_NE107_callback")
+					sWert= IntToStr(iHandle);
+					QueWrite(hQue2, sWert, sTag);
+					QueWrite(hQue, sWert, sTag);
+				END
+				RdbNextRec(hDev);
+				Sleep(0);
+			END
+			RdbClose(hDev);
+		CASE 2 !Equipment
+			DevModify("Scratch","{Name,32}{Desc,64}{Pen1,32}{Pen2,32}{Pen3,32}{Pen4,32}{Pen5,32}{Pen6,32}{Pen7,32}{Pen8,32}{Area,10}{Sort,20}","*","[RUN]:UNE107.DBF",dBASE_DEV);
+			hDev = DevOpen("Scratch",0);
+			hQue2 = QueOpen("NE107", 2);
+			IF hDev <> -1 THEN
+				WHILE NOT DevEOF(hDev) DO
+					sNE = DevGetField(hDev, "MCODE");
+					IF sNE = "1" THEN
+						sTag = DevGetField(hDev, "Name");
+						sSPS = DevGetField(hDev, "SPS");
+						hQue = QueOpen("NE107_" +sSPS, 2);
+						iHandle =TagSubscribe(sTag , 500, "Raw");
+						SubscriptionAddCallback(iHandle, "UAG_Test_NE107_callback")
+						sWert= IntToStr(iHandle);
+						QueWrite(hQue2, sWert, sTag);
+						QueWrite(hQue, sWert, sTag);
+					END
+					Sleep(0);
+					DevNext(hDev);
+				END	
+			END
+			DevClose(hDev);
+	
+	END	SELECT		
+	
+	ErrSet(0);
+END
+
+//	UAG_Test_NE107_callback()
+//	Übergabeparameter:	subsHandle
+//                         
+//	Rückgabewert:		 
+//	Beschreibung:		Bei Wertänderung Tag Prüfen.
+//						
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	18.03.11	/	Schneider Electric GmbH
+//	Version				72.33.70.03
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	22.07.13	Steiner		Alarmsperrlist Hinzugefügt
+
+FUNCTION
+UAG_Test_NE107_callback(INT subsHandle)
+	STRING 	sTag;
+	INT 	iTemp,hQue,iWert,iWertTemp;
+	ErrSet(1);
+	sTag = SubscriptionGetAttribute(subsHandle,"TagName");
+	iWertTemp = SubscriptionGetAttribute(subsHandle,"Value")
+	iWert = HighByte(HighWord(iWertTemp));
+	hQue = QueOpen("NE107_All", 2);
+	IF iWert =0 THEN
+		QuePeek(hQue, iTemp, sTag, 9);
+	ELSE
+		QuePeek(hQue, iTemp, sTag, 9);
+		QueWrite(hQue, iWert, sTag);
+	END	
+	iWert = (LowByte (HighWord(iWertTemp))) BITAND  0x30	!Alarmsperre
+	hQue = QueOpen("ASB", 2);
+	IF iWert =0 THEN
+		QuePeek(hQue, iTemp, sTag, 9);
+	ELSE
+		QuePeek(hQue, iTemp, sTag, 9);
+		QueWrite(hQue, iWert, sTag);
+	END
+	ErrSet(0);
+
+
+END
+//	UAG_NE107_PAGE()
+//	Übergabeparameter:	Animationsnummer der Liste
+//						Anzahl der Listenelemente
+//                         
+//	Rückgabewert:		 
+//	Beschreibung:		NE107 Status Anzeige wie Alarmliste. 
+//						
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	18.03.11	/	Schneider Electric GmbH
+//	Version				7.2.3.2
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+FUNCTION
+UAG_NE107_PAGE(INT iAN,INT iAnzahl)
+TaskNew( "_UAG_NE107_PAGE", "^"" + IntToStr(iAN) +"^",^"" + IntToStr(iAnzahl) +"^"", 1) 
+END
+FUNCTION
+_UAG_NE107_PAGE(INT iAN,INT iAnzahl)
+	INT		hQue,i,iTyp,iError,itemp,iSeite;
+	STRING	sTemp,sTemp2;
+
+	ErrSet(1);
+	hQue=QueOpen("NE107_ALL", 0);
+	WHILE true DO
+		i=0;
+		iSeite =PageGetInt("ISeite") 
+		IF PageGetInt("ISeitev") = 1 THEN
+			iSeite = iSeite +1
+			PageSetInt("ISeitev",0);
+			PageSetInt("ISeite",iSeite)
+		END
+		IF (PageGetInt("ISeiter") = 1 )AND (iSeite > 0 ) THEN
+			iSeite = iSeite -1
+			PageSetInt("ISeiter",0);
+			PageSetInt("ISeite",iSeite)
+		END
+		
+		FOR i = iAn TO (iAn + iAnzahl-1) DO
+			iTyp=(i -iAN)+iSeite*iAnzahl;
+			iError=QuePeek(hQue,iTyp,sTemp,16);
+			IF (iError = 0) AND (iTyp <> 0) THEN
+				
+				DspStr(i, "UAG_Txt", StrPad (sTemp," ",40) + " " + StrPad (UAG_GET_LT(StrLeft (sTemp,StrLength(sTemp)-2))," ",64));
+				NE107_LIST[i -iAN] =iTyp;
+				PageSetStr(i,StrLeft (sTemp,StrLength(sTemp)-2));
+			ELSE
+				DspStr(i, "UAG_Txt", "");
+				NE107_LIST[i -iAN] =0;
+				PageSetStr(i,"");
+			END
+			
+		END	
+		SleepMS(2000)	
+		
+	END
+
+ErrSet(0);	
+END
+//	UAG_NE107_PAGE_Len()
+//	Übergabeparameter:	
+//						Anzahl der Listenelemente
+//                         
+//	Rückgabewert:		 
+//	Beschreibung:		NE107 Status Anzeige wie Alarmliste. 
+//						
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	18.03.11	/	Schneider Electric GmbH
+//	Version				7.2.3.2
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+
+INT FUNCTION
+UAG_NE107_PAGE_Len(INT iAnzahl=40)
+	INT		hQue,itemp;
+	
+	ErrSet(1);
+	hQue=QueOpen("NE107_ALL", 0);
+	itemp=QueLength(hQue)
+	ErrSet(0);
+	RETURN UAG_Round(itemp ,iAnzahl)
+	
+END
+//	FUNCTION AT_NE107()
+//	Übergabeparameter:	---      
+//                       
+//	Rückgabewert:		---
+//	Beschreibung:	Panel mit NE107 	
+//
+//	Autor:				
+//	Erstellungsdatum:	28.02.07	/	ATEG GmbH
+//	Version				75.33.11.08
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//
+//		Beispiel für Aufruf
+//		TaskNew("UAG_AT_NE107", "^"%TAG%^"", 8)
+//		TaskNew("UAG_AT_NE107", "^"%TAG%^",2", 8) 
+
+
+FUNCTION UAG_AT_NE107(STRING sTag) // Einfachantrieb
+		
+
+//	_Ass(-2,1,"'" + sTag + "'",0);
+	Ass(-2, 1, "'" + sTag + "'", 0);	// der Anfang aller Tag-Bezeichnungen als String, i.d.R. MSR-Nummer, z.B. "EU4711"
+	_Ass(-2, 2, sTag + "DSME");		// Meldewort-Tag, z.B. EU4711ME
+	_Ass(-2, 3, sTag + "DSBEF");		// (Tag!) Leitwort / Befehl
+	_Ass(-2, 4, sTag + "LT");		// Langtext, z.B. EU4711LT = "Antrieb Rührer Kessel-11, Straße 47"
+	_Ass(-2, 5, sTag + "TYP");
+
+	GUT_PopupNewAt("!p_ne107",giMODE); //
+
+
+END 
+
+//	AtNE107GetSymbolindex(INT TAG)
+//	Übergabeparameter:	MSR
+//                       
+//	Rückgabewert:		---
+//	Beschreibung:		
+//
+//	Autor:				
+//	Erstellungsdatum:	14.11.07	/	ATEG GmbH
+//	Version				3.1.1.6
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	23.11.09	Steiner		Simulation eingefügt
+
+INT FUNCTION UAG_AtNE107GetSymbolindex(INT TagDS)
+	IF (TagDS BITAND 0xFF)=0 THEN RETURN 0	//Ungültig (DS=0)=> keine Diagnose
+	ELSE 	IF TagDS BITAND 0x40 THEN RETURN 7	//Simulation
+    		ELSE 	IF TagDS BITAND 0x20 THEN RETURN 1	//Diagnose passiv
+     				ELSE 	IF TagDS BITAND 0x10 THEN RETURN 2		//Failure
+    						ELSE 	IF TagDS BITAND 0x08 THEN RETURN 3	//Check Function
+    		  						ELSE 	IF TagDS BITAND 0x04 THEN RETURN 4			//Out of Spec
+    		  								ELSE 	IF TagDS BITAND 0x02 THEN RETURN 5	//Maintenance
+    		  										ELSE 	IF TagDS BITAND 0x01 THEN RETURN 6	//Diagnose aktiv (good)
+
+    		  												END
+    		  										END		
+    		  								END
+    			   					END
+    		  				END
+    	 			END
+    		END
+    END		
+END
+
+//	FUNCTION UAG_Ne107_20
+//	Übergabeparameter:	Statusnummer as INT, TAG, x, y, modus      
+//                       
+//	Rückgabewert:		---
+//	Beschreibung:		Setzt Parameter und ruft ein Statuspannel auf für Rechts und links
+//						Modus 0 = 16 Bit 1 =32 Bit
+//						Die Texte werden nicht mehr in einem Array Verwaltet sondern in der UIMessag2.dbf im Unterverzeichniss 	
+//						UAGBasis703140P2
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	18.08.09	/	Schneider Electrik GmbH
+//	Version				75.33.11.08
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	18.10.11	Steiner		Erweitert um KT Informationen.
+
+//		Beispiel für Aufruf
+//		TaskNew("UAG_Ne107_20", "^"%TAGNE%^",1", 8)
+//		TaskNew("UAG_Ne107_20", "^"%TAGNE%^",2", 8) 
+
+FUNCTION 
+UAG_Ne107_20(STRING sTag, INT iMode=1)
+
+
+	Ass(-2,1,"'" + sTag + "'",0);
+	_Ass(-2,2,sTag + "_M");
+	Ass(-2,3,"'-'",0);
+	_Ass(-2,5,sTag + "_LT");
+	UAG_LoadUIBIT(21, 34,8)
+	UAG_LoadUI( sTag + "_KT", 60);
+
+	GUT_PopupNewAt("!p_ne107_20",giMODE,imode)
+	_WinTitle(sTag);
+END
+
+//	FUNCTION UAG_NE107_BuildMenuPage
+//	Übergabeparameter:	      
+// 		PageName:   The page name to be used for the constructed menu.
+// 		SelectFn:   The Cicode function name to call when a menu item is selected.
+//             		The defined function is to expect a single string parameter.
+//             		Example: MyFunction(STRING sName)
+// 		NameFilter: Apply a filter on the name field of the equipment list.
+//                       
+//	Rückgabewert:		---
+//	Beschreibung:		Used to build a dynamic menu of the equipment database.
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	18.08.11	/	Schneider Electrik GmbH
+//	Version				74.33.70.00
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+
+
+FUNCTION UAG_NE107_BuildMenuPage(STRING sPageName = "_Equipment", STRING sSelectFn = "", STRING sNameFilter = "", STRING sNodeSym = "Node", INT bReload = FALSE)
+
+	IF ((bReload = TRUE) OR (MenuGetPageNode(sPageName) = -1)) THEN
+
+		TaskNew("_UAG_NE107_BuildMenuPage", "^""+sPageName+"^",^""+sSelectFn+"^",^""+sNameFilter+"^",^""+sNodeSym+"^"", 8);
+	END
+END
+
+
+// ---------------------------------------------------------------------------
+// Internal Functions
+//
+// The following functions are used within the genies and support functions
+// and are not designed to be called directly from user Cicode
+// ---------------------------------------------------------------------------
+
+
+// ---------------------------------------------------------------------------
+// Function to extract item from equipment hierarchy name
+//
+// _Equip_GetEquipNamePart:
+//
+// Parameters
+// Data:   The equipment name hierarchy.
+// Indent: The number of levels to move along the hierarchy.
+// Mode:   The retun mode: 0 for the item name at the requested level.
+//                         1 for the parent hierarchy of the item.
+//                         2 for the total level count of the hierarchy (Indent is ignored).
+//
+// ---------------------------------------------------------------------------
+
+INT FUNCTION _UAG_NE107_BuildMenuPage(STRING sPageName, STRING sSelectFn, STRING sNameFilter)
+
+	INT		hSession;
+	INT		hPageNode;
+	INT		hNode;
+	INT		hChild;
+	STRING	sName;
+	STRING	sItem;
+	STRING	sItemFull;
+	STRING	sSymbol;
+	STRING 	sNE;
+	STRING	sTag;
+	INT		iWert,iWertQ;
+	INT		nLevel;
+	INT		nMaxLevel;
+	INT		nError		= 0;
+
+	// Load the equipment nodes
+		hSession=UAG_DevOpen_UI("UNE107.DBF", "{Name,40}{MCODE,2}{SPS,10}{Type,32}{PARENT,100}");		
+
+	// Check if the equipment list has not loaded
+	IF (hSession = -1) THEN RETURN (-1); END
+
+	// Open the menu node
+	hPageNode = MenuGetPageNode(sPageName, TRUE);
+	ErrSet(1);
+	// Remove Existing Menu Items
+	hChild = MenuGetFirstChild(hPageNode);
+	WHILE (hChild <> -1) DO
+		MenuNodeRemove(hChild);
+		hChild = MenuGetNextChild(hChild);
+	END
+
+	// Process each equipment entry
+	WHILE (nError = 0) DO
+		sName = DevGetField(hSession, "PARENT");
+
+
+		nLevel = 0;
+		hNode = hPageNode;
+		nMaxLevel = _MyEquip_GetEquipNamePart(sName, 0, 2);
+
+		// Move along the menu path for the entry
+		WHILE ((StrLength(sItem) > 0) OR (nLevel = 0)) DO
+
+			sItem = _MyEquip_GetEquipNamePart(sName, nLevel);
+			IF (StrLength(sItem) > 0) THEN
+				hChild = MenuGetChild(hNode, sItem);
+				IF (hChild = -1) THEN
+					sItemFull = _MyEquip_GetEquipNamePart(sName, nLevel, 1);
+					sNE = DevGetField(hSession, "MCODE");
+					IF sNE = "1" THEN
+						sTag = DevGetField(hSession, "Name");
+						sSymbol=UAG_NE107_Eq_Sym(sTag,nLevel,nMaxLevel);
+					ELSE
+						sSymbol="uag_device.node"
+
+					END	
+					hChild = MenuNodeAddChild(hNode, sItem, sSelectFn, "^""+sItemFull+"^"", sSymbol);
+				END
+			END
+
+			hNode = hChild;
+			nLevel = nLevel + 1;
+		END
+
+		nError = DevNext(hSession);
+	END
+
+	DevClose(hSession);
+	ErrSet(0);
+	RETURN TRUE
+END
+
+STRING FUNCTION _MyEquip_GetEquipNamePart(STRING sName, INT nIndent = 0, INT nMode = 0)
+
+	INT		nOffset		= 0;
+	INT		nPos		= 0;
+	INT		nIndex		= 0;
+	INT		bEnd		= 0;
+
+	IF (nMode = 2) THEN nIndent = 9999; END
+	IF (nIndent < 0) THEN RETURN (""); END
+
+	WHILE (sName <> "") AND (nIndex <= nIndent) AND (bEnd = 0) DO
+
+		nPos = StrSearch(nOffset, sName, ".");
+		IF (nPos < 0) THEN
+			nPos = StrLength(sName);
+			IF (nMode = 2) THEN nIndent = nIndex; END
+			bEnd = 1;
+		END
+
+		IF (nIndent = nIndex) THEN
+			IF (nMode = 2) THEN RETURN( nIndex ); END
+			IF (nMode = 1) THEN RETURN( StrLeft(sName, nPos) ); END
+			RETURN( StrMid(sName, nOffset, nPos-nOffset) );
+		ELSE
+			nIndex = nIndex + 1;
+			nOffset = nPos + 1 ;
+		END
+	END
+
+	RETURN("");
+END
+
+FUNCTION UAG_NE107_sel(STRING sName)
+INT 	hDev,iTemp;
+STRING	sTag;
+
+	hDev=UAG_DevOpen_UI("UNE107.DBF", "{Name,40}{MCODE,2}{SPS,10}{Type,32}{PARENT,100}");		
+	IF (hDev = -1) THEN RETURN; END
+	DevSeek(hDev, 1);
+	IF DevFind(hDev, sName, "PARENT") = 0 THEN
+		sTag = DevGetField(hdev, "Name");;
+	END
+	DevClose(hdev);
+	iTemp = StrSearch(StrLength(sTag)-4, sTag, "_")
+
+	sTag = StrLeft(sTag, iTemp )
+
+	PageSetStr(3,sName);
+	PageSetStr(4,sTag);
+	UAG_NE107_LoadUI(sTag+"_KT",5)
+	PageSetStr( 13,TagRead(sTag+"_M"))
+END
+
+//	FUNCTION UAG_NE107_Eq_Sym()
+//	Übergabeparameter:	
+//                    sTag: Name of tag that indicates if messages must be displayed or not
+//                         
+//	Rückgabewert:		Symbol Name
+//	Beschreibung:		Symbol zum NE107 Status suchen.
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	24.08.2011	/	Schneider Electrik GmbH
+//	Version				7.2.3.0
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	
+
+STRING FUNCTION 
+UAG_NE107_Eq_Sym(STRING sTag, INT nLevel,INT nMaxLevel)
+INT iWert, temp2;
+	ErrSet(1);
+//	temp=TagReadEx(sTag+".Q")
+//	temp2 = IsError()
+//
+	IF QualityIsBad(TagReadEx(sTag+".Q")) THEN
+		IF (nLevel = nMaxLevel) THEN
+			ErrSet(0);
+			RETURN  "uag_device.node_err"
+		ELSE
+			ErrSet(0);
+			RETURN   "uag_device.l0_err";
+		END
+	END	
+	iWert =UAG_AtNE107GetSymbolindex( HighByte(HighWord( TagReadEx(sTag))));
+	IF iWert >0 THEN 
+		IF (nLevel = nMaxLevel) THEN
+			ErrSet(0);
+			RETURN  "uag_device.NE_"+IntToStr ( iWert)
+//			UAG_NE107_Eq_Sym(sTag)
+		ELSE
+			ErrSet(0);
+			RETURN   "uag_device.l0_err";
+		END
+	ELSE
+		IF (nLevel = nMaxLevel) THEN 
+			ErrSet(0);
+			RETURN   "uag_device.node"
+		ELSE
+			ErrSet(0);
+			RETURN   "uag_device.l"+ IntToStr(nLevel);
+		END
+	END
+	ErrSet(0);
+END
+
+// PageName:   The page name to be used for the constructed menu.
+// SelectFn:   The Cicode function name to call when a menu item is selected.
+//             The defined function is to expect a single string parameter.
+//             Example: MyFunction(STRING sName)
+// NameFilter: Apply a filter on the name field of the equipment list.
+
+//	FUNCTION UAG_LoadUI()
+//	Übergabeparameter:	
+//                    sTag: Name of tag that indicates if messages must be displayed or not
+//                    AssNumber: Number of first association that must be realized
+//                    MaxAss: Maximum number of association that must be realized
+//                         
+//	Rückgabewert:		---
+//	Beschreibung:		zusatztexte für Tag und Faceplate laden.
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	10.06.2011	/	Schneider Electrik GmbH
+//	Version				7.2.0.2
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	
+
+FUNCTION UAG_NE107_LoadUI(STRING sTag, INT istart, INT iMax=7)
+INT hDev, i;
+
+	// To initialize texts associated to SuperGenie
+	FOR i=istart TO (istart+iMax-1) DO
+		PageSetStr(i, "-");
+	END
+	ErrSet(1);
+
+	// To examine if Tag exists at DataBase
+	IF TagInfo(sTag,0) <> "" THEN
+		// If Tag exists, the texts must be searched in configuration file
+
+		hDev = UAG_DevOpen_UI("UIMessag.DBF", "{Name,40}{SPS,10}{AREA,16}{Bild,31}{ORT,32}{PLAN,32}{HERST,32}{BNR,32}")
+		IF hDev >= 0 THEN
+			DevSeek(hDev, 1);
+			IF DevFind(hDev, sTag, "Name") = 0 THEN
+					PageSetStr( istart + 0, DevGetField(hDev, "SPS"));
+					PageSetStr( istart + 1, DevGetField(hDev, "AREA"));
+					PageSetStr( istart + 2, DevGetField(hDev, "Bild"));
+					PageSetStr( istart + 3, DevGetField(hDev, "ORT"));
+					PageSetStr( istart + 4, DevGetField(hDev, "PLAN"));
+					PageSetStr( istart + 5, DevGetField(hDev, "HERST"));
+					PageSetStr( istart + 6, DevGetField(hDev, "BNR"));
+					
+			END
+		END
+		DevClose(hDev);
+	END;
+	ErrSet(0);
+END
+
+
+
+

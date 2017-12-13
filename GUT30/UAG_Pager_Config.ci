@@ -1,0 +1,1001 @@
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//	
+// 	FILE:	UAG_Pager_Config.ci
+//
+//	Beschreibung:
+//
+//	This file contains the user interface forms for configuration of
+//	the paging sequence steps for each alarm.
+//
+//		Funktionen mit Version 3.x sind freigegeben
+//
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	10.10.08	/	Schneider Electrik GmbH
+//	Version				74.33.81.02
+//
+//
+//	NOTE:	Variable Prefixes;
+//			h	Local (function) var handle 	(INT data type)
+//			i	Local (function) var integer 	(INT data type)
+//			s	Local (function) var string 	(STRING data type)
+//			r	Local (function) var real 		(REAL data type)
+//
+//			mh	Module (file) var handle type 	(INT data type)
+//			mi	Module (file) var integer type 	(INT data type)
+//			ms	Module (file) var string type 	(STRING data type)
+//			mr	Module (file) var real type 	(REAL data type)
+//
+//			gh	Global (project) var handle type 	(INT data type)
+//			gi	Global (project) var integer type 	(INT data type)
+//			gs	Global (project) var string type 	(STRING data type)
+//			gr	Global (project) var real type 		(REAL data type)
+//
+//			_	Label defined in LABELS.DBF (remaining letters capitalised)
+//
+//			none	All capitalised represent VARIABLE Tags
+//
+//      Notes:
+//			
+////	PUBLIC FUNCTIONS:
+//
+//		DspAlarmPagingForm(INT iRecNo)
+//		DspPagingAlarmList()
+//
+//	FUNCTIONS:
+//		///	User functions ///
+//
+//		///	System function ///
+//		_GetAlarmFormData( INT hSQL, INT iRecNo)
+//		_SetTxStatus( INT hSQL, INT iRecNo)
+//		_AddPagingStep()				! Form Callback function
+//		_InsertPagingStep()				! Form Callback function
+//		_UpdatePagingStep()             ! Form Callback function
+//		_DeletePagingStep()             ! Form Callback function
+//		_ClearPagingSteps()             ! Form Callback function
+//		_LoadPagingSteps()				! Form Callback function
+//		_SavePagingSteps()				! Form Callback function
+//		_InsertStep( INT hSQL, INT iRecNo, INT iStepNo, STRING sStepName, STRING sStepData)
+//		_UpdateStep( INT hSQL, INT iRecNo, INT iStepNo, STRING sStepName, STRING sStepData)
+//		_EditPagingStepForm( STRING sTitle, INT iStepNo, STRING sStepName, STRING sStepData, INT iMode)
+//		_TranslateStrings(STRING sString, INT iMode)
+//			
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)//
+
+
+
+
+
+//	MODULE CONSTANTS	//
+
+INT	miStepNoWidth	= 5;
+INT	miStepNameWidth = 18;
+INT	miStepDataWidth = 44;
+INT	miUpdatemode	= 0;
+INT	miInsertMode	= 1;
+
+STRING	gsAlarmFormText[ 12] =
+		"@(Tag):",
+		"@(Name):",
+		"@(Description):",
+		"@(Category):",
+		"@(Area):",
+		"  @(Send To &Pager^(s^))",
+		"@(&Note)";
+
+//	MODULE VARS		//
+BINARY	mbUpdating		= FALSE;
+BINARY	mbBusy			= FALSE;
+
+INT		mhPagingForm	= -1;
+INT		mhSQL			= -1;
+INT		mhIndicateSQL	= -1;
+STRING	msAlmTag		= "";
+STRING	msName			= "";
+STRING	msDesc			= "";
+STRING	msCat			= "";
+STRING	msArea			= "";
+INT		miPagingIndicate[ 21];
+
+STRING	msAlarmFormData[ 12];
+STRING	msAlarmFormData2[ 12];
+STRING	msStepInfo 		= "";
+STRING	sTest[20];
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//		FUNCTION NAME	
+//						DspAlarmPagingForm
+//
+//	FUNCTION DESCRIPTION:	Displays the main user interface form that allows Citect alarms
+//				to be set to transmit to a sequence of configured pagers.
+//				Only one of these forms can be open at a time due to the use of a GLOBAL
+//				alarm record number.
+//
+//				The form is automaticlly destroyed and re-opened when the paging sequence is edited
+//				using the callback function buttons. The form is also safe guarded in the case of
+//				the form being closed using the system menu (move, close).
+//
+// 		ARGUMENTS:
+//
+//			sAlmtag		-	Alarmtag
+
+//
+//     	RETURNED VALUE: 
+//
+//			0 if successful, otherwise -1
+//
+//		PSEUDO CODE:
+//
+//	Autor:				A.Winter
+//	Erstellungsdatum:	17.07.95	/	Schneider Electric GmbH
+//	Version				74.33.81.02
+//
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//
+// 13.11.09 Steiner 		Aufruf für Client geändert
+// 27.11.15	Steiner			Checkbox Wert geändert
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+INT FUNCTION
+DspAlarmPagingForm(STRING sAlmTag,STRING sName,STRING sDesc,STRING sCat="",STRING sArea="")
+	INT	iError		= -1;
+	INT	iCount		= 0;
+	INT	iFormWidth	= 70;
+	INT	iFormHeight	= 16;
+	INT	iTest		= -1;
+	INT iRecNo		= -1;
+	STRING sTemp;	
+	IF mhPagingForm <> -1 OR sAlmTag = "" THEN
+		RETURN( -1);
+	END
+
+	IF mhSQL = -1 THEN
+		mhSQL = SQLConnect("DSN=PAGING");
+		IF mhSQL < 0 THEN
+			UAG_SystemInfo("DspAlarmPagingForm", "Paging System", "@(Error connecting to ^"PAGING^" ODBC data source).","-","-","-",TaskCluster(),_UAG_Fehler)
+			RETURN( -1);
+		END
+	END
+
+//	iRecNo = AlarmFirstTagRec(sAlmTag,"","",""); //Purely checks to see if the alarm tag is a configured alarm
+//	IF iRecNo = -1 THEN
+//		SQLDisconnect(mhSQL);
+//		mhSQL = -1;
+//		RETURN -1;
+//	END
+	
+	msAlmTag = sAlmTag;
+	msName			= sNAME;
+	msDesc			= sDesc;
+	msCat			= sCat;
+	msArea			= sArea;
+	
+	msAlarmFormData[ 0] = msAlmTag;
+	msAlarmFormData[ 1] = msName;
+	msAlarmFormData[ 2] = msDesc;
+	msAlarmFormData[ 3] = msCat;
+	msAlarmFormData[ 4] = msArea;
+	msAlarmFormData[ 5] = "0";						//Default to not paging mode
+
+	IF _RecordExist( mhSQL, "PagingAlarms", "TAG", "'"+msAlmTag+"'") THEN		//If its a paging alarm
+		sTemp = SQLGetTrimField( mhSQL, "TX")
+		msAlarmFormData[ 5] = sTemp
+	END
+
+	mhPagingForm = FormNew( "@(Select Alarm Pager)", iFormWidth, iFormHeight, 1+8);
+
+
+	FormGroupBox( 0, 0, iFormWidth , 7);
+	FormPrompt( 3, 0, " @(ALARM INFO) ");
+	FOR iCount = 0 TO 2 DO
+		FormPrompt( 2, iCount+1, gsAlarmFormText[ iCount]);
+		FormPrompt( 14, iCount+1, msAlarmFormData[ iCount]);
+	END
+
+	FormPrompt( 36, 1, gsAlarmFormText[ 3]);
+	FormPrompt( 45, 1, msAlarmFormData[ 3]);
+	FormPrompt( 52, 1, gsAlarmFormText[ 4]);
+	FormPrompt( 59, 1, msAlarmFormData[ 4]);
+
+	FormGroupBox( 0, iFormHeight - 10, iFormWidth , 11);
+	FormPrompt( 3, iFormHeight - 10, "@(PAGING Abfolge, 17, c)");
+	FormCheckBox( 2, iFormHeight - 9, gsAlarmFormText[ 5], msAlarmFormData[ 5]);
+	FormPrompt( 37, iFormHeight - 9, "@(Steps) :");
+	FormPrompt( 2, iFormHeight - 8, "@(&Step Name, 23, l)@(User Message / Delay Time ^(seconds^))");
+
+	iError = SQLExec( mhSQL, " SELECT STEPNO,STEPName,StepData FROM PagingAlarms WHERE TAG='" + msAlmTag + "' ORDER BY STEPNO");
+	IF SQLNext(mhSQL) = 0 THEN
+		msStepInfo = StrPad( SQLGetField( mhSQL, "STEPNO"), " ", miStepNoWidth) +
+				StrPad( _TranslateStrings(SQLGetField( mhSQL, "STEPName"), 0), " ", miStepNameWidth) +
+				StrPad( SQLGetField( mhSQL, "STEPData"), " ", miStepDataWidth);
+	END
+	FormListBox( 2, iFormHeight - 7, iFormWidth - 4, 4, msStepInfo, 1);
+	IF msStepInfo <> "" THEN
+		FormAddList(msStepInfo);
+	END
+	WHILE SQLNext( mhSQL) = 0 DO
+		FormAddList(	StrPad( SQLGetField( mhSQL, "STEPNO"), " ", miStepNoWidth) +
+				StrPad( _TranslateStrings(SQLGetField( mhSQL, "STEPName"), 0), " ", miStepNameWidth) +
+				StrPad( SQLGetField( mhSQL, "STEPData"), " ", miStepDataWidth));
+	END
+	FormButton( 2 , iFormHeight - 3, "@(&Edit, 8, c)", _UpdatePagingStep, 0);
+	FormButton( 13, iFormHeight - 3, "@(&Add, 8, c)", _AddPagingStep, 0);
+	FormButton( 24, iFormHeight - 3, "@(&Insert, 8, c)", _InsertPagingStep, 0);
+	FormButton( 35, iFormHeight - 3, "@(&Delete, 8, c)", _DeletePagingStep, 0);
+	FormButton( 46, iFormHeight - 3, "@(&Clear, 8, c)", _ClearPagingSteps, 0);
+	FormButton( 46, iFormHeight - 9, "@(&Load, 8, c)", _LoadPagingSteps, 0);
+	FormButton( 57, iFormHeight - 9, "@(&Save, 8, c)", _SavePagingSteps, 0);
+	FormButton( iFormWidth - 11, iFormHeight - 1, "@(Close)", 0, 1);
+
+	IF FormRead(0) = 0 THEN
+		_SetTxStatus( mhSQL, msAlmTag);
+	ELSE
+		IF mbUpdating THEN		! When the form is destroyed via the callback functions below
+			msStepInfo = "";	! then the SQL connection should be maintained. Each of the 
+			mhPagingForm = -1;	! callback functions set the mbUpdating flag.
+			mbUpdating = FALSE;
+			RETURN( 0);
+		END
+	END
+	SQLDisconnect( mhSQL);
+	mhSQL = -1;
+	mhPagingForm = -1;
+	msStepInfo = "";
+	FOR iCount = 0 TO 11 DO
+		msAlarmFormData[ iCount] = "";
+	END
+	RETURN(0);
+END
+
+
+
+//
+//	FUNCTION NAME:		_SetTxStatus
+//
+//	FUNCTION DESCRIPTION:	When the AlarmPagingForm is closed this function is called and updates
+//				a flag in the MS-Access PagingAlarms table that determines whether the
+//				paging alarm should be transmitted or not.
+//
+//	REV	DATE		WHO		DESCRIP
+//	1.0	17/7/95		A.Winter	Original
+//	1.1	12/06/08	A.Winter	Modified to used alarm tag rather than record number
+//
+//	SOURCE:			Called from DspAlarmPagingForm on closing.
+//
+//	ARGUMENTS:
+//		hSQL		A handle to the MS-Access paging database
+//		iRecNo		The Citect alarm record number
+//
+//	RETURNED VALUE:
+//		0		If OK
+//		-1		If an error occured performing the SQL update
+//
+//	NOTES:
+//
+
+INT FUNCTION
+_SetTxStatus( INT hSQL, STRING sAlmTag)
+	INT	iError		= -1;
+	INT	iCount		= 0;
+	STRING sTemp;
+		sTemp =msAlarmFormData[ 5]	
+			
+	IF _RecordExist( hSQL, "PagingAlarms", "TAG", "'"+sAlmTag+"'") THEN
+		iError = SQLExec( hSQL, " UPDATE PagingAlarms SET TX="+msAlarmFormData[ 5]+
+					 " WHERE TAG='" +sAlmTag +"'");
+		IF iError <> 0 THEN
+			UAG_SystemInfo("_SetTxStatus", "Paging System", "@(UPDATE error updating paging alarms TX field).","-","-","-",TaskCluster(),_UAG_Fehler)
+			RETURN(-1);
+		END
+	END
+	RETURN(0);
+END
+
+
+//
+//	FUNCTION NAME:		_AddPagingStep
+//
+//	FUNCTION DESCRIPTION:	Adds either a new step 0 or new step at the end of the paging
+//				sequence for the current alarm number.
+//
+//	REV	DATE		WHO		DESCRIP
+//	1.0	17/7/95		A.Winter	Original
+//	1.1	12/06/08	A.Winter	Modified to used alarm tag rather than record number
+//
+//	SOURCE:			Form call back function called form the AlarmPagingForm.
+//
+//	ARGUMENTS:
+//
+//	RETURNED VALUE:
+//		0		Serves no purpose on callback functions
+//
+//	NOTES:
+//
+
+PRIVATE INT
+FUNCTION
+_AddPagingStep()
+	INT	iError;
+	INT	iStepNo = 0;
+	STRING	sStepName = "";
+	STRING	sStepData = "";
+
+	! If this alarm number already exists as a paging alarm then find the last step no
+	! in paging sequence and increment by 1
+
+	IF _RecordExist( mhSQL, "PagingAlarms", "TAG", "'"+msAlmTag+"'") THEN
+		iError = SQLExec( mhSQL, " SELECT STEPNO"+
+					" FROM PagingAlarms"+
+					" WHERE TAG='"+msAlmTag+"'"+
+					" ORDER BY STEPNO");
+		IF iError = 0 THEN
+			WHILE SQLNext( mhSQL) = 0 DO
+				;
+			END
+			iStepNo = StrToInt( SQLGetField( mhSQL, "STEPNO")) + 1;
+		END
+	END
+
+	IF _EditPagingStepForm( "@(<Add Paging Step>)", iStepNo, sStepName, sStepData, miInsertMode) = 0 THEN
+		mbUpdating = TRUE;
+		FormDestroy( mhPagingForm);
+		DspAlarmPagingForm(msAlmTag,msName,msDesc,msCat,msArea);
+	END
+	msStepInfo = "";
+	RETURN( 0);
+END
+//
+//	FUNCTION NAME:		_InsertPagingStep
+//
+//	FUNCTION DESCRIPTION:	Inserts a new step in front of the currently highlighted paging step
+//				in the paging sequence for the current alarm number.
+//
+//	REV	DATE		WHO		DESCRIP
+//	1.0	17/7/95		A.Winter	Original
+//	1.1	12/06/08	A.Winter	Modified to used alarm tag rather than record number
+//
+//	SOURCE:			Form call back function called form the AlarmPagingForm.
+//
+//	ARGUMENTS:
+//
+//	RETURNED VALUE:
+//		0		Serves no purpose on callback functions
+//
+//	NOTES:
+//
+
+PRIVATE INT
+FUNCTION
+_InsertPagingStep()
+	INT	iError;
+
+	FormGetData( mhPagingForm);
+	IF msStepInfo <> "" THEN
+		IF _RecordExist( mhSQL, "PagingAlarms", "TAG", "'"+msAlmTag+"'") THEN
+			IF _EditPagingStepForm( "@(<Insert Paging Step>)",
+					 StrToInt( StrLeft( msStepInfo, miStepNoWidth)),
+					 StrTrim( StrMid( msStepInfo, 5, miStepNameWidth)),
+					 StrTrim( StrMid( msStepInfo, 23, miStepDataWidth)),
+					 miInsertMode) = 0
+			THEN
+				mbUpdating = TRUE;
+				FormDestroy( mhPagingForm);
+				DspAlarmPagingForm(msAlmTag,msName,msDesc,msCat,msArea);
+
+			END
+		END
+		msStepInfo = "";
+	END
+	RETURN( 0);
+END
+
+//
+//	FUNCTION NAME:		_UpdatePagingStep
+//
+//	FUNCTION DESCRIPTION: 	Edits the currently highlighted paging step in the paging sequence 
+//				for the current alarm number.
+//
+//	REV	DATE		WHO		DESCRIP
+//	1.0	17/7/95		A.Winter	Original
+//	1.1	12/06/08	A.Winter	Modified to used alarm tag rather than record number
+//
+//	SOURCE:			Form call back function called form the AlarmPagingForm.
+//
+//	ARGUMENTS:
+//
+//	RETURNED VALUE:
+//		0		Serves no purpose on callback functions
+//
+//	NOTES:
+//
+
+INT
+FUNCTION
+_UpdatePagingStep()
+	INT	iError;
+
+	FormGetData(mhPagingForm);
+	IF msStepInfo <> "" THEN
+		IF _RecordExist(mhSQL, "PagingAlarms", "TAG", "'"+msAlmTag+"'") THEN
+			IF _EditPagingStepForm("@(<Update Psging Step>)",
+					 StrToInt(StrLeft(msStepInfo, miStepNoWidth)),
+					 StrTrim(StrMid(msStepInfo, 5, miStepNameWidth)),
+					 StrTrim(StrMid(msStepInfo, 23, miStepDataWidth)),
+					 miUpdatemode) = 0
+			THEN
+				mbUpdating = TRUE;
+				FormDestroy(mhPagingForm);
+				DspAlarmPagingForm(msAlmTag,msName,msDesc,msCat,msArea);
+			END
+		END
+	END
+	RETURN(0);
+END
+
+//
+//	FUNCTION NAME:		_DeletePagingStep
+//
+//	FUNCTION DESCRIPTION: 	Delets the currently highlighted paging step in the paging sequence
+//				for the current alarm number. Also re-numbers all following steps.
+//
+//	REV	DATE		WHO		DESCRIP
+//	1.0	17/7/95		A.Winter	Original
+//	1.1	12/06/08	A.Winter	Modified to used alarm tag rather than record number
+//
+//	SOURCE:			Form call back function called form the AlarmPagingForm.
+//
+//	ARGUMENTS:
+//
+//	RETURNED VALUE:
+//		0		Serves no purpose on callback functions
+//
+//	NOTES:
+//
+
+PRIVATE INT
+FUNCTION
+_DeletePagingStep()
+	INT	iError;
+	INT	iStepNo;
+
+	FormGetData( mhPagingForm);
+	IF msStepInfo <> "" THEN
+		iError = _MessageForm( "@(WARNING)", "@(Delete Paging Step). @(Are You Sure ?)", 1);
+		IF iError = 0 THEN
+			iStepNo = StrToInt( StrLeft( msStepInfo, 5));
+			iError = SQLExec( mhSQL, " DELETE FROM PagingAlarms"+
+						" WHERE TAG='"+msAlmTag+"' AND STEPNO="+iStepNo:#);
+			IF iError <> 0 THEN
+				UAG_SystemInfo("_DeletePagingStep", "Paging System", "@(DELETE error deleting step in paging steps).","-","-","-",TaskCluster(),_UAG_Fehler)
+				RETURN(-1);
+			ELSE
+				iError = SQLExec( mhSQL, " UPDATE PagingAlarms SET STEPNO=[STEPNO]-1"+
+							" WHERE TAG='"+msAlmTag+"' AND STEPNO>="+iStepNo:#);
+				IF iError <> 0 THEN
+					UAG_SystemInfo("_DeletePagingStep", "Paging System", "@(UPDATE error deleting step in paging steps).","-","-","-",TaskCluster(),_UAG_Fehler)
+					RETURN(-1);
+				END
+			END
+			mbUpdating = TRUE;
+			FormDestroy( mhPagingForm);
+			DspAlarmPagingForm(msAlmTag,msName,msDesc,msCat,msArea);
+		END
+	END
+	RETURN( 0);
+END
+
+//
+//	FUNCTION NAME:		_ClearPagingSteps
+//
+//	FUNCTION DESCRIPTION: 	Clears all the paging steps in the paging sequence.
+//
+//	REV	DATE		WHO		DESCRIP
+//	1.0	17/7/95		A.Winter	Original
+//	1.1	12/06/08	A.Winter	Modified to used alarm tag rather than record number
+//
+//	SOURCE:			Form call back function called form the AlarmPagingForm.
+//
+//	ARGUMENTS:
+//
+//	RETURNED VALUE:
+//		0		Serves no purpose on callback functions
+//
+//	NOTES:
+//
+
+PRIVATE INT FUNCTION
+_ClearPagingSteps()
+	INT	iError;
+
+	iError = _MessageForm( "@(WARNING)", "@(Delete all Paging Step ).  @(Are You Sure ?)", 1);
+	IF iError = 0 THEN
+		iError = SQLExec( mhSQL, " DELETE FROM PagingAlarms"+
+					 " WHERE TAG='"+msAlmTag+"'");
+		IF iError <> 0 THEN
+			UAG_SystemInfo("_ClearPagingSteps", "Paging System", "@(DELETE error clearing paging steps).","-","-","-",TaskCluster(),_UAG_Fehler)
+			RETURN(-1);
+		END
+		mbUpdating = TRUE;
+		FormDestroy( mhPagingForm);
+		DspAlarmPagingForm(msAlmTag,msName,msDesc,msCat,msArea);
+	END
+	RETURN( 0);
+END
+
+
+//
+//	FUNCTION NAME:		_LoadPagingSteps
+//
+//	FUNCTION DESCRIPTION: 	Opens the generic _RecordSelectForm function to allow a sequence of paging
+//				steps to be loaded (and deleted) into the currently displayed alarm record number.
+//
+//	REV	DATE		WHO		DESCRIP
+//	1.0	1/9/95		A.Winter	Original
+//	1.1	12/06/08	A.Winter	Modified to used alarm tag rather than record number
+//
+//	SOURCE:			Form call back function called form the AlarmPagingForm.
+//
+//	ARGUMENTS:
+//
+//	RETURNED VALUE:
+//		0		Serves no purpose on callback functions
+//		-1		Serves no purpose on callback functions
+//
+//
+//	NOTES:
+//
+
+PRIVATE INT FUNCTION
+_LoadPagingSteps()
+	INT	iError;
+	INT	hSeqSQL = -1;
+	STRING	sName;
+
+	hSeqSQL = SQLConnect("DSN=PAGING");
+	IF hSeqSQL < 0 THEN
+		UAG_SystemInfo("_LoadPagingSteps", "Paging System", "@(Error connecting to ^"PAGING^" ODBC data source).","-","-","-",TaskCluster(),_UAG_Fehler)
+		RETURN( -1);
+	END
+
+	sName = _RecordSelectForm( hSeqSQL, "@(Select Sequence)", "Sequences", "Name", "", 2);
+	IF _RecordExist( hSeqSQL, "Sequences", "Name", "'"+sName+"'") THEN
+		_RecordDelete( mhSQL, "PagingAlarms", "TAG", "'"+msAlmTag+"'");
+		iError = SQLExec( hSeqSQL," SELECT STEPNO,STEPName,StepData"+
+					  " FROM Sequences"+
+					  " WHERE Name='"+sName+"'"+
+					  " ORDER BY STEPNO");
+		WHILE SQLNext( hSeqSQL) = 0 DO
+			_InsertStep( mhSQL, msAlmTag,	StrToInt( SQLGetField( hSeqSQL, "STEPNo")),
+							SQLGetField( hSeqSQL, "STEPName"),
+							SQLGetField( hSeqSQL, "STEPData"));
+		END
+		mbUpdating = TRUE;
+		FormDestroy( mhPagingForm);
+		DspAlarmPagingForm(msAlmTag,msName,msDesc,msCat,msArea);
+	END
+	SQLDisconnect( hSeqSQL);
+	RETURN(0);
+END
+
+
+//
+//	FUNCTION NAME:		_SavePagingSteps
+//
+//	FUNCTION DESCRIPTION: 	Allows the currently configured set of paging steps (the paging sequence) to be
+//				saved with a name into the Sequences table in the ODBC device.
+//
+//	REV	DATE		WHO		DESCRIP
+//	1.0	1/9/95		A.Winter	Original
+//	1.1	12/06/08	A.Winter	Modified to used alarm tag rather than record number
+//
+//	SOURCE:			Form call back function called form the AlarmPagingForm.
+//
+//	ARGUMENTS:
+//
+//	RETURNED VALUE:
+//		0		Serves no purpose on callback functions
+//		-1		Serves no purpose on callback functions
+//
+//
+//	NOTES:
+//
+
+PRIVATE INT FUNCTION
+_SavePagingSteps()
+	INT	iError;
+	INT	hSeqSQL = -1;
+	STRING	sName;
+
+	hSeqSQL = SQLConnect("DSN=PAGING");
+	IF hSeqSQL < 0 THEN
+		UAG_SystemInfo("_SavePagingSteps", "Paging System", "@(Error connecting to ^"PAGING^" ODBC data source).","-","-","-",TaskCluster(),_UAG_Fehler)
+		RETURN( -1);
+	END
+
+	sName = AdvInput( "@(Save Paging Step)", "@(Enter a name to save under)", "");
+	IF sName <> "" THEN
+		IF _RecordExist( hSeqSQL, "Sequences", "Name", "'"+sName+"'") THEN
+			IF _MessageForm( "@(WARNING)", "@(Overwrite existing sequence) "+sName, 1) = 0 THEN
+				_RecordDelete( hSeqSQL, "Sequences", "Name", "'"+sName+"'");
+			ELSE
+				SQLDisconnect( hSeqSQL);
+				RETURN( -1);
+			END
+		END
+		iError = SQLExec( mhSQL, " SELECT STEPNO,STEPName,StepData"+
+					 " FROM PagingAlarms"+
+					 " WHERE TAG='"+msAlmTag+"'"+
+					 " ORDER BY STEPNO");
+
+		WHILE SQLNext( mhSQL) = 0 DO
+			ErrSet( 1);
+			iError = SQLExec( hSeqSQL," INSERT INTO Sequences (Name,STEPNo,STEPName,STEPData)"+
+						" VALUES ('"+	sName+"',"+
+								SQLGetField( mhSQL, "STEPNo")+",'"+
+								SQLGetField( mhSQL, "STEPName")+"','"+
+								SQLGetField( mhSQL, "STEPData")+"')");
+			ErrSet( 0);
+			IF iError = -1 THEN
+				UAG_SystemInfo("_SavePagingSteps", "Paging System", "@(Error inserting steps into Sequences Table)","-","-","-",TaskCluster(),_UAG_Fehler)
+			END
+		END
+	END
+	SQLDisconnect( hSeqSQL);
+	RETURN(0);
+END
+
+
+//
+//	FUNCTION NAME:		_InsertStep
+//
+//	FUNCTION DESCRIPTION:	This function is used to add and insert steps into the paging sequence.
+//
+//	REV	DATE		WHO		DESCRIP
+//	1.0	17/7/95		A.Winter	Original
+//	1.1	12/06/08	A.Winter	Modified to used alarm tag rather than record number
+//
+//	SOURCE:			Called from EditPagingStepForm function if all the step details are correct.
+//
+//	ARGUMENTS:
+//		hSQL		A handle to the MS-Access paging database
+//		iRecNo		The Citect alarm record number
+//		iStepNo		The step number at which to add or insert
+//		sStepName	A valid pager name or "--DELAY--" for a step delay
+//		sStepDate	A user message for the new step or the delay time if sStepName = "--DELAY--"
+//
+//	RETURNED VALUE:
+//		0		If OK
+//		-1		If error
+//
+//	NOTES:
+//
+
+INT FUNCTION
+_InsertStep( INT hSQL, STRING sAlmTag, INT iStepNo, STRING sStepName, STRING sStepData)
+	INT	iError = -1;
+	INT iRecNo = -1;
+
+//	iRecNo = AlarmFirstTagRec(sAlmTag,"","");
+//	IF iRecNo = -1 THEN
+//		UAG_SystemInfo("_InsertStep", "Paging System", "@(INSERT error inserting new step in paging steps).","-","-","-",TaskCluster(),_UAG_Fehler);
+//		RETURN( -1);
+//	END
+	iError = SQLExec( hSQL, " UPDATE PagingAlarms SET STEPNO=[STEPNO]+1"+
+				" WHERE TAG='"+sAlmTag+"' AND STEPNO>="+iStepNo:#);
+	IF iError <> 0 THEN
+		UAG_SystemInfo("_InsertStep", "Paging System", "@(UPDATE error inserting new step in paging steps).","-","-","-",TaskCluster(),_UAG_Fehler);
+		RETURN(-1);
+	ELSE
+		iError = SQLExec( hSQL,	" INSERT INTO PagingAlarms (TAG,NAME,DESCRIPTION,STEPNO,STEPName,STEPData)"+
+					" VALUES ('"+sAlmTag+"','"+
+							StrTrim( msNAME)+"','"+
+							StrTrim( msDESC)+"',"+
+							iStepNo:#+",'"+
+							sStepName+"','"+
+							sStepData+"')");
+		IF iError <> 0 THEN
+			UAG_SystemInfo("_InsertStep", "Paging System", "@(INSERT error inserting new step in paging steps).","-","-","-",TaskCluster(),_UAG_Fehler);
+			RETURN( -1);
+		END
+	END
+	RETURN(0)
+END
+
+
+//
+//	FUNCTION NAME:		_UpdateStep
+//
+//	FUNCTION DESCRIPTION:	This function is used to update a step in the paging sequence.
+//
+//	REV	DATE		WHO		DESCRIP
+//	1.0	17/7/95		A.Winter	Original
+//	1.1	12/06/08	A.Winter	Modified to used alarm tag rather than record number
+//
+//	SOURCE:			Called from EditPagingStepForm function if all the step details are correct.
+//
+//	ARGUMENTS:
+//		hSQL		A handle to the MS-Access paging database
+//		iRecNo		The Citect alarm record number
+//		iStepNo		The step number to update
+//		sStepName	A valid pager name or "--DELAY--" for a step delay
+//		sStepDate	A user message for the updated step or the delay time if sStepName = "--DELAY--"
+//
+//	RETURNED VALUE:
+//		0
+//
+//	NOTES:
+//
+
+INT FUNCTION
+_UpdateStep( INT hSQL, STRING sAlmTag, INT iStepNo, STRING sStepName, STRING sStepData)
+	INT	iError = -1;
+
+	iError = SQLExec( hSQL, " UPDATE PagingAlarms SET STEPName='"+sStepName+"', STEPData='"+sStepData+"'"+
+				" WHERE TAG='"+sAlmTag+"' AND STEPNO="+iStepNo:#);
+	IF iError <> 0 THEN
+		UAG_SystemInfo("_UpdateStep", "Paging System", "@(UPDATE error updating paging step).","-","-","-",TaskCluster(),_UAG_Fehler)
+		RETURN(-1);
+	END
+	RETURN( 0);
+END
+
+
+//
+//	FUNCTION NAME:		_EditPagingStepForm
+//
+//	FUNCTION DESCRIPTION:	Opens an edit form to allow new or existing paging steps to be
+//				added or updated. The form contains fields for selection of a valid 
+//				pager name or a "--DELAY--" step, a step user message and a delay time in
+//				seconds.
+//
+//
+//	REV	DATE		WHO		DESCRIP
+//	1.0	17/7/95		A.Winter	Original
+//	1.1	07/02/2000	T.Munro		Added support for language translation to "--DELAY--" and
+//						"--GOTO--"
+//	1.2	11/10/01	E.Black		Added IF block to load 1st step name into combobox instead of a blank
+//	1.3	12/06/08	A.Winter	Modified to used alarm tag rather than record number
+//
+//	SOURCE:			Called from some of the callback functions above
+//
+//	ARGUMENTS:
+//
+//	RETURNED VALUE:
+//		0
+//
+//	NOTES:
+//
+
+INT FUNCTION
+_EditPagingStepForm( STRING sTitle, INT iStepNo, STRING sStepName, STRING sStepData, INT iMode)
+	INT	iError		= -1;
+	INT	iFormWidth	= 50;
+	INT	iFormHeight	= 5;
+	STRING	sDelay		= "";
+	STRING	sMessage	= "";
+	STRING	sPagerName	= "";
+
+	IF sStepName = _STEP_DELAY_E THEN
+		sStepData = StrWord(sStepData);
+	END
+	IF sStepName = _STEP_GOTO_E THEN
+		sStepData = StrWord(sStepData);
+	END
+
+	FormNew( sTitle, iFormWidth, iFormHeight, 1+8+16);
+
+	SQLExec( mhSQL,	" SELECT Name"	+
+			" FROM Pagers" +
+			" ORDER BY Name");
+
+	IF sStepName = "" THEN		// Don't replace previous step name unless it's blank (adding new step)
+		SQLNext( mhSQL);
+		sStepName = _TranslateStrings(SQLGetField( mhSQL, "Name"), 0);
+	END
+
+	FormComboBox( 2, 0, 18, 6, sStepName, 0);
+
+	WHILE SQLNext( mhSQL) = 0 DO
+		// Add the list of avaliable pagers/steps to the form
+		sPagerName = _TranslateStrings(SQLGetField( mhSQL, "Name"), 0);
+		FormAddList(sPagerName);
+	END
+
+	FormPrompt( 1, 1, "@(User Message / Delay Time ^(seconds^))");
+	FormInput( 0, 2, "", sStepData, iFormWidth -2);
+
+	FormButton( iFormWidth - 26, iFormHeight - 1, "@(OK,8,c)", 0, 1);
+	FormButton( iFormWidth - 11, iFormHeight - 1, "@(Cancel,12,c)", 0, 2);
+	IF FormRead(0) = 0 THEN
+
+		// Translate the selection back to the db internal format
+		sStepName = _TranslateStrings(sStepName, 1);
+		IF _RecordExist( mhSQL, "Pagers", "Name", "'" + StrTrim(sStepName) + "'") THEN
+			IF sStepName = _STEP_DELAY_E THEN
+				// Filter out invalid entry of null, non integer or negative number
+				IF sStepData = "" OR NOT _IsStrInt( sStepData) OR StrLeft( sStepData, 1) = "-" THEN
+					UAG_SystemInfo("_EditPagingStepForm", "Paging System", "@(Invalid delay time).","-","-","-",TaskCluster(),_UAG_Fehler)
+					RETURN( -1);
+				END
+				sStepData = StrPad(sStepData, " ", 10);
+			END
+			IF sStepName = _STEP_GOTO_E THEN
+				// Filter out invalid entry of null, non integer or negative number	//
+				IF sStepData = "" OR NOT _IsStrInt( sStepData) OR StrLeft( sStepData, 1) = "-" THEN
+					UAG_SystemInfo("_EditPagingStepForm", "Paging System", "@(Invalid step no).","-","-","-",TaskCluster(),_UAG_Fehler)
+					RETURN( -1);
+				END
+			END
+			IF iMode = miUpdatemode THEN
+				_UpdateStep( mhSQL, msAlmTag, iStepNo, StrTrim( sStepName), StrTrim( sStepData));
+			END
+			IF iMode = miInsertMode THEN
+				_InsertStep( mhSQL, msAlmTag, iStepNo, StrTrim( sStepName), StrTrim( sStepData));
+			END
+		ELSE
+			UAG_SystemInfo("_EditPagingStepForm","Paging System", "@(Invalid Step Name).","-","-","-",TaskCluster(),_UAG_Fehler)
+			RETURN( -1);
+		END
+	ELSE
+		RETURN( -1);
+	END
+	RETURN( 0);
+END
+
+
+
+//	DspPagingAlarmList()
+//	Übergabeparameter:	---
+//	Rückgabewert:		---
+//	Beschreibung:		This function brings up a list of paging alarms and displays 
+//				the paging alarm details. When selected in the list it will take you
+//				to the paging alarm configuration form. Similar to selecting off the PagingPopup
+//				window list.
+//
+//	Autor:				K. Mac
+//	Erstellungsdatum:	05.01.98	/	Schneider Electrik GmbH
+//	Version				7.2.33.70.01
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	1.1	16/10/01	E.Black		Set Listbox buffer so blank record isn't displayed
+//	1.2	02/03/05	K.Maritz	Change Alarm Select Form to show fixed pitched font
+//								Change spacing to Tag,32 Name,32 Desc,48 
+//	1.3 29/05/08	A.Winter	Merged 3.84R1 and 3.85 changes
+//	20.11.09	Steiner		für Client geändert
+
+
+FUNCTION
+DspPagingAlarmList()
+
+	INT	iError				= -1;
+	INT	iFormWidth			= 120;
+	INT	iFormHeight			= 10;
+	INT	iTagWidth			= 32;
+	INT	iNameWidth			= 32;
+	INT	iDescriptionWidth 	= 48;
+	INT	iRecNo				= 0;
+	INT	hSQL				= -1;
+	
+	STRING	sAlarmInfo		= "";
+	STRING	sAlarmInfoTag	= "";
+	STRING	sAlarmInfoName	= "";
+	STRING	sAlarmInfoDesc	= "";
+
+
+	IF NOT mbBusy THEN
+		mbBusy = TRUE;
+		hSQL = SQLConnect("DSN=PAGING");
+		IF hSQL < 0 THEN
+			UAG_SystemInfo("DspPagingAlarmList","Paging System", "@(Error connecting to ^"PAGING^" ODBC data source).","-","-","-",TaskCluster(),_UAG_Fehler)
+			RETURN;
+		END
+
+		FormNew("@(Pager Alarmliste)", iFormWidth, iFormHeight, 1+2+8+16);
+		FormPrompt(1, 0, " @(Tag,32,l)@(Name,32,l)");
+		FormPrompt(66, 0, "@(Description,48,l)");
+		FormListBox(1, 1, iFormWidth - 2, iFormHeight - 2, sAlarmInfo, 1);
+
+		iError = SQLExec(hSQL,	"SELECT TAG,NAME,DESCRIPTION FROM PagingAlarms ORDER BY STEPNO");
+		WHILE SQLNext(hSQL) = 0 DO
+			FormAddList(StrPad(SQLGetField(hSQL, "TAG"), 		" ", iTagWidth) +
+						StrPad(SQLGetField(hSQL, "NAME"), 		" ", iNameWidth) +
+						StrPad(SQLGetField(hSQL, "DESCRIPTION")," ", iDescriptionWidth));
+		END
+
+		FormButton(iFormWidth - 26, iFormHeight - 1, " @(OK) ", 0, 1);
+		FormButton(iFormWidth - 11, iFormHeight - 1, " @(Cancel) ", 0, 2);
+
+		IF FormRead(0) = 0 THEN
+			sAlarmInfoTag = StrTrim(StrLeft(sAlarmInfo, iTagWidth));		! Gets the Tag field & removes any padding
+			sAlarmInfoName = StrTrim(StrMid(sAlarmInfo, iTagWidth, iNameWidth));
+			sAlarmInfoDesc = StrTrim(StrRight(sAlarmInfo, iDescriptionWidth));
+			IF sAlarmInfoTag <> "" THEN
+				DspAlarmPagingForm(sAlarmInfoTag,sAlarmInfoName,sAlarmInfoDesc);
+			END	
+//			iRecNo = AlarmFirstTagRec(sAlarmInfoTag, sAlarmInfoName, sAlarmInfoDesc);
+			// For language translated alarms ....
+
+
+		END
+		
+		SQLDisconnect(hSQL);
+		mbBusy = FALSE;
+	END
+END
+
+//
+//	FUNCTION Name:		_TranslateStrings
+//
+//	FUNCTION DESCRIPTION:	All STRING information stored the paging system database IS inherently
+//				English. FOR example items such as "--DELAY--" AND "--GOTO--" are always
+//				stored in english in the database.
+//
+//				When we display items such as these on forms we want them translated TO
+//				the LOCAL language. When users SELECT such items (eg from combo boxes on
+//				forms) we must translate them back TO English before updating the database.
+//
+//
+//
+//	REV	DATE		WHO		DESCRIP
+//	1.0	07/02/2000	T.Munro		Original
+//
+//	SOURCE:			
+//
+//	ARGUMENTS:
+//		sString	= Sting TO be translated TO/from db internal English
+//		iMode	= 0 TO translate from db internal TO LOCAL text
+//				= 1 TO translate from LOCAL into db internal
+//
+//	RETURNED VALUE:
+//		sString	= Translated Version of the STRING passed in
+//
+//	NOTES:
+//	TO add items TO this FUNCTION 2 x entries must be added TO the "Labels" records.
+//	- The first label (ending "_E") represents the english Version of the STRING;
+//	- The second label (ending "_L") represents the LOCAL Version of the STRING.
+//
+
+STRING
+FUNCTION
+_TranslateStrings(STRING sString, INT iMode=0)
+
+	// Determine translation direction
+	IF iMode = 0 THEN
+
+		// Translating from db internal to local
+		SELECT CASE sString
+		CASE _STEP_GOTO_E
+			sString = _STEP_GOTO_L;
+		CASE _STEP_DELAY_E
+			sString = _STEP_DELAY_L;
+		CASE _OP_MODE_UNACK_ALL_E
+			sString = _OP_MODE_UNACK_ALL_L;
+		CASE _OP_MODE_UNACK_ON_E
+			sString = _OP_MODE_UNACK_ON_L;
+		CASE _SERVICE_NULL_E
+			sString = _SERVICE_NULL_L;
+		END SELECT
+	ELSE
+		// Translating from local to db internal
+		SELECT CASE sString
+		CASE _STEP_GOTO_L
+			sString = _STEP_GOTO_E;
+		CASE _STEP_DELAY_L
+			sString = _STEP_DELAY_E;
+		CASE _OP_MODE_UNACK_ALL_L
+			sString = _OP_MODE_UNACK_ALL_E;
+		CASE _OP_MODE_UNACK_ON_L
+			sString = _OP_MODE_UNACK_ON_E;
+		CASE _SERVICE_NULL_L
+			sString = _SERVICE_NULL_E;
+		END SELECT
+	END
+
+	// Return the translated string
+	RETURN(sString)
+END
+

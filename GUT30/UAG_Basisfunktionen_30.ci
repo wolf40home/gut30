@@ -1,0 +1,492 @@
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//	
+// 	FILE:	UAG_Basisfunktionen_30.ci
+//
+//	Beschreibung:
+//
+//		Enthält Funktionen die als Grundlage für die neue Oberfläche mit ASM benötigt werden.
+//		Funktionen mit Version 3. sind freigegeben
+//
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	14.07.15	/	Schneider Electrik GmbH
+//	Version				75.33.11.08
+//
+//	PUBLIC FUNCTIONS:
+//
+//			UAG_MELD_ANA_ASM()
+//			UAG_ASM()
+//			UAG_ASM_BIT()
+//			UAG_ASM_ANA()
+//			UAG_ASM_DOS()
+//			UAG_ASM_INT()
+//			UAG_ASM_REG()
+//			UAG_ASM_REG_yh()
+//			
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	
+
+
+
+
+//	FUNCTION UAG_MELD_ANA_ASM()
+//	Übergabeparameter:	Wert, M
+//                                             
+//	Rückgabewert:		Auswertung ob Simulation oder Auserhalb der Spec mit Meldesperre
+//	Beschreibung:		
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	04.05.15	/	Schneider Electrik GmbH
+//	Version				75.33.11.08
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	
+
+INT FUNCTION		
+UAG_MELD_ANA_ASM(INT iM,INT AHH=1,INT ALL=1,INT AH=1,INT AL=1)
+		IF (iM  BITAND Pow(2,2)) THEN //Leitsperre
+			RETURN 5
+		ELSE
+			IF 	AHH=0 OR AH=0 OR ALL=0 OR AL=0 THEN
+				RETURN 2
+			ELSE
+				IF (HighWord(iM ) BITAND Pow(2,0)) OR (HighWord(iM ) BITAND Pow(2,1)) OR (HighWord(iM ) BITAND Pow(2,2)) OR (HighWord(iM ) BITAND Pow(2,3))OR (HighWord(iM ) BITAND Pow(2,6)) THEN
+					RETURN 4
+				ELSE
+					RETURN 0
+				END		
+			END
+		END
+END
+
+//	FUNCTION UAG_MELD_MOT_ASM()
+//	Übergabeparameter:	Wert, M
+//                                             
+//	Rückgabewert:		Auswertung ob Simulation oder Auserhalb der Spec
+//	Beschreibung:		
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	20.07.2015	/	Schneider Electrik GmbH
+//	Version				74.33.81.01
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	
+//	
+
+
+INT FUNCTION		
+UAG_MELD_MOT_ASM(INT iM,INT AHH,INT ALL,INT AH=1,INT AL=1)
+
+	IF (iM  BITAND Pow(2,2)) THEN //Leitsperre
+		RETURN 5
+	ELSE
+		IF 	AHH=0 OR AH=0 OR ALL=0 OR AL=0 THEN
+			RETURN 2
+		ELSE
+			IF (HighWord(iM ) BITAND Pow(2,0)) OR (HighWord(iM ) BITAND Pow(2,1)) OR (HighWord(iM ) BITAND Pow(2,2)) OR (HighWord(iM ) BITAND Pow(2,3)) THEN
+				RETURN 4
+			ELSE
+				RETURN 0
+			END	
+		END		
+	END
+END
+
+
+
+//	FUNCTION UAG_ASM_ANA()
+//	Übergabeparameter:	
+//                    iTag: Name of tag that indicates if messages must be displayed or not
+//                   //                         
+//	Rückgabewert:		---
+//	Beschreibung:		Prüfen ob ASM Symbol sichbar sein soll
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	13.07.2015	/	Schneider Electrik GmbH
+//	Version				74.33.81.01
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//
+INT	
+FUNCTION UAG_ASM_ANA(INT iTag)
+	IF (iTag BITAND Pow(2,15)) THEN  // Meldesperre
+		RETURN 0
+	ELSE
+		IF (HighWord(iTag) BITAND Pow(2,5)) THEN //Alarmsperre
+			RETURN 0
+		ELSE
+			IF HighByte(HighWord(iTag ))BITAND 0x40 THEN // Simulation
+				RETURN 0
+			ELSE		
+				IF (iTag BITAND Pow(2,0)) THEN  // Reparatur
+					RETURN 0
+				ELSE		
+					IF (iTag BITAND Pow(2,1)) THEN  // Automatenfall
+						RETURN 0
+					ELSE
+						RETURN 1
+					END	
+				END
+			END	
+		END		
+	END
+
+
+END
+
+//	FUNCTION UAG_ASM_DOS()
+//	Übergabeparameter:	
+//                    iTag: Name of tag that indicates if messages must be displayed or not
+//                         
+//	Rückgabewert:		---
+//	Beschreibung:		Prüfen ob ASM Symbol sichbar sein soll
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	14.07.2015	/	Schneider Electrik GmbH
+//	Version				74.33.81.01
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//
+INT	
+FUNCTION UAG_ASM_DOS(INT iTag)
+
+	IF (iTag BITAND Pow(2,5)) THEN  // Hand
+		RETURN 0
+	ELSE
+		RETURN UAG_ASM(iTag)
+	END
+
+
+END
+
+//	FUNCTION UAG_ASM_INT()
+//	Übergabeparameter:	
+//                    iTag: Name of tag that indicates if messages must be displayed or not
+//                         
+//	Rückgabewert:		---
+//	Beschreibung:		Prüfen ob ASM Symbol sichbar sein soll
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	30.03.2015	/	Schneider Electrik GmbH
+//	Version				74.33.81.01
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//
+INT	
+FUNCTION UAG_ASM_INT(INT iTag)
+
+	IF (iTag BITAND Pow(2,15)) THEN  // Meldesperre
+		RETURN 0
+	ELSE
+		IF (HighWord(iTag) BITAND Pow(2,5)) THEN //Alarmsperre
+			RETURN 0
+		ELSE
+			IF HighByte(HighWord(iTag ))BITAND 0x40 THEN // Simulation
+				RETURN 0
+			ELSE
+				RETURN 1
+			END
+		END		
+	END
+
+
+END
+
+//	FUNCTION UAG_ASM_reg()
+//	Übergabeparameter:	
+//                    iTag: Name of tag that indicates if messages must be displayed or not
+//                         
+//	Rückgabewert:		---
+//	Beschreibung:		Prüfen ob ASM Symbol sichbar sein soll
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	14.07.2015	/	Schneider Electrik GmbH
+//	Version				74.33.81.01
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//
+INT	
+FUNCTION UAG_ASM_REG(INT iTag)
+
+	IF (iTag BITAND Pow(2,22)) THEN  // Meldesperre
+		RETURN 0
+	ELSE
+		IF (HighWord(iTag) BITAND Pow(2,5)) THEN //Alarmsperre
+			RETURN 0
+		ELSE
+			IF HighByte(HighWord(iTag ))BITAND 0x40 THEN // Simulation
+				RETURN 0
+			ELSE
+				IF NOT (iTag BITAND Pow(2,11)) THEN //Extern
+					RETURN 0
+				ELSE
+					IF NOT (iTag BITAND Pow(2,14)) THEN //Automatik
+						RETURN 0
+					ELSE
+						RETURN 1
+					END
+				END		
+			END
+		END		
+	END
+
+
+END
+//	FUNCTION UAG_ASM_LT()
+//	Übergabeparameter:	
+//                    iTag: Name of tag that indicates if messages must be displayed or not
+//                   //                         
+//	Rückgabewert:		---
+//	Beschreibung:		Prüfen ob ASM Symbol sichbar sein soll
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	19.10.2016	/	Schneider Electrik GmbH
+//	Version				75.33.11.03
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//
+INT	
+FUNCTION UAG_ASM_LT(INT iTag)
+	IF (iTag BITAND Pow(2,4)) THEN  // Meldesperre
+		RETURN 0
+	ELSE
+		RETURN 1
+	END
+END
+
+//	FUNCTION UAG_ASM_reg_yh()
+//	Übergabeparameter:	
+//                    iTag: Name of tag that indicates if messages must be displayed or not
+//                         
+//	Rückgabewert:		---
+//	Beschreibung:		Prüfen ob ASM Symbol sichbar sein soll
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	14.07.2015	/	Schneider Electrik GmbH
+//	Version				74.33.81.01
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//
+INT	
+FUNCTION UAG_ASM_REG_yh(INT iTag)
+
+	IF NOT (iTag BITAND Pow(2,3)) THEN //Extern
+		RETURN 0
+	ELSE
+		RETURN 1
+	END
+
+
+END
+
+//	FUNCTION UAG_ASM_soll()
+//	Übergabeparameter:	
+//                    iTag: Name of tag that indicates if messages must be displayed or not
+//                         
+//	Rückgabewert:		---
+//	Beschreibung:		Prüfen ob ASM Symbol sichbar sein soll
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	15.07.2015	/	Schneider Electrik GmbH
+//	Version				74.33.81.01
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//
+INT	
+FUNCTION UAG_ASM_SOLL(INT iTag)
+
+	IF NOT (iTag BITAND Pow(2,3)) THEN //Extern
+		RETURN 0
+	ELSE
+		RETURN 1
+	END
+
+
+END
+
+//	FUNCTION UAG_ASM_MOT()
+//	Übergabeparameter:	
+//                    iTag: Name of tag that indicates if messages must be displayed or not
+//                         
+//	Rückgabewert:		---
+//	Beschreibung:		Prüfen ob ASM Symbol sichbar sein soll
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	30.03.2015	/	Schneider Electrik GmbH
+//	Version				74.33.81.01
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//
+INT	
+FUNCTION UAG_ASM_MOT(INT iTag)
+
+	IF (iTag BITAND Pow(2,5)) THEN  // Hand
+		RETURN 0
+	ELSE
+		RETURN UAG_ASM(iTag)
+	END
+
+
+END
+
+//	FUNCTION UAG_ASM_MOT()
+//	Übergabeparameter:	
+//                    iTag: Name of tag that indicates if messages must be displayed or not
+//                         
+//	Rückgabewert:		---
+//	Beschreibung:		Prüfen ob ASM Symbol sichbar sein soll
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	28.09.2015	/	Schneider Electrik GmbH
+//	Version				74.33.81.01
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//
+INT	
+FUNCTION UAG_ASM_SYSQ(INT iTag)
+
+		RETURN UAG_ASM(iTag)
+
+END
+
+//	FUNCTION UAG_ASM()
+//	Übergabeparameter:	
+//                    iTag: Name of tag that indicates if messages must be displayed or not
+//                         
+//	Rückgabewert:		---
+//	Beschreibung:		Prüfen ob ASM Symbol sichbar sein soll
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	30.03.2015	/	Schneider Electrik GmbH
+//	Version				74.33.81.01
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//
+INT	
+FUNCTION UAG_ASM(INT iTag)
+
+	IF (iTag BITAND Pow(2,15)) THEN  // Meldesperre
+		RETURN 0
+	ELSE
+		IF (HighWord(iTag) BITAND Pow(2,5)) THEN //Alarmsperre
+			RETURN 0
+		ELSE
+			IF HighByte(HighWord(iTag ))BITAND 0x40 THEN // Simulation
+				RETURN 0
+			ELSE
+				RETURN 1
+			END
+		END		
+	END
+
+
+END
+
+//	FUNCTION UAG_ASM_SYS()
+//	Übergabeparameter:	
+//                    iTag: Name of tag that indicates if messages must be displayed or not
+//                         
+//	Rückgabewert:		---
+//	Beschreibung:		Prüfen ob ASM Symbol sichbar sein soll
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	30.03.2015	/	Schneider Electrik GmbH
+//	Version				74.33.81.01
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//
+
+
+INT	
+FUNCTION UAG_ASM_SYS(INT iTag)
+
+	IF (iTag BITAND Pow(2,15)) THEN  // Meldesperre
+		RETURN 0
+	ELSE
+		IF (HighWord(iTag) BITAND Pow(2,5)) THEN //Alarmsperre
+			RETURN 0
+		ELSE
+			IF HighByte(HighWord(iTag ))BITAND 0x40 THEN // Simulation
+				RETURN 0
+			ELSE
+				RETURN 1
+			END
+		END		
+	END
+
+
+END
+
+//	FUNCTION UAG_ASM_BIT()
+//	Übergabeparameter:	
+//                    iTag: Name of tag that indicates if messages must be displayed or not
+//                    iBit     
+//	Rückgabewert:		---
+//	Beschreibung:		Prüfen ob ASM Symbol sichbar sein soll
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	14.07.2015	/	Schneider Electrik GmbH
+//	Version				74.33.81.01
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//
+INT	
+FUNCTION UAG_ASM_BIT(INT iTag,INT iBit)
+
+	RETURN NOT ((iTag BITAND Pow(2,iBit)) = Pow(2,iBit))
+END
+
+//	UAG_Textauswahl_30()
+//	Übergabeparameter:	 ---     
+//                       
+//	Rückgabewert:		-
+//	Beschreibung:		Zeigt eine Listbox mit Texten aus den Metadaten der AN	
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	13.03.17	/	Schneider Electrik GmbH
+//	Version				75.33.11.08
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	
+FUNCTION UAG_Textauswahl_30(STRING sTag, INT iAnzahl=10)
+	STRING	sBuf;
+	INT		iAn,i;
+	STRING	sText;
+	
+	ErrSet(1);
+	iAn =KeyGetCursor()
+	FormNew(sTag, 38,9, 16);
+	GUT_GetMousePos_unten(300);
+	FormPosition( giPosX,giPosY,0);
+	FormButton( 1, 8, "   @(OK)  ", 0, 1);
+	FormButton(17, 8, " @(Cancel) ", 0, 2);
+	sBuf = TagRead(sTag)
+	FormListBox(1, 0, 36, 7, sBuf);
+	FOR i = 1 TO iAnzahl DO
+		sText = DspAnGetMetadata(iAn, "Text"+ IntToStr(i))
+		IF sText <> "" THEN
+			FormAddList(sText );
+		END	
+	END
+	IF FormRead(0) = 0 THEN
+		TagWrite(sTag,sBuf)
+
+	END
+	ErrSet(0);
+END

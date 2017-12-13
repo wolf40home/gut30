@@ -1,0 +1,3753 @@
+//-----------------------------------------------------------------------------
+// 	FILE:	UAG_UAG_Tabmenu.ci
+//
+//	Beschreibung:
+//
+//		Contains related functions to instantiate alarm lists (for tab style templates) on CitectSCADA windows
+//
+//	Autor:				Michael Yip
+//	Erstellungsdatum:	04.05.09	/	Schneider Electrik GmbH
+//	Version				75.33.11.04
+//	Copyright © 2009 Schneider Electric (Australia) Pty Ltd.
+//	All rights reserved.
+//
+//	SUMMARY:
+//
+//		Contains related functions to instantiate tab menus on CitectSCADA windows.
+//
+//	PUBLIC FUNCTIONS:
+//
+//		UAG_Tabmenu_Run
+//		UAG_Tabmenu_Reload
+//		UAG_Tabmenu_TabFocusDisallowed
+//		UAG_Tabmenu_ButtonFocusDisallowed
+//		UAG_Tabmenu_SelectedTab
+//		UAG_Tabmenu_SelectedButton
+//		UAG_Tabmenu_SelectAllUAG_Tabmenu
+//		UAG_Tabmenu_HasHiddenTab
+//		UAG_Tabmenu_SelectHiddenUAG_Tabmenu
+//		UAG_Tabmenu_SelectAllButtonMenu
+//		UAG_Tabmenu_HasHiddenButton
+//		UAG_Tabmenu_SelectHiddenButton
+//		UAG_Tabmenu_CreateDefaultMenu
+//		UAG_Tabmenu_NeedDefaultMenu
+//		UAG_Tabmenu_GetChild
+//		UAG_Tabmenu_AddChild
+//
+//		UAG_Tabmenu_Tab_Hidden
+//		UAG_Tabmenu_Tab_Disabled
+//		UAG_Tabmenu_Tab_PosOffset
+//		UAG_Tabmenu_Tab_WidthPercent
+//		UAG_Tabmenu_Tab_ShowDspText
+//		UAG_Tabmenu_Tab_ShowIcon
+//		UAG_Tabmenu_Tab_Select
+//
+//		UAG_Tabmenu_Button_Hidden
+//		UAG_Tabmenu_Button_Disabled
+//		UAG_Tabmenu_Button_PosOffset
+//		UAG_Tabmenu_Button_MenuPosOffset
+//		UAG_Tabmenu_Button_WidthPercent
+//		UAG_Tabmenu_Button_ShowDspText
+//		UAG_Tabmenu_Button_ShowIcon
+//		UAG_Tabmenu_Button_HasMenu
+//		UAG_Tabmenu_Button_Select
+//		UAG_Tabmenu_Button_SelectMenu
+//				
+// 	REMARKS: 
+//
+//		There are limits on the range of tab ID or button id that can be assigned to the
+//		tab menu style buttons. Only one Tab Menu is supported per CitectSCADA window
+//
+//	USAGE:
+//		A cicode code that calls UAG_Tabmenu_Run() should be pasted on a page that
+//		contains the tab menu.
+//
+//		Up to c_UAG_Tabmenu_TAB_MAX tabs could be pasted on a tab menu. Each of the
+//		tabs should be assigned a unique tab ID. The ID should start from 0, and
+//		be incrementd by 1 for the next tab and so on.
+//
+//		Up to c_UAG_Tabmenu_BUTTON_MAX buttons could be pasted on a tab menu. Each of the
+//		buttons should be assigned a unique button ID. The ID should start from 0, and
+//		be incrementd by 1 for the next button and so on.
+//
+//-----------------------------------------------------------------------------
+//	16.04.14	Steiner		Alle Funktionen auf 7.40 Page Funktionen umgestellt
+
+
+//-----------------------------------------------------------------------------
+//
+//	Constants
+//
+//-----------------------------------------------------------------------------
+
+INT		c_WINDOW_MAX					= 50;		// Maximum number of windows supported in system
+
+INT		c_UAG_Tabmenu_MAX					= 9;		// Maximum number of Tab Menus to be shown simultaneously
+INT		c_UAG_Tabmenu_PAGESCAN_TIMEOUT		= 5;		// Number of page scan allowed to readjust control positions and widths
+INT		c_UAG_Tabmenu_PAGESCAN_IDLEINTVAL	= 6;		// Number of page scan interval to refresh controls AFTER they have been loaded
+INT		c_UAG_Tabmenu_INITCYCLE_PRE			= 0;		// One of tab menu's initiating cycle state: PRE = prepare for initialisation
+INT		c_UAG_Tabmenu_INITCYCLE_ING			= 1;		// One of tab menu's initiating cycle state: ING = during initialisation
+INT		c_UAG_Tabmenu_INITCYCLE_END			= 2;		// One of tab menu's initiating cycle state: PRE = initialisation ended
+INT		c_UAG_Tabmenu_FOCUS_INIT			= -1;		// Indicate the tab menu is initiating and control cursor focus not to be allowed
+
+INT		c_UAG_Tabmenu_TAB_MAX				= 25;		// Maximum number of Tabs to be shown on a UAG_Tabmenu
+INT		c_UAG_Tabmenu_TAB_CELLPADDING		= 9;		// Celling Padding (including the border) for the Tab box
+INT		c_UAG_Tabmenu_TAB_MINWIDTH			= 63;		// Minimum Width of a Tab (needs to be 1 pixel less than actual)
+INT		c_UAG_Tabmenu_TAB_ICONSIZE			= 16;		// The size of the icon used on the tab row
+INT		c_UAG_Tabmenu_TAB_INTERNALSPACE		= 4;		// The internal spacing betten icon and text
+INT		c_UAG_Tabmenu_TAB_PAGEMARGIN		= 22;		// Number of pixels to be left out on the edge of the page
+
+INT		c_UAG_Tabmenu_BUTTON_MAX			= 25;		// Maximum number of Buttons to be shown on a UAG_Tabmenu
+INT		c_UAG_Tabmenu_BUTTON_CELLPADDING	= 9;		// Celling Padding (including the border) for the Button box
+INT		c_UAG_Tabmenu_BUTTON_MINWIDTH		= 61;		// Minimum Width of a Button (needs to be 1 pixel less than actual)
+INT		c_UAG_Tabmenu_BUTTON_ICONSIZE		= 32;		// The size of the icon used on the tool bar
+INT		c_UAG_Tabmenu_BUTTON_PAGEMARGIN		= 24;		// Number of pixels to be left out on the edge of the page
+INT		c_UAG_Tabmenu_BUTTON_MENUWIDTH		= 16;		// Number of pixels for the dropdown button
+INT		c_UAG_Tabmenu_BUTTON_OFFCENTRE		= 2;		// The off centre of button icon when have menu dropdown button
+
+// The name of system pages, to be initialized by _UAG_Tabmenu_IsSystemPage()
+STRING	c_UAG_Tabmenu_PAGE_SYSTEM[9]		= "PageMenu","Alarm","Summary","SOE","Disabled","Hardware","ProcessAnalyst","!ProcessAnalystPopup","Tab_Style_Startup";
+INT		c_UAG_Tabmenu_PAGE_SYSTEM_COUNT		= -1;		// The number of system pages, initialized by _UAG_Tabmenu_IsSystemPage()
+
+// The enumerated values for parameter [Page]AddDefaultMenu
+INT		c_PAGE_DEFMENU_DISABLED			= 0;		// never add default menu
+INT		c_PAGE_DEFMENU_GENERIC			= 1;		// add if no generic menu defined
+INT		c_PAGE_DEFMENU_ALWAYS			= 2;		// always add default menu
+
+
+//-----------------------------------------------------------------------------
+//
+//	Module Variables
+//
+//-----------------------------------------------------------------------------
+
+INT		m_Page_AddDefaultMenu			= -1;		// Cached parameter value to determine whether to add default (generic) menu
+INT		m_UAG_Tabmenu_Menu_InUse			= 0;		// Indicated whether the pop-up menu is already in use
+
+// The following data structures represent the UAG_Tabmenu controls that are currently ON DISPLAY
+
+// Array to map tab menu instance against window number, each element in the array stores the tab menu instance number with respective to the window number
+INT		m_UAG_Tabmenu_Instance				[50] = -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1
+											 , -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1
+											 , -1, -1, -1, -1, -1, -1, -1, -1, -1, -1;
+
+// UAG_Tabmenu data structure, each element represents the properties for a Tab menu instance on each displayed window
+
+// The following properties must be persisted between page transition
+INT		m_UAG_Tabmenu_PreSelectedItemID		[9] = -1, -1, -1, -1, -1, -1, -1, -1, -1;	// The index of the UAG_Tabmenu item that has justed been pre-selected from last page display
+STRING	m_UAG_Tabmenu_PreSelectedItemName	[9];		// The name of the UAG_Tabmenu item (0 = tab, 1 = button) that has just been pre-selected from last page display
+INT		m_UAG_Tabmenu_PreSelectedItemType	[9];		// The type of the UAG_Tabmenu item (0 = tab, 1 = button) that has just been pre-selected from last page display
+INT		m_UAG_Tabmenu_PreSelectedPageScan	[9];		// The page scan when the tab menu item is selcted (this is used to determined if new page is displayed)
+INT		m_UAG_Tabmenu_SelectedTab			[9];		// The index of the tab that is currently selected
+STRING	m_UAG_Tabmenu_SelectedTabName		[9];		// The name of the tab that is currently selected (this is used for page transition as tab may appear / disappear)
+INT		m_UAG_Tabmenu_SelectedButton		[9] = -1, -1, -1, -1, -1, -1, -1, -1, -1;	// Reserved for future use - the index of the button that has justed been selected
+INT		m_UAG_Tabmenu_FirstMenuConfigTab	[9];		// The number of tabs between the first tab configured in menu configuration (config.) and the first tab displayed on screen
+INT		m_UAG_Tabmenu_FirstMenuConfigButton	[9];		// The number of buttons between the first button configured in menu config. and the first button displayed on screen
+
+// The following properties do not needed to be persisted between page transition
+INT		m_UAG_Tabmenu_LastDisplayTab		[9];		// The index of the last displayed tab on screen
+INT		m_UAG_Tabmenu_LastMenuConfigTab		[9];		// The number of tabs between the last tab configured in menu config. and the first tab displayed on screen
+INT		m_UAG_Tabmenu_HasMoreTab			[9];		// The flag to indicate whether more tabs are available on the right end of those already displayed
+INT		m_UAG_Tabmenu_LastDisplayButton		[9];		// The index of the last displayed button on screen
+INT		m_UAG_Tabmenu_LastMenuConfigButton	[9];		// The number of buttons between the last button configured in menu config. and the first button displayed on screen
+INT		m_UAG_Tabmenu_HasMoreButton			[9];		// The flag to indicate whether more buttons are available on the right end of those already displayed
+INT		m_UAG_Tabmenu_InitiatingCycle		[9];		// Indicates the Initiating cycle of tab menu: the works involves initialising the contents and initial positions of the controls
+INT		m_UAG_Tabmenu_Refresh				[9];		// Indicates whether the contents has been changed (from menu config.), and need to be refreshed on screen
+INT		m_UAG_Tabmenu_RefreshTimer			[9];		// Page scan timer to tell the tab menu control to keep adjusting controls positions
+INT		m_UAG_Tabmenu_RefreshSkip			[9];		// Indicates whether to skip refresh after the menu configuration has been loaded. NOTE: selectively used in some controls
+INT		m_UAG_Tabmenu_TabFocusDisallowed	[9];		// Indicates whether cursor focus is disallowed on tab. NOTE: this is set to true when the controls need to be redrawn
+INT		m_UAG_Tabmenu_ButtonFocusDisallowed	[9];		// Indicates whether cursor focus is disallowed on button. NOTE: this is set to true when the controls need to be redrawn
+
+// The following variables represents values of INI parameters for customization
+INT		m_UAG_Tabmenu_Custom_Initialized	= 0;		// Flag to indicate whether customization has been initialized
+STRING	m_UAG_Tabmenu_Custom_Font_Normal	= "";		// Custom font for normal text, configurable via param [UAG_Tabmenu.Custom]Font.Normal
+STRING	m_UAG_Tabmenu_Custom_Font_Disabled	= "";		// Custom font for disabled text, configurable via param [UAG_Tabmenu.Custom]Font.Disabled
+STRING	m_UAG_Tabmenu_Custom_Fn_CreateDefaultMenu = "";	// Custom function for creating default menu, configurable via param [UAG_Tabmenu.Custom]Function.CreateDefaultMenu
+
+
+//-----------------------------------------------------------------------------
+//
+//	UAG_Tabmenu Public Functions
+//
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		UAG_Tabmenu_Run
+//
+//	SUMMARY:
+//		Initialise the tab menu display and adjust display while the page is shown
+//			
+//	PARAMS:
+//		tabsOnPage			- (Optional) number of tabs configured on page,  default to MAX allowed if not specified
+//		buttonsOnPage		- (Optional) number of buttons configured on page, default to MAX allowed if not specified
+//			
+//	RETURNS: 
+//		0 if run successfully or -1 if failed
+//
+//	REMARKS:
+//		This funciton should be called on a separate Cicode object per tab menu.
+//		Only one tab menu is allowed per page
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION UAG_Tabmenu_Run(INT tabsOnPage = -1, INT buttonsOnPage = -1)
+	INT UAG_TabmenuID = _UAG_Tabmenu_GetInstance(1);
+	INT i;
+
+	IF (UAG_TabmenuID < 0) THEN
+		RETURN -1;
+	END
+	// Only do animation after Page Shown event is fired
+	IF (PageInfo(25) = "0") THEN
+		m_UAG_Tabmenu_InitiatingCycle[UAG_TabmenuID] = c_UAG_Tabmenu_INITCYCLE_PRE;
+		m_UAG_Tabmenu_TabFocusDisallowed[UAG_TabmenuID] = c_UAG_Tabmenu_FOCUS_INIT;
+		m_UAG_Tabmenu_ButtonFocusDisallowed[UAG_TabmenuID] = c_UAG_Tabmenu_FOCUS_INIT;
+
+		// Reset initial position of tabs and buttons not shown on screen
+		IF (tabsOnPage > -1) THEN
+			i = tabsOnPage; WHILE (i < c_UAG_Tabmenu_TAB_MAX) DO _UAG_Tabmenu_Tab_IntMetadata(UAG_TabmenuID, i, "InitPos", 0); i = i + 1; END
+		END
+		IF (buttonsOnPage > -1) THEN
+			i = buttonsOnPage; WHILE (i < c_UAG_Tabmenu_BUTTON_MAX) DO _UAG_Tabmenu_Button_IntMetadata(UAG_TabmenuID, i, "InitPos", 0); i = i + 1; END
+		END
+
+		// initialize customization
+		_UAG_Tabmenu_Custom_Init();
+
+		RETURN -1;
+	END
+	IF (m_UAG_Tabmenu_InitiatingCycle[UAG_TabmenuID] = c_UAG_Tabmenu_INITCYCLE_PRE) THEN
+		// Before Page Is shown event is triggered, ensure only execute once
+		m_UAG_Tabmenu_InitiatingCycle[UAG_TabmenuID] = c_UAG_Tabmenu_INITCYCLE_ING;
+
+		// Initialise configuration environment
+		// load contents from menu configuration and initialise controls and localised text
+		TaskNew("UAG_Tabmenu_Reload", UAG_TabmenuID, 1);
+	ELSE
+		IF (m_UAG_Tabmenu_InitiatingCycle[UAG_TabmenuID] = c_UAG_Tabmenu_INITCYCLE_END) THEN
+			// after information is initialised, do runtime adjustments
+
+			// Update idle time refresh timer
+			IF m_UAG_Tabmenu_RefreshSkip[UAG_TabmenuID] <= 0 THEN
+				m_UAG_Tabmenu_RefreshSkip[UAG_TabmenuID] = c_UAG_Tabmenu_PAGESCAN_IDLEINTVAL;
+			ELSE
+				m_UAG_Tabmenu_RefreshSkip[UAG_TabmenuID] = m_UAG_Tabmenu_RefreshSkip[UAG_TabmenuID] - 1;
+			END
+
+			// only adjust position for a limited number of page scans
+			IF (m_UAG_Tabmenu_RefreshTimer[UAG_TabmenuID] <= 0) THEN
+				m_UAG_Tabmenu_Refresh[UAG_TabmenuID] = 0;
+				RETURN 0;
+			ELSE
+				m_UAG_Tabmenu_RefreshTimer[UAG_TabmenuID] = m_UAG_Tabmenu_RefreshTimer[UAG_TabmenuID] - 1;
+			END
+
+			// Position calculation is done by _UAG_Tabmenu_LoadMenuConfig(), no need to doing anything here
+
+			// Re-enable control cursor focus after their position has been adjusted
+			IF (m_UAG_Tabmenu_TabFocusDisallowed[UAG_TabmenuID] = c_UAG_Tabmenu_FOCUS_INIT) THEN
+				m_UAG_Tabmenu_TabFocusDisallowed[UAG_TabmenuID] = 0;
+				m_UAG_Tabmenu_ButtonFocusDisallowed[UAG_TabmenuID] = 0
+			END
+
+		END
+	END
+
+	RETURN 0;
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		UAG_Tabmenu_Reload
+//
+//	SUMMARY:
+//		load contents from the menu configuration and adjust them such that
+//		the previously selected control is on display
+//			
+//	PARAMS:
+//		UAG_TabmenuID		- A unique number that identifies a particular tab menu
+//							withing the scope of the current process.
+//							If not specified, the tab menu for the current window
+//							will be used.
+//			
+//	RETURNS: 
+//		The menu handle for the page if successful or -1 if failed
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION UAG_Tabmenu_Reload(INT UAG_TabmenuID = -1)
+	INT hndMenuConfigPage;
+	INT selectedTabInMenuConfig;
+	INT selectedButtonInMenuConfig = -1;
+
+	IF (UAG_TabmenuID < 0) THEN
+		UAG_TabmenuID = _UAG_Tabmenu_GetInstance();
+	END
+	IF (UAG_TabmenuID < 0) THEN
+		RETURN -1;
+	END
+
+	// remember the currently selected tab and button against the current context
+	selectedTabInMenuConfig = _UAG_Tabmenu_FindTabByName(UAG_TabmenuID, m_UAG_Tabmenu_SelectedTabName[UAG_TabmenuID]);
+	IF (selectedTabInMenuConfig < 0) THEN
+		// if failed to find the tab by name, use the last display position
+		selectedTabInMenuConfig =  m_UAG_Tabmenu_SelectedTab[UAG_TabmenuID] + m_UAG_Tabmenu_FirstMenuConfigTab[UAG_TabmenuID];
+
+		// reset existing button display and preselection
+		m_UAG_Tabmenu_FirstMenuConfigButton[UAG_TabmenuID] = 0;
+		_UAG_Tabmenu_PreSelectedItemSet(UAG_TabmenuID);
+	ELSE IF (m_UAG_Tabmenu_PreSelectedItemType[UAG_TabmenuID] = 1) THEN
+		// only shift buttons if able to find the tab
+		selectedButtonInMenuConfig = _UAG_Tabmenu_FindButtonByName(UAG_TabmenuID, selectedTabInMenuConfig, m_UAG_Tabmenu_PreSelectedItemName[UAG_TabmenuID]);
+		IF (selectedButtonInMenuConfig < 0) THEN
+			// reset preselection
+			_UAG_Tabmenu_PreSelectedItemSet(UAG_TabmenuID);
+		ELSE
+			m_UAG_Tabmenu_PreSelectedItemID[UAG_TabmenuID] = selectedButtonInMenuConfig - m_UAG_Tabmenu_FirstMenuConfigButton[UAG_TabmenuID];
+		END
+	ELSE
+		m_UAG_Tabmenu_PreSelectedItemID[UAG_TabmenuID] = selectedTabInMenuConfig - m_UAG_Tabmenu_FirstMenuConfigTab[UAG_TabmenuID];
+	END END
+	m_UAG_Tabmenu_SelectedTab[UAG_TabmenuID] = selectedTabInMenuConfig - m_UAG_Tabmenu_FirstMenuConfigTab[UAG_TabmenuID];
+
+	// load menu configuration for the page
+	hndMenuConfigPage = _UAG_Tabmenu_LoadMenuConfig(UAG_TabmenuID);
+
+	// shift tabs to show the last selected one on screen
+	IF (selectedTabInMenuConfig < m_UAG_Tabmenu_FirstMenuConfigTab[UAG_TabmenuID]) THEN
+		_UAG_Tabmenu_Tab_ShiftLeftTo(UAG_TabmenuID, selectedTabInMenuConfig);
+	ELSE IF (selectedTabInMenuConfig > m_UAG_Tabmenu_FirstMenuConfigTab[UAG_TabmenuID] + m_UAG_Tabmenu_LastDisplayTab[UAG_TabmenuID]) THEN
+		_UAG_Tabmenu_Tab_ShiftRightTo(UAG_TabmenuID, selectedTabInMenuConfig);
+	END END
+
+	// shift buttons to show the last selected one on screen
+	IF (selectedButtonInMenuConfig > -1) THEN
+		IF (selectedButtonInMenuConfig < m_UAG_Tabmenu_FirstMenuConfigButton[UAG_TabmenuID]) THEN
+			_UAG_Tabmenu_Button_ShiftLeftTo(UAG_TabmenuID, m_UAG_Tabmenu_SelectedTab[UAG_TabmenuID], selectedButtonInMenuConfig);
+		ELSE IF (selectedButtonInMenuConfig > m_UAG_Tabmenu_FirstMenuConfigButton[UAG_TabmenuID] + m_UAG_Tabmenu_LastDisplayButton[UAG_TabmenuID]) THEN
+			_UAG_Tabmenu_Button_ShiftRightTo(UAG_TabmenuID, m_UAG_Tabmenu_SelectedTab[UAG_TabmenuID], selectedButtonInMenuConfig);
+		END END
+	END
+
+	RETURN hndMenuConfigPage;
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		UAG_Tabmenu_TabFocusDisallowed
+//
+//	SUMMARY:
+//		Indicate whether the tab menu allow cursor focus to the tab controls.
+//			
+//	PARAMS:
+//		None
+//			
+//	RETURNS: 
+//		1 if cursor focus is disallowed or 0 if allowed
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION UAG_Tabmenu_TabFocusDisallowed()
+	INT UAG_TabmenuID = _UAG_Tabmenu_GetInstance();
+
+	IF (UAG_TabmenuID < 0) THEN
+		RETURN 1;
+	END
+
+	RETURN m_UAG_Tabmenu_TabFocusDisallowed[UAG_TabmenuID];
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		UAG_Tabmenu_ButtonFocusDisallowed
+//
+//	SUMMARY:
+//		Indicate whether the tab menu allow cursor focus to the button controls.
+//			
+//	PARAMS:
+//		None
+//			
+//	RETURNS: 
+//		1 if cursor focus is disallowed or 0 if allowed
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION UAG_Tabmenu_ButtonFocusDisallowed()
+	INT UAG_TabmenuID = _UAG_Tabmenu_GetInstance();
+
+	IF (UAG_TabmenuID < 0) THEN
+		RETURN 1;
+	END
+
+	RETURN m_UAG_Tabmenu_ButtonFocusDisallowed[UAG_TabmenuID];
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		UAG_Tabmenu_SelectedTab
+//
+//	SUMMARY:
+//		Indicate which tab is currently selected in the tab menu
+//			
+//	PARAMS:
+//		None
+//			
+//	RETURNS: 
+//		the tab ID currently selected or -1 if failed
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION UAG_Tabmenu_SelectedTab()
+	INT UAG_TabmenuID = _UAG_Tabmenu_GetInstance();
+
+	IF (UAG_TabmenuID < 0) THEN
+		RETURN -1;
+	END
+
+	RETURN m_UAG_Tabmenu_SelectedTab[UAG_TabmenuID];
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		UAG_Tabmenu_SelectedButton
+//
+//	SUMMARY:
+//		Indicate which button has just been selected.
+//			
+//	PARAMS:
+//		None
+//			
+//	RETURNS: 
+//		the button ID currently selected or -1 if failed
+//
+//	REMARKS:
+//		This function is not used in the GUI, as selecting a button is transient,
+//		and doesn't change the state of the tab menu.
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION UAG_Tabmenu_SelectedButton()
+	INT UAG_TabmenuID = _UAG_Tabmenu_GetInstance();
+
+	IF (UAG_TabmenuID < 0) THEN
+		RETURN -1;
+	END
+
+	RETURN m_UAG_Tabmenu_SelectedButton[UAG_TabmenuID];
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		UAG_Tabmenu_SelectAllTabmenu
+//
+//	SUMMARY:
+//		The function is invoked after the user selects the Show All Tabs dropdown
+//		button on the page. It will display a drop-down menu showing all the tabs
+//		configured in the menu configuration database. Once a user selects an item
+//		from the menu, that tab will be selected, and the contents of the tab menu
+//		will be refreshed accordingly. . Finally, the command associated with the
+//		tab will be executed.
+//			
+//	PARAMS:
+//		None
+//			
+//	RETURNS: 
+//		0 if executed successfully or -1 if failed
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION UAG_Tabmenu_SelectAllTabmenu()
+	INT UAG_TabmenuID = _UAG_Tabmenu_GetInstance();
+	INT hndMenuConfigPage, hndMenuConfigTab, hndMenuConfigSelected = -1;
+	INT itemCount;
+	INT itemPosition;
+	INT selection;
+	INT AN, x, top, y, right;
+	STRING menuPrefix;
+
+	IF (UAG_TabmenuID < 0) THEN
+		RETURN -1;
+	END
+
+	hndMenuConfigPage = _UAG_Tabmenu_OpenPageMenuConfig();
+	IF (hndMenuConfigPage < 0) THEN
+		RETURN -1;
+	END
+
+	// Disallow displaying menu if already in progress
+	IF (m_UAG_Tabmenu_Menu_InUse) THEN
+		RETURN -1;
+	END
+	m_UAG_Tabmenu_Menu_InUse = 1;
+
+	// Get coordinates of AN
+	AN = KeyGetCursor();
+	IF (AN > 0) THEN
+		DspGetAnExtent(AN, top, x, y, right);
+	END
+	
+	itemCount = 0;
+	IF (m_UAG_Tabmenu_SelectedTab[UAG_TabmenuID] > -1) THEN
+		hndMenuConfigSelected = _UAG_Tabmenu_Tab_IntMetadata(UAG_TabmenuID, m_UAG_Tabmenu_SelectedTab[UAG_TabmenuID], "MenuConfigHandle");
+	END
+	hndMenuConfigTab = MenuGetFirstChild(hndMenuConfigPage);
+	WHILE (hndMenuConfigTab > -1) DO
+		// add tab to tab menu
+		menuPrefix = "";
+		IF (_UAG_Tabmenu_GetMenuConfigDisabled(hndMenuConfigTab)) THEN
+			menuPrefix = menuPrefix + "!";	// disabled
+		END
+		IF (hndMenuConfigTab = hndMenuConfigSelected) THEN
+			menuPrefix = menuPrefix + "~";	// checked
+		END
+		DspPopupMenu(0, menuPrefix + StrToLocalText(MenuNodeGetProperty(hndMenuConfigTab, 0)));
+
+		// advance to next item
+		itemCount = itemCount + 1;
+		hndMenuConfigTab = MenuGetNextChild(hndMenuConfigTab);
+	END
+
+	// execute menu selection
+	IF (itemCount > 0) THEN
+		selection = DspPopupMenu(-1, "", x, y+1);	// shown pop-up in pos. relative to a AN, as command may not be fired from mouse
+
+		// Re-allow to display menu after selection is made
+		m_UAG_Tabmenu_Menu_InUse = 0;
+
+		IF (selection < 1) THEN
+			RETURN 0;	// no selection
+		END
+		
+		// browse item again to find the menu node
+		itemPosition = 0;
+		hndMenuConfigTab = MenuGetFirstChild(hndMenuConfigPage);
+		WHILE (hndMenuConfigTab > -1) AND (itemPosition < selection - 1) DO
+			itemPosition = itemPosition + 1;
+			hndMenuConfigTab = MenuGetNextChild(hndMenuConfigTab);	
+		END
+		IF (hndMenuConfigTab > -1) THEN
+			// if the selected item is hidden item need to shif tab display
+			IF (itemPosition < m_UAG_Tabmenu_FirstMenuConfigTab[UAG_TabmenuID]) THEN
+				itemPosition = _UAG_Tabmenu_Tab_ShiftLeftTo(UAG_TabmenuID, itemPosition);
+				UAG_Tabmenu_Tab_Select(itemPosition, 1);
+			ELSE IF (itemPosition > m_UAG_Tabmenu_FirstMenuConfigTab[UAG_TabmenuID] + m_UAG_Tabmenu_LastDisplayTab[UAG_TabmenuID]) THEN
+				itemPosition = _UAG_Tabmenu_Tab_ShiftRightTo(UAG_TabmenuID, itemPosition);
+				UAG_Tabmenu_Tab_Select(itemPosition, 1);
+			ELSE
+				itemPosition = itemPosition - m_UAG_Tabmenu_FirstMenuConfigTab[UAG_TabmenuID];
+				// Set cursor focus to the selected tab
+				KeySetCursor(_UAG_Tabmenu_Tab_IntMetadata(UAG_TabmenuID, itemPosition, "MasterAN"));
+				UAG_Tabmenu_Tab_Select(itemPosition);
+			END END
+		END
+	END
+
+	// Re-allow to display menu after selection is made
+	m_UAG_Tabmenu_Menu_InUse = 0;
+
+	RETURN 0;
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		UAG_Tabmenu_HasHiddenTab
+//
+//	SUMMARY:
+//		Indicate whether the tab menu has tabs hidden from the page due to lack
+//		of screen real estate.
+//			
+//	PARAMS:
+//		atBegin		- Optional, indicate which end, defaulted to at the end side (0), of the display has hidden tab(s)
+//			
+//	RETURNS: 
+//		1 if hidden tabs exist or 0 if none exists
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION UAG_Tabmenu_HasHiddenTab(INT atBegin = 0)
+	INT UAG_TabmenuID = _UAG_Tabmenu_GetInstance();
+
+	IF (UAG_TabmenuID < 0) THEN
+		RETURN 0;
+	END
+	IF (atBegin) THEN
+		RETURN (m_UAG_Tabmenu_FirstMenuConfigTab[UAG_TabmenuID] > 0);
+	ELSE
+		RETURN (m_UAG_Tabmenu_HasMoreTab[UAG_TabmenuID]);
+	END
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		UAG_Tabmenu_SelectHiddenUAG_Tabmenu
+//
+//	SUMMARY:
+//		The function is invoked after the user selects the Show Hidden Tabs dropdown
+//		button on the page. It will display a drop-down menu showing the tabs
+//		configured in the menu configuration database that are not currenlty showing
+//		due to lack of screen real estate. Both hidden items at the end
+//		of the tab menu will be listed in the drop down menu separated by a separator
+//		line. Once a user selects an item from the menu, that tab will be selected,
+//		the contents of the tab menu will be refreshed accordingly. The
+//		command associated with the tab will NOT be executed.
+//
+//	PARAMS:
+//		atBegin		- Optional, indicate which end, defaulted to the end side (0), of
+//						the hidden tabs to be listed. When listing the beginning side (1)
+//						of the hidden tabs, they are listed in reverse order in the menu.
+//			
+//	RETURNS: 
+//		0 if executed successfully or -1 if failed
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION UAG_Tabmenu_SelectHiddenUAG_Tabmenu(INT atBegin = 0)
+	INT UAG_TabmenuID = _UAG_Tabmenu_GetInstance();
+	INT hndMenuConfigPage, hndMenuConfigTab;
+	INT itemCount;
+	INT itemPosition;
+	INT selection;
+	INT AN, x, top, y, right;
+	STRING menuPrefix;
+
+	IF (UAG_TabmenuID < 0) THEN
+		RETURN -1;
+	END
+
+	hndMenuConfigPage = _UAG_Tabmenu_OpenPageMenuConfig();
+	IF (hndMenuConfigPage < 0) THEN
+		RETURN -1;
+	END
+
+	// Disallow menu to be displayed if it is already in use
+	IF (m_UAG_Tabmenu_Menu_InUse) THEN
+		RETURN -1;
+	END
+	m_UAG_Tabmenu_Menu_InUse = 1;
+
+	// Get coordinates of AN
+	AN = KeyGetCursor();
+	IF (AN > 0) THEN
+		DspGetAnExtent(AN, top, x, y, right);
+	END
+	
+	itemCount = 0;
+	IF (atBegin) THEN
+		// add tab to menu (in reverse order) if they are beyond the beginning side of the currently display range
+		hndMenuConfigTab = _UAG_Tabmenu_Tab_IntMetadata(UAG_TabmenuID, 0, "MenuConfigHandle");
+		hndMenuConfigTab = MenuGetPrevChild(hndMenuConfigTab);
+		WHILE (hndMenuConfigTab > -1) DO
+			menuPrefix = "";
+			IF (_UAG_Tabmenu_GetMenuConfigDisabled(hndMenuConfigTab)) THEN
+				menuPrefix = menuPrefix + "!";	// disabled
+			END
+			DspPopupMenu(0, menuPrefix + StrToLocalText(MenuNodeGetProperty(hndMenuConfigTab, 0)));
+
+			// advance to prev item
+			itemCount = itemCount + 1;
+			hndMenuConfigTab = MenuGetPrevChild(hndMenuConfigTab);
+		END
+	ELSE
+		hndMenuConfigTab = MenuGetFirstChild(hndMenuConfigPage);
+		WHILE (hndMenuConfigTab > -1) DO
+			// add tab to menu if they are beyond the end side of the currently display range
+			IF (itemCount > m_UAG_Tabmenu_FirstMenuConfigTab[UAG_TabmenuID] + m_UAG_Tabmenu_LastDisplayTab[UAG_TabmenuID]) THEN
+				menuPrefix = "";
+				IF (_UAG_Tabmenu_GetMenuConfigDisabled(hndMenuConfigTab)) THEN
+					menuPrefix = menuPrefix + "!";	// disabled
+				END
+				DspPopupMenu(0, menuPrefix + StrToLocalText(MenuNodeGetProperty(hndMenuConfigTab, 0)));
+			END
+	
+			// advance to next item
+			itemCount = itemCount + 1;
+			hndMenuConfigTab = MenuGetNextChild(hndMenuConfigTab);
+		END
+	END
+
+	// execute menu selection
+	IF (itemCount > 0) THEN
+		selection = DspPopupMenu(-1, "", x, y+1);	// shown pop-up in pos. relative to a AN, as command may not be fired from mouse
+
+		// Re-allow menu after selection is made
+		m_UAG_Tabmenu_Menu_InUse = 0;
+
+		IF (selection < 1) THEN
+			RETURN 0;	// no selection
+		ELSE
+			IF (atBegin) THEN
+				// reverse order
+				selection = m_UAG_Tabmenu_FirstMenuConfigTab[UAG_TabmenuID] - selection + 1;
+			ELSE
+				selection = selection + m_UAG_Tabmenu_FirstMenuConfigTab[UAG_TabmenuID] + m_UAG_Tabmenu_LastDisplayTab[UAG_TabmenuID] + 1;
+			END
+		END
+		
+		// browse item again to find the menu node
+		itemPosition = 0;
+		hndMenuConfigTab = MenuGetFirstChild(hndMenuConfigPage);
+		WHILE (hndMenuConfigTab > -1) AND (itemPosition < selection - 1) DO
+			itemPosition = itemPosition + 1;
+			hndMenuConfigTab = MenuGetNextChild(hndMenuConfigTab);	
+		END
+		IF (hndMenuConfigTab > -1) THEN
+			// if the selected item is hidden item at beginning side need to shift tab display to left
+			IF (itemPosition < m_UAG_Tabmenu_FirstMenuConfigTab[UAG_TabmenuID]) THEN
+				_UAG_Tabmenu_Tab_ShiftLeftTo(UAG_TabmenuID, itemPosition);
+			// if the selected item is hidden item at beginning side need to shift tab display to right
+			ELSE IF (itemPosition > m_UAG_Tabmenu_FirstMenuConfigTab[UAG_TabmenuID] + m_UAG_Tabmenu_LastDisplayTab[UAG_TabmenuID]) THEN
+				_UAG_Tabmenu_Tab_ShiftRightTo(UAG_TabmenuID, itemPosition);
+			END END
+			// Do not execute command for shifting hidden items
+		END
+	END
+
+	// Re-allow menu after selection is made
+	m_UAG_Tabmenu_Menu_InUse = 0;
+
+	RETURN 0;
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		UAG_Tabmenu_SelectAllButtonMenu
+//
+//	SUMMARY:
+//		The function is invoked after the user selects the Show All Buttons dropdown
+//		button on the page. It will display a drop-down menu showing all the buttons
+//		configured in the menu configuration database. Once a user selects an item
+//		from the menu, that button will be selected, and the contents of the tab
+//		menu will be refreshed accordingly. Finally, the command associated with
+//		the button will be executed.
+//			
+//	PARAMS:
+//		None
+//			
+//	RETURNS: 
+//		0 if executed successfully or -1 if failed
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION UAG_Tabmenu_SelectAllButtonMenu()
+	INT UAG_TabmenuID = _UAG_Tabmenu_GetInstance();
+	INT hndMenuConfigTab, hndMenuConfigButton;
+	INT itemCount;
+	INT itemPosition;
+	INT selection;
+	INT AN, x, top, y, right;
+	STRING menuPrefix;
+
+	IF (UAG_TabmenuID < 0) THEN
+		RETURN -1;
+	END
+
+	// Get the parent menu node from the first displayed button
+	IF (m_UAG_Tabmenu_LastDisplayButton[UAG_TabmenuID] < 0) THEN
+		RETURN -1;	// tab has no buttons
+	ELSE
+		hndMenuConfigButton = _UAG_Tabmenu_Button_IntMetadata(UAG_TabmenuID, 0, "MenuConfigHandle");
+		IF (hndMenuConfigButton > -1) THEN
+			hndMenuConfigTab = MenuGetParent(hndMenuConfigButton);
+		END
+	END
+	IF (hndMenuConfigTab < 0) THEN
+		RETURN -1;
+	END
+
+	// Disallow menu to be displayed if already in use
+	IF (m_UAG_Tabmenu_Menu_InUse) THEN
+		RETURN -1;
+	END
+	m_UAG_Tabmenu_Menu_InUse = 1;
+
+	// Get coordinates of AN
+	AN = KeyGetCursor();
+	IF (AN > 0) THEN
+		DspGetAnExtent(AN, top, x, y, right);
+	END
+	
+	itemCount = 0;
+	hndMenuConfigButton = MenuGetFirstChild(hndMenuConfigTab);
+	WHILE (hndMenuConfigButton > -1) DO
+		// add button to tab menu
+		menuPrefix = "";
+		IF (_UAG_Tabmenu_GetMenuConfigDisabled(hndMenuConfigButton)) THEN
+			menuPrefix = menuPrefix + "!";	// disabled
+		END
+		DspPopupMenu(0, menuPrefix + StrToLocalText(MenuNodeGetProperty(hndMenuConfigButton, 0)));
+
+		// advance to next item
+		itemCount = itemCount + 1;
+		hndMenuConfigButton = MenuGetNextChild(hndMenuConfigButton);
+	END
+
+	// execute menu selection
+	IF (itemCount > 0) THEN
+		selection = DspPopupMenu(-1, "", x, y+1);	// shown pop-up in pos. relative to a AN, as command may not be fired from mouse
+
+		// re-allow to display menu after selection is made
+		m_UAG_Tabmenu_Menu_InUse = 0;
+
+		IF (selection < 1) THEN
+			RETURN 0;	// no selection
+		END
+		
+		// browse item again to find the menu node
+		itemPosition = 0;
+		hndMenuConfigButton = MenuGetFirstChild(hndMenuConfigTab);
+		WHILE ((hndMenuConfigButton > -1) AND (itemPosition < selection - 1)) DO
+			itemPosition = itemPosition + 1;
+			hndMenuConfigButton = MenuGetNextChild(hndMenuConfigButton);	
+		END
+		IF (hndMenuConfigButton > -1) THEN
+			// if the selected item is hidden item need to shift button display
+			IF (itemPosition < m_UAG_Tabmenu_FirstMenuConfigButton[UAG_TabmenuID]) THEN
+				itemPosition = _UAG_Tabmenu_Button_ShiftLeftTo(UAG_TabmenuID, m_UAG_Tabmenu_SelectedTab[UAG_TabmenuID], itemPosition);
+			ELSE IF (itemPosition > m_UAG_Tabmenu_FirstMenuConfigButton[UAG_TabmenuID] + m_UAG_Tabmenu_LastDisplayButton[UAG_TabmenuID]) THEN
+				itemPosition = _UAG_Tabmenu_Button_ShiftRightTo(UAG_TabmenuID, m_UAG_Tabmenu_SelectedTab[UAG_TabmenuID], itemPosition);
+			ELSE
+				itemPosition = itemPosition - m_UAG_Tabmenu_FirstMenuConfigButton[UAG_TabmenuID];
+				// Set cursor focus to the selected button
+				KeySetCursor(_UAG_Tabmenu_Button_IntMetadata(UAG_TabmenuID, itemPosition, "MasterAN"));
+			END END
+			// select the button and execute command
+			UAG_Tabmenu_Button_Select(itemPosition);
+		END
+	END
+
+	// re-allow to display menu after selection is made
+	m_UAG_Tabmenu_Menu_InUse = 0;
+
+	RETURN 0;
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		UAG_Tabmenu_HasHiddenButton
+//
+//	SUMMARY:
+//		Indicate whether the tab menu has buttons hidden from the page due to lack
+//		of screen real estate.
+//			
+//	PARAMS:
+//		atBegin		- Optional, indicate which end, defaulted to at the end side (0), of the display has hidden button(s)
+//			
+//	RETURNS: 
+//		1 if has hidden buttons exist or 0 if none exists
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION UAG_Tabmenu_HasHiddenButton(INT atBegin = 0)
+	INT UAG_TabmenuID = _UAG_Tabmenu_GetInstance();
+
+	IF (UAG_TabmenuID < 0) THEN
+		RETURN 0;
+	END
+	IF (atBegin) THEN
+		RETURN (m_UAG_Tabmenu_FirstMenuConfigButton[UAG_TabmenuID] > 0);
+	ELSE
+		RETURN (m_UAG_Tabmenu_HasMoreButton[UAG_TabmenuID]);
+	END
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		UAG_Tabmenu_SelectHiddenButtonMenu
+//
+//	SUMMARY:
+//		The function is invoked after the user selects the Show Hidden Buttons dropdown
+//		button on the page. It will display a drop-down menu showing buttons
+//		configured in the menu configuration database that are not currenlty showing
+//		due to lack of screen real estate. Both hidden items at the end
+//		of the tab menu will be listed in the drop down menu separated by a separator
+//		line. Once a user selects an item from the menu, that button will be selected.
+//		Please note that the command associated with the button will NOT be executed.
+//			
+//	PARAMS:
+//		atBegin		- Optional, indicate which end, defaulted to the end side (0), of
+//						the hidden buttons to be listed. When listing the beginning side (1)
+//						of the hidden buttons, they are listed in reverse order in the menu.
+//			
+//	RETURNS: 
+//		0 if executed successfully or -1 if failed
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION UAG_Tabmenu_SelectHiddenButtonMenu(INT atBegin = 0)
+	INT UAG_TabmenuID = _UAG_Tabmenu_GetInstance();
+	INT hndMenuConfigTab, hndMenuConfigButton;
+	INT itemCount;
+	INT itemPosition;
+	INT selection;
+	INT AN, x, top, y, right;
+	STRING menuPrefix;
+
+	IF (UAG_TabmenuID < 0) THEN
+		RETURN -1;
+	END
+
+	// Get the parent menu node from the first displayed button
+	IF (m_UAG_Tabmenu_LastDisplayButton[UAG_TabmenuID] < 0) THEN
+		RETURN -1;	// tab has no buttons
+	ELSE
+		hndMenuConfigButton = _UAG_Tabmenu_Button_IntMetadata(UAG_TabmenuID, 0, "MenuConfigHandle");
+		IF (hndMenuConfigButton > -1) THEN
+			hndMenuConfigTab = MenuGetParent(hndMenuConfigButton);
+		END
+	END
+	IF (hndMenuConfigTab < 0) THEN
+		RETURN -1;
+	END
+
+	// Disallow menu be displayed if already in use
+	IF (m_UAG_Tabmenu_Menu_InUse) THEN
+		RETURN -1;
+	END
+	m_UAG_Tabmenu_Menu_InUse = 1;
+
+	// Get coordinates of AN
+	AN = KeyGetCursor();
+	IF (AN > 0) THEN
+		DspGetAnExtent(AN, top, x, y, right);
+	END
+	
+	itemCount = 0;
+	IF (atBegin) THEN
+		// add button to pop-up menu (in reverse order) if they are beyond the beginning side of the currently display range
+		hndMenuConfigButton = _UAG_Tabmenu_Button_IntMetadata(UAG_TabmenuID, 0, "MenuConfigHandle");
+		hndMenuConfigButton = MenuGetPrevChild(hndMenuConfigButton);
+		WHILE (hndMenuConfigButton > -1) DO
+			menuPrefix = "";
+			IF (_UAG_Tabmenu_GetMenuConfigDisabled(hndMenuConfigButton)) THEN
+				menuPrefix = menuPrefix + "!";	// disabled
+			END
+			DspPopupMenu(0, menuPrefix + StrToLocalText(MenuNodeGetProperty(hndMenuConfigButton, 0)));
+
+			// advance to prev item
+			itemCount = itemCount + 1;
+			hndMenuConfigButton = MenuGetPrevChild(hndMenuConfigButton);
+		END
+	ELSE
+		// add button to pop-up menu if they are beyond the end side of the currently display range
+		hndMenuConfigButton = MenuGetFirstChild(hndMenuConfigTab);
+		WHILE (hndMenuConfigButton > -1) DO
+			IF (itemCount > m_UAG_Tabmenu_FirstMenuConfigButton[UAG_TabmenuID] + m_UAG_Tabmenu_LastDisplayButton[UAG_TabmenuID]) THEN
+				menuPrefix = "";
+				IF (_UAG_Tabmenu_GetMenuConfigDisabled(hndMenuConfigButton)) THEN
+					menuPrefix = menuPrefix + "!";	// disabled
+				END
+				DspPopupMenu(0, menuPrefix + StrToLocalText(MenuNodeGetProperty(hndMenuConfigButton, 0)));
+			END
+	
+			// advance to next item
+			itemCount = itemCount + 1;
+			hndMenuConfigButton = MenuGetNextChild(hndMenuConfigButton);
+		END
+	END
+
+	// execute menu selection
+	IF (itemCount > 0) THEN
+		selection = DspPopupMenu(-1, "", x, y+1);	// shown pop-up in pos. relative to a AN, as command may not be fired from mouse
+
+		// Re-allow to display menu after selection is made
+		m_UAG_Tabmenu_Menu_InUse = 0;
+
+		IF (selection < 1) THEN
+			RETURN 0;	// no selection
+		ELSE
+			IF (atBegin) THEN
+				// reverse order
+				selection = m_UAG_Tabmenu_FirstMenuConfigButton[UAG_TabmenuID] - selection + 1;
+			ELSE
+				selection = selection + m_UAG_Tabmenu_FirstMenuConfigButton[UAG_TabmenuID] + m_UAG_Tabmenu_LastDisplayButton[UAG_TabmenuID] + 1;
+			END
+		END
+		
+		// browse item again to find the menu node
+		itemPosition = 0;
+		hndMenuConfigButton = MenuGetFirstChild(hndMenuConfigTab);
+		WHILE ((hndMenuConfigButton > -1) AND (itemPosition < selection - 1)) DO
+			itemPosition = itemPosition + 1;
+			hndMenuConfigButton = MenuGetNextChild(hndMenuConfigButton);	
+		END
+		IF (hndMenuConfigButton > -1) THEN
+			// if the selected item is hidden item on beginning side need to shift button display to left
+			IF (itemPosition < m_UAG_Tabmenu_FirstMenuConfigButton[UAG_TabmenuID]) THEN
+				itemPosition = _UAG_Tabmenu_Button_ShiftLeftTo(UAG_TabmenuID, m_UAG_Tabmenu_SelectedTab[UAG_TabmenuID], itemPosition);
+			// if the selected item is hidden item on end side need to shift button display to right
+			ELSE IF (itemPosition > m_UAG_Tabmenu_FirstMenuConfigButton[UAG_TabmenuID] + m_UAG_Tabmenu_LastDisplayButton[UAG_TabmenuID]) THEN
+				itemPosition = _UAG_Tabmenu_Button_ShiftRightTo(UAG_TabmenuID, m_UAG_Tabmenu_SelectedTab[UAG_TabmenuID], itemPosition);
+			END END
+		END
+		// Do not execute command for shifting hidden items
+	END
+
+	// Re-allow to display menu after selection is made
+	m_UAG_Tabmenu_Menu_InUse = 0;
+
+	RETURN 0;
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		UAG_Tabmenu_CreateDefaultMenu
+//
+//	SUMMARY:
+//		Create default menu configuration if none was configured in the system.
+//			
+//	PARAMS:
+//		winNo			- the window number that the default menu to be created
+//							If it is not specified or -1, assumes current window
+//		alwaysCreate	- always create the default menu regardless of value set
+//							in INI parameter [Page]AddDefaultMenu.
+//							If it is not specified, it is set to FALSE
+//			
+//	RETURNS: 
+//		the handle to the created page node if executed successfully or -1 if failed
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION UAG_Tabmenu_CreateDefaultMenu(INT winNo = -1, INT alwaysCreate = FALSE)
+	INT hndPageNode;
+	INT hndMenuNode;		// Tab
+	INT hndMenuitemNode;	// Button
+	INT rdbPages;
+	STRING pageName;
+	INT order = 100;			// default order to allow user defined menus to be before / after the default one
+
+	// Call core function to write into the menu configuration
+	IF (winNo < 0) THEN
+		winNo = WinNumber();
+	END
+	hndPageNode = MenuGetWindowNode(winNo);
+	IF (hndPageNode < 0) THEN
+		RETURN -1;
+	END
+
+	// check parameter
+	IF (NOT alwaysCreate) THEN
+		IF (NOT UAG_Tabmenu_NeedDefaultMenu(winNo)) THEN
+			RETURN hndPageNode;
+		END
+	END
+
+	// Add hard-coded node definitions - Pages tab
+	hndMenuNode = UAG_Tabmenu_AddChild(hndPageNode, "@(Pages)", "", "", "", order);
+	IF (hndMenuNode >= 0) THEN
+		// Remember default menu has been created for this page
+		PageSetInt("_UAG_Tabmenu_DefaultMenuCreated", 1, winNo);
+
+		// Populate pages from pages.rdb
+		rdbPages = RdbOpen("_pages");
+		IF (rdbPages >= 0) THEN
+			RdbFirstRec(rdbPages);
+			WHILE (NOT RdbEOF(rdbPages)) DO
+				pageName = RdbGet(rdbPages, "Name");
+				IF (_UAG_Tabmenu_IsSystemPage(pageName) = 0) THEN
+					// Add item by page name
+					IF (MenuGetChild(hndMenuNode, "@"+"(" + pageName + ")") < 0) THEN
+						hndMenuitemNode = MenuNodeAddChild(hndMenuNode, pageName, "PageDisplay", "^"" + pageName + "^"", "icons_32x32.page", order);
+					END
+				END
+				RdbNextRec(rdbPages);
+			END
+			RdbClose(rdbPages);
+		END
+	END
+
+	// Add hard-coded node definitions - Alarms tab
+	hndMenuNode = UAG_Tabmenu_AddChild(hndPageNode, "@(Alarms)", "", "", "", order);
+	IF (hndMenuNode >= 0) THEN
+		UAG_Tabmenu_AddChild(hndMenuNode, "@(Active Alarms)", "PageAlarm", "", "icons_32x32.alarm_act", order);
+		// Only add sub-items if the item is not already defined
+		IF (UAG_Tabmenu_GetChild(hndMenuNode, "@(Historical Events)") < 0) THEN
+			hndMenuitemNode = MenuNodeAddChild(hndMenuNode, "@(Historical Events)", "PageSOE", "0,1", "icons_32x32.alarm_sum", order);
+			IF (hndMenuitemNode >= 0) THEN
+				UAG_Tabmenu_AddChild(hndMenuitemNode, "@(Sequence of Events)", "PageSOE", "", "", order);
+				UAG_Tabmenu_AddChild(hndMenuitemNode, "@(Alarm Summary)", "PageSummary", "", "", order);
+			END
+		END
+		UAG_Tabmenu_AddChild(hndMenuNode, "@(Disabled Alarms)", "PageDisabled", "", "icons_32x32.alarm_dis", order);
+		UAG_Tabmenu_AddChild(hndMenuNode, "@(Hardware Alarms)", "PageHardware", "", "icons_32x32.alarm_hw", order);
+	END
+
+	// Add hard-coded node definitions - Trends tab
+	hndMenuNode = UAG_Tabmenu_AddChild(hndPageNode, "@(Trends)", "", "", "", order);
+	IF (hndMenuNode >= 0) THEN
+		UAG_Tabmenu_AddChild(hndMenuNode, "@(Process Analyst)", "PageProcessAnalyst", "^"^",^"^"", "icons_32x32.trend", order);
+		UAG_Tabmenu_AddChild(hndMenuNode, "@(Popup Process Analyst)...", "ProcessAnalystPopup", "^"^",^"^"", "icons_32x32.trend_popup", order);
+	END
+
+	// Add hard-coded Action node definition for templates with equipment tree - Action tab
+	_UAG_Tabmenu_AddDefaultActionMenu(hndPageNode, winNo);
+
+	RETURN hndPageNode;
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		UAG_Tabmenu_NeedDefaultMenu
+//
+//	SUMMARY:
+//		Indicate whether creating default menu configuration is allowed by
+//		checking the net effect of INI parameter [Page]AddDefaultMenu.
+//			
+//	PARAMS:
+//		winNo			- the window number that the default menu to be created
+//			
+//	RETURNS: 
+//		TRUE if default menu is allowed or FALSE if not
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION UAG_Tabmenu_NeedDefaultMenu(INT winNo = -1)
+	IF (m_Page_AddDefaultMenu < 0) THEN
+		m_Page_AddDefaultMenu = ParameterGet("Page", "AddDefaultMenu", c_PAGE_DEFMENU_GENERIC);
+	END
+	SELECT CASE m_Page_AddDefaultMenu
+	CASE c_PAGE_DEFMENU_DISABLED
+		RETURN FALSE;
+	CASE c_PAGE_DEFMENU_GENERIC
+		// only proceeds if Generic menu is empty
+		IF (MenuGetFirstChild(MenuGetGenericNode()) > -1) THEN
+			RETURN FALSE;
+		END
+	CASE IS <> c_PAGE_DEFMENU_ALWAYS
+		// invalid parameter value, do nothing
+		RETURN FALSE;
+	END SELECT
+
+	// Do no create default menu if it's already created for this window
+ 	IF PageGetInt("_UAG_Tabmenu_DefaultMenuCreated", winNo) THEN
+ 		RETURN FALSE;
+ 	END
+
+	RETURN TRUE;
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		UAG_Tabmenu_GetChild
+//
+//	SUMMARY:
+//		Get a child node of the specified name to the menu config handle
+//			
+//	PARAMS:
+//		menuConfigHandle	- the handle to the menu configuration of the parent node
+//		displayName			- the name of the child node
+//			
+//	RETURNS: 
+//		the handle to the child node of matching display name or -1 if cannot find one
+//
+//	REMARKS:
+//		this function returns the handle of a child node if its name matches to either
+//		the native or localized version of displayName.
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION UAG_Tabmenu_GetChild(INT menuConfigHandle, STRING displayName)
+
+	INT handle;
+
+	// check raw name
+	handle = MenuGetChild(menuConfigHandle, displayName);
+	// check native name
+	IF (handle < 0) THEN
+		IF (StrLeft(displayName, 2) = "@"+"(") THEN
+			IF (StrRight(displayName, 1) = ")") THEN
+				handle = MenuGetChild(menuConfigHandle, StrMid(displayName, 2, StrLength(displayName) - 3));
+			ELSE IF (StrRight(displayName, 1) = ")...") THEN
+				handle = MenuGetChild(menuConfigHandle, StrMid(displayName, 2, StrLength(displayName) - 6));
+			END END
+		END
+	END
+	// check localized name
+	IF (handle < 0) THEN
+		handle = MenuGetChild(menuConfigHandle, StrToLocalText(displayName));
+	END
+
+	RETURN handle;
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		UAG_Tabmenu_AddChild
+//
+//	SUMMARY:
+//		Add a child node of the specified name to the menu config handle
+// 		If the child node of specified display name already exist, returns its handle
+//		without adding new node.
+//			
+//	PARAMS:
+//		menuConfigHandle	- the handle to the menu configuration of the parent node
+//		displayName			- the name of the child node
+//		fnName				- the name of Cicode function to run, default = ""
+//		fnArgs				- the arugments list in CSV format, default = ""
+//		symbol				- the symbol name, default = ""
+//		order				- relative order against other child nodes, default = 0
+//		width				- width (in pixels) of the menu item, default = 0 (auto-width)
+//		disabledWhenFn		- the function name for disabling the child node, default = ""
+//		disabledWhenArgs	- the aruments of the disabled when function, default = ""
+//			
+//	RETURNS: 
+//		the handle to the child node of matching display name or -1 if cannot find one
+//		or add one
+//
+//	REMARKS:
+//		this function returns the handle of a child node if its name matches to either
+//		the native or localized version of displayName.
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION UAG_Tabmenu_AddChild(INT menuConfigHandle, STRING displayName,
+	STRING fnName = "", STRING fnArgs = "", STRING symbol = "", INT order = 0,
+	INT width = 0, STRING disabledWhenFn = "", STRING disabledWhenArgs = "")
+
+	INT handle;
+
+	// check native or localized name
+	handle = UAG_Tabmenu_GetChild(menuConfigHandle, displayName);
+	IF (handle < 0) THEN
+		handle = MenuNodeAddChild(menuConfigHandle, displayName, fnName, fnArgs, symbol, order);
+		IF (handle > -1) THEN
+			IF (width > 0) THEN
+				MenuNodeSetProperty(handle, 6, width);
+			END
+			// TODO: uncommet the folloiwng statemtment when the problem of causing mem assertion is fixed
+			//IF (disabledWhenFn <> "") THEN
+			//	MenuNodeSetDisabledWhen(handle, disabledWhenFn, disabledWhenArgs);
+			//END
+		END
+	END
+
+	RETURN handle;
+END
+
+
+//-----------------------------------------------------------------------------
+//
+//	UAG_Tabmenu.Tab Public Functions
+//
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		UAG_Tabmenu_Tab_Hidden
+//
+//	SUMMARY:
+//		Indicate whether the tab should be hidden. The function is to be called
+//		at the Appearance | Visibility tab of the graphical object.
+//			
+//	PARAMS:
+//		tabID			- A unique number that identifies a particular tab
+//		isMaster		- (Optional) specify wheter the calling object is the master
+//							object of a tab, defaulted to 0 if not specified.
+//			
+//	RETURNS: 
+//		1 if the tab should be hidden / failed or 0 if the tab should be shown
+//
+//	REMARKS:
+//		The master object is used to determines the position of a tab. It MUST NOT be
+//		hidden while the tab menu is still initialising. This gives time for the Tab
+//		menu to work out the configured (initial) position of all the master objects
+//		used in it.
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION UAG_Tabmenu_Tab_Hidden(INT tabID, INT isMaster = 0)
+	INT UAG_TabmenuID = _UAG_Tabmenu_GetInstance();
+
+	IF (UAG_TabmenuID < 0) THEN
+		RETURN 1;
+	END
+
+	// Do not hide the master object, which acts as the anchorage point, until finish initialising its position
+	IF (_UAG_Tabmenu_IsInitiating(UAG_TabmenuID)) THEN
+		IF (isMaster) THEN
+			RETURN 0;
+		END
+		RETURN 1;
+	END
+	RETURN _UAG_Tabmenu_Tab_ToHide(UAG_TabmenuID, tabID);
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		UAG_Tabmenu_Tab_Disabled
+//
+//	SUMMARY:
+//		Indicate whether the tab should be disabled. The function is to be called
+//		at the Access | Disable tab of the graphical object.
+//			
+//	PARAMS:
+//		tabID			- A unique number that identifies a particular tab
+//		isMaster		- (Optional) specify wheter the calling object is the master
+//							object of a tab, defaulted to 0 if not specified.
+//
+//	RETURNS: 
+//		1 if the tab should be disabled / failed or 0 if the tab should be shown
+//
+//	REMARKS:
+//		Control is disabled (command disallowed) before initialisation completes
+//		whether it is master object or not.
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION UAG_Tabmenu_Tab_Disabled(INT tabID, INT isMaster = 0)
+	INT UAG_TabmenuID = _UAG_Tabmenu_GetInstance();
+
+	IF (UAG_TabmenuID < 0) THEN
+		RETURN 1;
+	END
+
+	// Do not hide the master object, which acts as the anchorage point, until finish initialising its position
+	IF (_UAG_Tabmenu_IsInitiating(UAG_TabmenuID)) OR (m_UAG_Tabmenu_TabFocusDisallowed[UAG_TabmenuID]) THEN
+		RETURN 1;
+	END
+	RETURN (_UAG_Tabmenu_GetMenuConfigDisabled(_UAG_Tabmenu_Tab_IntMetadata(UAG_TabmenuID, tabID, "MenuConfigHandle")));
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		UAG_Tabmenu_Tab_PosOffset
+//
+//	SUMMARY:
+//		Indicate the position offset of the tab from the actual displayed
+//		position to the configured position. The function is to be called at
+//		the Movement | Horizontal tab of the graphical object.
+//			
+//	PARAMS:
+//		tabID			- A unique number that identifies a particular tab
+//		isMaster		- (Optional) specify wheter the calling object is the master
+//							object of a tab, defaulted to 0 if not specified.
+//		offset			- (Optional) The position offset of the calling object relative to
+//							the entire tab control, defaulted to 0 if not specified.
+//			
+//	RETURNS: 
+//		Position offset (in pixels) from actual position to configured position
+//
+//	REMARKS:
+//		Set the input range from 0 to 2000, and set the offset range from
+//		0 to 2000 as well.
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION UAG_Tabmenu_Tab_PosOffset(INT tabID, INT isMaster = 0, INT offset = 0)
+	INT x;
+	INT y;
+	INT AN;
+	INT UAG_TabmenuID = _UAG_Tabmenu_GetInstance();
+
+	IF (UAG_TabmenuID < 0) THEN
+		RETURN -1;
+	END
+
+	// Do not adjust control position until finish initialising positions
+	IF (_UAG_Tabmenu_IsInitiating(UAG_TabmenuID)) THEN
+		IF (isMaster) THEN
+			AN = DspGetAnCur();
+			IF (AN <= 0) THEN
+				RETURN 0;
+			END
+			DspAnGetPos(AN, x, y);
+			_UAG_Tabmenu_Tab_IntMetadata(UAG_TabmenuID, tabID, "MasterAN", AN);			// remember the AN of master object
+			_UAG_Tabmenu_Tab_IntMetadata(UAG_TabmenuID, tabID, "InitPos", x - offset);
+		END
+		RETURN 0;
+	END
+
+	// Set cursor focus to pre-selected tab at page open
+	IF (isMaster) THEN
+		IF (0 = m_UAG_Tabmenu_PreSelectedItemType[UAG_TabmenuID]) AND (tabID = m_UAG_Tabmenu_PreSelectedItemID[UAG_TabmenuID]) THEN
+			IF (StrToInt(PageInfo(7)) < m_UAG_Tabmenu_PreSelectedPageScan[UAG_TabmenuID]) THEN
+				AN = DspGetAnCur();
+				KeySetCursor(AN);
+				IF (KeyGetCursor() = AN) THEN
+					_UAG_Tabmenu_PreSelectedItemSet(UAG_TabmenuID);
+				END
+			END
+		END
+	END
+
+	RETURN _UAG_Tabmenu_Tab_IntMetadata(UAG_TabmenuID, tabID, "Pos") - _UAG_Tabmenu_Tab_IntMetadata(UAG_TabmenuID, tabID, "InitPos");
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		UAG_Tabmenu_Tab_WidthPercent
+//
+//	SUMMARY:
+//		Indicate the percentage of the actual width of the tab control against
+//		the width as configured on the page. The function is called at the
+//		Scaling | Horizontal tab of the graphical object.
+//			
+//	PARAMS:
+//		tabID			- A unique number that identifies a particular tab
+//		offset			- (Optional) The width offset of the calling AN (usually an
+//							invisible command box) relative to the entire
+//							tab control, defaulted to 0 if not specified.
+//			
+//	RETURNS: 
+//		percentage of the actual width against the configured width
+//
+//	REMARKS:
+//		CitectSCADA Scaling property will automatically cap the scale to 100%
+//		if the actual width > configured width. To work with this behaviour,
+//		set the input range from 0 to 4000, and set the scaling range from
+//		0 to 4000 as well.
+//
+//-----------------------------------------------------------------------------
+
+REAL FUNCTION UAG_Tabmenu_Tab_WidthPercent(INT tabID, INT offset = 0)
+	REAL scale;
+	INT UAG_TabmenuID = _UAG_Tabmenu_GetInstance();
+
+	IF (UAG_TabmenuID < 0) THEN
+		RETURN 100;
+	END
+	scale = (_UAG_Tabmenu_Tab_IntMetadata(UAG_TabmenuID, tabID, "Width") + offset) * 100;
+	RETURN (scale / (c_UAG_Tabmenu_TAB_MINWIDTH + offset));
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		UAG_Tabmenu_Tab_ShowDspText
+//
+//	SUMMARY:
+//		Display the localised name of a tab at the calling AN. The text will be
+//		truncated (Fixed width) or shown in full depending on whether the width
+//		is specified in the menu configuration.
+//			
+//	PARAMS:
+//		tabID			- A unique number that identifies a particular tab
+//			
+//	RETURNS: 
+//		0 if executed successfully or -1 if failed
+//
+//	REMARKS:
+//		This function is to be called from a Cicode object only.
+//		The hiding, positioning and formatting of the displayed text is entirely
+//		handled by this function.
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION UAG_Tabmenu_Tab_ShowDspText(INT tabID)
+	INT AN = DspGetAnCur();
+	INT UAG_TabmenuID;
+
+	IF (AN <= 0) THEN
+		RETURN "";
+	END
+	UAG_TabmenuID = _UAG_Tabmenu_GetInstance();
+	IF (UAG_TabmenuID < 0) THEN
+		RETURN -1;
+	END
+
+	// Do not show text until menu config is loaded
+	IF (_UAG_Tabmenu_IsInitiating(UAG_TabmenuID)) THEN
+		RETURN 0;
+	END
+
+	// only adjust content within a limited number of page scans
+	IF (m_UAG_Tabmenu_RefreshTimer[UAG_TabmenuID] <= 0) THEN
+		// allow text to be updated at slower rate
+		IF (m_UAG_Tabmenu_RefreshSkip[UAG_TabmenuID]) THEN
+			RETURN 0;
+		END
+	END
+
+	// show text or not based on whether button is hidden
+	IF (_UAG_Tabmenu_Tab_ToHide(UAG_TabmenuID, tabID)) THEN
+		IF (StrToInt(DspAnInfo(AN, 0)) > 1) THEN
+			DspDel(AN);
+		END
+		RETURN 0;
+	END
+
+	// adjust the position of the text and display it at the specified AN
+	_UAG_Tabmenu_Tab_Text_AdjustPos(UAG_TabmenuId, tabID, AN);
+	RETURN 0;
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		UAG_Tabmenu_Tab_ShowIcon
+//
+//	SUMMARY:
+//		Display a symbol at the calling AN according to the menu configuration.
+//			
+//	PARAMS:
+//		tabID			- A unique number that identifies a particular tab
+//			
+//	RETURNS: 
+//		0 if executed successfully or -1 if failed
+//
+//	REMARKS:
+//		This function is to be called from a Cicode object only.
+//		The hiding, positioning and formatting of the displayed symbol is entirely
+//		handled by this function.
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION UAG_Tabmenu_Tab_ShowIcon(INT tabID)
+	INT AN = DspGetAnCur();
+	INT UAG_TabmenuID;
+	STRING sIcon;
+
+	IF (AN <= 0) THEN
+		RETURN -1;
+	END
+	UAG_TabmenuID = _UAG_Tabmenu_GetInstance();
+	IF (UAG_TabmenuID < 0) THEN
+		RETURN -1;
+	END
+
+	// Do not show icon until menu config is loaded
+	IF (_UAG_Tabmenu_IsInitiating(UAG_TabmenuID)) THEN
+		RETURN 0;
+	END
+
+	// only adjust content within a limited number of page scans
+	IF (m_UAG_Tabmenu_RefreshTimer[UAG_TabmenuID] <= 0) THEN
+		RETURN 0;
+	END
+
+	// show icon or not based on whether button is hidden
+	IF (_UAG_Tabmenu_Tab_ToHide(UAG_TabmenuID, tabID)) THEN
+		IF (StrToInt(DspAnInfo(AN, 0)) > 1) THEN
+			DspDel(AN);
+		END
+		RETURN 0;
+	END
+
+	// show icon or not based on whether AN is empty or being forced to refresh
+	IF ((StrToInt(DspAnInfo(AN, 0)) <= 1) OR m_UAG_Tabmenu_Refresh[UAG_TabmenuID]) THEN
+		// show icon or not based on whether icon is defined in menu config
+		sIcon = _UAG_Tabmenu_GetMenuConfigIcon(_UAG_Tabmenu_Tab_IntMetadata(UAG_TabmenuID, tabID, "MenuConfigHandle"));
+		IF ("" <> sIcon) THEN
+			DspSym(AN, sIcon, 1);
+		ELSE
+			DspDel(AN);
+			RETURN 0;
+		END
+	END
+
+	// calculate position
+	_UAG_Tabmenu_Tab_Icon_AdjustPos(UAG_TabmenuID, tabID, AN);
+	RETURN 0;
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		UAG_Tabmenu_Tab_Select
+//
+//	SUMMARY:
+//		This function is invoked after a tab is selected by the user. The buttons
+//		that belong to the tab will be shown at the tool bar. Finally, the
+//		command associated with the tab will be executed. This function
+//		is to be called at the Input | Touch | Down Action property and the
+//		Input | Keyboard Commands | ENTER key sequence of the master object of
+//		a tab.
+//			
+//	PARAMS:
+//		tabID			- A unique number that identifies a particular tab
+//		noRefresh		- Whether to refresh the tab menu items, default is refresh (0)
+//			
+//	RETURNS: 
+//		0 if executed successfully or -1 if failed
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION UAG_Tabmenu_Tab_Select(INT tabID, INT noRefresh = 0)
+	INT UAG_TabmenuID = _UAG_Tabmenu_GetInstance();
+	INT hndMenuConfig;
+
+	IF (UAG_TabmenuID < 0) THEN
+		RETURN -1;
+	END
+
+	IF (m_UAG_Tabmenu_TabFocusDisallowed[UAG_TabmenuID]) THEN
+		RETURN -1;
+	END
+
+	// Reset button settings if changing tab
+	IF (m_UAG_Tabmenu_SelectedTab[UAG_TabmenuID] <> tabID) THEN
+		m_UAG_Tabmenu_SelectedButton[UAG_TabmenuID] = -1;
+		m_UAG_Tabmenu_SelectedTab[UAG_TabmenuID] = tabID;
+		m_UAG_Tabmenu_FirstMenuConfigButton[UAG_TabmenuID] = 0;
+	END
+
+	IF (0 = noRefresh) THEN
+		// Update buttons from menu configuration
+		m_UAG_Tabmenu_ButtonFocusDisallowed[UAG_TabmenuID] = 1;
+
+		_UAG_Tabmenu_LoadMenuConfig(UAG_TabmenuID, tabID);
+		SleepMS(_UAG_Tabmenu_GetAnmDelayTime());
+
+		m_UAG_Tabmenu_ButtonFocusDisallowed[UAG_TabmenuID] = 0;
+	END
+
+	// execute command
+	hndMenuConfig = _UAG_Tabmenu_Tab_IntMetadata(UAG_TabmenuID, tabID, "MenuConfigHandle");
+	IF (MenuNodeHasCommand(hndMenuConfig)) THEN
+		// pre-select the tab, so that it will be highlighted after page is changed
+		_UAG_Tabmenu_PreSelectedItemSet(UAG_TabmenuID, 0, tabID, _UAG_Tabmenu_GetMenuConfigText(hndMenuConfig), StrToInt(PageInfo(7)));
+
+		_UAG_Tabmenu_ExecuteCommand(hndMenuConfig);
+	END
+
+	RETURN 0;
+END
+
+
+//-----------------------------------------------------------------------------
+//
+//	UAG_Tabmenu.Button Public Functions
+//
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		UAG_Tabmenu_Button_Hidden
+//
+//	SUMMARY:
+//		Indicate whether the button should be hidden. The function is to be called
+//		at the Appearance | Visibility tab of the graphical object.
+//			
+//	PARAMS:
+//		buttonID		- A unique number that identifies a particular button
+//		isMaster		- (Optional) specify wheter the calling object is the master
+//							object of a button, defaulted to 0 if not specified.
+//			
+//	RETURNS: 
+//		1 if the button should be hidden / failed or 0 if the button should be shown
+//
+//	REMARKS:
+//		The master object is used to determines the position of a button. It MUST NOT
+//		be hidden while the tab menu is still initialising. This gives time for the Tab
+//		menu to work out the configured (initial) position of all the master objects
+//		used in it.
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION UAG_Tabmenu_Button_Hidden(INT buttonID, INT isMaster = 0)
+	INT UAG_TabmenuID = _UAG_Tabmenu_GetInstance();
+
+	IF (UAG_TabmenuID < 0) THEN
+		RETURN 1;
+	END
+
+	// Do not hide the master object, which acts as the anchorage point, until finish initialising its position
+	IF (_UAG_Tabmenu_IsInitiating(UAG_TabmenuID)) THEN
+		IF (isMaster) THEN
+			RETURN 0;
+		END
+		RETURN 1;
+	END
+	RETURN _UAG_Tabmenu_Button_ToHide(UAG_TabmenuID, buttonID);
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		UAG_Tabmenu_Button_Disabled
+//
+//	SUMMARY:
+//		Indicate whether the button should be disabled. The function is to be called
+//		at the Access | Disable tab of the graphical object.
+//			
+//	PARAMS:
+//		buttonID		- A unique number that identifies a particular button
+//		isMaster		- (Optional) specify wheter the calling object is the master
+//							object of a button, defaulted to 0 if not specified.
+//
+//	RETURNS: 
+//		1 if the button should be disabled / failed or 0 if the button should be shown
+//
+//	REMARKS:
+//		Control is disabled (command disallowed) before initialisation completes
+//		whether it is master object or not.
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION UAG_Tabmenu_Button_Disabled(INT buttonID, INT isMaster = 0)
+	INT UAG_TabmenuID = _UAG_Tabmenu_GetInstance();
+
+	IF (UAG_TabmenuID < 0) THEN
+		RETURN 1;
+	END
+
+	// Do not hide the master object, which acts as the anchorage point, until finish initialising its position
+	IF (_UAG_Tabmenu_IsInitiating(UAG_TabmenuID)) OR (m_UAG_Tabmenu_ButtonFocusDisallowed[UAG_TabmenuID]) THEN
+		RETURN 1;
+	END
+	RETURN _UAG_Tabmenu_GetMenuConfigDisabled(_UAG_Tabmenu_Button_IntMetadata(UAG_TabmenuID, buttonID, "MenuConfigHandle"));
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		UAG_Tabmenu_Button_PosOffset
+//
+//	SUMMARY:
+//		Indicate the position offset of the button from the actual displayed
+//		position to the configured position. The function is to be called at
+//		the Movement | Horizontal tab of the graphical object.
+//			
+//	PARAMS:
+//		buttonID		- A unique number that identifies a particular button
+//		isMaster		- (Optional) specify wheter the calling object is the master
+//							object of a button, defaulted to 0 if not specified.
+//		offset			- (Optional) The position offset of the calling object relative to
+//							the entire button control, defaulted to 0 if not specified.
+//			
+//	RETURNS: 
+//		Position offset (in pixels) from actual position to configured position
+//
+//	REMARKS:
+//		Set the input range from 0 to 2000, and set the offset range from
+//		0 to 2000 as well.
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION UAG_Tabmenu_Button_PosOffset(INT buttonID, INT isMaster = 0, INT offset = 0)
+	INT x;
+	INT y;
+	INT AN;
+	INT UAG_TabmenuID = _UAG_Tabmenu_GetInstance();
+
+	IF (UAG_TabmenuID < 0) THEN
+		RETURN 0;
+	END
+
+	// Do not adjust control position until finish initialising positions
+	IF (_UAG_Tabmenu_IsInitiating(UAG_TabmenuID)) THEN
+		IF (isMaster) THEN
+			AN = DspGetAnCur();
+			IF (AN <= 0) THEN
+				RETURN 0;
+			END
+			DspAnGetPos(AN, x, y);
+			_UAG_Tabmenu_Button_IntMetadata(UAG_TabmenuID, buttonID, "MasterAN", AN);			// remember the AN of master object
+			_UAG_Tabmenu_Button_IntMetadata(UAG_TabmenuID, buttonID, "InitPos", x + offset);
+		END
+		RETURN 0;
+	END
+
+	// Set cursor focus to pre-selected button at page open
+	IF (isMaster) THEN
+		IF (1 = m_UAG_Tabmenu_PreSelectedItemType[UAG_TabmenuID]) AND (buttonID = m_UAG_Tabmenu_PreSelectedItemID[UAG_TabmenuID]) THEN
+			IF (StrToInt(PageInfo(7)) < m_UAG_Tabmenu_PreSelectedPageScan[UAG_TabmenuID]) THEN
+				AN = DspGetAnCur();
+				KeySetCursor(AN);
+				IF (KeyGetCursor() = AN) THEN
+					_UAG_Tabmenu_PreSelectedItemSet(UAG_TabmenuID);
+				END
+			END
+		END
+	END
+
+	RETURN _UAG_Tabmenu_Button_IntMetadata(UAG_TabmenuID, buttonID, "Pos") - _UAG_Tabmenu_Button_IntMetadata(UAG_TabmenuID, buttonID, "InitPos");
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		UAG_Tabmenu_Button_MenuPosOffset
+//
+//	SUMMARY:
+//		Indicate the position offset of the dropdown menu button from the actual
+//		displayed position to the configured position. The function is to be
+//		called at the Movement | Horizontal tab of the graphical object.
+//			
+//	PARAMS:
+//		buttonID		- A unique number that identifies a particular button
+//			
+//	RETURNS: 
+//		Position offset (in pixels) from actual position to configured position
+//
+//	REMARKS:
+//		Set the input range from 0 to 2000, and set the offset range from
+//		0 to 2000 as well.
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION UAG_Tabmenu_Button_MenuPosOffset(INT buttonID)
+	INT offset;
+	INT UAG_TabmenuID = _UAG_Tabmenu_GetInstance();
+
+	IF (UAG_TabmenuID < 0) THEN
+		RETURN 0;
+	END
+	offset = _UAG_Tabmenu_Button_IntMetadata(UAG_TabmenuID, buttonID, "Pos") - _UAG_Tabmenu_Button_IntMetadata(UAG_TabmenuID, buttonID, "InitPos");	// button position change
+	offset = offset + _UAG_Tabmenu_Button_IntMetadata(UAG_TabmenuID, buttonID, "Width") - c_UAG_Tabmenu_BUTTON_MINWIDTH;			// button width change
+	RETURN offset;
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		UAG_Tabmenu_Button_WidthPercent
+//
+//	SUMMARY:
+//		Indicate the percentage of the actual width of the button control against
+//		the width as configured on the page. The function is called at the
+//		Scaling | Horizontal tab of the graphical object.
+//			
+//	PARAMS:
+//		buttonID		- A unique number that identifies a particular button
+//		offset			- (Optional) The width offset of the calling AN (usually an
+//							invisible command box) relative to the entire
+//							button control, defaulted to 0 if not specified.
+//			
+//	RETURNS: 
+//		percentage of the actual width against the configured width
+//
+//	REMARKS:
+//		CitectSCADA Scaling property will automatically cap the scale to 100%
+//		if the actual width > configured width. To work with this behaviour,
+//		set the input range from 0 to 4000, and set the scaling range from
+//		0 to 4000 as well.
+//
+//-----------------------------------------------------------------------------
+
+REAL FUNCTION UAG_Tabmenu_Button_WidthPercent(INT buttonID, INT offset = 0)
+	REAL scale;
+	INT UAG_TabmenuID = _UAG_Tabmenu_GetInstance();
+
+	IF (UAG_TabmenuID < 0) THEN
+		RETURN 100;
+	END
+	scale = (_UAG_Tabmenu_Button_IntMetadata(UAG_TabmenuID, buttonID, "Width") + offset) * 100;
+	RETURN Round(scale / (c_UAG_Tabmenu_BUTTON_MINWIDTH + offset), 0);
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		UAG_Tabmenu_Button_ShowDspText
+//
+//	SUMMARY:
+//		Display the localised name of a button at the calling AN. The text will be
+//		truncated (Fixed width) or shown in full depending on whether the width
+//		is specified in the menu configuration.
+//			
+//	PARAMS:
+//		buttonID		- A unique number that identifies a particular button
+//			
+//	RETURNS: 
+//		0 if executed successfully or -1 if failed
+//
+//	REMARKS:
+//		This function is to be called from a Cicode object only.
+//		The hiding, positioning and formatting of the displayed text is entirely
+//		handled by this function.
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION UAG_Tabmenu_Button_ShowDspText(INT buttonID)
+	INT AN = DspGetAnCur();
+	INT UAG_TabmenuID;
+
+	IF (AN <= 0) THEN
+		RETURN "";
+	END
+	UAG_TabmenuID = _UAG_Tabmenu_GetInstance();
+	IF (UAG_TabmenuID < 0) THEN
+		RETURN -1;
+	END
+
+	// Do not show text until menu config is loaded
+	IF (_UAG_Tabmenu_IsInitiating(UAG_TabmenuID)) THEN
+		RETURN 0;
+	END
+
+	// only adjust content within a limited number of page scans
+	IF (m_UAG_Tabmenu_RefreshTimer[UAG_TabmenuID] <= 0) THEN
+		// allow text to be updated at slower rate
+		IF (m_UAG_Tabmenu_RefreshSkip[UAG_TabmenuID]) THEN
+			RETURN 0;
+		END
+	END
+
+	// show text or not based on whether button is hidden
+	IF (_UAG_Tabmenu_Button_ToHide(UAG_TabmenuID, buttonID)) THEN
+		IF (StrToInt(DspAnInfo(AN, 0)) > 1) THEN
+			DspDel(AN);
+		END
+		RETURN 0;
+	END
+
+	// adjust the position of the text and display it at the specified AN
+	_UAG_Tabmenu_Button_Text_AdjustPos(UAG_TabmenuId, buttonID, AN);
+	RETURN 0;
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		UAG_Tabmenu_Button_ShowIcon
+//
+//	SUMMARY:
+//		Display a symbol at the calling AN according to the menu configuration.
+//			
+//	PARAMS:
+//		buttonID		- A unique number that identifies a particular button
+//			
+//	RETURNS: 
+//		0 if executed successfully or -1 if failed
+//
+//	REMARKS:
+//		This function is to be called from a Cicode object only.
+//		The hiding, positioning and formatting of the displayed symbol is entirely
+//		handled by this function.
+//
+//-----------------------------------------------------------------------------
+//	27.04.17	Steiner		Blau Entfernt
+
+INT FUNCTION UAG_Tabmenu_Button_ShowIcon(INT buttonID)
+	INT AN = DspGetAnCur();
+	INT UAG_TabmenuID;
+	STRING icon;
+	STRING iconDefault = "uag_icons32x32.default";
+
+	IF (AN <= 0) THEN
+		RETURN -1;
+	END
+	UAG_TabmenuID = _UAG_Tabmenu_GetInstance();
+	IF (UAG_TabmenuID < 0) THEN
+		RETURN -1;
+	END
+
+	// Do not show icon until menu config is loaded
+	IF (_UAG_Tabmenu_IsInitiating(UAG_TabmenuID)) THEN
+		RETURN 0;
+	END
+
+	// only adjust content within a limited number of page scans
+	IF (m_UAG_Tabmenu_RefreshTimer[UAG_TabmenuID] <= 0) THEN
+		RETURN 0;
+	END
+
+	// show icon or not based on whether button is hidden
+	IF (_UAG_Tabmenu_Button_ToHide(UAG_TabmenuID, buttonID)) THEN
+		IF (StrToInt(DspAnInfo(AN, 0)) > 1) THEN
+			DspDel(AN);
+		END
+		RETURN 0;
+	END
+
+	// show icon or not based on whether AN is empty or being forced to refresh
+	IF ((StrToInt(DspAnInfo(AN, 0)) <= 1) OR m_UAG_Tabmenu_Refresh[UAG_TabmenuID]) THEN
+		// show icon or not based on whether icon is defined in menu config
+		icon = _UAG_Tabmenu_GetMenuConfigIcon(_UAG_Tabmenu_Button_IntMetadata(UAG_TabmenuID, buttonID, "MenuConfigHandle"));
+		IF ("" = icon) THEN
+			icon  = iconDefault;
+		END
+		IF ("" <> icon) THEN
+			ErrSet(1);
+			IsError();
+			DspSym(AN, icon, 1);
+			IF (IsError() AND (icon <> iconDefault)) THEN
+				DspSym(AN, iconDefault, 1);	// display default icon if failed to display specified icon
+			END
+			ErrSet(0);
+		ELSE
+			DspDel(AN);
+			RETURN 0;
+		END
+	END
+
+	// adjust position based on whether has menu (dropdown button)
+	_UAG_Tabmenu_Button_Icon_AdjustPos(UAG_TabmenuID, buttonID, AN);
+	RETURN 0;
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		UAG_Tabmenu_Button_HasMenu
+//
+//	SUMMARY:
+//		Indicate whether the button has sub-menu. This function is to be called
+//		at the Appearance | Visibility tab of the graphical objects involved
+//		with the dropdown menu control.
+//			
+//	PARAMS:
+//		buttonID		- A unique number that identifies a particular button
+//			
+//	RETURNS: 
+//		1 if button menu exists or 0 if does not exist
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION UAG_Tabmenu_Button_HasMenu(INT buttonID)
+	INT UAG_TabmenuID = _UAG_Tabmenu_GetInstance();
+
+	IF (UAG_TabmenuID < 0) THEN
+		RETURN 1;
+	END
+
+	RETURN (_UAG_Tabmenu_GetMenuConfigMenu(_UAG_Tabmenu_Button_IntMetadata(UAG_TabmenuID, buttonID, "MenuConfigHandle")) >= 0);
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		UAG_Tabmenu_Button_Select
+//
+//	SUMMARY:
+//		This function is invoked after a button is selected by the user. The
+//		command associated with the button will be executed. If no command is
+//		defined against the button, its menu will be displayed instead. This
+//		function is to be called at the Input | Touch | Down Action property and
+//		the Input | Keyboard Commands | ENTER key sequence of the master object
+//		of a button.
+//			
+//	PARAMS:
+//		buttonID		- A unique number that identifies a particular button
+//			
+//	RETURNS: 
+//		0 if executed successfully or -1 if failed
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION UAG_Tabmenu_Button_Select(INT buttonID)
+	INT UAG_TabmenuID = _UAG_Tabmenu_GetInstance();
+	INT handle;
+
+	IF (UAG_TabmenuID < 0) THEN
+		RETURN -1;
+	END
+
+	IF (m_UAG_Tabmenu_ButtonFocusDisallowed[UAG_TabmenuID]) THEN
+		RETURN -1;
+	END
+
+	// execute command
+	handle = _UAG_Tabmenu_Button_IntMetadata(UAG_TabmenuID, buttonID, "MenuConfigHandle");
+
+	IF (_UAG_Tabmenu_GetMenuConfigHasCommand(handle)) THEN
+		// if command is defined against the button
+
+		// pre-select the button, so that it will be highlighted after page is changed
+		_UAG_Tabmenu_PreSelectedItemSet(UAG_TabmenuID, 1, buttonID, _UAG_Tabmenu_GetMenuConfigText(handle), StrToInt(PageInfo(7)));
+
+		_UAG_Tabmenu_ExecuteCommand(handle);
+	ELSE
+		// if no command, show the dropdown menu instead
+		UAG_Tabmenu_Button_SelectMenu(buttonID);
+	END
+
+	RETURN 0;
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		UAG_Tabmenu_Button_SelectMenu
+//
+//	SUMMARY:
+//		This function is invoked after the dropdown menu button is selected by
+//		the user. The dropdown menu associated with the button will be displayed.
+//		This function is to be called at the Input | Touch | Down Action property
+//		and the Input | Keyboard Commands | ENTER key sequence of the master object
+//		of a dropdown menu button.
+//			
+//	PARAMS:
+//		buttonID		- A unique number that identifies a particular button
+//			
+//	RETURNS: 
+//		0 if executed successfully or -1 if failed
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION UAG_Tabmenu_Button_SelectMenu(INT buttonID)
+	INT UAG_TabmenuID = _UAG_Tabmenu_GetInstance();
+	INT x, y;
+	INT hndMenuConfigButton;
+	INT lastPreSelectedItemType, lastPreSelectedItemID, lastPreSelectedPageScan;
+	STRING lastPreSelectedItemName;
+
+	IF (UAG_TabmenuID < 0) THEN
+		RETURN -1;
+	END
+
+	IF (m_UAG_Tabmenu_ButtonFocusDisallowed[UAG_TabmenuID]) THEN
+		RETURN -1;
+	END
+
+	// Determine the position of the menu
+	x = _UAG_Tabmenu_Button_IntMetadata(UAG_TabmenuID, buttonID, "Pos");
+	y = DspGetAnBottom(KeyGetCursor());
+
+	// Get the parent menu node which is the currently selected button
+	hndMenuConfigButton = _UAG_Tabmenu_Button_IntMetadata(UAG_TabmenuID, buttonID, "MenuConfigHandle");
+	IF (hndMenuConfigButton < 0) THEN
+		RETURN -1;
+	END
+
+	// pre-select the button, so that it will be highlighted after page is changed
+	lastPreSelectedItemType = m_UAG_Tabmenu_PreSelectedItemType[UAG_TabmenuID];
+	lastPreSelectedItemID = m_UAG_Tabmenu_PreSelectedItemID[UAG_TabmenuID];
+	lastPreSelectedItemName = m_UAG_Tabmenu_PreSelectedItemName[UAG_TabmenuID];
+	lastPreSelectedPageScan = m_UAG_Tabmenu_PreSelectedPageScan[UAG_TabmenuID];
+	_UAG_Tabmenu_PreSelectedItemSet(UAG_TabmenuID, 1, buttonID, _UAG_Tabmenu_GetMenuConfigText(hndMenuConfigButton), StrToInt(PageInfo(7)));
+	// Show the pop-up menu at specific position
+	IF (DspPopupConfigMenu(hndMenuConfigButton, 0, x, y) <> 0) THEN
+		// restore preselection if failed to execute command
+		_UAG_Tabmenu_PreSelectedItemSet(UAG_TabmenuID, lastPreSelectedItemType, lastPreSelectedItemID, lastPreSelectedItemName, lastPreSelectedPageScan);
+	END
+
+	RETURN 0;
+END
+
+
+//-----------------------------------------------------------------------------
+//
+//	Private Helper Functions (control type specific)
+//
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		_UAG_Tabmenu_CalcPos
+//
+//	SUMMARY:
+//		Calculate the positons of control on a tab menu
+//			
+//	PARAMS:
+//		UAG_TabmenuID		- A unique number that identifies a particular tab menu
+//			
+//	RETURNS: 
+//		None
+//
+//-----------------------------------------------------------------------------
+
+PRIVATE
+FUNCTION _UAG_Tabmenu_CalcPos(INT UAG_TabmenuID)
+	INT i;
+	INT prevItemMovement;
+	INT pos;
+	INT prevPos
+	INT prevWidth;
+	INT displayLimit;
+
+	displayLimit = StrToInt(PageInfo(21)) - c_UAG_Tabmenu_TAB_PAGEMARGIN;
+
+	// Adjust the size of the first displayed tab to fit screen
+	pos = _UAG_Tabmenu_Tab_IntMetadata(UAG_TabmenuID, 0, "InitPos");
+	_UAG_Tabmenu_Tab_IntMetadata(UAG_TabmenuID, 0, "Pos", pos);
+	IF (pos + _UAG_Tabmenu_Tab_IntMetadata(UAG_TabmenuID, 0, "Width") > displayLimit) THEN
+		m_UAG_Tabmenu_LastDisplayTab[UAG_TabmenuID] = 0;
+		_UAG_Tabmenu_Tab_IntMetadata(UAG_TabmenuID, 0, "Width", displayLimit - pos);
+	ELSE
+		// Adjust tab positions, sizes and visibility
+		m_UAG_Tabmenu_LastDisplayTab[UAG_TabmenuID] = m_UAG_Tabmenu_LastMenuConfigTab[UAG_TabmenuID];
+		i = 1;
+		WHILE (i <= m_UAG_Tabmenu_LastDisplayTab[UAG_TabmenuID]) DO
+			// Adjust position based on previous one's position and width
+			prevPos = _UAG_Tabmenu_Tab_IntMetadata(UAG_TabmenuID, i-1, "Pos");
+			prevWidth = _UAG_Tabmenu_Tab_IntMetadata(UAG_TabmenuID, i-1, "Width");
+			prevItemMovement = prevPos - _UAG_Tabmenu_Tab_IntMetadata(UAG_TabmenuID, i-1, "InitPos")
+								+ prevWidth - c_UAG_Tabmenu_TAB_MINWIDTH;
+			pos = _UAG_Tabmenu_Tab_IntMetadata(UAG_TabmenuID, i, "Pos", _UAG_Tabmenu_Tab_IntMetadata(UAG_TabmenuID, i, "InitPos") + prevItemMovement);
+
+			// Find out the last control can fit to screen, and hide overlapped objects
+			IF ((pos < prevPos + prevWidth)
+				OR (pos + _UAG_Tabmenu_Tab_IntMetadata(UAG_TabmenuID, i, "Width") > displayLimit)) THEN
+				m_UAG_Tabmenu_LastDisplayTab[UAG_TabmenuID] = i - 1;
+			END
+			i = i + 1;
+		END
+	END
+	// set if more (trailing) tabs are not yet shown
+	i = m_UAG_Tabmenu_LastDisplayTab[UAG_TabmenuID];
+	IF (i > -1) THEN
+		m_UAG_Tabmenu_HasMoreTab[UAG_TabmenuID] = (MenuGetNextChild(_UAG_Tabmenu_Tab_IntMetadata(UAG_TabmenuID, m_UAG_Tabmenu_LastDisplayTab[UAG_TabmenuID], "MenuConfigHandle")) <> -1);
+	ELSE
+		m_UAG_Tabmenu_HasMoreTab[UAG_TabmenuID] = 0;
+	END
+
+	displayLimit = StrToInt(PageInfo(21)) - c_UAG_Tabmenu_BUTTON_PAGEMARGIN;
+
+	// Adjust the size of the first displayed button to fit screen
+	pos = _UAG_Tabmenu_Button_IntMetadata(UAG_TabmenuID, 0, "InitPos");
+	_UAG_Tabmenu_Button_IntMetadata(UAG_TabmenuID, 0, "Pos", pos);
+	IF (pos + _UAG_Tabmenu_Button_IntMetadata(UAG_TabmenuID, 0, "Width") > displayLimit) THEN
+		m_UAG_Tabmenu_LastDisplayButton[UAG_TabmenuID] = 0;
+		_UAG_Tabmenu_Button_IntMetadata(UAG_TabmenuID, 0, "Width", displayLimit - pos);
+	ELSE
+		// Adjust button positions, sizes and visibility
+		m_UAG_Tabmenu_LastDisplayButton[UAG_TabmenuID] = m_UAG_Tabmenu_LastMenuConfigButton[UAG_TabmenuID];
+		i = 1;
+		WHILE (i <= m_UAG_Tabmenu_LastDisplayButton[UAG_TabmenuID]) DO
+			// Adjust position based on previous one's position and width
+			prevPos = _UAG_Tabmenu_Button_IntMetadata(UAG_TabmenuID, i-1, "Pos");
+			prevWidth = _UAG_Tabmenu_Button_IntMetadata(UAG_TabmenuID, i-1, "Width");
+			prevItemMovement = prevPos - _UAG_Tabmenu_Button_IntMetadata(UAG_TabmenuID, i-1, "InitPos")
+								+ prevWidth - c_UAG_Tabmenu_BUTTON_MINWIDTH;
+			pos = _UAG_Tabmenu_Button_IntMetadata(UAG_TabmenuID, i, "Pos", _UAG_Tabmenu_Button_IntMetadata(UAG_TabmenuID, i, "InitPos") + prevItemMovement);
+
+			// Find out the last control can fit to screen, and hide overlapped objects
+			IF ((pos < prevPos + prevWidth)
+				OR (pos + _UAG_Tabmenu_Button_IntMetadata(UAG_TabmenuID, i, "Width") > displayLimit)) THEN
+				m_UAG_Tabmenu_LastDisplayButton[UAG_TabmenuID] = i - 1;
+			END
+			i = i + 1;
+		END
+	END
+	// set if more (trailing) buttons are not yet shown
+	i = m_UAG_Tabmenu_LastDisplayButton[UAG_TabmenuID];
+	IF (i > -1) THEN
+		m_UAG_Tabmenu_HasMoreButton[UAG_TabmenuID] = (MenuGetNextChild(_UAG_Tabmenu_Button_IntMetadata(UAG_TabmenuID, i, "MenuConfigHandle")) <> -1);
+	ELSE
+		m_UAG_Tabmenu_HasMoreButton[UAG_TabmenuID] = 0;
+	END
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		_UAG_Tabmenu_PreSelectedItemSet
+//
+//	SUMMARY:
+//		Set the pre-selected item for restoring focus after page transition
+//			
+//	PARAMS:
+//		UAG_TabmenuID		- A unique number that identifies a particular tab menu
+//		itemType		- type of item (0 - tab, 1 - button), default to -1
+//		itemID			- ID of item as displayed on screen, default to -1
+//		itemName		- name of item, default to ""
+//		pageScan		- current page scan count
+//			
+//	RETURNS: 
+//		None
+//
+//-----------------------------------------------------------------------------
+
+PRIVATE
+FUNCTION _UAG_Tabmenu_PreSelectedItemSet(INT UAG_TabmenuID, INT itemType = -1, INT itemID = -1, STRING itemName = "", INT pageScan = -1)
+	m_UAG_Tabmenu_PreSelectedItemType[UAG_TabmenuID] = itemType;
+	m_UAG_Tabmenu_PreSelectedItemID[UAG_TabmenuID] = itemID;
+	m_UAG_Tabmenu_PreSelectedItemName[UAG_TabmenuID] = itemName;
+	m_UAG_Tabmenu_PreSelectedPageScan[UAG_TabmenuID] = pageScan;
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		_UAG_Tabmenu_Tab_ToHide
+//
+//	SUMMARY:
+//		Indicate whether to hide a tab
+//			
+//	PARAMS:
+//		UAG_TabmenuID		- A unique number that identifies a particular tab menu
+//		tabID			- A unique number that identifies a particular tab
+//			
+//	RETURNS: 
+//		1 if should hide or 0 if should show
+//
+//-----------------------------------------------------------------------------
+
+PRIVATE
+INT FUNCTION _UAG_Tabmenu_Tab_ToHide(INT UAG_TabmenuID, INT tabID)
+	RETURN (tabID > m_UAG_Tabmenu_LastDisplayTab[UAG_TabmenuID]);
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		_UAG_Tabmenu_Tab_Icon_AdjustPos
+//
+//	SUMMARY:
+//		low-level function to adjust the position of a symbol used in a tab.
+//			
+//	PARAMS:
+//		UAG_TabmenuID		- A unique number that identifies a particular tab menu
+//		tabID			- A unique number that identifies a particular tab
+//		AN				- The animation number that displays the symbol
+//			
+//	RETURNS: 
+//		The new (horizontal) position for the symbol
+//
+//-----------------------------------------------------------------------------
+
+PRIVATE
+INT FUNCTION _UAG_Tabmenu_Tab_Icon_AdjustPos(INT UAG_TabmenuID, INT tabID, INT AN)
+	INT x, x_new, y;
+
+	// Move icon to the correct position
+	DspAnGetPos(AN, x, y);
+	x_new = _UAG_Tabmenu_Tab_IntMetadata(UAG_TabmenuID, tabID, "Pos") + c_UAG_Tabmenu_TAB_CELLPADDING;
+	IF (x <> x_new) THEN
+		DspAnMoveRel(AN, x_new - x, 0);
+	END
+	RETURN x_new;
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		_UAG_Tabmenu_Tab_Text_AdjustPos
+//
+//	SUMMARY:
+//		low-level function to adjust the position and display of the text
+//		for the name of a tab.
+//			
+//	PARAMS:
+//		UAG_TabmenuID		- A unique number that identifies a particular tab menu
+//		tabID			- A unique number that identifies a particular tab
+//		AN				- The animation number that displays the symbol
+//			
+//	RETURNS: 
+//		The new (horizontal) position for the text
+//
+//-----------------------------------------------------------------------------
+
+PRIVATE
+INT FUNCTION _UAG_Tabmenu_Tab_Text_AdjustPos(INT UAG_TabmenuID, INT tabID, INT AN)
+	INT x, x_new, y, width;
+	INT offset;
+	STRING icon;
+	INT hndFont;
+	INT hndMenuConfig = _UAG_Tabmenu_Tab_IntMetadata(UAG_TabmenuID, tabID, "MenuConfigHandle");
+
+	// check whether has icon from menu config
+	icon = _UAG_Tabmenu_GetMenuConfigIcon(hndMenuConfig);
+
+	// calculate position based on whether has icon
+	x_new = _UAG_Tabmenu_Tab_IntMetadata(UAG_TabmenuID, tabID, "Pos") + c_UAG_Tabmenu_TAB_CELLPADDING;
+	IF ("" <> icon) THEN
+		x_new = x_new + c_UAG_Tabmenu_TAB_ICONSIZE + c_UAG_Tabmenu_TAB_INTERNALSPACE;
+	END
+	offset = x_new - _UAG_Tabmenu_Tab_IntMetadata(UAG_TabmenuID, tabID, "Pos");
+
+	// Get text font based on disabled state
+	hndFont = _UAG_Tabmenu_GetTextFont(_UAG_Tabmenu_GetMenuConfigDisabled(hndMenuConfig));
+
+	// Get tab width from menu configuration
+	IF (_UAG_Tabmenu_GetMenuConfigWidth(hndMenuConfig) > 0) THEN
+		// fixed width
+		width = _UAG_Tabmenu_Tab_IntMetadata(UAG_TabmenuID, tabID, "Width") - c_UAG_Tabmenu_TAB_CELLPADDING - offset;
+		UAG_DspFixedWidthText(AN, _UAG_Tabmenu_Tab_StrMetadata(UAG_TabmenuID, tabID, "LocalText"), width, hndFont);
+	ELSE
+		// Auto fit
+		UAG_DspFixedWidthText(AN, _UAG_Tabmenu_Tab_StrMetadata(UAG_TabmenuID, tabID, "LocalText"), -1, hndFont);
+	END
+
+	// move text AFTER it's displayed within the same scan cycle
+	DspAnGetPos(AN, x, y);
+	IF (x <> x_new) THEN
+		DspAnMoveRel(AN, x_new - x, 0);
+	END
+
+	RETURN x_new;
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		_UAG_Tabmenu_Tab_Text_CalcWidth
+//
+//	SUMMARY:
+//		low-level function to calculate the width of a tab in advance.
+//			
+//	PARAMS:
+//		hndMenuConfig	- The handle to the menu configuration node of a tab
+//			
+//	RETURNS: 
+//		The width of the tab
+//
+//-----------------------------------------------------------------------------
+
+PRIVATE
+INT FUNCTION _UAG_Tabmenu_Tab_Text_CalcWidth(INT hndMenuConfig)
+	INT width;
+
+	width = _UAG_Tabmenu_GetMenuConfigWidth(hndMenuConfig);
+	IF (width <= 0) THEN
+		// Get margins based on whether has icon
+		width = c_UAG_Tabmenu_TAB_CELLPADDING + c_UAG_Tabmenu_TAB_CELLPADDING;
+		IF ("" <> _UAG_Tabmenu_GetMenuConfigIcon(hndMenuConfig)) THEN
+			width = width + c_UAG_Tabmenu_TAB_ICONSIZE + c_UAG_Tabmenu_TAB_INTERNALSPACE;
+		END
+
+		// Get text font and calculate text width
+		width = width + StrCalcWidth(StrToLocalText(_UAG_Tabmenu_GetMenuConfigText(hndMenuConfig)), _UAG_Tabmenu_GetTextFont(0));
+	END
+	width = Max(width, c_UAG_Tabmenu_TAB_MINWIDTH);
+
+	RETURN width;
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		_UAG_Tabmenu_Tab_ShiftLeftTo
+//
+//	SUMMARY:
+//		low-level function to shift the contents of the tab bar to the left.
+//		The menu item specified via argument UAG_TabmenuConfigPos will become the
+//		first tab displayed on screen.
+//			
+//	PARAMS:
+//		UAG_TabmenuID		- A unique number that identifies a particular tab menu
+//		UAG_TabmenuPos		- The (enumerated) position of a tab as defined in menu configuration to be shifted to
+//			
+//	RETURNS: 
+//		The ID of the chosen tab
+//
+//-----------------------------------------------------------------------------
+
+PRIVATE
+INT FUNCTION _UAG_Tabmenu_Tab_ShiftLeftTo(INT UAG_TabmenuID, INT UAG_TabmenuConfigPos)
+	INT anmDelay = _UAG_Tabmenu_GetAnmDelayTime();
+	INT tabID;
+
+	m_UAG_Tabmenu_TabFocusDisallowed[UAG_TabmenuID] = 1;
+	m_UAG_Tabmenu_ButtonFocusDisallowed[UAG_TabmenuID] = 1;
+
+	m_UAG_Tabmenu_FirstMenuConfigTab[UAG_TabmenuID] = UAG_TabmenuConfigPos;
+	tabID = 0;
+	m_UAG_Tabmenu_SelectedTab[UAG_TabmenuID] = 0;
+	m_UAG_Tabmenu_FirstMenuConfigButton[UAG_TabmenuID] = 0;
+	_UAG_Tabmenu_LoadMenuConfig(UAG_TabmenuID);
+	SleepMS(anmDelay);
+
+	m_UAG_Tabmenu_TabFocusDisallowed[UAG_TabmenuID] = 0;
+	m_UAG_Tabmenu_ButtonFocusDisallowed[UAG_TabmenuID] = 0;
+	SleepMS(anmDelay);
+
+	// Set cursor focus to the selected tab
+	KeySetCursor(_UAG_Tabmenu_Tab_IntMetadata(UAG_TabmenuID, tabID, "MasterAN"));
+
+	RETURN tabID;
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		_UAG_Tabmenu_Tab_ShiftRightTo
+//
+//	SUMMARY:
+//		low-level function to shift the contents of the tab bar to the right.
+//		The menu item specified via argument UAG_TabmenuConfigPos will usually become the
+//		last tab displayed on screen.
+//			
+//	PARAMS:
+//		UAG_TabmenuID		- A unique number that identifies a particular tab menu
+//		UAG_TabmenuPos		- The (enumerated) position of a tab as defined in menu configuration to be shifted to
+//			
+//	RETURNS: 
+//		The ID of the selected tab
+//
+//-----------------------------------------------------------------------------
+
+PRIVATE
+INT FUNCTION _UAG_Tabmenu_Tab_ShiftRightTo(INT UAG_TabmenuID, INT UAG_TabmenuConfigPos)
+	INT increment = 1;
+	INT anmDelay = _UAG_Tabmenu_GetAnmDelayTime();
+	INT tabID;
+
+	m_UAG_Tabmenu_TabFocusDisallowed[UAG_TabmenuID] = 1;
+	m_UAG_Tabmenu_ButtonFocusDisallowed[UAG_TabmenuID] = 1;
+
+	WHILE (UAG_TabmenuConfigPos > m_UAG_Tabmenu_FirstMenuConfigTab[UAG_TabmenuID] + m_UAG_Tabmenu_LastDisplayTab[UAG_TabmenuID]) AND (m_UAG_Tabmenu_HasMoreTab[UAG_TabmenuID]) DO
+		increment = Max(1, (UAG_TabmenuConfigPos - m_UAG_Tabmenu_FirstMenuConfigTab[UAG_TabmenuID] - m_UAG_Tabmenu_LastDisplayTab[UAG_TabmenuID]));
+		m_UAG_Tabmenu_FirstMenuConfigTab[UAG_TabmenuID] = m_UAG_Tabmenu_FirstMenuConfigTab[UAG_TabmenuID] + increment;
+		// do not refresh buttons, so no need to update selected tab until finalized
+		_UAG_Tabmenu_LoadMenuConfig(UAG_TabmenuID, -1, 1);
+	END
+	// cap the selected tab to the currently displayed ones
+	tabID = Max(Min(UAG_TabmenuConfigPos - m_UAG_Tabmenu_FirstMenuConfigTab[UAG_TabmenuID], m_UAG_Tabmenu_LastDisplayTab[UAG_TabmenuID]), 0);
+	m_UAG_Tabmenu_SelectedTab[UAG_TabmenuID] = tabID;
+	m_UAG_Tabmenu_FirstMenuConfigButton[UAG_TabmenuID] = 0;
+	_UAG_Tabmenu_LoadMenuConfig(UAG_TabmenuID);
+	SleepMS(anmDelay);
+
+	m_UAG_Tabmenu_TabFocusDisallowed[UAG_TabmenuID] = 0;
+	m_UAG_Tabmenu_ButtonFocusDisallowed[UAG_TabmenuID] = 0;
+	SleepMS(anmDelay);
+
+	// Set cursor focus to the selected tab
+	KeySetCursor(_UAG_Tabmenu_Tab_IntMetadata(UAG_TabmenuID, tabID, "MasterAN"));
+
+	RETURN tabID;
+END
+
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		_UAG_Tabmenu_Button_ToHide
+//
+//	SUMMARY:
+//		Indicate whether to hide a button
+//			
+//	PARAMS:
+//		UAG_TabmenuID		- A unique number that identifies a particular tab menu
+//		buttonID		- A unique number that identifies a particular button
+//			
+//	RETURNS: 
+//		1 if should hide or 0 if should show
+//
+//-----------------------------------------------------------------------------
+
+PRIVATE
+INT FUNCTION _UAG_Tabmenu_Button_ToHide(INT UAG_TabmenuID, INT buttonID)
+	RETURN (buttonID > m_UAG_Tabmenu_LastDisplayButton[UAG_TabmenuID]);
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		_UAG_Tabmenu_Button_Icon_AdjustPos
+//
+//	SUMMARY:
+//		low-level function to adjust the position of a symbol used in a button.
+//			
+//	PARAMS:
+//		UAG_TabmenuID		- A unique number that identifies a particular tab menu
+//		buttonID		- A unique number that identifies a particular button
+//		AN				- The animation number that displays the symbol
+//			
+//	RETURNS: 
+//		The new (horizontal) position for the symbol
+//
+//-----------------------------------------------------------------------------
+
+PRIVATE
+INT FUNCTION _UAG_Tabmenu_Button_Icon_AdjustPos(INT UAG_TabmenuID, INT buttonID, INT AN)
+	INT x, x_new, y;
+	INT width;
+
+	// Move icon to the correct position depending on whether has menu or not
+	DspAnGetPos(AN, x, y);
+	IF (_UAG_Tabmenu_GetMenuConfigMenu(_UAG_Tabmenu_Button_IntMetadata(UAG_TabmenuID, buttonID, "MenuConfigHandle")) >= 0) THEN
+		width = _UAG_Tabmenu_Button_IntMetadata(UAG_TabmenuID, buttonID, "Width") - c_UAG_Tabmenu_BUTTON_MENUWIDTH;
+		x_new = _UAG_Tabmenu_Button_IntMetadata(UAG_TabmenuID, buttonID, "Pos") + (width - c_UAG_Tabmenu_BUTTON_ICONSIZE) / 2 + c_UAG_Tabmenu_BUTTON_OFFCENTRE;
+	ELSE
+		width = _UAG_Tabmenu_Button_IntMetadata(UAG_TabmenuID, buttonID, "Width");
+		x_new = _UAG_Tabmenu_Button_IntMetadata(UAG_TabmenuID, buttonID, "Pos") + (width - c_UAG_Tabmenu_BUTTON_ICONSIZE) / 2;
+	END
+	IF (x <> x_new) THEN
+		DspAnMoveRel(AN, x_new - x, 0);
+	END
+	RETURN x_new;
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		_UAG_Tabmenu_Button_Text_AdjustPos
+//
+//	SUMMARY:
+//		low-level function to adjust the position and display of the text
+//		for the name of a button.
+//			
+//	PARAMS:
+//		UAG_TabmenuID		- A unique number that identifies a particular tab menu
+//		buttonID		- A unique number that identifies a particular button
+//		AN				- The animation number that displays the symbol
+//			
+//	RETURNS: 
+//		The new (horizontal) position for the text
+//
+//-----------------------------------------------------------------------------
+
+PRIVATE
+INT FUNCTION _UAG_Tabmenu_Button_Text_AdjustPos(INT UAG_TabmenuID, INT buttonID, INT AN)
+	INT x, x_new, y, width;
+	INT hndFont;
+	INT hndMenuConfig = _UAG_Tabmenu_Button_IntMetadata(UAG_TabmenuID, buttonID, "MenuConfigHandle");
+
+	// calculate text position
+	x_new = _UAG_Tabmenu_Button_IntMetadata(UAG_TabmenuID, buttonID, "Pos") + c_UAG_Tabmenu_BUTTON_CELLPADDING;
+
+	// Get text font based on disabled state
+	hndFont = _UAG_Tabmenu_GetTextFont(_UAG_Tabmenu_GetMenuConfigDisabled(hndMenuConfig));
+
+	// get text width from pre-calculated button width
+	width = _UAG_Tabmenu_Button_IntMetadata(UAG_TabmenuID, buttonID, "Width") - c_UAG_Tabmenu_BUTTON_CELLPADDING - c_UAG_Tabmenu_BUTTON_CELLPADDING;
+	IF (_UAG_Tabmenu_GetMenuConfigMenu(hndMenuConfig) >= 0) THEN
+		width = width - c_UAG_Tabmenu_BUTTON_MENUWIDTH + (c_UAG_Tabmenu_BUTTON_CELLPADDING / 2);
+	END
+	x_new = x_new + width / 2;
+	IF (_UAG_Tabmenu_GetMenuConfigWidth(hndMenuConfig) > 0) THEN
+		// fixed width
+		UAG_DspFixedWidthText(AN, _UAG_Tabmenu_Button_StrMetadata(UAG_TabmenuID, buttonID, "LocalText"), width, hndFont, 2);	// centre alignment
+	ELSE
+		// Auto fit
+		UAG_DspFixedWidthText(AN, _UAG_Tabmenu_Button_StrMetadata(UAG_TabmenuID, buttonID, "LocalText"), -1, hndFont, 2);	// centre alignment
+	END
+
+	// move text AFTER it's displayed within the same scan cycle
+	DspAnGetPos(AN, x, y);
+	IF (x <> x_new) THEN
+		DspAnMoveRel(AN, x_new - x, 0);
+	END
+
+	RETURN x_new;
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		_UAG_Tabmenu_Button_Text_CalcWidth
+//
+//	SUMMARY:
+//		low-level function to calculate the width of a button in advance.
+//			
+//	PARAMS:
+//		hndMenuConfig	- The handle to the menu configuration node of a button
+//			
+//	RETURNS: 
+//		The width of the button
+//
+//-----------------------------------------------------------------------------
+
+PRIVATE
+INT FUNCTION _UAG_Tabmenu_Button_Text_CalcWidth(INT hndMenuConfig)
+	INT width;
+
+	width = _UAG_Tabmenu_GetMenuConfigWidth(hndMenuConfig);
+	IF (width <= 0) THEN
+		// Get margins
+		width = c_UAG_Tabmenu_BUTTON_CELLPADDING + c_UAG_Tabmenu_BUTTON_CELLPADDING;
+		IF (_UAG_Tabmenu_GetMenuConfigMenu(hndMenuConfig) >= 0) THEN
+			width = width + c_UAG_Tabmenu_BUTTON_MENUWIDTH - (c_UAG_Tabmenu_BUTTON_CELLPADDING / 2);
+		END
+
+		// Get text font and calculate text width
+		width = width + StrCalcWidth(StrToLocalText(_UAG_Tabmenu_GetMenuConfigText(hndMenuConfig)), _UAG_Tabmenu_GetTextFont(0));
+	END
+	width = Max(width, c_UAG_Tabmenu_BUTTON_MINWIDTH);
+
+	RETURN width;
+END
+
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		_UAG_Tabmenu_Button_ShiftLeftTo
+//
+//	SUMMARY:
+//		low-level function to shift the contents of the button toolbar to the left.
+//		The menu item specified via argument buttonMenuConfigPos will become the
+//		first button displayed on screen.
+//			
+//	PARAMS:
+//		UAG_TabmenuID		- A unique number that identifies a particular tab menu
+//		tabID			- A unique number that identifies a particular tab that is currently selected
+//		buttonMenuPos	- The (enumerated) position of a button as defined in menu configuration to be shifted to
+//			
+//	RETURNS: 
+//		The ID of the selected button
+//
+//-----------------------------------------------------------------------------
+
+PRIVATE
+INT FUNCTION _UAG_Tabmenu_Button_ShiftLeftTo(INT UAG_TabmenuID, INT tabID, INT buttonMenuConfigPos)
+	INT	anmDelay = _UAG_Tabmenu_GetAnmDelayTime();
+	INT buttonID;
+
+	m_UAG_Tabmenu_ButtonFocusDisallowed[UAG_TabmenuID] = 1;
+
+	m_UAG_Tabmenu_FirstMenuConfigButton[UAG_TabmenuID] = buttonMenuConfigPos;
+	_UAG_Tabmenu_LoadMenuConfig(UAG_TabmenuID, tabID);
+	SleepMS(anmDelay);
+
+	m_UAG_Tabmenu_ButtonFocusDisallowed[UAG_TabmenuID] = 0;
+	SleepMS(anmDelay);
+
+	// Set cursor focus to the selected button
+	buttonID = buttonMenuConfigPos - m_UAG_Tabmenu_FirstMenuConfigButton[UAG_TabmenuID];
+	KeySetCursor(_UAG_Tabmenu_Button_IntMetadata(UAG_TabmenuID, buttonID, "MasterAN"));
+
+	RETURN buttonID;
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		_UAG_Tabmenu_Button_ShiftRightTo
+//
+//	SUMMARY:
+//		low-level function to shift the contents of the button toolbar to the right.
+//		The menu item specified via argument buttonMenuConfigPos will become the
+//		last button displayed on screen.
+//			
+//	PARAMS:
+//		UAG_TabmenuID		- A unique number that identifies a particular tab menu
+//		tabID			- A unique number that identifies a particular tab that is currently selected
+//		buttonMenuPos	- The (enumerated) position of a button as defined in menu configuration to be shifted to
+//			
+//	RETURNS: 
+//		The ID of the selected button
+//
+//-----------------------------------------------------------------------------
+
+PRIVATE
+INT FUNCTION _UAG_Tabmenu_Button_ShiftRightTo(INT UAG_TabmenuID, INT tabID, INT buttonMenuConfigPos)
+	INT increment = 1;
+	INT	anmDelay = _UAG_Tabmenu_GetAnmDelayTime();
+	INT buttonID;
+
+	m_UAG_Tabmenu_ButtonFocusDisallowed[UAG_TabmenuID] = 1;
+
+	WHILE (buttonMenuConfigPos > m_UAG_Tabmenu_FirstMenuConfigButton[UAG_TabmenuID] + m_UAG_Tabmenu_LastDisplayButton[UAG_TabmenuID]) AND (m_UAG_Tabmenu_HasMoreButton[UAG_TabmenuID]) DO
+		increment = Max(1, (buttonMenuConfigPos - m_UAG_Tabmenu_FirstMenuConfigButton[UAG_TabmenuID] - m_UAG_Tabmenu_LastDisplayButton[UAG_TabmenuID]));
+		m_UAG_Tabmenu_FirstMenuConfigButton[UAG_TabmenuID] = m_UAG_Tabmenu_FirstMenuConfigButton[UAG_TabmenuID] + increment;
+		_UAG_Tabmenu_LoadMenuConfig(UAG_TabmenuID, tabID);
+	END
+
+	m_UAG_Tabmenu_ButtonFocusDisallowed[UAG_TabmenuID] = 0;
+	SleepMS(anmDelay);
+
+	// Set cursor focus to the selected button
+	buttonID = buttonMenuConfigPos - m_UAG_Tabmenu_FirstMenuConfigButton[UAG_TabmenuID];
+	IF (buttonID <= m_UAG_Tabmenu_LastDisplayButton[UAG_TabmenuID]) THEN
+		KeySetCursor(_UAG_Tabmenu_Button_IntMetadata(UAG_TabmenuID, buttonID, "MasterAN"));
+	END
+
+	RETURN buttonID;
+END
+
+
+//-----------------------------------------------------------------------------
+//
+//	Private Helper Functions (Common to any UAG_Tabmenu related controls)
+//
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		_UAG_Tabmenu_GetInstance
+//
+//	SUMMARY:
+//		Get the instance handle of the tab menu displayed on the current window.
+//			
+//	PARAMS:
+//		allocate	- whether to allocate instance if not exists, default to 0
+//			
+//	RETURNS: 
+//		The handle to the tab menu instance
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION _UAG_Tabmenu_GetInstance(INT allocate = 0)
+	INT	winNo = WinNumber();
+	INT list, instance;
+	INT winSearch, foundFreeWindow;
+	INT oldErrLevel;
+
+	IF (winNo >= c_WINDOW_MAX) THEN
+		RETURN -1;
+	END
+	// Retrieve instance handle from cache
+	IF (m_UAG_Tabmenu_Instance[winNo] >= 0) THEN
+		IF (allocate) THEN
+			IF ("0" = PageInfo(7)) THEN
+				PageSetInt("_UAG_Tabmenu_exist", 1, winNo);
+			END
+		END
+		RETURN m_UAG_Tabmenu_Instance[winNo];
+	END
+
+	// only one object on the page would allocate instance
+	IF (0 = allocate) THEN
+		RETURN -1;
+	END
+	IF ("0" <> PageInfo(7)) THEN
+		RETURN -1;
+	END
+
+	// Create a new list / retrieve existing list for allocating instances
+	list = ItemListNew("UAG_Tabmenu_Instance", c_UAG_Tabmenu_MAX);
+	IF (list < 0) THEN
+		RETURN -1;
+	END
+	instance = ItemFind(list, winNo);
+	IF (instance < 0) THEN
+		// allocate new instance to the list
+		instance = ItemAdd(list, winNo);
+		IF (instance < 0) THEN
+			// If list is full, find item with invalid window number and replace it
+			oldErrLevel = ErrSetLevel(1);
+			foundFreeWindow = 0;
+			instance = ItemFirst(list);
+			WHILE ((NOT foundFreeWindow) AND (instance >= 0)) DO
+				winSearch = ItemValue(list, instance);
+				IF (1 <> PageGetInt("_UAG_Tabmenu_exist", winSearch)) THEN
+					// window has no tab menu, replace it with current window number
+					foundFreeWindow = 1;
+					ItemValue(list, instance, winNo);
+					m_UAG_Tabmenu_Instance[winSearch] = -1;
+				ELSE
+					instance = ItemNext(list, instance);
+				END
+			END
+			ErrSetLevel(oldErrLevel);
+		END
+		IF (instance >= 0) THEN
+			m_UAG_Tabmenu_Instance[winNo] = instance;
+			PageSetInt("_UAG_Tabmenu_exist", 1, winNo);
+		END
+	END
+	RETURN instance;
+END
+
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		_UAG_Tabmenu_ExecuteCommand
+//
+//	SUMMARY:
+//		Execute the command specified in the menu configuration of the selected control.
+//			
+//	PARAMS:
+//		handle		- handle to the menu configuration node
+//			
+//	RETURNS: 
+//		0 if run successfully or -1 if failed
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION _UAG_Tabmenu_ExecuteCommand(INT handle)
+	INT returnValue = -1;
+
+	IF (handle > -1) THEN
+		IF (NOT _UAG_Tabmenu_GetMenuConfigDisabled(handle)) THEN
+			IF (MenuNodeRunCommand(handle) = 0) THEN
+				returnValue = 0;
+			END
+		END
+	END
+	RETURN returnValue;
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		_UAG_Tabmenu_EnableRefresh
+//
+//	SUMMARY:
+//		Enable refreshing of position and reloading of symbols. The fresh will
+//		stop after the c_UAG_Tabmenu_PAGESCAN_TIMEOUT scans.
+//			
+//	PARAMS:
+//		UAG_TabmenuID		- A unique number that identifies a particular tab menu
+//			
+//	RETURNS: 
+//		0 if executed successfully or -1 if failed
+//
+//-----------------------------------------------------------------------------
+
+PRIVATE
+INT FUNCTION _UAG_Tabmenu_EnableRefresh(INT UAG_TabmenuID)
+	m_UAG_Tabmenu_RefreshTimer[UAG_TabmenuID] = c_UAG_Tabmenu_PAGESCAN_TIMEOUT;
+	m_UAG_Tabmenu_Refresh[UAG_TabmenuID] = 1;
+	RETURN 0;
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		_UAG_Tabmenu_IsInitiating
+//
+//	SUMMARY:
+//		Indicate whether the UAG_Tabmenu is still initiating the controls
+//			
+//	PARAMS:
+//		UAG_TabmenuID			- A unique number that identifies a particular tab menu
+//			
+//	RETURNS:
+//		1 if tab menu is still initializing or 0 if it finishes
+//
+//-----------------------------------------------------------------------------
+
+PRIVATE
+INT FUNCTION _UAG_Tabmenu_IsInitiating(INT UAG_TabmenuID)
+	RETURN (m_UAG_Tabmenu_InitiatingCycle[UAG_TabmenuID] <> c_UAG_Tabmenu_INITCYCLE_END) OR (PageInfo(7) = "0");
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		_UAG_Tabmenu_ResetWidths
+//
+//	SUMMARY:
+//		Reset the width of controls in a tab menu to default width
+//			
+//	PARAMS:
+//		UAG_TabmenuID			- A unique number that identifies a particular tab menu
+//		tabsOnPage			- (Optional) number of tabs configured on page,  default to MAX allowed if not specified
+//		buttonsOnPage		- (Optional) number of buttons configured on page, default to MAX allowed if not specified
+//			
+//	RETURNS: 
+//		0 if executed successfully or -1 if failed
+//
+//-----------------------------------------------------------------------------
+
+PRIVATE
+INT FUNCTION _UAG_Tabmenu_ResetWidths(INT UAG_TabmenuID, INT tabsOnPage = -1, INT buttonsOnPage = -1);
+	INT i;
+	
+	IF (tabsOnPage < 0) THEN tabsOnPage = c_UAG_Tabmenu_TAB_MAX; END
+	IF (buttonsOnPage < 0) THEN buttonsOnPage = c_UAG_Tabmenu_BUTTON_MAX; END
+	FOR i = 0 TO (tabsOnPage - 1) DO
+		_UAG_Tabmenu_Tab_IntMetadata(UAG_TabmenuID, i, "Width", c_UAG_Tabmenu_TAB_MINWIDTH);
+	END
+	FOR i = 0 TO (buttonsOnPage - 1) DO
+		_UAG_Tabmenu_Button_IntMetadata(UAG_TabmenuID, i, "Width", c_UAG_Tabmenu_BUTTON_MINWIDTH);
+	END
+
+	RETURN 0;
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		_UAG_Tabmenu_GetAnmDelayTime
+//
+//	SUMMARY:
+//		Get the animation delay time for the dyn. objects on the page to be updated
+//			
+//	PARAMS:
+//		None
+//			
+//	RETURNS:
+//		scan time (in milliseconds) for animation to be updated
+//
+//-----------------------------------------------------------------------------
+
+PRIVATE
+INT FUNCTION _UAG_Tabmenu_GetAnmDelayTime()
+	// only returns the time delay for 1 page scan
+	RETURN Min(StrToInt(ParameterGet("Page", "AnmDelay", "500")), PageGetInt(-2));
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		_UAG_Tabmenu_GetTextFont
+//
+//	SUMMARY:
+//		Get the text font handle for the tab controls
+//			
+//	PARAMS:
+//		disabled	- The disabled state of the text
+//			
+//	RETURNS:
+//		The font handle under the specified disabled state
+//
+//	REMARKS:
+//		The font can be customized by parameters
+//		[UAG_Tabmenu.Custom]
+//		Font.Disabled
+//		Font.Normal
+//-----------------------------------------------------------------------------
+//	27.04.17	Steiner		Blau Entfernt
+
+
+PRIVATE
+INT FUNCTION _UAG_Tabmenu_GetTextFont(INT disabled)
+	INT hndFont = -1;
+
+	IF disabled THEN
+		IF ("" <> m_UAG_Tabmenu_Custom_Font_Disabled) THEN
+			hndFont = DspFontHnd(m_UAG_Tabmenu_Custom_Font_Disabled);
+		END
+		IF (hndFont < 0) THEN
+			hndFont = DspFont("Arial", -10, MakeCitectColour(216,216,216), TRANSPARENT);
+		END
+	ELSE
+		IF ("" <> m_UAG_Tabmenu_Custom_Font_Normal) THEN
+			hndFont = DspFontHnd(m_UAG_Tabmenu_Custom_Font_Normal);
+		END
+		IF (hndFont < 0) THEN
+			hndFont = DspFont("Arial", -10, MakeCitectColour(153,153,153), TRANSPARENT);
+		END
+	END
+	RETURN hndFont;
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		_UAG_Tabmenu_IsSystemPage
+//
+//	SUMMARY:
+//		Check if the specified page is a system page.
+//			
+//	PARAMS:
+//		pageName	- name of the page
+//			
+//	RETURNS: 
+//		1 if specified page is system page or 0 if not
+//		If the page name is empty, it also returns 1 for fail-safe
+//
+//	REMARKS:
+//		A system page is one of the followings:
+//			!<page name>
+//			PageMenu
+//			alarm pages defined in [Page]AlarmPage, SummaryPage, DisabledPage, HardwarePage
+//			trend pages defined in [Page]ProcessAnalystPage, ProcessAnalystPopupPage
+//
+//-----------------------------------------------------------------------------
+
+PRIVATE
+INT FUNCTION _UAG_Tabmenu_IsSystemPage(STRING pageName)
+	INT pageIdx;
+	INT pageCount;
+
+	IF ("" = pageName) THEN
+		RETURN 1;
+	END
+
+	IF (StrLeft(pageName, 1) = "!") THEN
+		RETURN 1;
+	END
+
+	// get the system pages from Citect.ini parameters
+	IF (c_UAG_Tabmenu_PAGE_SYSTEM_COUNT < 1) THEN
+		c_UAG_Tabmenu_PAGE_SYSTEM[0] = "pagemenu";
+		c_UAG_Tabmenu_PAGE_SYSTEM[1] = StrLower(ParameterGet("Page", "AlarmPage", c_UAG_Tabmenu_PAGE_SYSTEM[1]));
+		c_UAG_Tabmenu_PAGE_SYSTEM[2] = StrLower(ParameterGet("Page", "SummaryPage", c_UAG_Tabmenu_PAGE_SYSTEM[2]));
+		c_UAG_Tabmenu_PAGE_SYSTEM[3] = StrLower(ParameterGet("Page", "SOEPage", c_UAG_Tabmenu_PAGE_SYSTEM[3]));
+		c_UAG_Tabmenu_PAGE_SYSTEM[4] = StrLower(ParameterGet("Page", "DisabledPage", c_UAG_Tabmenu_PAGE_SYSTEM[4]));
+		c_UAG_Tabmenu_PAGE_SYSTEM[5] = StrLower(ParameterGet("Page", "HardwarePage", c_UAG_Tabmenu_PAGE_SYSTEM[5]));
+		c_UAG_Tabmenu_PAGE_SYSTEM[6] = StrLower(ParameterGet("Page", "ProcessAnalystPage", c_UAG_Tabmenu_PAGE_SYSTEM[6]));
+		c_UAG_Tabmenu_PAGE_SYSTEM[7] = StrLower(ParameterGet("Page", "ProcessAnalystPopupPage", c_UAG_Tabmenu_PAGE_SYSTEM[7]));
+		c_UAG_Tabmenu_PAGE_SYSTEM[8] = "tab_style_startup";
+		c_UAG_Tabmenu_PAGE_SYSTEM_COUNT = 9;
+	END
+	pageName = StrLower(pageName);
+
+	pageIdx = 0;
+	pageCount = c_UAG_Tabmenu_PAGE_SYSTEM_COUNT;
+	WHILE (pageIdx < pageCount) DO
+		IF (pageName = c_UAG_Tabmenu_PAGE_SYSTEM[pageIdx]) THEN
+			RETURN 1;
+		END
+		pageIdx = pageIdx + 1;
+	END
+
+	RETURN 0;
+END
+
+
+//-----------------------------------------------------------------------------
+//
+//	Private Helper Functions (Interface with menu configuration)
+//
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		_UAG_Tabmenu_LoadMenuConfig
+//
+//	SUMMARY:
+//		load contents from the menu configuration
+//			
+//	PARAMS:
+//		UAG_TabmenuID		- A unique number that identifies a particular tab menu
+//		tabID			- (Optional) A unique number that identifies a particular tab
+//							If tabID is specified, only the buttons of the selected tab will be reloaded
+//							If it is not specified, it is assumed to be the currenlty selected tab.
+//							If no tab is selected, it is defaulted to the tab ID 0
+//		noReloadButton	- Do not reload buttons on the toolbar, default = reload (0)
+//			
+//	RETURNS: 
+//		The menu handle for the page if successful or -1 if failed
+//
+//-----------------------------------------------------------------------------
+
+PRIVATE
+INT FUNCTION _UAG_Tabmenu_LoadMenuConfig(INT UAG_TabmenuID, INT tabID = -1, INT noReloadButton = 0)
+	INT i;
+	INT hndMenuConfigPage, hndMenuConfigTab, hndMenuConfigTabToUpdate, hndMenuConfigButton;
+	INT tabCount, buttonCount;
+	INT configWidth;
+	STRING itemName;
+
+	hndMenuConfigPage = _UAG_Tabmenu_OpenPageMenuConfig();
+	// Call core function to get info from menu configuration
+	IF (hndMenuConfigPage > -1) THEN
+		IF (tabID < 0) THEN
+			// enumerate the tab number to initial displayed position
+			tabCount = 0;
+			hndMenuConfigTab = MenuGetFirstChild(hndMenuConfigPage);
+			WHILE ((tabCount < m_UAG_Tabmenu_FirstMenuConfigTab[UAG_TabmenuID]) AND (hndMenuConfigTab > -1)) DO
+				hndMenuConfigTab = MenuGetNextChild(hndMenuConfigTab);
+				tabCount = tabCount + 1;
+			END
+			IF (hndMenuConfigTab < 0) THEN
+				m_UAG_Tabmenu_FirstMenuConfigTab[UAG_TabmenuID] = 0;
+				hndMenuConfigTab = MenuGetFirstChild(hndMenuConfigPage);
+			END
+
+			// default the tab to update be the first displayed tab
+			hndMenuConfigTabToUpdate = hndMenuConfigTab;
+			tabID = 0;
+
+			// populate the tab handles
+			tabCount = 0;
+			WHILE ((hndMenuConfigTab > -1) AND (tabCount < c_UAG_Tabmenu_TAB_MAX)) DO
+				IF (tabCount = m_UAG_Tabmenu_SelectedTab[UAG_TabmenuID]) THEN
+					hndMenuConfigTabToUpdate = hndMenuConfigTab;
+					tabID = tabCount;
+				END
+				_UAG_Tabmenu_Tab_IntMetadata(UAG_TabmenuID, tabCount, "MenuConfigHandle", hndMenuConfigTab);
+				configWidth = _UAG_Tabmenu_Tab_Text_CalcWidth(hndMenuConfigTab);
+				_UAG_Tabmenu_Tab_IntMetadata(UAG_TabmenuID, tabCount, "Width", configWidth);
+
+				hndMenuConfigTab = MenuGetNextChild(hndMenuConfigTab);
+				tabCount = tabCount + 1;
+			END
+			m_UAG_Tabmenu_LastMenuConfigTab[UAG_TabmenuID] = tabCount - 1;
+		ELSE
+			// if tab ID already known, assume the tab is populated previously
+			hndMenuConfigTabToUpdate = _UAG_Tabmenu_Tab_IntMetadata(UAG_TabmenuID, tabID, "MenuConfigHandle");
+		END
+
+		IF (0 = noReloadButton) THEN
+			// ensure the selected tab reflects the buttons displayed on page
+			m_UAG_Tabmenu_SelectedTab[UAG_TabmenuID] = tabID;
+			m_UAG_Tabmenu_SelectedTabName[UAG_TabmenuID] = _UAG_Tabmenu_GetMenuConfigText(hndMenuConfigTabToUpdate);
+
+			// enumerate the button number to initial displayed position
+			buttonCount = 0;
+			hndMenuConfigButton = MenuGetFirstChild(hndMenuConfigTabToUpdate);
+			WHILE ((buttonCount < m_UAG_Tabmenu_FirstMenuConfigButton[UAG_TabmenuID]) AND (hndMenuConfigButton > -1)) DO
+				hndMenuConfigButton = MenuGetNextChild(hndMenuConfigButton);
+				buttonCount = buttonCount + 1;
+			END
+			IF (hndMenuConfigButton < 0) THEN
+				m_UAG_Tabmenu_FirstMenuConfigButton[UAG_TabmenuID] = 0;
+				hndMenuConfigButton = MenuGetFirstChild(hndMenuConfigTabToUpdate);
+			END
+			
+			// populate the button handles
+			buttonCount = 0;
+			WHILE ((hndMenuConfigButton > -1) AND (buttonCount < c_UAG_Tabmenu_BUTTON_MAX)) DO
+				_UAG_Tabmenu_Button_IntMetadata(UAG_TabmenuID, buttonCount, "MenuConfigHandle", hndMenuConfigButton);
+				configWidth = _UAG_Tabmenu_Button_Text_CalcWidth(hndMenuConfigButton);
+				_UAG_Tabmenu_Button_IntMetadata(UAG_TabmenuID, buttonCount, "Width", configWidth);
+
+				hndMenuConfigButton = MenuGetNextChild(hndMenuConfigButton);
+				buttonCount = buttonCount + 1;
+			END
+			m_UAG_Tabmenu_LastMenuConfigButton[UAG_TabmenuID] = buttonCount - 1;
+		END
+	END
+
+	// At this point, the first and last tab "indexes" and the tab handles should be defined. The same goes for the buttons
+	// Translate tab and button names to local language
+	FOR i = 0 TO m_UAG_Tabmenu_LastMenuConfigTab[UAG_TabmenuID] DO
+		itemName = _UAG_Tabmenu_GetMenuConfigText(_UAG_Tabmenu_Tab_IntMetadata(UAG_TabmenuID, i, "MenuConfigHandle"));
+		_UAG_Tabmenu_Tab_StrMetadata(UAG_TabmenuID, i, "LocalText", StrToLocalText(itemName));
+	END
+	FOR i = 0 TO m_UAG_Tabmenu_LastMenuConfigButton[UAG_TabmenuID] DO
+		itemName = _UAG_Tabmenu_GetMenuConfigText(_UAG_Tabmenu_Button_IntMetadata(UAG_TabmenuID, i, "MenuConfigHandle"));
+		_UAG_Tabmenu_Button_StrMetadata(UAG_TabmenuID, i, "LocalText", StrToLocalText(itemName));
+	END
+
+	// pre-calculate controls positions
+	_UAG_Tabmenu_CalcPos(UAG_TabmenuID);
+
+	// after information is initialised, do runtime adjustments
+	m_UAG_Tabmenu_InitiatingCycle[UAG_TabmenuID] = c_UAG_Tabmenu_INITCYCLE_END;
+
+	// Allow contents on the page to be refreshed
+	_UAG_Tabmenu_EnableRefresh(UAG_TabmenuID);
+
+	RETURN hndMenuConfigPage;
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		_UAG_Tabmenu_FindSelectedTabByName
+//
+//	SUMMARY:
+//		Find the position of the specified tab in the menu config. by name
+//			
+//	PARAMS:
+//		UAG_TabmenuID		- A unique number that identifies a particular tab menu
+//		tabName			- The name of tab to search for
+//			
+//	RETURNS: 
+//		The position of the specified tab in the menu configuration
+//
+//-----------------------------------------------------------------------------
+
+PRIVATE
+INT FUNCTION _UAG_Tabmenu_FindTabByName(INT UAG_TabmenuID, STRING tabName)
+	INT hndMenuConfig;
+	INT tabCount = 0;
+
+	hndMenuConfig = _UAG_Tabmenu_OpenPageMenuConfig();
+	IF (hndMenuConfig < 0) THEN
+		RETURN -1;
+	END
+	hndMenuConfig = MenuGetFirstChild(hndMenuConfig);
+	WHILE (hndMenuConfig >= 0) DO
+		IF (tabName = _UAG_Tabmenu_GetMenuConfigText(hndMenuConfig)) THEN
+			 RETURN tabCount;
+		END
+		hndMenuConfig = MenuGetNextChild(hndMenuConfig);
+		tabCount = tabCount + 1;
+	END
+
+	RETURN -1;
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		_UAG_Tabmenu_FindSelectedButtonByName
+//
+//	SUMMARY:
+//		Find the position of the specified button in the menu config. by name
+//			
+//	PARAMS:
+//		UAG_TabmenuID		- A unique number that identifies a particular tab menu
+//		tabPos			- A unique number that identifies a particular tab in
+//							the menu configuration
+//		buttonName		- The name of tab to search for
+//			
+//	RETURNS: 
+//		The position of the specified button in the menu configuration
+//
+//-----------------------------------------------------------------------------
+
+PRIVATE
+INT FUNCTION _UAG_Tabmenu_FindButtonByName(INT UAG_TabmenuID, INT tabPos, STRING buttonName)
+	INT hndMenuConfig;
+	INT count;
+
+	hndMenuConfig = _UAG_Tabmenu_OpenPageMenuConfig();
+	IF (hndMenuConfig < 0) THEN
+		RETURN -1;
+	END
+
+	count = 0;
+	hndMenuConfig = MenuGetFirstChild(hndMenuConfig);
+	WHILE (hndMenuConfig >= 0) AND (count < tabPos) DO
+		hndMenuConfig = MenuGetNextChild(hndMenuConfig);
+		count = count + 1;
+	END
+	IF (hndMenuConfig < 0) THEN
+		RETURN -1;
+	END
+
+	count = 0;
+	hndMenuConfig = MenuGetFirstChild(hndMenuConfig);
+	WHILE (hndMenuConfig >= 0) DO
+		IF (buttonName = _UAG_Tabmenu_GetMenuConfigText(hndMenuConfig)) THEN
+			 RETURN count;
+		END
+		hndMenuConfig = MenuGetNextChild(hndMenuConfig);
+		count = count + 1;
+	END
+
+	RETURN -1;
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		_UAG_Tabmenu_AddDefaultActionMenu
+//
+//	SUMMARY:
+//		Adds the default Action menu (tab) and its child items.
+//			
+//	PARAMS:
+//		hndParentNode	- The handle to the parent menu node
+//		winNo			- The window number, default = -1 (current window)
+//			
+//	RETURNS: 
+//		the handle to the action menu node if executed successfully or -1 if failed
+//
+//	REMARKS:
+//		page variable _ActionMenuType is set in the affected templates.
+//		It decides what type of action menu is created:
+//			To support alarm templates, Its value has
+//				- the same range as the Type argument of fn. AlarmDsp()
+//			To support other templates, It contains additoin numbers
+//				- 101	for databrowse template
+
+//-----------------------------------------------------------------------------
+
+PRIVATE
+INT FUNCTION _UAG_Tabmenu_AddDefaultActionMenu(INT hndParentNode, INT winNo = -1)
+	INT width = 0;
+	INT order = 10000;	// add a large default order so it appears at the end
+	STRING actionMenuTypeStr;
+	INT actionMenuType;
+	INT hndMenuNode;
+	INT hndSubmenuNode;
+
+	IF (hndParentNode = -1) THEN
+		RETURN -1;
+	END
+	actionMenuTypeStr = PageGetStr("_ActionMenuType");
+	IF ("" = actionMenuTypeStr) THEN
+		RETURN -1;
+	END
+	IF (PageGetInt("_UAG_Tabmenu_ActionMenuAdded", winNo)) THEN
+		RETURN -1;
+	END
+	actionMenuType = StrToInt(actionMenuTypeStr);
+
+	hndMenuNode = UAG_Tabmenu_GetChild(hndParentNode, "@(Action)");
+	// Do not modify the Action tab if it is already defined
+	IF (hndMenuNode < 0) THEN
+		hndMenuNode = UAG_Tabmenu_AddChild(hndParentNode, "@(Action)", "", "", "", order);
+		SELECT CASE actionMenuType
+		CASE 0 TO 15	// Action tab for alarm templates
+			// add Control actions
+			SELECT CASE actionMenuType
+			CASE 3	// Disabled alarms
+				UAG_Tabmenu_AddChild(hndMenuNode, "@(Enable page)", "TabAlarm_Enable", "1", "icons_32x32.alarm_dis_neg", order, width, "_UAG_Tabmenu_AlmActionIsDisabled", "2");
+			CASE 0	// active alarms
+				hndSubmenuNode = UAG_Tabmenu_GetChild(hndMenuNode, "@(Acknowledge page)");
+				IF (hndSubmenuNode < 0) THEN
+					hndSubmenuNode = UAG_Tabmenu_AddChild(hndMenuNode, "@(Acknowledge page)", "TabAlarm_Ack", "1", "icons_32x32.alarm_ack", order, width, "_UAG_Tabmenu_AlmActionIsDisabled", "1");
+					UAG_Tabmenu_AddChild(hndSubmenuNode, "@(Acknowledge page)", "TabAlarm_Ack", "1", "", order, width, "_UAG_Tabmenu_AlmActionIsDisabled", "1");
+					UAG_Tabmenu_AddChild(hndSubmenuNode, "@(Disable page)", "TabAlarm_Disable", "1", "", order, width, "_UAG_Tabmenu_AlmActionIsDisabled", "2");
+				END
+			END SELECT
+
+			// add Data actions
+			SELECT CASE actionMenuType
+			CASE 10, 15	// historical events
+				UAG_Tabmenu_AddChild(hndMenuNode, "@(Refresh)", "TabAlarm_ReloadData", "1", "icons_32x32.refresh", order, width);
+			END SELECT
+
+			// add Filter actions
+			hndSubmenuNode = UAG_Tabmenu_GetChild(hndMenuNode, "@(Filter)...");
+			IF (hndSubmenuNode < 0) THEN
+				hndSubmenuNode = UAG_Tabmenu_AddChild(hndMenuNode, "@(Filter)...", "TabAlarm_FormFilter", "1", "icons_32x32.filter_02", order, width);
+				UAG_Tabmenu_AddChild(hndSubmenuNode, "@(Filter)...", "TabAlarm_FormFilter", "1", "", order, width);
+				UAG_Tabmenu_AddChild(hndSubmenuNode, "@(Reset filter)", "TabAlarm_ResetFilter", "1", "", order, width);
+			END
+
+			// add Columns actions
+			hndSubmenuNode = UAG_Tabmenu_GetChild(hndMenuNode, "@(Auto-fit columns)");
+			IF (hndSubmenuNode < 0) THEN
+				hndSubmenuNode = UAG_Tabmenu_AddChild(hndMenuNode, "@(Auto-fit columns)", "TabAlmTable_AutoFit", "^"1^"", "icons_32x32.column_fit", order, width);
+				UAG_Tabmenu_AddChild(hndSubmenuNode, "@(Auto-fit columns)", "TabAlmTable_AutoFit", "^"1^"", "", order, width);
+				UAG_Tabmenu_AddChild(hndSubmenuNode, "@(Add column)...", "TabAlmTable_Col_ShowContextMenu", "^"1^",-1", "", order, width);
+			END
+
+			// add View actions
+			hndSubmenuNode = UAG_Tabmenu_GetChild(hndMenuNode, "@(Save view)");
+			IF (hndSubmenuNode < 0) THEN
+				hndSubmenuNode = UAG_Tabmenu_AddChild(hndMenuNode, "@(Save view)", "TabAlmTable_SaveConfig", "^"1^"", "icons_32x32.save", order, width);
+				UAG_Tabmenu_AddChild(hndSubmenuNode, "@(Save view)", "TabAlmTable_SaveConfig", "^"1^"", "", order, width);
+				UAG_Tabmenu_AddChild(hndSubmenuNode, "@(Restore saved view)", "TabAlmTable_LoadConfig", "^"1^"", "", order, width);
+				UAG_Tabmenu_AddChild(hndSubmenuNode, "@(Reset view to default)", "TabAlmTable_ResetConfig", "^"1^"", "", order, width);
+			END
+
+			// add Page actions
+			UAG_Tabmenu_AddChild(hndMenuNode, "@(Print / Export)...", "TabAlmTable_Print", "^"1^"", "icons_32x32.printer", order, width);
+		CASE 101	// Action tab for databrowse templates
+			// add Data actions
+			UAG_Tabmenu_AddChild(hndMenuNode, "@(Refresh)", "LibBrowseTable_ReloadData", "^"1^"", "icons_32x32.refresh", order, width);
+
+			// add Columns actions
+			UAG_Tabmenu_AddChild(hndMenuNode, "@(Auto-fit columns)", "TabTable_AutoFit", "^"1^"", "icons_32x32.column_fit", order, width);
+
+			// add View actions
+			hndSubmenuNode = UAG_Tabmenu_GetChild(hndMenuNode, "@(Save view)");
+			IF (hndSubmenuNode < 0) THEN
+				hndSubmenuNode = UAG_Tabmenu_AddChild(hndMenuNode, "@(Save view)", "LibBrowseTable_SaveConfig", "^"1^"", "icons_32x32.save", order, width);
+				UAG_Tabmenu_AddChild(hndSubmenuNode, "@(Save view)", "LibBrowseTable_SaveConfig", "^"1^"", "", order, width);
+				UAG_Tabmenu_AddChild(hndSubmenuNode, "@(Restore saved view)", "LibBrowseTable_LoadConfig", "^"1^"", "", order, width);
+				UAG_Tabmenu_AddChild(hndSubmenuNode, "@(Reset view to default)", "LibBrowseTable_ResetConfig", "^"1^"", "", order, width);
+			END
+		END SELECT
+	END
+
+	PageSetInt("_UAG_Tabmenu_ActionMenuAdded", 1, winNo);
+	RETURN hndMenuNode;
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		_UAG_Tabmenu_AlmActionIsDisabled
+//
+//	SUMMARY:
+//		Tells whether an item under the (Alarms) Action tab is disabled based
+//		on the logged on user privilege. This function is called internally
+//		by the menu items of the default (alarm) Action menu (tab).
+//			
+//	PARAMS:
+//		almActionType	- The alarm action type:
+//							1	- Acknowledge
+//							2	- Disable / Enable
+//							3	- Silence alarm sound
+//			
+//	RETURNS: 
+//		TRUE (1) if action is disabled or FALSE (0) if not
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION _UAG_Tabmenu_AlmActionIsDisabled(INT almActionType)
+	SELECT CASE almActionType
+	CASE 1	// acknowledge
+		RETURN NOT UAG_TabAlarm_GetAckPriv();
+	CASE 2	// disable / enable
+		RETURN NOT UAG_TabAlarm_GetDisablePriv();
+	CASE 3	// silence
+		RETURN NOT StrToInt(TaskCall("UAG_TabAlarmSnd_GetPriv", ""));
+	END SELECT
+
+	RETURN 0;
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		_UAG_Tabmenu_OpenPageMenuConfig
+//
+//	SUMMARY:
+//		Open the menu configuration node for the a displayed page.
+//			
+//	PARAMS:
+//		winNo		- (Optional) the window number where the page is being displayed
+//			
+//	RETURNS: 
+//		the menu node handle of the specified page if executed successfully or -1 if failed
+//
+//	REMARKS:
+//		The content of the default menu can be customized by parameter
+//		[UAG_Tabmenu.Custom]
+//		Function.CreateDefaultMenu
+//
+//-----------------------------------------------------------------------------
+
+PRIVATE
+INT FUNCTION _UAG_Tabmenu_OpenPageMenuConfig(INT winNo = -1)
+	INT pageNode;
+	
+	IF (winNo < 0) THEN
+		winNo = WinNumber();
+	END
+
+	EnterCriticalSection("_UAG_Tabmenu_OpenPageMenuConfig");
+	pageNode = MenuGetWindowNode(winNo);
+	IF (pageNode > -1) THEN
+		// create default menu items if required
+		// the check is now done here instead of in UAG_Tabmenu_CreateDefaultMenu()
+		// to make the code simplier for creating custom default menu
+		IF (UAG_Tabmenu_NeedDefaultMenu(winNo)) THEN
+			IF ("" <> m_UAG_Tabmenu_Custom_Fn_CreateDefaultMenu) THEN
+				pageNode = TaskCall(m_UAG_Tabmenu_Custom_Fn_CreateDefaultMenu, IntToStr(winNo) + ",1");
+			ELSE
+				pageNode = UAG_Tabmenu_CreateDefaultMenu(winNo, TRUE);
+			END
+			// Remember default menu has been created for this page
+			PageSetInt("_UAG_Tabmenu_DefaultMenuCreated", 1, winNo);
+		END
+		// Always try to create the default Action Menu if the template asks for it
+		_UAG_Tabmenu_AddDefaultActionMenu(pageNode, winNo);
+	ELSE
+		UAG_SystemInfo(" _UAG_Tabmenu_OpenPageMenuConfig(" + winNo:# + "):","System"," Failed TO get Window node.");
+	END
+	LeaveCriticalSection("_UAG_Tabmenu_OpenPageMenuConfig");
+
+	RETURN pageNode;
+END
+
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		_UAG_Tabmenu_GetMenuConfigText
+//
+//	SUMMARY:
+//		Get the (original) name of the control from menu configuration
+//			
+//	PARAMS:
+//		menuConfigHandle	- the handle to the menu configuration of a particular control 
+//			
+//	RETURNS: 
+//		The name of the control as defined in the menu configuration database
+//
+//-----------------------------------------------------------------------------
+
+PRIVATE
+STRING FUNCTION _UAG_Tabmenu_GetMenuConfigText(INT menuConfigHandle)
+	// Call core function to get info from menu configuration
+	RETURN MenuNodeGetProperty(menuConfigHandle, 0);
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		_UAG_Tabmenu_GetMenuConfigHasCommand
+//
+//	SUMMARY:
+//		Get whether command is configured for the control from menu configuration
+//			
+//	PARAMS:
+//		menuConfigHandle	- the handle to the menu configuration of a particular control 
+//			
+//	RETURNS: 
+//		1 if command is configured for the control or 0 if otherwise
+//
+//-----------------------------------------------------------------------------
+
+PRIVATE
+INT FUNCTION _UAG_Tabmenu_GetMenuConfigHasCommand(INT menuConfigHandle)
+	// Call core function to get info from menu configuration
+	RETURN MenuNodeHasCommand(menuConfigHandle);
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		_UAG_Tabmenu_GetMenuConfigDisabled
+//
+//	SUMMARY:
+//		Get whether a control from menu config is disabled
+//			
+//	PARAMS:
+//		menuConfigHandle	- the handle to the menu configuration of a particular control 
+//			
+//	RETURNS: 
+//		1 if disabled or 0 if not
+//
+//	REMARKS:
+//		If the parent menu node is disabled, the current node is also treated as disabled.
+//
+//-----------------------------------------------------------------------------
+
+PRIVATE
+INT FUNCTION _UAG_Tabmenu_GetMenuConfigDisabled(INT menuConfigHandle)
+	INT disable;
+	INT privilege;
+	INT area;
+	INT parent = MenuGetParent(menuConfigHandle);
+
+	// Check if parent is disabled
+	IF (parent > -1) THEN
+		IF (_UAG_Tabmenu_GetMenuConfigDisabled(parent)) THEN
+			RETURN 1;
+		END
+	END
+
+	// Call core function to get info from menu configuration
+	privilege = _UAG_Tabmenu_GetMenuConfigPrivilege(menuConfigHandle);
+	area = _UAG_Tabmenu_GetMenuConfigArea(menuConfigHandle);
+	disable = MenuNodeIsDisabled(menuConfigHandle) OR MenuNodeIsHidden(menuConfigHandle);
+	RETURN (disable OR (NOT GetPriv(privilege, area)));
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		_UAG_Tabmenu_GetMenuConfigPrivilege
+//
+//	SUMMARY:
+//		Get the privilege property of a control from menu config
+//			
+//	PARAMS:
+//		menuConfigHandle	- the handle to the menu configuration of a particular control 
+//			
+//	RETURNS: 
+//		The privilege of a control as defined in the menu config
+//
+//-----------------------------------------------------------------------------
+
+PRIVATE
+INT FUNCTION _UAG_Tabmenu_GetMenuConfigPrivilege(INT menuConfigHandle)
+	// Call core function to get info from menu configuration
+	RETURN MenuNodeGetProperty(menuConfigHandle, 2);
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		_UAG_Tabmenu_GetMenuConfigArea
+//
+//	SUMMARY:
+//		Get the area property of a control from menu config
+//			
+//	PARAMS:
+//		menuConfigHandle	- the handle to the menu configuration of a particular control 
+//			
+//	RETURNS: 
+//		The area of a control as defined in the menu config
+//
+//-----------------------------------------------------------------------------
+
+PRIVATE
+INT FUNCTION _UAG_Tabmenu_GetMenuConfigArea(INT menuConfigHandle)
+	// Call core function to get info from menu configuration
+	RETURN MenuNodeGetProperty(menuConfigHandle, 3);
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		_UAG_Tabmenu_GetMenuConfigChecked
+//
+//	SUMMARY:
+//		Get the checked property of a control from menu config
+//			
+//	PARAMS:
+//		menuConfigHandle	- the handle to the menu configuration of a particular control 
+//			
+//	RETURNS: 
+//		1 if checked or 0 if not
+//
+//-----------------------------------------------------------------------------
+
+PRIVATE
+INT FUNCTION _UAG_Tabmenu_GetMenuConfigChecked(INT menuConfigHandle)
+	// Call core function to get info from menu configuration
+	RETURN MenuNodeGetProperty(menuConfigHandle, 5);
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		_UAG_Tabmenu_GetMenuConfigWidth
+//
+//	SUMMARY:
+//		Get the width property (in pixels) of a control from menu config
+//			
+//	PARAMS:
+//		menuConfigHandle	- the handle to the menu configuration of a particular control 
+//			
+//	RETURNS: 
+//		The width of the control in pixels or < 1 for using auto-fit
+//
+//-----------------------------------------------------------------------------
+
+PRIVATE
+INT FUNCTION _UAG_Tabmenu_GetMenuConfigWidth(INT menuConfigHandle)
+	// Call core function to get info from menu configuration
+	RETURN MenuNodeGetProperty(menuConfigHandle, 6);
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		_UAG_Tabmenu_GetMenuConfigIcon
+//
+//	SUMMARY:
+//		Get name of the symbol used for a control from menu config. The name of the
+//		symbol is in the format of <library>.<symbol name>
+//			
+//	PARAMS:
+//		menuConfigHandle	- the handle to the menu configuration of a particular control 
+//			
+//	RETURNS: 
+//		The symbol name of the control as defined in the menu config or "" if not defined
+//
+//-----------------------------------------------------------------------------
+
+PRIVATE
+STRING FUNCTION _UAG_Tabmenu_GetMenuConfigIcon(INT menuConfigHandle)
+	// Call core function to get info from menu configuration
+	RETURN MenuNodeGetProperty(menuConfigHandle, 1);
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		_UAG_Tabmenu_GetMenuConfigMenu
+//
+//	SUMMARY:
+//		Get the handle to the first menu item assocaited with the control from menu config
+//			
+//	PARAMS:
+//		menuConfigHandle	- the handle to the menu configuration of a particular control 
+//			
+//	RETURNS: 
+//		handle of the first menu item to the menu config or -1 if no menu items found
+//
+//-----------------------------------------------------------------------------
+
+PRIVATE
+INT FUNCTION _UAG_Tabmenu_GetMenuConfigMenu(INT menuConfigHandle)
+	// Call core function to get info from menu configuration
+	RETURN MenuGetFirstChild(menuConfigHandle);
+END
+
+
+//-----------------------------------------------------------------------------
+//
+//	Private Helper Functions (Customization)
+//
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		_UAG_Tabmenu_Custom_Init
+//
+//	SUMMARY:
+//		Initialize customization for tab menu.
+//			
+//	PARAMS:
+//		None
+//			
+//	RETURNS: 
+//		None
+//
+//-----------------------------------------------------------------------------
+
+PRIVATE
+FUNCTION _UAG_Tabmenu_Custom_Init()
+	// ensure initialization is only done once
+	IF m_UAG_Tabmenu_Custom_Initialized THEN
+		RETURN;
+	END
+
+	// initialize custom fonts from INI parameters
+	m_UAG_Tabmenu_Custom_Font_Normal = ParameterGet("UAG_Tabmenu.Custom", "Font.Normal", "");
+	m_UAG_Tabmenu_Custom_Font_Disabled = ParameterGet("UAG_Tabmenu.Custom", "Font.Disabled", "");
+	m_UAG_Tabmenu_Custom_Fn_CreateDefaultMenu = ParameterGet("UAG_Tabmenu.Custom", "Function.CreateDefaultMenu", "");
+
+	// mark the completion of initialization
+	m_UAG_Tabmenu_Custom_Initialized = 1;
+END

@@ -1,0 +1,4622 @@
+//--------------------------------------------------------------------------------
+//	Copyright © 2015 Schneider Electric (Australia) Pty Ltd. All rights reserved.
+  
+// 	FILE:	UAG_UAG_TabAlarm.ci
+//
+//	Beschreibung:
+//
+//		Contains related functions to instantiate alarm lists (for tab style templates) on CitectSCADA windows
+//
+//	Autor:				Michael Yip
+//	Erstellungsdatum:	09.10.09	/	Schneider Electrik GmbH
+//	Version				75.33.11.02
+//	Copyright © 2009 Schneider Electric (Australia) Pty Ltd.
+//	All rights reserved.
+//
+//
+//	PUBLIC FUNCTIONS:
+//
+//		UAG_TabAlarm_Dsp
+//		UAG_TabAlarm_DspLast
+//		UAG_TabAlarm_ColumnCount
+//		UAG_TabAlarm_GetInfo
+//		UAG_TabAlarm_FilterString
+//		UAG_TabAlarm_GetAn
+//		UAG_TabAlarm_SetInfo
+//		UAG_TabAlarm_Refresh
+//		UAG_TabAlarm_Print
+//		UAG_TabAlarm_FormFilter
+//		UAG_TabAlarm_ResetFilter
+//		UAG_TabAlarm_SaveConfig
+//		UAG_TabAlarm_LoadConfig
+//		UAG_TabAlarm_ResetConfig
+//		UAG_TabAlarm_AutoFit
+//		UAG_TabAlarm_Ack
+//		UAG_TabAlarm_Disable
+//		UAG_TabAlarm_Enable
+//		UAG_TabAlarm_ReloadData
+//
+//		UAG_TabAlarm_Col_Hidden
+//		UAG_TabAlarm_Col_Disabled
+//		UAG_TabAlarm_Col_PosOffset
+//		UAG_TabAlarm_Col_WidthPercent
+//		UAG_TabAlarm_Col_Heading
+//		UAG_TabAlarm_Col_GetFieldName
+//		UAG_TabAlarm_Col_SortPosOffset
+//		UAG_TabAlarm_Col_SortDirection
+//		UAG_TabAlarm_Col_Selected
+//		UAG_TabAlarm_Col_Dragged
+//		UAG_TabAlarm_Col_DragHPosOffset
+//		UAG_TabAlarm_Col_DragVPosOffset
+//		UAG_TabAlarm_Col_Drag
+//		UAG_TabAlarm_Col_Drop
+//		UAG_TabAlarm_Col_Sort
+//		UAG_TabAlarm_Col_AutoFit
+//		UAG_TabAlarm_Col_SetFieldName
+//		UAG_TabAlarm_Col_Insert
+//		UAG_TabAlarm_Col_Delete
+//		UAG_TabAlarm_Col_ShowContextMenu
+//		UAG_TabAlarm_Col_ShowDspText
+//
+//		UAG_TabAlarm_ColSep_Hidden
+//		UAG_TabAlarm_ColSep_Disabled
+//		UAG_TabAlarm_ColSep_PosOffset
+//		UAG_TabAlarm_ColSep_Dragged
+//		UAG_TabAlarm_ColSep_Drag
+//		UAG_TabAlarm_ColSep_Drop
+//
+//		UAG_TabAlarm_Row_Hidden
+//		UAG_TabAlarm_Row_Disabled
+//		UAG_TabAlarm_Row_ShowDspText
+//		UAG_TabAlarm_Row_HasFocus
+//		UAG_TabAlarm_Row_Selected
+//		UAG_TabAlarm_Row_Select
+//		UAG_TabAlarm_Row_SelectPrev
+//		UAG_TabAlarm_Row_SelectNext
+//		UAG_TabAlarm_Row_ShowContextMenu
+//		UAG_TabAlarm_Row_ShowHelp
+//		UAG_TabAlarm_Row_ShowInfo
+//		UAG_TabAlarm_Row_AddComment
+//		UAG_TabAlarm_Row_AddEvent
+//		UAG_TabAlarm_Row_Ack
+//		UAG_TabAlarm_Row_Disable
+//		UAG_TabAlarm_Row_Enable
+//
+// 	REMARKS: 
+//
+//		There are limits on the range of list ID, column id and row id that can be
+//		assigned to the controls used in an alarm list.
+//
+//	USAGE:
+//		A cicode code that calls UAG_TabAlarm_Dsp() should be pasted for each alarm list
+//		on the page.
+//
+//		Up to c_TABALARM_MAX alarm list could be pasted on a page. Each of the
+//		lists within a page should be assigned a unique list ID. The ID should start
+//		from 0, and be incrementd by 1 for the next list and so on.
+//
+//		Up to c_TABALARM_COL_MAX columns (and separators) could be pasted on an alarm
+//		list. Each of the columns should be assigned a unique column ID. The ID
+//		should start from 0, and be incrementd by 1 for the next column and so on.
+//
+//		Up to c_TABALARM_ROW_MAX rows could be pasted on an alarm list. Each of the
+//		rows should be assigned a unique row ID. The ID should start from 0, and
+//		be incrementd by 1 for the next row and so on.
+//
+//-----------------------------------------------------------------------------
+
+
+//-----------------------------------------------------------------------------
+//
+//	Constants
+//
+//-----------------------------------------------------------------------------
+
+INT		c_TABALARM_PAGESCAN_TIMEOUT		= 5;		// Number of page scan allowed to readjust control positions and widths
+INT		c_TABALARM_PAGESCAN_IDLEINTVAL	= 6;		// Number of page scan interval to refresh controls AFTER they have been initialised
+INT		c_TABALARM_INITCYCLE_PRE		= 0;		// One of alarm list's initiating cycle state: PRE = prepare for initialisation
+INT		c_TABALARM_INITCYCLE_ING		= 1;		// One of alarm list's initiating cycle state: ING = during initialisation
+INT		c_TABALARM_INITCYCLE_END		= 2;		// One of alarm list's initiating cycle state: END = initialisation ended
+
+INT		c_TABALARM_COL_MAX				= 30;		// Maximum number of columns to be shown on an alarm list
+INT		c_TABALARM_COL_CELLPADDING		= 1;		// Celling Padding (including the border) for the column
+INT		c_TABALARM_COL_MINWIDTH			= 61;		// Minimum Width of a column (i.e. configured width on page - 1 pixel)
+INT		c_TABALARM_COL_PAGEMARGIN		= 22;		// Number of pixels to be left out on the edge of the page
+INT		c_TABALARM_COL_SORTWIDTH		= 16;		// Number of pixels for the sort direction symbol
+INT		c_TABALARM_COL_HEADHEIGHT		= 25;		// Height of the column heading
+INT		c_TABALARM_COL_DRAGMINMS		= 500;		// Minimum number of millisecond for mouse button being pressed to consider a column is being dragged
+INT		c_TABALARM_COL_POS_OFFSET		= 1;		// Horizontal position offset of the alarm text vs the column boundary
+
+INT		c_TABALARM_ROW_MAX				= 50;		// Maximum number of rows to be shown on an alarm list
+INT		c_TABALARM_ROW_POS_OFFSET		= 2;		// Vertical position offset to make room to show alarm text in the middle of the cursor box
+
+
+//-----------------------------------------------------------------------------
+//
+//	Module Variables
+//
+//-----------------------------------------------------------------------------
+
+INT		m_TABALARM_Col_HeadFontHnd		= -1;		// column heading font handle
+INT		m_TABALARM_Col_DragStartMS		= -1;		// (millisecond) timestamp when the user start dragging the column separator
+
+STRING	m_TABALARM_Print_OptAllPages	= "0";		// Field value for All pages option in alarm print form
+STRING	m_TABALARM_Print_OptPages		= "1";		// Field value for Pages option in alarm print form
+STRING	m_TABALARM_Print_TxtPages		= "1";		// Field value for textbox Pages in alarm print form
+
+INT		m_TABALARM_Menu_InUse			= 0;		// Indicate if a control is being clicked
+
+STRING	m_TABALARM_Custom_Fn_AlarmGetDsp			= "";	// Custom function for getting alarm field value
+
+INT		m_SemRefreshTimeout				= 10;
+INT		m_SemRefreshTimeoutLoaded		= FALSE;								 
+
+
+//-----------------------------------------------------------------------------
+//
+//	UAG_TabAlarm Public Functions
+//
+//-----------------------------------------------------------------------------
+
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		UAG_TabAlarm_DspLast
+//
+//	SUMMARY:
+//		Displays the last alarm list and adjust display while the page is shown.
+//			
+//	PARAMS:
+//		listID			- The alarm list ID number, zero-based
+//		count			- The number of alarms to display
+//		type			- The type of alarms to display. Optional, default = -1 (depends on [Alarm] LastAlarmType)
+//		clusterName		- The clustrer name to which the alarms belong. Optional, default = "" (all clusters)
+//
+//		Note: for above arguments (except listID), please refer to built-in function AlarmDsp() for details
+//
+//		listWidth		- The width of the list in pixels
+//							This parameter is optional, only applicable to
+//							alarm templates provided by Tab_Style_Include project
+//		formatName		- The custom format name defined in INI parameters [Format]
+//							Plese refer to description of the same parameters in UAG_TabAlarm_Dsp() for details. 
+//		autoFit			- The width of the columns will be automatically adjusted continuously
+//							This parameter is optional, its default value is 1
+//							Plese refer to description of the same parameters in UAG_TabAlarm_Dsp() for details. 
+//		viewOnly		- Whether alarm list is view only and disable built-in GUI for controls
+//							Plese refer to description of the same parameters in UAG_TabAlarm_Dsp() for details. 
+//
+//	RETURNS: 
+//		0 if run successfully or error number if failed
+//
+//	REMARKS:
+//		This funciton should be called on a separate Cicode object per alarm list.
+//		Multiple alarm lists are allowed per page
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION UAG_TabAlarm_DspLast(INT listID, INT count, INT type = 1, STRING clusterName = "", INT listWidth = -1, STRING formatName = "LastAlarm", INT autoFit = 0, INT viewOnly = 0,INT iMode=_UAG_TabAlarm_DspLast_GetParam("LastDisplayMode"),INT iprio = _UAG_TabAlarm_DspLast_GetParam("LastAalrmPriorities"),INT iCat=_UAG_TabAlarm_DspLast_GetParam("LastAlarmCategories"))
+	INT retValue = 274;
+	INT listAN = DspGetAnCur();
+
+	INT	iGroup;
+	IF (listAN <= 0) THEN
+		RETURN retValue;
+	END
+
+	// Check arguments
+	IF (type < 0) THEN
+		type = _UAG_TabAlarm_DspLast_GetParam("LastAlarmType");
+	END
+	IF ("" = formatName) THEN
+		formatName = "LastAlarm";
+	END
+	IF iMode =3 THEN
+		iGroup	= GrpOpen("NormalAlarms",0);
+		iprio	= iGroup;
+		iCat	= 0;
+		iMode 	= 1;
+	END	
+	// Display alarm list
+	retValue = AlarmDspLast(listAN, count, type, clusterName, 1, "_UAG_TabAlarm_Dsp_DataChange");
+
+	// Set display attributes
+	IF (PageInfo(7) = "0") THEN
+											  
+		IF (StrToInt(_UAG_TabAlarm_DspLast_GetParam("LastAlarmCategories")) > -1) THEN
+			AlarmSetInfo(listAN, 2, iCat);
+		END
+		IF (StrToInt(_UAG_TabAlarm_DspLast_GetParam("LastAalrmPriorities")) > -1) THEN
+			AlarmSetInfo(listAN, 7, iprio);
+		END	
+		IF (StrToInt(_UAG_TabAlarm_DspLast_GetParam("LastDisplayMode")) > -1) THEN
+			AlarmSetInfo(listAN, 8, iMode);
+		END
+		AlarmSetInfo(listAN, 6, -1);
+	END
+	_UAG_TabAlarm_DspInit(listID, listAN, count, clusterName, listWidth, formatName, _UAG_TabAlarm_DspLast_GetParam("LastAlarmFmt"), autoFit, viewOnly);
+
+	RETURN retValue;
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		UAG_TabAlarm_ColumnCount
+//
+//	SUMMARY:
+//		Returns the number of columns current visible on the alarm list.
+//			
+//	PARAMS:
+//		listID			- The alarm list ID number, zero-based
+//			
+//	RETURNS: 
+//		the number of columns displayed on an alarm list or -1 if failed
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION UAG_TabAlarm_ColumnCount_alt(INT listID)
+	INT retValue = -1;
+	INT listHnd = _UAG_TabAlarm_GetInstance(listID);
+
+	IF (listHnd < 0) THEN
+		RETURN retValue;
+	END
+
+	retValue = _UAG_TabAlarm_IntMetadata(listHnd, "Columns");
+
+	RETURN retValue;
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		UAG_TabAlarm_GetInfo
+//
+//	SUMMARY:
+//		Returns information about an alarm list. Please refer to built-in fn
+//		AlarmGetInfo() for details.
+//			
+//	PARAMS:
+//		listID			- The alarm list ID number, zero-based
+//		type			- The type of data
+//			
+//	RETURNS: 
+//		information about alarm list or -1 if failed
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION UAG_TabAlarm_GetInfo(INT listID, INT type)
+	INT retValue = -1;
+	INT listHnd = _UAG_TabAlarm_GetInstance(listID);
+	INT listAN;
+
+	IF (listHnd < 0) THEN
+		RETURN retValue;
+	END
+
+	listAN = _UAG_TabAlarm_IntMetadata(listHnd, "MasterAN");
+	IF (listAN <= 0) THEN
+		RETURN retValue;
+	END
+
+	retValue = AlarmGetInfo(listAN, type);
+
+	RETURN retValue;
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		UAG_TabAlarm_FilterString
+//
+//	SUMMARY:
+//		Returns the currently active filter string for user feedback.
+//			
+//	PARAMS:
+//		listID			- The alarm list ID number, zero-based
+//			
+//	RETURNS: 
+//		the active filter string of an alarm list or "" if failed
+//
+//-----------------------------------------------------------------------------
+
+STRING FUNCTION UAG_TabAlarm_FilterString(INT listID)
+	STRING retValue = "";
+	INT listHnd = _UAG_TabAlarm_GetInstance(listID);
+	INT listAN;
+
+	IF (listHnd < 0) THEN
+		RETURN retValue;
+	END
+
+	listAN = _UAG_TabAlarm_IntMetadata(listHnd, "MasterAN");
+	RETURN UAG_TabAlarmFilter_GetString(listAN);
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		UAG_TabAlarm_GetAn
+//
+//	SUMMARY:
+//		Returns the Animation Number of the alarm list.
+//			
+//	PARAMS:
+//		listID			- The alarm list ID number, zero-based
+//			
+//	RETURNS: 
+//		The AN of the alarm list or -1 if failed
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION UAG_TabAlarm_GetAn(INT listID)
+	INT retValue = -1;
+	INT listHnd = _UAG_TabAlarm_GetInstance(listID);
+
+	IF (listHnd < 0) THEN
+		RETURN retValue;
+	END
+	RETURN _UAG_TabAlarm_IntMetadata(listHnd, "MasterAN");
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		UAG_TabAlarm_SetInfo
+//
+//	SUMMARY:
+//		Sets display attributes of an alarm list. Please refer to built-in fn
+//		AlarmSetInfo() for details.
+//			
+//	PARAMS:
+//		listID			- The alarm list ID number, zero-based
+//		type			- The type of data
+//		value			- The meaning of value argument depends on the data
+//							type specified in the type argument.
+//							Optional, default to "".
+//			
+//	RETURNS: 
+//		0 if successful or error number if failed
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION UAG_TabAlarm_SetInfo(INT listID, INT type, STRING value = "")
+	INT retValue = 274;
+	INT listHnd = _UAG_TabAlarm_GetInstance(listID);
+	INT listAN;
+
+	IF (listHnd < 0) THEN
+		RETURN retValue;
+	END
+
+	listAN = _UAG_TabAlarm_IntMetadata(listHnd, "MasterAN");
+	IF (listAN <= 0) THEN
+		RETURN retValue;
+	END
+
+	retValue = AlarmSetInfo(listAN, type, value);
+
+	RETURN retValue;
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		UAG_TabAlarm_Referesh
+//
+//	SUMMARY:
+//		Refreshes the contents and display attributes of the alarm list.
+//			
+//	PARAMS:
+//		listID			- The alarm list ID number, zero-based
+//		delayMS			- The number of milliseconds to delay before refreshing data
+//							This is optional, if it is not specified, refresh immediately
+//			
+//	RETURNS: 
+//		0 if successful or error number if failed
+//
+//	REMARKS:
+//		This function is called at events when the alarm list needs refresh,
+//		such as changes in alarm data, changes in column settings, etc.
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION UAG_TabAlarm_Refresh(INT listID, INT delayMS = -1)
+	INT retValue = 274;
+	INT listHnd = _UAG_TabAlarm_GetInstance(listID);
+	INT listAN;
+	INT prevItemMovement;
+	INT colID;
+	INT columns;
+	INT displayLimit;
+	INT semaphore;
+	INT initPosX;
+	INT initPosY;
+
+	IF (listHnd < 0) THEN
+		RETURN retValue;
+	END
+
+	// before information is initialised, do not do runtime adjustments
+	IF (_UAG_TabAlarm_IntMetadata(listHnd, "InitiatingCycle") <> c_TABALARM_INITCYCLE_END) THEN
+		RETURN retValue;
+	END
+
+	// do not refresh if refresh is disabled
+	IF (_UAG_TabAlarm_IntMetadata(listHnd, "RefreshEnable") = 0) THEN
+		RETURN 0;	// normal exit
+	END
+
+	// delay refresh if specified
+	IF (delayMS > -1) THEN
+		SleepMS(delayMS);
+	END
+
+	// enter critical section
+	semaphore = SemOpen("_semUAG_TabAlarm_refresh", 2);
+	IF (semaphore > -1) THEN
+		SemWait(semaphore, 5);
+	END
+
+	columns = _UAG_TabAlarm_IntMetadata(listHnd, "Columns");
+
+	// initalise the initial position of the columns in case some column heading genies are not pasted on the page
+	listAN = _UAG_TabAlarm_IntMetadata(listHnd, "MasterAN");															 
+	IF (_UAG_TabAlarm_Col_IntMetadata(listHnd, 0, "MasterAN") <= 0) THEN
+		IF (_UAG_TabAlarm_Col_IntMetadata(listHnd, 0, "InitPosX") <= 0) THEN
+
+			IF (listAN > 0) THEN
+				DspText(listAN, -1, " ");		// Need to draw something on an AN for its position to be tracked correctly
+				DspAnGetPos(listAN, initPosX, initPosY);
+				_UAG_TabAlarm_Col_IntMetadata(listHnd, 0, "InitPosX", initPosX);
+				_UAG_TabAlarm_Col_IntMetadata(listHnd, 0, "Pos", initPosX);
+			END
+		END
+	END
+	colID = 1;
+	WHILE (colID < columns) DO
+		initPosX = _UAG_TabAlarm_Col_IntMetadata(listHnd, colID, "InitPosX");
+		IF (initPosX <= 0) THEN
+			initPosX = _UAG_TabAlarm_Col_IntMetadata(listHnd, colID - 1, "InitPosX") + c_TABALARM_COL_MINWIDTH;
+			_UAG_TabAlarm_Col_IntMetadata(listHnd, colID, "InitPosX", initPosX);
+		END
+		colID = colID + 1;
+	END
+
+	// Re-calculate column widths if the list is in auto fit mode
+	IF (_UAG_TabAlarm_IntMetadata(listHnd, "AutoFit")) THEN
+		_UAG_TabAlarm_AutoWidth(listHnd);
+	ELSE
+		// initialises widths of columns that are set to auto-width, i.e. no width specified
+		colID = 0;
+		WHILE (colID < columns) DO
+			IF (_UAG_TabAlarm_Col_IntMetadata(listHnd, colID, "Width") < c_TABALARM_COL_MINWIDTH) THEN 
+				_UAG_TabAlarm_Col_IntMetadata(listHnd, colID, "Width", _UAG_TabAlarm_Col_MaxWidth(listHnd, colID));
+			END
+			colID = colID + 1;
+		END
+	END
+
+	// fit all columns to be shown on screen
+	_UAG_TabAlarm_FitColumns(listHnd);
+	displayLimit = _UAG_TabAlarm_Col_IntMetadata(listHnd, 0, "InitPosX") + _UAG_TabAlarm_IntMetadata(listHnd, "Width");
+
+	// Adjust column positions, sizes and visibility
+	IF (columns > 0) THEN
+		_UAG_TabAlarm_Col_IntMetadata(	listHnd, 0, "SortDirection",
+			_UAG_TabAlarm_IsSorted(listAN, _UAG_TabAlarm_Col_StrMetadata(listHnd, 0, "FieldName")));
+	END
+		   
+	colID = 1;
+	WHILE (colID < columns) DO
+		// Set sorting order of each column
+		_UAG_TabAlarm_Col_IntMetadata(	listHnd, colID, "SortDirection",
+			_UAG_TabAlarm_IsSorted(listAN, _UAG_TabAlarm_Col_StrMetadata(listHnd, colID, "FieldName")));
+															   
+		// Adjust position based on previous one's position and width
+		prevItemMovement = _UAG_TabAlarm_Col_IntMetadata(listHnd, colID - 1, "Pos") - _UAG_TabAlarm_Col_IntMetadata(listHnd, colID - 1, "InitPosX")
+							+ _UAG_TabAlarm_Col_IntMetadata(listHnd, colID - 1, "Width") - c_TABALARM_COL_MINWIDTH;
+		_UAG_TabAlarm_Col_IntMetadata(listHnd, colID, "Pos", _UAG_TabAlarm_Col_IntMetadata(listHnd, colID, "InitPosX") + prevItemMovement);
+
+		// pre-calculate position offset for performance
+		_UAG_TabAlarm_Col_IntMetadata(listHnd, colID, "PosOffset", prevItemMovement);
+
+		// Find out the last column can fit to screen
+		IF (_UAG_TabAlarm_Col_IntMetadata(listHnd, colID, "Pos") + _UAG_TabAlarm_Col_IntMetadata(listHnd, colID, "Width") > displayLimit) THEN
+			columns = colID;
+			_UAG_TabAlarm_IntMetadata(listHnd, "Columns", colID);
+		END
+
+		colID = colID + 1;
+	END
+
+	// allow other on-screen items to be refreshed
+	_UAG_TabAlarm_IntMetadata(listHnd, "RefreshTimer", c_TABALARM_PAGESCAN_TIMEOUT);
+
+	// update row contents
+	retValue = _UAG_TabAlarm_PaintRows(listHnd);
+
+	// update row selection
+	_UAG_TabAlarm_Row_RestoreSelection(listHnd);
+
+	// leave critical section
+	IF (semaphore > -1) THEN
+		SemSignal(semaphore);
+	END
+
+	RETURN retValue;
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		UAG_TabAlarm_Print
+//
+//	SUMMARY:
+//		Pops up a window / dialog for the user to print / export alarm list.
+//			
+//	PARAMS:
+//		listID			- The alarm list ID number, zero-based
+//			
+//	RETURNS: 
+//		0 if successful or error number if failed
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION UAG_TabAlarm_Print_alt(INT listID)
+	INT retValue = 274;
+	INT listHnd = _UAG_TabAlarm_GetInstance(listID);
+	INT frmHnd;
+	INT fieldHnd;
+	STRING text;
+	IF (listHnd < 0) THEN
+		RETURN retValue;
+	END
+
+	frmHnd = FormNew("@(Alarm Print) / @(Export)", 45, 6, 1+4+8+16);
+	IF (frmHnd < 0) THEN
+		RETURN retValue;
+	END
+
+	FormRadioButton(0, 0, "@(All Pages)", m_TABALARM_Print_OptAllPages);
+	text = StrToLocalText("@(Pages)");
+	FormRadioButton(0, 2, text, m_TABALARM_Print_OptPages);
+	FormEdit(5 + StrLength(text), 2, m_TABALARM_Print_TxtPages, 8);
+
+	text = _StrPadCenter(StrToLocalText("@(Print)"), 12);
+	fieldHnd = FormButton( 2, 5, text, _UAG_TabAlarm_Print_ButtonClick_alt, 0);
+	FormSetInst(frmHnd, fieldHnd, listHnd, "Print");
+
+	text = _StrPadCenter(StrToLocalText("@(Export)"), 12);
+	fieldHnd = FormButton(17, 5, text, _UAG_TabAlarm_Print_ButtonClick_alt, 0);
+	FormSetInst(frmHnd, fieldHnd, listHnd, "Export");
+
+	text = _StrPadCenter(StrToLocalText("@(Cancel)"), 12);
+	fieldHnd = FormButton(32, 5, text, 0, 2);
+
+	_UAG_FormCenter(45, 6);
+	retValue = FormRead(1);
+
+	RETURN retValue;
+END
+
+PRIVATE
+STRING FUNCTION _StrPadCenter(STRING text, INT len)
+	INT textLen = StrLength(text);
+	INT pad = Max((len - textLen) / 2, 0);
+	RETURN StrPad("", " ", pad) + StrPad(text, " ", Max(textLen, len - pad));
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		UAG_TabAlarm_FormFilter
+//
+//	SUMMARY:
+//		Pops up an alarm filter form for filtering alarms.
+//			
+//	PARAMS:
+//		listID			- The alarm list ID number, zero-based
+//		bUseLegacyForm	- Use legacy form (default = FALSE)
+//			
+//	RETURNS: 
+//		0 if successful or error number if failed
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION UAG_TabAlarm_FormFilter(INT listID, INT bUseLegacyForm = FALSE)
+	INT retValue = 274;
+	INT listHnd = _UAG_TabAlarm_GetInstance(listID);
+	INT listAN;
+	INT index;
+	INT errLevelOld;
+
+	IF (listHnd < 0) THEN
+		RETURN retValue;
+	END
+
+	errLevelOld = ErrSetLevel(1);
+
+	// determine index (type) for filter form
+	listAN = _UAG_TabAlarm_IntMetadata(listHnd, "MasterAN");
+	retValue = UAG_TabAlarmFilter_ShowForm(listAN, bUseLegacyForm);
+
+	ErrSetLevel(errLevelOld);
+
+	RETURN retValue;
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		UAG_TabAlarm_ResetFilter
+//
+//	SUMMARY:
+//		Reset alarm filter.
+//			
+//	PARAMS:
+//		listID			- The alarm list ID number, zero-based
+//			
+//	RETURNS: 
+//		0 if successful or error number if failed
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION UAG_TabAlarm_ResetFilter(INT listID)
+	INT retValue = 274;
+	INT listHnd = _UAG_TabAlarm_GetInstance(listID);
+	INT listAN;
+	INT index;
+	INT errLevelOld;
+
+	IF (listHnd < 0) THEN
+		RETURN retValue;
+	END
+
+	errLevelOld = ErrSetLevel(1);
+
+	// determine index (type) for filter form
+	listAN = _UAG_TabAlarm_IntMetadata(listHnd, "MasterAN");
+	retValue = UAG_TabAlarmFilter_Reset(listAN);
+	UAG_TabAlarm_SetInfo(listID,8,1)
+	UAG_TabAlarm_SetInfo(listID,7,0)
+	UAG_TabAlarm_SetInfo(listID,2,0)
+//	UAG_TabAlarm_SetInfo(listID,3,0)
+	PageSetStr(20,"");
+
+	ErrSetLevel(errLevelOld);
+
+	RETURN retValue;
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		UAG_TabAlarm_SaveConfig
+//
+//	SUMMARY:
+//		Saves the currently displayed column settings to INI file.
+//			
+//	PARAMS:
+//		listID			- The alarm list ID number, zero-based
+//		formatName		- The name of the alarm format to be saved under.
+//							If not specified or "", it will be defaulted to
+//							the format name currently used for the alarm list
+//			
+//	RETURNS: 
+//		0 if successful or error number if failed
+//
+//
+//	REMARKS:
+//		Please refer to UAG_TabAlarm_LoadConfig() for the explanation about alarm
+//		format parameters.
+//
+//		Please note that this function only save the format string currently
+//		applied to an alarm list. It does not re-save the alarm headings, as
+//		they cannot be changed programmatically at runtime.
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION UAG_TabAlarm_SaveConfig_alt(INT listID, STRING formatName = "")
+	INT retValue = 274;
+	INT listHnd = _UAG_TabAlarm_GetInstance(listID);
+	INT columns;
+	INT colID;
+	STRING fieldName;
+	INT width;
+	STRING fmtString = "";
+	INT fmtStringLen = 0;
+	STRING fmtField;
+	INT fmtFieldLen;
+
+	IF (listHnd < 0) THEN
+		RETURN retValue;
+	END
+
+	// check arguments
+	IF ("" = formatName) THEN
+		formatName = _UAG_TabAlarm_StrMetadata(listHnd, "FormatName");
+	END
+
+	// determine default format name
+	IF ("" = formatName) THEN
+		formatName = UAG_TabAlarm_GetFormatNameDefault(_UAG_TabAlarm_IntMetadata(listHnd, "MasterAN"));
+	END
+
+	columns = _UAG_TabAlarm_IntMetadata(listHnd, "Columns");
+	colID = 0;
+	WHILE (colID < columns) DO
+		fieldName = _UAG_TabAlarm_Col_StrMetadata(listHnd, colID, "FieldName");
+		width = _UAG_TabAlarm_Col_IntMetadata(listHnd, colID, "Width");
+
+		// cap the format string length
+		fmtField = "{" + fieldName + "," + IntToStr(width) + "}";
+		fmtFieldLen = StrLength(fmtField);
+		IF (fmtStringLen + fmtFieldLen < 255) THEN
+			fmtString = fmtString + fmtField;
+			fmtStringLen = fmtStringLen + fmtFieldLen;
+		ELSE
+			// give warning for the unsaved field
+			UAG_SystemInfo("UAG_TabAlarm_SaveConfig", "System", "@(Unable to save all fields)"+ " " + "@(First unsaved field): " + fieldName,"-",UserInfo(1),"-",TaskCluster(),_UAG_Info);
+			colID = columns;
+		END
+
+		colID = colID + 1;
+	END
+	retValue = UAG_TabAlarm_SetFormatStringINI(formatName, fmtString);
+
+	RETURN retValue;
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		UAG_TabAlarm_LoadConfig
+//
+//	SUMMARY:
+//		Loads the alarm display settings from INI file.
+//			
+//	PARAMS:
+//		listID			- The alarm list ID number, zero-based
+//		formatName		- The name of the alarm format to be loaded.
+//							If not specified or "", it will be defaulted to
+//							the format name currently used for the alarm list
+//			
+//	RETURNS: 
+//		0 if successful or error number if failed
+//
+//	REMARKS:
+//		Alarm format strings are defined as the following project / Citect.ini parameters:
+//
+//		[Format]
+//		formatName = {fieldName,pixelWidth}{fieldName,pixelWidth}...
+//
+//		[AlarmHeading]
+//		fieldName = column heading
+//		fieldName = column heading
+//		...
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION UAG_TabAlarm_LoadConfig_alt(INT listID, STRING formatName = "")
+	INT retValue = 274;
+	INT listHnd = _UAG_TabAlarm_GetInstance(listID);
+	INT listAN;
+	INT fmtHnd;
+	STRING fmtString;
+	STRING fieldName;
+	INT columns;
+	INT colID;
+	INT colWidth;
+	INT sortDirection;
+	INT pageScan;
+
+	IF (listHnd < 0) THEN
+		RETURN retValue;
+	END
+	listAN = _UAG_TabAlarm_IntMetadata(listHnd, "MasterAN");
+
+	// check arguments and update metadata
+	IF ("" = formatName) THEN
+		formatName = _UAG_TabAlarm_StrMetadata(listHnd, "FormatName");
+	ELSE
+		_UAG_TabAlarm_StrMetadata(listHnd, "FormatName", formatName);
+	END
+
+	// determine default format name
+	IF ("" = formatName) THEN
+		formatName = UAG_TabAlarm_GetFormatNameDefault(listAN);
+	END
+
+	// get alarm field format string
+	fmtString = UAG_TabAlarm_GetFormatString(listAN, formatName, _UAG_TabAlarm_IntMetadata(listHnd, "Width"));
+
+	// remember the initial display type for the list
+	_UAG_TabAlarm_IntMetadata(listHnd, "Type", AlarmGetInfo(listAN, 3));
+
+	// parse format string in the format of {field name,pixel width}
+	// if pixel width is not set or <= 0, assumes auto-fit
+	fmtHnd = FmtOpen("_TabAlarm_fmt", fmtString, 1);
+	IF (fmtHnd > -1) THEN
+		columns = Min(FmtGetFieldCount(fmtHnd), c_TABALARM_COL_MAX);
+		colID = 0;
+		WHILE (colID < columns) DO
+			fieldName = _UAG_TabAlarm_StrCapitalize(FmtGetFieldName(fmtHnd, colID));
+			_UAG_TabAlarm_Col_StrMetadata(listHnd, colID, "FieldName", fieldName);
+			_UAG_TabAlarm_Col_StrMetadata(listHnd, colID, "LocalText", UAG_TabAlarm_GetColNameINI(fieldName));
+
+			// get field width (in unit of pixels) instead of default width (i.e. auto width)
+			colWidth = FmtGetFieldWidth(fmtHnd, colID);
+			// when no width is specified, FmtGetFieldWidth() returns the no. of chars of the field name plus the 2 chars for the brackets
+			IF (colWidth = StrLength(fieldName) + 2) THEN
+				colWidth = 0;
+			ELSE
+				colWidth = Max(colWidth, c_TABALARM_COL_MINWIDTH);
+			END
+			_UAG_TabAlarm_Col_IntMetadata(listHnd, colID, "Width", colWidth);
+			colID = colID + 1;
+		END
+		_UAG_TabAlarm_IntMetadata(listHnd, "Columns", columns);
+
+		FmtClose(fmtHnd);
+	END
+
+	// initialise width for unallocated columns
+	WHILE (colID < c_TABALARM_COL_MAX) DO
+		_UAG_TabAlarm_Col_IntMetadata(listHnd, colID, "Width", c_TABALARM_COL_MINWIDTH);
+		colID = colID + 1;
+	END
+
+	// delay refreshing alarm rows if encounter Foreground task running too long error
+	IF (ErrGetHw(2, 0) = 285) THEN
+		pageScan = StrToInt(PageInfo(7));
+		WHILE (StrToInt(PageInfo(7)) - pageScan < 2) DO
+			SleepMS(100);
+		END
+	END
+
+	// enable refresh
+	_UAG_TabAlarm_IntMetadata(listHnd, "InitiatingCycle", c_TABALARM_INITCYCLE_END);
+	_UAG_TabAlarm_IntMetadata(listHnd, "RefreshEnable", 1);
+
+	retValue = UAG_TabAlarm_Refresh(listID);
+
+	RETURN retValue;
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		UAG_TabAlarm_ResetConfig
+//
+//	SUMMARY:
+//		Resets the saved display settings in INI file and reload display with the defaults.
+//			
+//	PARAMS:
+//		listID			- The alarm list ID
+//		formatName		- The name of the alarm format to be reset.
+//							If not specified or "", it will be defaulted to
+//							the format name currently used for the alarm list
+//			
+//	RETURNS: 
+//		0 if successful or error number if failed
+//
+//	REMARKS:
+//		Please refer to UAG_TabAlarm_LoadConfig() for the explanation about alarm
+//		format parameters.
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION UAG_TabAlarm_ResetConfig_alt(INT listID, STRING formatName = "")
+	INT retValue;
+	INT listHnd = _UAG_TabAlarm_GetInstance(listID);
+
+	IF (listHnd < 0) THEN
+		RETURN retValue;
+	END
+
+	// check arguments
+	IF ("" = formatName) THEN
+		formatName = _UAG_TabAlarm_StrMetadata(listHnd, "FormatName");
+	END
+
+	// determine default format name
+	IF ("" = formatName) THEN
+		formatName = UAG_TabAlarm_GetFormatNameDefault(_UAG_TabAlarm_IntMetadata(listHnd, "MasterAN"));
+	END
+
+	retValue = UAG_TabAlarm_SetFormatStringINI(formatName, "");
+	UAG_TabAlarm_LoadConfig_alt(listID, formatName);
+
+	RETURN retValue;
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		UAG_TabAlarm_AutoFit
+//
+//	SUMMARY:
+//		Sets the width of all displayed columns to display the full content of the field values.
+//			
+//	PARAMS:
+//		listID			- The alarm list ID number, zero-based
+//			
+//	RETURNS: 
+//		0 if successful or error number if failed
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION UAG_TabAlarm_AutoFit_alt(INT listID)
+	INT retValue = 274;
+	INT listHnd = _UAG_TabAlarm_GetInstance(listID);
+
+	IF (listHnd < 0) THEN
+		RETURN retValue;
+	END
+
+	retValue = _UAG_TabAlarm_AutoWidth(listHnd);
+	IF (retValue = 0) THEN
+		retValue = UAG_TabAlarm_Refresh(listID);
+	ELSE
+		retValue = 276;
+	END
+
+	RETURN retValue;
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		UAG_TabAlarm_Ack
+//
+//	SUMMARY:
+//		Acknowledges all alarms currently displayed on the alarm list.
+//			
+//	PARAMS:
+//		listID			- The alarm list ID number, zero-based
+//			
+//	RETURNS: 
+//		0 if successful or error number if failed
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION UAG_TabAlarm_Ack(INT listID,INT iMode=0)
+	INT retValue = 274;
+	INT listHnd = _UAG_TabAlarm_GetInstance(listID);
+	INT listAN;
+
+	IF (listHnd < 0) THEN
+		RETURN retValue;
+	END
+
+	listAN = _UAG_TabAlarm_IntMetadata(listHnd, "MasterAN");
+	IF (listAN <= 0) THEN
+		RETURN retValue;
+	END
+							   
+	IF UAG_TabAlarm_GetAckPriv(1) THEN
+		_UAG_TabAlarm_TaskCall("UAG_TabAlarmSnd_SilenceOnAck", "");	// Optionally include UAG_TabAlarmSnd.ci if using default alarm sound implementation
+		IF iMode=0 THEN
+					  
+   
+			retValue = AlarmAck(1, listAN, _UAG_TabAlarm_StrMetadata(listHnd, "ClusterName"));
+		ELSE
+			retValue = AlarmAck(3, 0, _UAG_TabAlarm_StrMetadata(listHnd, "ClusterName"));
+		END	
+	ELSE
+		retValue = 276;
+	END
+
+	RETURN retValue;
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		UAG_TabAlarm_Disable
+//
+//	SUMMARY:
+//		Disables all alarms currently displayed on the alarm list.
+//			
+//	PARAMS:
+//		listID			- The alarm list ID number, zero-based
+//			
+//	RETURNS: 
+//		0 if successful or error number if failed
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION UAG_TabAlarm_Disable_alt(INT listID)
+	INT retValue = 274;
+	INT listHnd = _UAG_TabAlarm_GetInstance(listID);
+	INT listAN;
+
+	IF (listHnd < 0) THEN
+		RETURN retValue;
+	END
+
+	listAN = _UAG_TabAlarm_IntMetadata(listHnd, "MasterAN");
+	IF (listAN <= 0) THEN
+		RETURN retValue;
+	END
+
+	IF UAG_TabAlarm_GetDisablePriv(1) THEN
+		retValue = AlarmDisable(1, listAN, _UAG_TabAlarm_StrMetadata(listHnd, "ClusterName"));
+	ELSE
+		retValue = 276;
+	END
+
+	RETURN retValue;
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		UAG_TabAlarm_Enable
+//
+//	SUMMARY:
+//		Enables all alarms currently displayed on the alarm list.
+//			
+//	PARAMS:
+//		listID			- The alarm list ID number, zero-based
+//			
+//	RETURNS: 
+//		0 if successful or error number if failed
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION UAG_TabAlarm_Enable_alt(INT listID)
+	INT retValue = 274;
+	INT listHnd = _UAG_TabAlarm_GetInstance(listID);
+	INT listAN;
+
+	IF (listHnd < 0) THEN
+		RETURN retValue;
+	END
+
+	listAN = _UAG_TabAlarm_IntMetadata(listHnd, "MasterAN");
+	IF (listAN <= 0) THEN
+		RETURN retValue;
+	END
+
+	IF UAG_TabAlarm_GetDisablePriv(1) THEN
+		retValue = AlarmEnable(1, listAN, _UAG_TabAlarm_StrMetadata(listHnd, "ClusterName"));
+	END
+
+	RETURN retValue;
+END
+
+//-----------------------------------------------------------------------------
+//
+//		FUNCTION NAME	
+//			UAG_TabAlarm_ReloadData
+//
+//     	SUMMARY:
+//			Requests the alarm system to refresh the data currently displayed
+//			on the alarm list.
+//
+// 		ARGUMENTS:
+//		listID			- The alarm list ID number, zero-based
+//			
+//     	RETURNS: 
+//			0 (zero) if successful, otherwise an error is returned.
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION UAG_TabAlarm_ReloadData_alt(INT listID)
+	INT listHnd = _UAG_TabAlarm_GetInstance(listID);
+	INT listAN;
+
+	IF (listHnd < 0) THEN
+		RETURN 274;
+	END
+
+	listAN = _UAG_TabAlarm_IntMetadata(listHnd, "MasterAN");
+	RETURN UAG_TabAlarm_ReloadDataByAN(listAN);
+END
+
+
+//-----------------------------------------------------------------------------
+//
+//	UAG_TabAlarm.Col Public Functions
+//
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		UAG_TabAlarm_Col_Hidden
+//
+//	SUMMARY:
+//		Returns whether a column is hidden. The function is to be called
+//		at the Appearance | Visibility tab of the graphical object.
+//			
+//	PARAMS:
+//		listID			- The alarm list ID number, zero-based
+//		colID			- The column ID number, zero-based
+//		isMaster		- (Optional) specify wheter the calling object is the master
+//							object of a column, defaulted to 0 if not specified.
+//			
+//	RETURNS: 
+//		1 if the column should be hidden / failed or 0 if the column should be shown
+//
+//	REMARKS:
+//		The master object is used to determines the position of a column. It MUST NOT be
+//		hidden while the alarm list is still initialising. This gives time for the alarm
+//		list to work out the configured (initial) position of all the master objects
+//		used in it.
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION UAG_TabAlarm_Col_Hidden_alt(INT listID, INT colID, INT isMaster = 0)
+	INT retValue = 0;
+	INT listHnd = _UAG_TabAlarm_GetInstance(listID);
+
+	IF ((listHnd < 0) OR (colID < 0)) THEN
+		RETURN 1;
+	END
+
+	// Do not hide the master object, which acts as the anchorage point, until finish initialising its position
+	IF (_UAG_TabAlarm_IntMetadata(listHnd, "InitiatingCycle") <> c_TABALARM_INITCYCLE_END) THEN
+		IF (isMaster) THEN
+			RETURN 0;
+		END
+		RETURN 1;
+	END
+
+	retValue = _UAG_TabAlarm_Col_ToHide(listHnd, colID);
+
+	RETURN retValue;
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		UAG_TabAlarm_Col_Disabled
+//
+//	SUMMARY:
+//		Returns whether a column is disabled. The function is to be called
+//		at the Access | Disable tab of the graphical object.
+//			
+//	PARAMS:
+//		listID			- The alarm list ID number, zero-based
+//		colID			- The column ID number, zero-based
+//		isMaster		- (Optional) specify wheter the calling object is the master
+//							object of a column, defaulted to 0 if not specified.
+//
+//	RETURNS: 
+//		1 if the column should be disabled / failed or 0 if the column should be shown
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION UAG_TabAlarm_Col_Disabled_alt(INT listID, INT colID, INT isMaster = 0)
+	INT retValue = 0;
+	INT listHnd = _UAG_TabAlarm_GetInstance(listID);
+
+	IF ((listHnd < 0) OR (colID < 0)) THEN
+		RETURN 1;
+	END
+
+	retValue = (_UAG_TabAlarm_IntMetadata(listHnd, "DraggedColSep") <> -1);	// disable column action when dragging separator
+
+	RETURN retValue;
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		UAG_TabAlarm_Col_PosOffset
+//
+//	SUMMARY:
+//		Indicate the position offset of the column from the actual displayed
+//		position to the configured position. The function is to be called at
+//		the Movement | Horizontal tab of the graphical object.
+//			
+//	PARAMS:
+//		listID			- The alarm list ID number, zero-based
+//		colID			- The column ID number, zero-based
+//		isMaster		- (Optional) specify wheter the calling object is the master
+//							object of a column, defaulted to 0 if not specified.
+//		offset			- (Optional) The position offset of the calling object relative to
+//							the entire tab control, defaulted to 0 if not specified.
+//			
+//	RETURNS: 
+//		Position offset (in pixels) from actual position to configured position
+//
+//	REMARKS:
+//		Set the input range from 0 to 2000, and set the offset range from
+//		0 to 2000 as well.
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION UAG_TabAlarm_Col_PosOffset_alt(INT listID, INT colID, INT isMaster = 0, INT offset = 0)
+	INT retValue = 0;
+	INT listHnd = _UAG_TabAlarm_GetInstance(listID);
+
+	IF ((listHnd < 0) OR (colID < 0)) THEN
+		RETURN retValue;
+	END
+
+	retValue = _UAG_TabAlarm_Col_IntMetadata(listHnd, colID, "PosOffset");	// column position change
+
+	RETURN retValue;
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		UAG_TabAlarm_Col_WidthPercent
+//
+//	SUMMARY:
+//		Indicate the percentage of the actual width of the column against
+//		the width as configured on the page. The function is called at the
+//		Scaling | Horizontal tab of the graphical object.
+//			
+//	PARAMS:
+//		listID			- The alarm list ID number, zero-based
+//		colID			- The column ID number, zero-based
+//		offset			- (Optional) The width offset of the calling AN (usually an
+//							invisible command box) relative to the entire
+//							tab control, defaulted to 0 if not specified.
+//			
+//	RETURNS: 
+//		percentage of the actual width against the configured width
+//
+//	REMARKS:
+//		CitectSCADA Scaling property will automatically cap the scale to 100%
+//		if the actual width > configured width. To work with this behaviour,
+//		set the input range from 0 to 2000, and set the scaling range from
+//		0 to 2000 as well.
+//
+//-----------------------------------------------------------------------------
+
+REAL FUNCTION UAG_TabAlarm_Col_WidthPercent_alt(INT listID, INT colID, INT offset = 0)
+	REAL retValue = 100;
+	INT listHnd = _UAG_TabAlarm_GetInstance(listID);
+
+	IF ((listHnd < 0) OR (colID < 0)) THEN
+		RETURN retValue;
+	END
+
+	retValue = (_UAG_TabAlarm_Col_IntMetadata(listHnd, ColID, "Width") + offset) * 100;
+	retValue = retValue / (c_TABALARM_COL_MINWIDTH + offset);
+
+	RETURN retValue;
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		UAG_TabAlarm_Col_Heading
+//
+//	SUMMARY:
+//		Returns the heading of a column.
+//			
+//	PARAMS:
+//		listID			- The alarm list ID number, zero-based
+//		colID			- The column ID number, zero-based
+//		trunc			- (Optional) Indicate whether return full heading
+//							or the truncated heading according to the
+//							column width set on screen.
+//			
+//	RETURNS: 
+//		the column heading
+//
+//-----------------------------------------------------------------------------
+
+STRING FUNCTION UAG_TabAlarm_Col_Heading_alt(INT listID, INT colID, INT trunc = 0)
+	STRING retValue = "";
+	INT listHnd = _UAG_TabAlarm_GetInstance(listID);
+	INT width;
+	STRING heading;
+
+	IF ((listHnd < 0) OR (colID < 0)) THEN
+		RETURN retValue;
+	END
+
+	IF (_UAG_TabAlarm_Col_ToHide(listHnd, colID)) THEN
+		RETURN retValue;
+	END
+
+	heading = _UAG_TabAlarm_Col_StrMetadata(listHnd, colID, "LocalText");
+
+	// truncate text if specified
+	IF (NOT trunc) THEN
+		RETURN heading;
+	ELSE
+		width = _UAG_TabAlarm_Col_IntMetadata(listHnd, colID, "Width") - c_TABALARM_COL_CELLPADDING * 3;
+		retValue = StrTruncFontHnd(heading, _UAG_TabAlarm_Col_HeadFontHnd(), width, 1);
+		IF (retValue <> heading) THEN
+			DspSetTip(DspGetAnCur(), heading);
+		ELSE
+			DspSetTip(DspGetAnCur(), "");
+		END
+	END
+	
+	RETURN retValue;
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		UAG_TabAlarm_Col_FieldName
+//
+//	SUMMARY:
+//		Returns the field name of a column.
+//			
+//	PARAMS:
+//		listID			- The alarm list ID number, zero-based
+//		colID			- The column ID number, zero-based
+//			
+//	RETURNS: 
+//		the alarm field name used for the column
+//
+//-----------------------------------------------------------------------------
+
+STRING FUNCTION UAG_TabAlarm_Col_FieldName_alt(INT listID, INT colID)
+	STRING retValue = "";
+	INT listHnd = _UAG_TabAlarm_GetInstance(listID);
+
+	IF ((listHnd < 0) OR (colID < 0)) THEN
+		RETURN retValue;
+	END
+
+	retValue = _UAG_TabAlarm_Col_StrMetadata(listHnd, colID, "FieldName");
+	
+	RETURN retValue;
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		UAG_TabAlarm_Col_SortPosOffset
+//
+//	SUMMARY:
+//		Returns the horizontal offset of the sorting symbol of a column from
+//		its configured position. The function is to be called at the Movement |
+//		Horizontal tab of the graphical object.
+//			
+//	PARAMS:
+//		listID			- The alarm list ID number, zero-based
+//		colID			- The column ID number, zero-based
+//			
+//	RETURNS: 
+//		Position offset (in pixels) from actual position to configured position
+//
+//	REMARKS:
+//		Set the input range from 0 to 2000, and set the offset range from
+//		0 to 2000 as well.
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION UAG_TabAlarm_Col_SortPosOffset_alt(INT listID, INT colID)
+	INT retValue = 0;
+	INT listHnd = _UAG_TabAlarm_GetInstance(listID);
+
+	IF ((listHnd < 0) OR (colID < 0)) THEN
+		RETURN retValue;
+	END
+
+	retValue = _UAG_TabAlarm_Col_IntMetadata(listHnd, colID, "PosOffset");											// column position change
+	retValue = retValue + _UAG_TabAlarm_Col_IntMetadata(listHnd, colID, "Width") - c_TABALARM_COL_MINWIDTH;			// column width change
+
+	RETURN retValue;
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		UAG_TabAlarm_Col_SortDirection
+//
+//	SUMMARY:
+//		Returns the sorting direction.
+//			
+//	PARAMS:
+//		listID			- The alarm list ID number, zero-based
+//		colID			- The column ID number, zero-based
+//			
+//	RETURNS: 
+//		the column sort direction:
+//			0 =	no sort
+//			1 = descending order
+//			2 = ascending order
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION UAG_TabAlarm_Col_SortDirection_alt(INT listID, INT colID)
+	INT retValue = 0;
+	INT listHnd = _UAG_TabAlarm_GetInstance(listID);
+
+	IF ((listHnd < 0) OR (colID < 0)) THEN
+		RETURN retValue;
+	END
+
+	retValue = _UAG_TabAlarm_Col_IntMetadata(listHnd, colID, "SortDirection");
+	
+	RETURN retValue;
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		UAG_TabAlarm_Col_Selected
+//
+//	SUMMARY:
+//		Returns whether a column is selected.
+//			
+//	PARAMS:
+//		listID			- The alarm list ID number, zero-based
+//		colID			- The column ID number, zero-based
+//			
+//	RETURNS: 
+//		1 if column is selected or 0 if not
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION UAG_TabAlarm_Col_Selected_alt(INT listID, INT colID)
+	INT retValue = 0;
+	INT listHnd = _UAG_TabAlarm_GetInstance(listID);
+
+	IF ((listHnd < 0) OR (colID < 0)) THEN
+		RETURN retValue;
+	END
+
+	retValue = (colID = _UAG_TabAlarm_IntMetadata(listHnd, "SelectedCol"));
+
+	RETURN retValue;
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		UAG_TabAlarm_Col_Dragged
+//
+//	SUMMARY:
+//		Returns whether a column heading is being dragged. The function is to be
+//		called at the Appearance | Visibility tab of the drag box for the columen
+//		heading.
+//			
+//	PARAMS:
+//		listID			- The alarm list ID number, zero-based
+//		colID			- The column ID number, zero-based
+//			
+//	RETURNS: 
+//		1 if column is being dragged or 0 if not
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION UAG_TabAlarm_Col_Dragged_alt(INT listID, INT colID)
+	INT retValue = 0;
+	INT listHnd = _UAG_TabAlarm_GetInstance(listID);
+
+	IF ((listHnd < 0) OR (colID < 0)) THEN
+		RETURN retValue;
+	END
+
+	retValue = (_UAG_TabAlarm_IntMetadata(listHnd, "DraggedCol") = colID);
+
+	RETURN retValue;
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		UAG_TabAlarm_Col_DragHPosOffset
+//
+//	SUMMARY:
+//		Returns the horizontal position offset of the drag box of a column heading.
+//		This is to be called at the Movement | Horizontal tab of the drag box
+//		for the column heading.
+//			
+//	PARAMS:
+//		listID			- The alarm list ID number, zero-based
+//		colID			- The column ID number, zero-based
+//		isMaster		- (Optional) specify wheter the calling object is the master
+//							object of a column, defaulted to 0 if not specified.
+//		offset			- (Optional) The position offset of the calling object relative to
+//							the entire tab control, defaulted to 0 if not specified.
+//			
+//	RETURNS: 
+//		Position offset (in pixels) from actual position to configured position
+//
+//	REMARKS:
+//		Set the input range from -2000 to 2000, and set the offset range from
+//		-2000 to 2000 as well.
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION UAG_TabAlarm_Col_DragHPosOffset_alt(INT listID, INT colID, INT isMaster = 0, INT offset = 0)
+	INT retValue = 0;
+	INT listHnd = _UAG_TabAlarm_GetInstance(listID);
+	INT x;
+	INT y;
+	INT startPos;
+	INT AN;
+
+	IF ((listHnd < 0) OR (colID < 0)) THEN
+		RETURN retValue;
+	END
+
+	// Do not adjust control position until finish initialising positions
+	IF (_UAG_TabAlarm_IntMetadata(listHnd, "InitiatingCycle") <> c_TABALARM_INITCYCLE_END) THEN
+		IF (isMaster) THEN
+			AN = DspGetAnCur();
+			IF (AN <= 0) THEN
+				RETURN 0;
+			END
+			DspAnGetPos(AN, x, y);
+			_UAG_TabAlarm_Col_IntMetadata(listHnd, colID, "MasterAN", AN);			// remember the AN of master object
+			_UAG_TabAlarm_Col_IntMetadata(listHnd, colID, "InitPosX", x - offset);
+			_UAG_TabAlarm_Col_IntMetadata(listHnd, colID, "InitPosY", y);
+			_UAG_TabAlarm_Col_IntMetadata(listHnd, colID, "Pos", x - offset);
+		END
+		RETURN retValue;
+	END
+
+	// check if it has been dragged
+	IF (_UAG_TabAlarm_IntMetadata(listHnd, "SelectedCol") = colID) THEN
+		DspGetMouse(x, y);
+		startPos = _UAG_TabAlarm_Col_IntMetadata(listHnd, colID, "DragStartPosX");
+		IF (startPos <> x) THEN
+			_UAG_TabAlarm_IntMetadata(listHnd, "DraggedCol", colID);
+			RETURN (_UAG_TabAlarm_Col_IntMetadata(listHnd, colID, "PosOffset") + x - startPos);
+		END
+	END
+	retValue = _UAG_TabAlarm_Col_IntMetadata(listHnd, colID, "PosOffset");
+
+	RETURN retValue;
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		UAG_TabAlarm_Col_DragVPosOffset
+//
+//	SUMMARY:
+//		Returns the vertical position offset of the drag box of a column heading.
+//		This is to be called at the Movement | Vertical tab of the drag box
+//		for the column heading.
+//			
+//	PARAMS:
+//		listID			- The alarm list ID number, zero-based
+//		colID			- The column ID number, zero-based
+//			
+//	RETURNS: 
+//		Position offset (in pixels) from actual position to configured position
+//
+//	REMARKS:
+//		Set the input range from -2000 to 2000, and set the offset range from
+//		-2000 to 2000 as well.
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION UAG_TabAlarm_Col_DragVPosOffset_alt(INT listID, INT colID)
+	INT retValue = 0;
+	INT listHnd = _UAG_TabAlarm_GetInstance(listID);
+	INT x;
+	INT y;
+	INT startPos;
+
+	IF ((listHnd < 0) OR (colID < 0)) THEN
+		RETURN retValue;
+	END
+
+	// check if has been dragged
+	IF (_UAG_TabAlarm_IntMetadata(listHnd, "SelectedCol") = colID) THEN
+		DspGetMouse(x, y);
+		startPos = _UAG_TabAlarm_Col_IntMetadata(listHnd, colID, "DragStartPosY");
+		IF (startPos <> y) THEN
+			_UAG_TabAlarm_IntMetadata(listHnd, "DraggedCol", colID);
+			RETURN (y - startPos);
+		END
+	END
+
+	RETURN retValue;
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		UAG_TabAlarm_Col_Drag
+//
+//	SUMMARY:
+//		Selects an alarm column. This is to be called at the left mouse button
+//		down / ENTER key-press event of the drag box for the column heading.
+//			
+//	PARAMS:
+//		listID			- The alarm list ID number, zero-based
+//		colID			- The column ID number, zero-based
+//			
+//	RETURNS: 
+//		0 if executed successful or error if failed
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION UAG_TabAlarm_Col_Drag_alt(INT listID, INT colID)
+	INT retValue = 274;
+	INT listHnd = _UAG_TabAlarm_GetInstance(listID);
+	INT x;
+	INT y;
+
+	IF ((listHnd < 0) OR (colID < 0)) THEN
+		RETURN retValue;
+	END
+
+	// remember the starting coordinate for draging
+	DspGetMouse(x, y);
+	_UAG_TabAlarm_Col_IntMetadata(listHnd, colID, "DragStartPosX", x);
+	_UAG_TabAlarm_Col_IntMetadata(listHnd, colID, "DragStartPosY", y);
+	_UAG_TabAlarm_IntMetadata(listHnd, "DraggedCol", -1);
+	_UAG_TabAlarm_IntMetadata(listHnd, "SelectedCol", colID);
+	retValue = 0;
+
+	RETURN retValue;
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		UAG_TabAlarm_Col_Drop
+//
+//	SUMMARY:
+//		Sorts / repositions / deletes a column when the user drops the drag box
+//		of a column heading depending on whether the box has been dragged. This
+// 		function is to be called at the left mouse button up event of the drag
+//		box.
+//			
+//	PARAMS:
+//		listID			- The alarm list ID number, zero-based
+//		colID			- The column ID number, zero-based
+//			
+//	RETURNS: 
+//		0 if executed successful or error if failed
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION UAG_TabAlarm_Col_Drop_alt(INT listID, INT colID)
+	INT retValue = 274;
+	INT listHnd = _UAG_TabAlarm_GetInstance(listID);
+	INT colBrowse;
+	INT colLast;
+	INT curPosX;
+	INT curPosY;
+	INT found;
+	INT focusAN = -1;
+	STRING fieldName;
+	STRING localText;
+	INT width;
+	INT sortDirection;
+
+	IF ((listHnd < 0) OR (colID < 0)) THEN
+		RETURN retValue;
+	END
+
+	// determine what action to take depending if column has been dragged or not
+	IF (_UAG_TabAlarm_IntMetadata(listHnd, "DraggedCol") = colID) THEN
+		DspGetMouse(curPosX, curPosY);
+
+		// delete coluumn if dragged outside the column heading area
+		IF (Abs(curPosY - _UAG_TabAlarm_Col_IntMetadata(listHnd, colID, "DragStartPosY"))
+				> c_TABALARM_COL_HEADHEIGHT) THEN
+			retValue = UAG_TabAlarm_Col_Delete_alt(listID, colID);
+		ELSE
+			// check position of the drag box based on its left corner
+			curPosX = curPosX - _UAG_TabAlarm_Col_IntMetadata(listHnd, colID, "DragStartPosX") + _UAG_TabAlarm_Col_IntMetadata(listHnd, colID, "Pos");
+			colLast = _UAG_TabAlarm_IntMetadata(listHnd, "Columns") - 1;
+			colBrowse = colLast;
+			WHILE (colBrowse >= 0) DO
+				found = 0;
+
+				// check if dragging to the last column
+				IF (colBrowse = colLast) THEN
+					IF (curPosX > _UAG_TabAlarm_Col_IntMetadata(listHnd, colLast, "Pos")) THEN
+						colBrowse = colLast + 1;
+						found = 1;
+					END
+				END
+
+				// check if the position of drag box is between this and previous column
+				IF ((found = 0) AND (colBrowse <> colID) AND (colBrowse - 1 <> colID)) THEN
+					IF (curPosX <= _UAG_TabAlarm_Col_IntMetadata(listHnd, colBrowse, "Pos")) THEN
+						IF (colBrowse = 0) THEN
+							found = 1;
+						ELSE IF (curPosX > _UAG_TabAlarm_Col_IntMetadata(listHnd, colBrowse - 1, "Pos")) THEN
+							found = 1;
+						END END
+					END
+				END
+
+				IF (found) THEN
+					// disable refresh
+					_UAG_TabAlarm_IntMetadata(listHnd, "RefreshEnable", 0);
+
+					// remember the contents of moved column
+					fieldName = _UAG_TabAlarm_Col_StrMetadata(listHnd, colID, "FieldName");
+					localText = _UAG_TabAlarm_Col_StrMetadata(listHnd, colID, "LocalText");
+					width = _UAG_TabAlarm_Col_IntMetadata(listHnd, colID, "Width");
+					sortDirection = _UAG_TabAlarm_Col_IntMetadata(listHnd, colID, "SortDirection");
+
+					// delete original column
+					retValue = UAG_TabAlarm_Col_Delete_alt(listID, colID);
+
+					IF (retValue = 0) THEN
+						// recalculate position of target column
+						IF (colBrowse > colID) THEN
+							colBrowse = colBrowse - 1;
+						END
+
+						// insert moved column here
+						retValue = UAG_TabAlarm_Col_Insert_alt(listID, colBrowse);
+
+						IF (retValue = 0) THEN
+							// set details to the new column
+							_UAG_TabAlarm_Col_StrMetadata(listHnd, colBrowse, "FieldName", fieldName);
+							_UAG_TabAlarm_Col_StrMetadata(listHnd, colBrowse, "LocalText", localText);
+							_UAG_TabAlarm_Col_IntMetadata(listHnd, colBrowse, "Width", width);
+							_UAG_TabAlarm_Col_IntMetadata(listHnd, colBrowse, "SortDirection", sortDirection);
+
+							// set focus to target column
+							focusAN = _UAG_TabAlarm_Col_IntMetadata(listHnd, colBrowse, "MasterAN");
+						END
+					END
+
+					// quit the loop
+					colBrowse = -1;
+
+					// refresh display
+					_UAG_TabAlarm_IntMetadata(listHnd, "RefreshEnable", 1);
+					retValue = UAG_TabAlarm_Refresh(listID);
+				END
+				colBrowse = colBrowse - 1;
+			END
+		END
+	ELSE
+		// sort the column
+		retValue = UAG_TabAlarm_Col_Sort_alt(listID, colID);
+	END
+
+	// reset selection
+	_UAG_TabAlarm_IntMetadata(listHnd, "DraggedCol", -1);
+	_UAG_TabAlarm_IntMetadata(listHnd, "SelectedCol", -1);
+
+	// set cursor focus to repositioned column
+	IF (focusAN > 0) THEN
+		SleepMS(0);
+		KeySetCursor(focusAN);
+	END
+
+	RETURN retValue;
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		UAG_TabAlarm_Col_Sort
+//
+//	SUMMARY:
+//		Switches the sort direction of an alarm column. This function is called
+//		at the ENTER keypress event of the drag box for the column heading.
+//			
+//	PARAMS:
+//		listID			- The alarm list ID number, zero-based
+//		colID			- The column ID number, zero-based
+//			
+//	RETURNS: 
+//		0 if executed successful or error if failed
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION UAG_TabAlarm_Col_Sort_alt(INT listID, INT colID)
+	INT retValue = 274;
+	INT listHnd = _UAG_TabAlarm_GetInstance(listID);
+	INT listAN;
+	INT sortDirection;
+	STRING fieldName;
+
+	IF ((listHnd < 0) OR (colID < 0)) THEN
+		RETURN retValue;
+	END
+
+	listAN = _UAG_TabAlarm_IntMetadata(listHnd, "MasterAN");
+	fieldName = _UAG_TabAlarm_Col_StrMetadata(listHnd, colID, "FieldName")
+
+	// check if column can be sorted
+	IF (NOT _UAG_TabAlarm_IsSortable(listAN, fieldName)) THEN
+		RETURN retValue;
+	END
+
+	// always sort date / time / milli together
+	fieldName = _UAG_TabAlarm_GetSortField(fieldName);
+	sortDirection = _UAG_TabAlarm_Col_IntMetadata(listHnd, colID, "SortDirection");
+	sortDirection = (sortDirection + 1) MOD 3;
+
+	// set the sort direction of column(s) that are currenlty sorted
+	INT columns = _UAG_TabAlarm_IntMetadata(listHnd, "Columns");
+	INT sortDirectionIter;
+	colID = 0;
+	WHILE (colID < columns) DO
+		IF (fieldName = _UAG_TabAlarm_GetSortField(_UAG_TabAlarm_Col_StrMetadata(listHnd, colID, "FieldName"))) THEN
+			sortDirectionIter = sortDirection;
+		ELSE
+			sortDirectionIter = 0;
+		END
+		colID = colID + 1;
+	END
+
+	SELECT CASE sortDirection
+	CASE 0
+		// no sort
+		AlarmSetInfo(listAN, 9, 0);
+		AlarmSetInfo(listAN, 10, "");
+		_UAG_TabAlarm_StrMetadata(listHnd, "SortFieldName", "");
+	CASE 1
+		// descending order
+		AlarmSetInfo(listAN, 10, "{" + fieldName + ",0}");
+		AlarmSetInfo(listAN, 9, 1);
+	CASE 2
+		// ascending order
+		AlarmSetInfo(listAN, 10, "{" + fieldName + ",1}");
+		AlarmSetInfo(listAN, 9, 1);
+	END SELECT
+	retValue = 0;
+
+	RETURN retValue;
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		UAG_TabAlarm_Col_AutoFit
+//
+//	SUMMARY:
+//		Sets the width of a column to display the full content of the field
+//		values, and reposition all columns to its right hand side accordingly.
+//		This function is called at the left mouse button double-click event of
+//		the column separator.
+//			
+//	PARAMS:
+//		listID			- The alarm list ID number, zero-based
+//		colID			- The column ID number, zero-based
+//			
+//	RETURNS: 
+//		0 if executed successful or error if failed
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION UAG_TabAlarm_Col_AutoFit_alt(INT listID, INT colID)
+	INT retValue = 274;
+	INT listHnd = _UAG_TabAlarm_GetInstance(listID);
+	INT width;
+
+	IF ((listHnd < 0) OR (colID < 0)) THEN
+		RETURN retValue;
+	END
+
+	width = _UAG_TabAlarm_Col_MaxWidth(listHnd, colID);
+	IF (width > 0) THEN
+		_UAG_TabAlarm_Col_IntMetadata(listHnd, colID, "Width", width);
+		retValue = UAG_TabAlarm_Refresh(listID);
+	END
+
+	RETURN retValue;
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		UAG_TabAlarm_Col_SetFieldName
+//
+//	SUMMARY:
+//		Sets the alarm field name to a column.
+//			
+//	PARAMS:
+//		listID			- The alarm list ID number, zero-based
+//		colID			- The column ID number, zero-based
+//			
+//	RETURNS: 
+//		0 if executed successful or error if failed
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION UAG_TabAlarm_Col_SetFieldName_alt(INT listID, INT colID, STRING fieldName)
+	INT retValue = 274;
+	INT listHnd = _UAG_TabAlarm_GetInstance(listID);
+
+	IF ((listHnd < 0) OR (colID < 0)) THEN
+		RETURN retValue;
+	END
+
+	IF (fieldName = "") THEN
+		RETURN UAG_TabAlarm_Col_Delete_alt(listID, colID);
+	END
+
+	_UAG_TabAlarm_Col_StrMetadata(listHnd, colID, "FieldName", fieldName);
+	_UAG_TabAlarm_Col_StrMetadata(listHnd, colID, "LocalText", UAG_TabAlarm_GetColNameINI(fieldName));
+	IF (_UAG_TabAlarm_Col_IntMetadata(listHnd, colID, "Width") <= 0) THEN
+		_UAG_TabAlarm_Col_IntMetadata(listHnd, colID, "Width", c_TABALARM_COL_MINWIDTH);
+	END
+
+	retValue = UAG_TabAlarm_Refresh(listID);
+
+	RETURN retValue;
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		UAG_TabAlarm_Col_Insert
+//
+//	SUMMARY:
+//		Inserts a new alarm column immediately before the specified column.
+//			
+//	PARAMS:
+//		listID			- The alarm list ID number, zero-based
+//		colID			- The column ID number, zero-based
+//			
+//	RETURNS: 
+//		0 if executed successful or error if failed
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION UAG_TabAlarm_Col_Insert_alt(INT listID, INT colID)
+	INT retValue = 274;
+	INT listHnd = _UAG_TabAlarm_GetInstance(listID);
+
+	IF ((listHnd < 0) OR (colID < 0)) THEN
+		RETURN retValue;
+	END
+
+	// shift columns to right
+	retValue = _UAG_TabAlarm_Col_Shift(listHnd, colID, 1);
+	IF (0 = retValue) THEN
+		// empty inserted column
+		_UAG_TabAlarm_Col_StrMetadata(listHnd, colID, "FieldName", "");
+		_UAG_TabAlarm_Col_StrMetadata(listHnd, colID, "LocalText", "");
+		_UAG_TabAlarm_Col_IntMetadata(listHnd, colID, "SortDirection", 0);
+
+		retValue = UAG_TabAlarm_Refresh(listID);
+	END
+
+	RETURN retValue;
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		UAG_TabAlarm_Col_Delete
+//
+//	SUMMARY:
+//		Deletes a column.
+//			
+//	PARAMS:
+//		listID			- The alarm list ID number, zero-based
+//		colID			- The column ID number, zero-based
+//			
+//	RETURNS: 
+//		0 if executed successful or error if failed
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION UAG_TabAlarm_Col_Delete_alt(INT listID, INT colID)
+	INT retValue = 274;
+	INT listHnd = _UAG_TabAlarm_GetInstance(listID);
+	INT columns;
+
+	IF ((listHnd < 0) OR (colID < 0)) THEN
+		RETURN retValue;
+	END
+
+	// shift columns to left
+	columns = _UAG_TabAlarm_IntMetadata(listHnd, "Columns");
+	retValue = _UAG_TabAlarm_Col_Shift(listHnd, colID + 1, -1);
+	IF (0 = retValue) THEN
+		// empty deleted column
+		columns = columns - 1;
+		_UAG_TabAlarm_Col_StrMetadata(listHnd, columns, "FieldName", "");
+		_UAG_TabAlarm_Col_StrMetadata(listHnd, columns, "LocalText", "");
+		_UAG_TabAlarm_Col_IntMetadata(listHnd, columns, "SortDirection", 0);
+	
+		retValue = UAG_TabAlarm_Refresh(listID);
+	END
+
+	RETURN retValue;
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		UAG_TabAlarm_Col_ShowContextMenu
+//
+//	SUMMARY:
+//		Shows a context menu for column. Currently only allows delete
+//		/ insert column
+//			
+//	PARAMS:
+//		listID			- The alarm list ID number, zero-based
+//		colID			- The column ID number, zero-based
+//							This is optional, if not specified, the action taken
+//							will be applied to an addition column
+//			
+//	RETURNS: 
+//		0 if executed successful or error if failed
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION UAG_TabAlarm_Col_ShowContextMenu_alt(INT listID, INT colID = -1)
+	INT retValue = 274;
+	INT listHnd = _UAG_TabAlarm_GetInstance(listID);
+	INT focusAN;
+	INT top, x, y, right;
+	INT insertMenuNo = 0, insertItemOffset = 0;
+	INT selection;
+	STRING fieldName;
+	INT listType;
+
+	IF (listHnd < 0) THEN
+		RETURN retValue;
+	END
+
+	IF (colID >= c_TABALARM_COL_MAX) THEN
+		RETURN retValue;
+	END
+
+	// disable pop-up menu if column is dragged
+	IF ((colID > -1) AND (_UAG_TabAlarm_IntMetadata(listHnd, "DraggedCol") = colID)) THEN
+		RETURN retValue;
+	END
+
+	// do not displayed menu if it is still in progress
+	IF (m_TABALARM_Menu_InUse) THEN
+		RETURN retValue;
+	END
+	m_TABALARM_Menu_InUse = 1;
+
+	// Get coordinates of AN in focus
+	focusAN = KeyGetCursor();
+	IF (focusAN > 0) THEN
+		DspGetAnExtent(focusAN, top, x, y, right);
+	END
+
+	// Show context menu
+	IF (colID > -1) THEN
+		DspPopupMenu(0, StrToLocalText("@(Remove Column)"));
+		DspPopupMenu(0, StrToLocalText("@(Insert Column)") + ">1");
+		insertMenuNo = 1;
+	ELSE
+		DspPopupMenu(0, "!" + StrToLocalText("@(Insert Column)") + ",,");
+		insertItemOffset = 1;
+	END
+	listType = AlarmGetInfo(_UAG_TabAlarm_IntMetadata(listHnd, "MasterAN"), 3);
+	_UAG_TabAlarm_Col_AddFieldsToMenu(listType, listHnd, "_UAG_TabAlarm_Col_IsShown", insertMenuNo);
+	selection = DspPopupMenu(-1, "", x, y);
+	fieldName = _UAG_TabAlarm_Col_GetFieldFromMenu(listType, selection, insertMenuNo, insertItemOffset);
+
+	// re-allow to display menu after selection is made
+	m_TABALARM_Menu_InUse = 0;
+
+	SELECT CASE selection
+	CASE 1
+		// delete column
+		retValue = UAG_TabAlarm_Col_Delete_alt(listID, colID);
+	CASE ELSE
+		// insert column before the specified column
+		IF ("" = fieldName) THEN
+			RETURN retValue;
+		END
+		IF (colID < 0) THEN colID = _UAG_TabAlarm_IntMetadata(listHnd, "Columns"); END
+		retValue = _UAG_TabAlarm_Col_Shift(listHnd, colID, 1);
+		IF (0 = retValue) THEN
+			// fill in contents of inserted column from selection
+			retValue = UAG_TabAlarm_Col_SetFieldName_alt(listID, colID, fieldName);
+
+			// set cursor focus to repositioned column
+			IF (focusAN > 0) THEN
+				SleepMS(0);
+				KeySetCursor(focusAN);
+			END
+		END
+	END SELECT
+
+	RETURN retValue;
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		UAG_TabAlarm_Col_ShowDspText
+//
+//	SUMMARY:
+//		Display the column heading at where the column head is located.
+//
+//	PARAMS:
+//		listID			- The alarm list ID number, zero-based
+//		colID			- The column ID number, zero-based
+//			
+//	RETURNS: 
+//		0 if executed successfully or error number if failed
+//
+//	REMARKS:
+//		This function may be called from on-page object after RefreshTimer is set.
+//		It is currently called from a Cicode object per column head genie.
+//		The AN to dispaly the text will be created on the fly if required.
+//		The position of the AN is determined by the position of the column heading
+//		rectangle which contains the metadata for the column.
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION UAG_TabAlarm_Col_ShowDspText_alt(INT listID, INT colID)
+	INT listHnd = _UAG_TabAlarm_GetInstance(listID);
+	INT AN;
+	INT posX;
+	INT posY;
+	INT width;
+	STRING heading;
+	INT hFont;
+
+	IF ((listID < 0) OR (colID < 0)) THEN
+		RETURN 274;
+	END
+
+	// only refresh text for a limited numbers of page scan after list is refreshed
+	IF (_UAG_TabAlarm_IntMetadata(listHnd, "RefreshTimer") <= 0) THEN
+		RETURN 0;
+	END
+
+	// get AN for displaying text
+	AN = _UAG_TabAlarm_Col_IntMetadata(listHnd, colID, "TextAN");
+
+	// show text or not based on whether column is hidden
+	IF (_UAG_TabAlarm_Col_ToHide(listHnd, colID) AND (AN > 0)) THEN
+		IF (DspAnInfo(AN, 2) <> "") THEN
+			DspText(AN, -1, "");
+		END
+		RETURN 0;
+	END
+
+	// display column heading at specified AN
+	posX = _UAG_TabAlarm_Col_IntMetadata(listHnd, colID, "Pos") + c_TABALARM_COL_CELLPADDING;
+	posY = _UAG_TabAlarm_Col_IntMetadata(listHnd, colID, "InitPosY") - c_TABALARM_COL_CELLPADDING - 1;	// compensate by 1 extra pixel for ref object being a transparent rectangle
+	IF (AN <= 0) THEN
+		AN = DspAnNew(posX, posY);	// create as new AN so that text is always on top
+		_UAG_TabAlarm_Col_IntMetadata(listHnd, colID, "TextAN", AN);
+	ELSE
+		DspAnMove(AN, posX, posY);
+	END
+
+	heading = _UAG_TabAlarm_Col_StrMetadata(listHnd, colID, "LocalText");
+	width = _UAG_TabAlarm_Col_IntMetadata(listHnd, colID, "Width") - c_TABALARM_COL_CELLPADDING * 3;
+	hFont = _UAG_TabAlarm_Col_HeadFontHnd();
+	UAG_DspFixedWidthText(AN, heading, width, hFont);
+
+	RETURN 0;
+END
+
+//-----------------------------------------------------------------------------
+//
+//	UAG_TabAlarm.ColSep Public Functions
+//
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		UAG_TabAlarm_ColSep_Hidden
+//
+//	SUMMARY:
+//		Returns whether a column separator is hidden. The function is to be called
+//		at the Appearance | Visibility tab of the graphical object.
+//			
+//	PARAMS:
+//		listID			- The alarm list ID number, zero-based
+//		colID			- The column ID number, zero-based
+//			
+//	RETURNS: 
+//		1 if the separator should be hidden / failed or 0 if it should be shown
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION UAG_TabAlarm_ColSep_Hidden_alt(INT listID, INT colID)
+	INT retValue = 0;
+	INT listHnd = _UAG_TabAlarm_GetInstance(listID);
+
+	IF ((listHnd < 0) OR (colID < 0)) THEN
+		RETURN 1;
+	END
+
+	retValue = _UAG_TabAlarm_Col_ToHide(listHnd, colID);
+
+	RETURN retValue;
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		UAG_TabAlarm_ColSep_Disabled
+//
+//	SUMMARY:
+//		Returns whether a column separator is disabled. The function is to be called
+//		at the Access | Disable tab of the graphical object.
+//			
+//	PARAMS:
+//		listID			- The alarm list ID number, zero-based
+//		colID			- The column ID number, zero-based
+//
+//	RETURNS: 
+//		1 if the separator should be disabled / failed or 0 if it should be shown
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION UAG_TabAlarm_ColSep_Disabled_alt(INT listID, INT colID)
+	INT retValue = 0;
+	INT listHnd = _UAG_TabAlarm_GetInstance(listID);
+	INT draggedColSep;
+
+	IF ((listHnd < 0) OR (colID < 0)) THEN
+		RETURN 1;
+	END
+
+	draggedColSep = _UAG_TabAlarm_IntMetadata(listHnd, "DraggedColSep");
+	retValue = (draggedColSep <> -1) AND (draggedColSep <> colID);
+	
+	RETURN retValue;
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		UAG_TabAlarm_ColSep_PosOffset
+//
+//	SUMMARY:
+//		Indicate the position offset of the column seperator from the actual displayed
+//		position to the configured position. The function is to be called at
+//		the Movement | Horizontal tab of the graphical object.
+//			
+//	PARAMS:
+//		listID			- The alarm list ID number, zero-based
+//		colID			- The column ID number, zero-based
+//			
+//	RETURNS: 
+//		Position offset (in pixels) from actual position to configured position
+//
+//	REMARKS:
+//		Set the input range from 0 to 2000, and set the offset range from
+//		0 to 2000 as well.
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION UAG_TabAlarm_ColSep_PosOffset_alt(INT listID, INT colID)
+	INT retValue = 0;
+	INT listHnd = _UAG_TabAlarm_GetInstance(listID);
+	INT x;
+	INT y;
+	INT startPos;
+
+	IF ((listHnd < 0) OR (colID < 0)) THEN
+		RETURN retValue;
+	END
+
+	// check if has been dragged
+	IF (_UAG_TabAlarm_IntMetadata(listHnd, "DraggedColSep") = colID) THEN
+		DspGetMouse(x, y);
+		startPos = _UAG_TabAlarm_Col_IntMetadata(listHnd, colID, "SepStartPosX");
+		IF (startPos <> x) THEN
+			RETURN (_UAG_TabAlarm_Col_IntMetadata(listHnd, colID, "PosOffset") + _UAG_TabAlarm_Col_IntMetadata(listHnd, colID, "Width") + x - startPos);
+		END
+	END
+	retValue = _UAG_TabAlarm_Col_IntMetadata(listHnd, colID, "PosOffset") + _UAG_TabAlarm_Col_IntMetadata(listHnd, colID, "Width");
+
+	RETURN retValue;
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		UAG_TabAlarm_ColSep_HeightPercent
+//
+//	SUMMARY:
+//		Indicate the percentage of the actual height of the column against
+//		the height as configured on the page. The function is called at the
+//		Scaling | Vertical tab of the graphical object.
+//			
+//	PARAMS:
+//		listID			- The alarm list ID number, zero-based
+//		colID			- The column ID number, zero-based
+//			
+//	RETURNS: 
+//		percentage of the actual width against the configured width
+//
+//	REMARKS:
+//		CitectSCADA Scaling property will automatically cap the scale to 100%
+//		if the actual height > configured height. To work with this behaviour,
+//		set the input range from 0 to 100, and set the scaling range from
+//		0 to 100 as well.
+//
+//-----------------------------------------------------------------------------
+
+REAL FUNCTION UAG_TabAlarm_ColSep_HeightPercent_alt(INT listID, INT colID)
+	REAL retValue = 100;
+	INT listHnd = _UAG_TabAlarm_GetInstance(listID);
+	INT AN, height;
+
+	IF ((listHnd < 0) OR (colID < 0)) THEN
+		RETURN retValue;
+	END
+
+	// only shrink column separator if it's not in focus
+	AN = DspGetAnCur();
+	IF (AN > 0) THEN
+		IF (AN <> KeyGetCursor()) THEN
+			height = _UAG_TabAlarm_IntMetadata(listHnd, "Height");
+			IF (height > 0) THEN
+				retValue = c_TABALARM_COL_HEADHEIGHT * 100 / height;
+			END
+		END
+	END
+
+	RETURN retValue;
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		UAG_TabAlarm_ColSep_Dragged
+//
+//	SUMMARY:
+//		Returns whether a column seperator is being dragged.
+//			
+//	PARAMS:
+//		listID			- The alarm list ID number, zero-based
+//		colID			- The column ID number, zero-based
+//			
+//	RETURNS: 
+//		1 if column separator is being dragged or 0 if not
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION UAG_TabAlarm_ColSep_Dragged_alt(INT listID, INT colID)
+	INT retValue = 0;
+	INT listHnd = _UAG_TabAlarm_GetInstance(listID);
+
+	IF ((listHnd < 0) OR (colID < 0)) THEN
+		RETURN retValue;
+	END
+
+	retValue = (_UAG_TabAlarm_IntMetadata(listHnd, "DraggedColSep") = colID);
+
+	RETURN retValue;
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		UAG_TabAlarm_ColSep_Drag
+//
+//	SUMMARY:
+//		Selects an column separator. This is to be called at the left mouse button
+//		down event of the column separator.
+//			
+//	PARAMS:
+//		listID			- The alarm list ID number, zero-based
+//		colID			- The column ID number, zero-based
+//			
+//	RETURNS: 
+//		0 if executed successful or error if failed
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION UAG_TabAlarm_ColSep_Drag_alt(INT listID, INT colID)
+	INT retValue = 274;
+	INT listHnd = _UAG_TabAlarm_GetInstance(listID);
+	INT x;
+	INT y;
+
+	IF ((listHnd < 0) OR (colID < 0)) THEN
+		RETURN retValue;
+	END
+
+	// ignore quick clicking for drag-and-drop operation
+	IF (SysTime() - m_TABALARM_Col_DragStartMS < c_TABALARM_COL_DRAGMINMS) THEN
+		RETURN 274;
+	END
+	m_TABALARM_Col_DragStartMS = SysTime();
+
+	// remember the starting coordinate for draging
+	DspGetMouse(x, y);
+	_UAG_TabAlarm_Col_IntMetadata(listHnd, colID, "SepStartPosX", x);
+	_UAG_TabAlarm_IntMetadata(listHnd, "DraggedColSep", colID);
+	retValue = 0;
+
+	RETURN retValue;
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		UAG_TabAlarm_ColSep_Drop
+//
+//	SUMMARY:
+//		Resizes a column when the user drops the column seperator after it
+//		has been dragged. This function is to be called at the left mouse button
+//		up event of column seperator.
+//			
+//	PARAMS:
+//		listID			- The alarm list ID number, zero-based
+//		colID			- The column ID number, zero-based
+//			
+//	RETURNS: 
+//		0 if executed successful or error if failed
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION UAG_TabAlarm_ColSep_Drop_alt(INT listID, INT colID)
+	INT retValue = 274;
+	INT listHnd = _UAG_TabAlarm_GetInstance(listID);
+	INT x;
+	INT colPos;
+
+	IF ((listHnd < 0) OR (colID < 0)) THEN
+		RETURN retValue;
+	END
+
+	IF ((_UAG_TabAlarm_IntMetadata(listHnd, "DraggedColSep") = colID)
+		AND (SysTime() - m_TABALARM_Col_DragStartMS >= c_TABALARM_COL_DRAGMINMS)) THEN
+		
+		DspGetMouse(x, colPos);
+		colPos = _UAG_TabAlarm_Col_IntMetadata(listHnd, colID, "Pos");
+		IF (x - colPos > c_TABALARM_COL_MINWIDTH) THEN
+			_UAG_TabAlarm_Col_IntMetadata(listHnd, colID, "Width", x - colPos);
+		ELSE
+			_UAG_TabAlarm_Col_IntMetadata(listHnd, colID, "Width", c_TABALARM_COL_MINWIDTH);
+		END
+		UAG_TabAlarm_Refresh(listID);
+	END
+
+	_UAG_TabAlarm_IntMetadata(listHnd, "DraggedColSep", -1);
+	retValue = 0;
+
+	RETURN retValue;
+END
+
+
+//-----------------------------------------------------------------------------
+//
+//	UAG_TabAlarm.Row Public Functions
+//
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		UAG_TabAlarm_Row_Hidden
+//
+//	SUMMARY:
+//		Returns whether a row is hidden. The function is to be called
+//		at the Appearance | Visibility tab of the graphical object.
+//			
+//	PARAMS:
+//		listID			- The alarm list ID number, zero-based
+//		rowID			- The row ID number, zero-based
+//			
+//	RETURNS: 
+//		1 if the row should be hidden / failed or 0 if it should be shown
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION UAG_TabAlarm_Row_Hidden(INT listID, INT rowID)
+	INT retValue = 1;
+	INT listHnd = _UAG_TabAlarm_GetInstance(listID);
+	INT listAN;
+
+	IF ((listHnd < 0) OR (rowID < 0)) THEN
+		RETURN retValue;
+	END
+
+	listAN = _UAG_TabAlarm_IntMetadata(listHnd, "MasterAN");
+	IF (listAN <= 0) THEN
+		RETURN retValue;
+	END
+
+	retValue = (AlarmGetDsp(listAN + rowID, "RecNo") = "");
+
+	RETURN retValue;
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		UAG_TabAlarm_Row_Disabled
+//
+//	SUMMARY:
+//		Returns whether a row is disabled. The function is to be called
+//		at the Access | Disable tab of the graphical object.
+//			
+//	PARAMS:
+//		listID			- The alarm list ID number, zero-based
+//		rowID			- The row ID number, zero-based
+//
+//	RETURNS: 
+//		1 if the column should be disabled / failed or 0 if the column should be shown
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION UAG_TabAlarm_Row_Disabled(INT listID, INT rowID)
+	INT retValue = 0;
+	INT listHnd = _UAG_TabAlarm_GetInstance(listID);
+
+	IF ((listHnd < 0) OR (rowID < 0)) THEN
+		RETURN 1;
+	END
+
+	retValue = (_UAG_TabAlarm_IntMetadata(listHnd, "DraggedColSep") <> -1);	// disable column action when dragging separator
+
+	RETURN retValue;
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		UAG_TabAlarm_Row_ShowDspText
+//
+//	SUMMARY:
+//		Initialises a row of alarm record on the screen according to the column
+//		settings specified to its associated alarm list. This actual painting
+//		of alarm rows is done by UAG_TabAlarm_Refresh() internally.
+//
+//	PARAMS:
+//		listID			- The alarm list ID number, zero-based
+//		rowID			- The row ID number, zero-based
+//			
+//	RETURNS: 
+//		0 if executed successfully or error number if failed
+//
+//	REMARKS:
+//		This function may be called from any dynamic object that supports Metadata.
+//		This excludes Cicode object.
+//		The function only initialises the position of the text line.
+//		The hiding, positioning and formatting of the displayed text is entirely
+//		handled by UAG_TabAlarm_Refresh().
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION UAG_TabAlarm_Row_ShowDspText(INT listID, INT rowID)
+	INT retValue = 274;
+	INT listHnd = _UAG_TabAlarm_GetInstance(listID);
+	INT AN;
+	INT posX;
+	INT posY;
+
+	IF ((listHnd < 0) OR (rowID < 0)) THEN
+		RETURN retValue;
+	END
+
+	IF (_UAG_TabAlarm_IntMetadata(listHnd, "InitiatingCycle") <> c_TABALARM_INITCYCLE_END) THEN
+		AN = DspGetAnCur();
+		IF (AN <= 0) THEN
+			RETURN retValue;
+		END
+		DspAnGetPos(AN, posX, posY);
+		_UAG_TabAlarm_Row_IntMetadata(listHnd, rowID, "MasterAN", AN);			// remember the AN of master object
+		_UAG_TabAlarm_Row_IntMetadata(listHnd, rowID, "Pos", posY - c_TABALARM_ROW_POS_OFFSET);
+	END
+	retValue = 0;
+
+	RETURN retValue;
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		UAG_TabAlarm_Row_HasFocus
+//
+//	SUMMARY:
+//		Returns whether the specified row ID has the keyboard focus.
+//			
+//	PARAMS:
+//		listID			- The alarm list ID number, zero-based
+//		rowID			- The row ID number, zero-based
+//			
+//	RETURNS: 
+//		1 if row has keyboard focus or 0 if not
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION UAG_TabAlarm_Row_HasFocus_alt(INT listID, INT rowID)
+	INT retValue = 0;
+	INT listHnd = _UAG_TabAlarm_GetInstance(listID);
+	INT focusAN;
+
+	IF ((listHnd < 0) OR (rowID < 0)) THEN
+		RETURN retValue;
+	END
+	focusAN = _UAG_TabAlarm_IntMetadata(listHnd, "FocusRowAN");
+	IF (focusAN < 1) THEN
+		RETURN retValue;
+	END
+
+	retValue = (focusAN = _UAG_TabAlarm_Row_IntMetadata(listHnd, rowID, "MasterAN"));
+
+	RETURN retValue;
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		UAG_TabAlarm_Row_Selected
+//
+//	SUMMARY:
+//		Returns whether a row is selected.
+//			
+//	PARAMS:
+//		listID			- The alarm list ID number, zero-based
+//		rowID			- The row ID number, zero-based
+//			
+//	RETURNS: 
+//		1 if row is selected or 0 if not
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION UAG_TabAlarm_Row_Selected(INT listID, INT rowID)
+	INT listHnd = _UAG_TabAlarm_GetInstance(listID);
+
+	IF ((listHnd < 0) OR (rowID < 0) OR (PageInfo(7) = "0")) THEN
+		RETURN 0;
+	END
+
+	RETURN _UAG_TabAlarm_Row_IsSelected(listHnd, rowID);
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		UAG_TabAlarm_Row_Select
+//
+//	SUMMARY:
+//		Selects an alarm row. This is to be called at the left mouse button
+//		down event of the row background box.
+//			
+//	PARAMS:
+//		listID			- The alarm list ID number, zero-based
+//		rowID			- The row ID number, zero-based
+//		rangeSelect		- Whether do range selection (1) or single selection (0)
+//							if not specified, defaults to 0
+//			
+//	RETURNS: 
+//		0 if executed successful or error if failed
+//
+//	REMARKS:
+//		To allow selected rows to be synchronised with the alarm record movement,
+//		alarm record numbers within the row selection are also stored. The stored
+//		alarm record numbers will be synchronised with the row selection whenever
+//		UAG_TabAlarm_Refresh() is called.
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION UAG_TabAlarm_Row_Select(INT listID, INT rowID, INT rangeSelect = 0)
+	INT retValue = 274;
+	INT listHnd = _UAG_TabAlarm_GetInstance(listID);
+	INT listAN;
+	INT rowStart;
+	INT rowEnd;
+
+	// check arguments
+	IF ((listHnd < 0) OR (rowID < 0)) THEN
+		RETURN retValue;
+	END
+	IF (rowID >= _UAG_TabAlarm_IntMetadata(listHnd, "Rows")) THEN
+		RETURN retValue;
+	END
+	listAN = _UAG_TabAlarm_IntMetadata(listHnd, "MasterAN");
+	IF (listAN <= 0) THEN
+		RETURN retValue;
+	END
+	IF (AlarmGetDsp(listAN + rowID, "RecNo") = "") THEN
+		RETURN retValue;
+	END
+
+	rowStart = _UAG_TabAlarm_IntMetadata(listHnd, "SelectedRowStart");
+	rowEnd = _UAG_TabAlarm_IntMetadata(listHnd, "SelectedRowEnd");
+	IF (rangeSelect AND (rowStart >= 0)) THEN
+		// complete selection range
+		rowEnd = rowID;
+	ELSE IF (_UAG_TabAlarm_Row_IsSelected(listHnd, rowID)) THEN
+		// within selection range, clear selection
+		rowStart = -1;
+		rowEnd = -1;
+	ELSE
+		// beyond selection range, single selection
+		rowStart = rowID;
+		rowEnd = rowID;
+	END END
+	_UAG_TabAlarm_IntMetadata(listHnd, "SelectedRowStart", rowStart);
+	_UAG_TabAlarm_IntMetadata(listHnd, "SelectedRowEnd", rowEnd);
+
+	// save alarm record numbers within the selection ranges
+	_UAG_TabAlarm_Row_SaveSelection(listHnd, rowStart, rowEnd);
+
+	retValue = 0;
+
+	RETURN retValue;
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		UAG_TabAlarm_Row_SelectPrev
+//
+//	SUMMARY:
+//		Selects the previous row. This is to be called at the
+//		SHIFT up key-press event of the row background box.
+//			
+//	PARAMS:
+//		listID			- The alarm list ID number, zero-based
+//		rowID			- The row ID number, zero-based
+//		rangeeSelect	- Whether do range selection (1) or single selection (0)
+//							if not specified, defaults to 0
+//			
+//	RETURNS: 
+//		0 if executed successful or error if failed
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION UAG_TabAlarm_Row_SelectPrev(INT listID, INT rowID, INT rangeSelect = 0)
+	INT retValue = 0;
+
+	IF (rangeSelect AND (NOT UAG_TabAlarm_Row_Selected(listID, rowID))) THEN
+		retValue = UAG_TabAlarm_Row_Select(listID, rowID);
+	END
+
+	IF (0 = retValue) THEN
+		retValue = UAG_TabAlarm_Row_Select(listID, rowID - 1, rangeSelect);
+		IF (0 = retValue) THEN
+			KeyUp();
+		END
+	END
+
+	RETURN retValue;
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		UAG_TabAlarm_Row_SelectNext
+//
+//	SUMMARY:
+//		Selects the next row. This is to be called at the
+//		SHIFT down key-press event of the row background box.
+//			
+//	PARAMS:
+//		listID			- The alarm list ID number, zero-based
+//		rowID			- The row ID number, zero-based
+//		rangeeSelect	- Whether do range selection (1) or single selection (0)
+//							if not specified, defaults to 0
+//			
+//	RETURNS: 
+//		0 if executed successful or error if failed
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION UAG_TabAlarm_Row_SelectNext(INT listID, INT rowID, INT rangeSelect = 0)
+	INT retValue = 0;
+
+	IF (rangeSelect AND (NOT UAG_TabAlarm_Row_Selected(listID, rowID))) THEN
+		retValue = UAG_TabAlarm_Row_Select(listID, rowID);
+	END
+
+	IF (0 = retValue) THEN
+		retValue = UAG_TabAlarm_Row_Select(listID, rowID + 1, rangeSelect);
+		IF (0 = retValue) THEN
+			KeyDown();
+		END
+	END
+
+	RETURN retValue;
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		UAG_TabAlarm_Row_DspContextMenu
+//
+//	SUMMARY:
+//		Pops up the context menu for the selected alarm rows. This function is
+//		called in the right mouse button down event of the dynamic objects that
+//		display the background box of the alarm row. If the user invokes the
+//		context menu outside of the selected row range, the existing selected rows
+//		will be deselected and the current row will be automatically selected
+//		prior to popping up the context menu.
+//			
+//	PARAMS:
+//		listID			- The alarm list ID number, zero-based
+//		rowID			- The row ID number, zero-based
+//			
+//	RETURNS: 
+//		0 if executed successfully or error code if failed
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION UAG_TabAlarm_Row_ShowContextMenu(INT listID, INT rowID)
+	INT retValue = 274;
+	INT listHnd = _UAG_TabAlarm_GetInstance(listID);
+	INT listAN;
+	INT listType;
+	INT selection;
+	INT focusAN;
+	INT	iAn;
+	INT		nSelection	= 0;
+	STRING	sDisableAck;
+	STRING	sDisableDis;
+	STRING	sDisableEn;
+	STRING	sDisablePager;
+	STRING	sDisableComment;
+	STRING	sGotoPage;
+	STRING	sInfo;
+	INT rowsSelected;
+	INT infoIndex = -1;
+	INT helpIndex = -1;
+	INT ackIndex = -1;
+	INT		iX;
+	INT		iY;
+	INT		iX_Tmp;
+	INT		iY_Tmp;
+	INT		iRecNo;
+	STRING	sRecNo;
+	STRING	sMenu		= "";
+	INT commentIndex = -1;
+	INT disableIndex = -1;
+	INT enableIndex = -1;
+	INT eventIndex = -1;
+	INT items = 0;
+	INT lastSep = 0;
+	STRING customFn;
+
+	IF ((listHnd < 0) OR (rowID < 0)) THEN
+		RETURN retValue;
+	END
+
+	focusAN = KeyGetCursor();
+	// Remember the row AN that has been right-clicked
+	_UAG_TabAlarm_IntMetadata(listHnd, "FocusRowAN", focusAN);
+
+	// select this row if it is outside the existing selection
+	IF NOT _UAG_TabAlarm_Row_IsSelected(listHnd, rowID) THEN
+		// beyond selection range, single selection
+		_UAG_TabAlarm_IntMetadata(listHnd, "SelectedRowStart", rowID);
+		_UAG_TabAlarm_IntMetadata(listHnd, "SelectedRowEnd", rowID);
+		_UAG_TabAlarm_Row_SaveSelection(listHnd, rowID, rowID);
+	END
+
+	listAN = _UAG_TabAlarm_IntMetadata(listHnd, "MasterAN");
+	listType = AlarmGetInfo(listAN, 3);
+	rowsSelected = Abs(_UAG_TabAlarm_IntMetadata(listHnd, "SelectedRowStart") - _UAG_TabAlarm_IntMetadata(listHnd, "SelectedRowEnd")) + 1;
+	// Show default context menu
+													 
+	IF (NOT _UAG_TabAlarm_IntMetadata(listHnd, "ViewOnly")) THEN
+		listType = AlarmGetInfo(_UAG_TabAlarm_IntMetadata(listHnd, "MasterAN"), 3);
+		iAN= _UAG_TabAlarm_IntMetadata(listHnd, "MasterAN")+ rowID
+		sRecNo = AlarmGetDsp(iAN, "RecNo");
+	
+		IF sRecNo = "" THEN
+			RETURN -1;
+		END
+		iRecNo = StrToInt(sRecNo);	
+		sDisableComment= "!";
+
+														 
+		IF NOT UAG_TabAlarm_GetAckPriv() THEN
+			sDisableAck = "!";
+		END
+		
+		IF NOT UAG_TabAlarm_GetDisablePriv() THEN
+			sDisableDis = "!";
+			sDisableEn = "!";
+			sDisablePager = "!";
+		END
+		SELECT CASE listType
+			CASE 0	! Last Alarm display
+				sDisableEn = "!";
+				sDisableComment= "!";
+			CASE 1	! Alarm page
+				sDisableEn = "!";
+			CASE 2	! All acknowledged ON alarms
+				sDisableAck = "!";
+				sDisableEn = "!";
+			CASE 3	! Disabled page
+				sDisableAck = "!";
+				sDisableDis = "!";
+				sDisablePager = "!";
+			CASE 4	! Alle Alarme
+				sDisableAck = "!";
+				sDisableEn = "!";
+			CASE 5	! Pager page
+				sDisableAck = "!";
+				sDisableDis = "!";
+			CASE 10	! Summary page
+				sDisableAck = "!";
+				sDisableEn = "!";
+			CASE 15	! Sequence of event list
+				sDisableAck = "!";
+				sDisableEn = "!";
+				sDisableComment= "";
+		END SELECT
+	
+		sInfo = AlarmGetDsp(iAN, "Tag");
+
+		sMenu = sInfo + ",," + 
+		
+			sDisableAck + StrToLocalText("Quittieren") + "," + 
+			sDisableDis + StrToLocalText("Sperren") + "," +	
+			sDisableEn + StrToLocalText("Freigeben") + ",," +
+			sDisablePager + StrToLocalText("Pager") + ",," +
+			StrToLocalText("Alarmbild")+ ",," +
+			"Alarmtrend Neu"+ "," +
+			"Alarmtrend +"+ "," +
+			sDisableComment	+StrToLocalText("@(Comment)...");
+		DspPopupMenu(0, sMenu); 
+		DspGetMouse(iX, iY);;
+		nSelection = DspPopupMenu(-1,"",iX,iY);
+ 	  
+		SELECT CASE nSelection
+	
+			CASE 1	! Display Alarm Info
+	        	UAG_Alarms_DspInfo(iAN); // RW 16 Apr 2007 - this used to call UAG_Alarms_DspInfoRec(iRecNo)
+				INT3=listID;
+				INT3=rowID;
+ 				
+			CASE 2	! Acknowledge alarm
+				retValue = UAG_TabAlarm_Row_Ack(listID, rowID);
+			
+			CASE 3	! Disable alarm
+				retValue = UAG_TabAlarm_Row_Disable(listID, rowID);
+			
+			CASE 4	! Enable alarm
+				retValue = UAG_TabAlarm_Row_Enable(listID, rowID);
+				
+			CASE 5	! Goto page associated with alarm
+				sRecNo =AlarmGetDsp(iAN, "TAG")
+
+				DspAlarmPagingForm(sInfo,AlarmGetDsp(iAN, "NAME"),AlarmGetDsp(iAN, "DESC"),AlarmGetDsp(iAN, "CATEGORY"),AlarmGetDsp(iAN, "AREA"));
+			CASE 6	! Goto page associated with alarm
+				retValue = UAG_TabAlarm_Row_ShowHelp(listID, rowID);
+			CASE 7	! Goto page associated with alarm
+				UAG_Alarm_22(sInfo)
+			CASE 8	! Goto page associated with alarm
+				UAG_Alarm_22_Z(sInfo)
+			CASE 9	! Goto page associated with alarm
+				retValue = UAG_TabAlarm_Row_AddComment(listID, rowID);
+ 	  
+		END SELECT
+		
+	END
+								  
+
+	// restore cursor focus after menu selection
+	IF (focusAN > 0) THEN
+		Sleep(0);
+		KeySetCursor(focusAN);
+	END
+
+	// Clear the row AN that has been right-clicked
+	_UAG_TabAlarm_IntMetadata(listHnd, "FocusRowAN", 0);
+					   
+//	SELECT CASE selection
+//	CASE 1
+//		retValue = UAG_TabAlarm_Row_ShowInfo(listID, rowID);
+//	CASE 2
+//		retValue = UAG_TabAlarm_Row_ShowHelp(listID, rowID);
+//	CASE 3
+//		retValue = UAG_TabAlarm_Row_Ack(listID, rowID);
+//	CASE 4
+//		retValue = UAG_TabAlarm_Row_Disable(listID, rowID);
+//	CASE 5
+												   
+//		retValue = Tab
+			
+//	END SELECT
+
+	RETURN retValue;
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		UAG_TabAlarm_Row_ShowHelp
+//
+//	SUMMARY:
+//		Displays the help page of the alarm displayed at the specified row.
+//			
+//	PARAMS:
+//		listID			- The alarm list ID number, zero-based
+//		rowID			- The row ID number, zero-based
+//			
+//	RETURNS: 
+//		0 if executed successfully or error code if failed
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION UAG_TabAlarm_Row_ShowHelp(INT listID, INT rowID)
+	INT retValue = 274;
+	INT listHnd = _UAG_TabAlarm_GetInstance(listID);
+	INT listAN;
+	STRING helpPage;
+
+	IF ((listHnd < 0) OR (rowID < 0)) THEN
+		RETURN retValue;
+	END
+
+	listAN = _UAG_TabAlarm_IntMetadata(listHnd, "MasterAN");
+	IF (listAN <= 0) THEN
+		RETURN retValue;
+	END
+
+	helpPage = _UAG_TabAlarm_AlarmGetDsp(listID, listAN + rowID, "Help");
+	IF (helpPage = "") THEN
+				  
+		RETURN retValue;
+	END
+
+	retValue = PageDisplay(helpPage);
+
+	RETURN retValue;
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		UAG_TabAlarm_Row_ShowInfo
+//
+//	SUMMARY:
+//		Displays the information page of the alarm displayed at the specified row.
+//			
+//	PARAMS:
+//		listID			- The alarm list ID number, zero-based
+//		rowID			- The row ID number, zero-based
+//			
+//	RETURNS: 
+//		0 if executed successfully or error code if failed
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION UAG_TabAlarm_Row_ShowInfo(INT listID, INT rowID)
+	INT retValue = 274;
+	INT listHnd = _UAG_TabAlarm_GetInstance(listID);
+	INT frmHnd;
+	INT recordAN;
+	INT posX
+	INT posY;
+	INT type;
+	INT nextFormRowNumber = 0;
+	INT formMaxRows = 20;
+	STRING title;
+
+	IF ((listHnd < 0) OR (rowID < 0)) THEN
+		RETURN retValue;
+	END
+
+	DspGetMouse(posX, posY);
+	PageTransformCoords(WinNumber(), posX, posY, posX, posY, 0);
+				
+	recordAN = _UAG_TabAlarm_IntMetadata(listHnd, "MasterAN") + rowID;
+	IF (AlarmGetDsp(recordAN, "RecNo") = "") THEN
+		RETURN retValue;
+	END
+
+	type = TabAlarm_GetInfo(listID, 3);
+	SELECT CASE type
+	CASE 10
+		title = "@(Summary Information)";
+	CASE 15, 16
+		title = "@(Event Information)";
+	CASE ELSE
+		title = "@(Alarm Information)";
+	END SELECT
+	
+	frmHnd = FormNew(title, 70, formMaxRows, 1+4+8);
+	IF (frmHnd < 0) THEN
+		RETURN retValue;
+	END
+
+	// Property									Value
+	FormPrompt(0,  0, "@(Tag)");				FormPrompt(30,  0, _UAG_TabAlarm_AlarmGetDsp(listID, recordAN, "Tag"));
+	FormPrompt(0,  1, "@(Name)");				FormPrompt(30,  1, _UAG_TabAlarm_AlarmGetDsp(listID, recordAN, "Name"));
+	FormPrompt(0,  2, "@(Description)");		FormPrompt(30,  2, _UAG_TabAlarm_AlarmGetDsp(listID, recordAN, "Desc"));
+	FormPrompt(0,  3, "@(Category)");			FormPrompt(30,  3, _UAG_TabAlarm_AlarmGetDsp(listID, recordAN, "Category"));
+	FormPrompt(0,  4, "@(Priority)");			FormPrompt(30,  4, _UAG_TabAlarm_AlarmGetDsp(listID, recordAN, "Priority"));
+	FormPrompt(0,  5, "@(OnTime)");			FormPrompt(30,  5, _UAG_TabAlarm_AlarmGetDsp(listID, recordAN, "OnTime"));
+	FormPrompt(0,  6, "@(OnDate)");			FormPrompt(30,  6, _UAG_TabAlarm_AlarmGetDsp(listID, recordAN, "OnDate"));
+	 
+	FormPrompt(0,  7, "@(OffTime)");			FormPrompt(30,  7, _UAG_TabAlarm_AlarmGetDsp(listID, recordAN, "OffTime"));
+	FormPrompt(0,  8, "@(OffDate)");			FormPrompt(30,  8, _UAG_TabAlarm_AlarmGetDsp(listID, recordAN, "OffDate"));
+	FormPrompt(0,  9, "@(Acknowledge Time)");	FormPrompt(30,  9, _UAG_TabAlarm_AlarmGetDsp(listID, recordAN, "AckTime"));
+	FormPrompt(0, 10, "@(Acknowledge Date)");	FormPrompt(30, 10, _UAG_TabAlarm_AlarmGetDsp(listID, recordAN, "AckDate"));
+	FormPrompt(0, 11, "@(Duration)");			FormPrompt(30, 11, _UAG_TabAlarm_AlarmGetDsp(listID, recordAN, "DeltaTime"));
+	FormPrompt(0, 12, "@(State)");				FormPrompt(30, 12, _UAG_TabAlarm_AlarmGetDsp(listID, recordAN, "State"));
+	FormPrompt(0, 13, "@(Cluster)");			FormPrompt(30, 13, _UAG_TabAlarm_AlarmGetDsp(listID, recordAN, "Cluster"));
+	
+
+	FormPosition(posX, posY, 0);
+	retValue = FormRead(1);
+
+	RETURN retValue;
+END
+
+INT
+FUNCTION
+_UAG_TabAlarm_AddToInformationForm(INT nextRowNumber, STRING property, STRING value)
+	FormPrompt(0, nextRowNumber, property);
+	FormPrompt(30, nextRowNumber, value);
+	RETURN nextRowNumber + 1;
+END
+
+//----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		UAG_TabAlarm_Row_AddComment
+//
+//	SUMMARY:
+//		Adds comment to the alarm displayed at the specified row.
+//			
+//	PARAMS:
+//		listID			- The alarm list ID number, zero-based
+//		rowID			- The row ID number, zero-based
+//			
+//	RETURNS: 
+//		0 if executed successfully or error code if failed
+//
+//----------------------------------------------------------------------------
+INT FUNCTION UAG_TabAlarm_Row_AddComment(INT listID, INT rowID)
+	INT retValue = 274;
+	INT listAN;
+	STRING tag;
+	STRING comment;
+
+	IF ((listID < 0) OR (rowID < 0)) THEN
+		RETURN retValue;
+	END
+
+	listAn = UAG_TabAlarm_GetAn(listID);
+	IF (listAN <= 0) THEN
+		RETURN retValue;
+	END
+
+	tag = _UAG_TabAlarm_AlarmGetDsp(listID, listAN + rowID, "Tag");
+	IsError();
+	comment = Input("@(Comment) [" + tag + "]", "@(Enter Comment):", "");
+	retValue = IsError();
+	IF (retValue = 0) THEN
+		retValue = AlarmComment(comment, listAN + rowID);
+	END
+	IF (retValue = 0) THEN
+		UAG_TabAlarm_ReloadDataByAN(listAN);
+	ELSE IF (retValue <> 299) THEN
+		Message("@(Error)", "[" + IntToStr(retValue) + "] " + ErrMsg(retValue), 0);
+	END END
+
+	RETURN retValue;
+END
+
+//----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		UAG_TabAlarm_Row_AddEvent
+//
+//	SUMMARY:
+//		Adds an event to the SOE.
+//			
+//	PARAMS:
+//		listID			- The alarm list ID
+//		rowID			- The row ID number, zero-indexed
+//			
+//	RETURNS: 
+//		0 if executed successfully or error code if failed
+//
+//----------------------------------------------------------------------------
+INT FUNCTION UAG_TabAlarm_Row_AddEvent_alt(STRING listID, INT rowID)
+	INT retValue = 274;
+	INT listAN;
+	STRING tag;
+	STRING cluster;
+	STRING msg;
+
+	IF (rowID < 0) THEN
+		RETURN retValue;
+	END
+
+	listAn = UAG_TabAlarm_GetAn(listID);
+	IF (listAN <= 0) THEN
+		RETURN retValue;
+	END
+
+	tag = _UAG_TabAlarm_AlarmGetDsp(listID, listAN + rowID, "Tag");
+	cluster = _UAG_TabAlarm_AlarmGetDsp(listID, listAN + rowID, "Cluster");
+	IsError();
+	msg = Input("@(Message) [" + tag + "]", "@(Enter Message):", "");
+	retValue = IsError();
+	IF (retValue = 0) THEN
+		retValue = SOEEventAdd(TimestampCurrent(), msg, tag, cluster);
+	END
+	IF (retValue = 0) THEN
+		UAG_TabAlarm_ReloadDataByAN(listAN);
+	ELSE IF (retValue <> 299) THEN
+		Message("@(Error)", "[" + IntToStr(retValue) + "] " + ErrMsg(retValue), 0);
+	END END
+
+	RETURN retValue;
+END
+																			   
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		UAG_TabAlarm_Row_Ack
+//
+//	SUMMARY:
+//		Acknowledges the alarm displayed at the specified row.
+//			
+//	PARAMS:
+//		listID			- The alarm list ID number, zero-based
+//		rowID			- The row ID number, zero-based
+//			
+//	RETURNS: 
+//		0 if executed successfully or error code if failed
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION UAG_TabAlarm_Row_Ack(INT listID, INT rowID)
+	INT retValue = 274;
+	INT listHnd = _UAG_TabAlarm_GetInstance(listID);
+	INT listAN;
+	INT recNo;
+	STRING field;
+	STRING clusterName;
+	INT rowStart;
+	INT rowEnd;
+	INT rowSwap;
+	INT err;		 
+
+	IF ((listHnd < 0) OR (rowID < 0)) THEN
+		RETURN retValue;
+	END
+
+	// check privilege
+	IF (NOT UAG_TabAlarm_GetAckPriv(1)) THEN
+		RETURN 276;
+	END
+
+	listAN = _UAG_TabAlarm_IntMetadata(listHnd, "MasterAN");
+	IF (listAN <= 0) THEN
+		RETURN retValue;
+	END
+
+	// get selected rows
+	rowStart = _UAG_TabAlarm_IntMetadata(listHnd, "SelectedRowStart");
+	rowEnd = _UAG_TabAlarm_IntMetadata(listHnd, "SelectedRowEnd");
+	IF (rowEnd < rowStart) THEN
+		rowSwap = rowStart;
+		rowStart = rowEnd;
+		rowEnd = rowSwap;
+	END
+	IF ((rowID < rowStart) OR (rowID > rowEnd)) THEN
+		// outside selection, work on this row only
+		rowStart = rowID;
+		rowEnd = rowID;
+	END
+
+	_UAG_TabAlarm_TaskCall("UAG_TabAlarmSnd_SilenceOnAck", "");	// Optionally include UAG_TabAlarmSnd.ci if using default alarm sound implementation
+
+	// action on all selected rows (in reverse order to mininize shuffle under default settings)
+	clusterName = _UAG_TabAlarm_StrMetadata(listHnd, "ClusterName");
+	rowID = rowEnd;
+	retValue = 0;							 
+	WHILE (rowID >= rowStart) DO
+		err = AlarmAck(0,listAn + rowID);
+		IF err <> 0 AND retValue = 0 THEN
+			retValue = err;
+		END
+		rowID = rowID - 1;
+	END
+
+	RETURN retValue;
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		UAG_TabAlarm_Row_Disable
+//
+//	SUMMARY:
+//		Disables the alarm displayed at the specified row.
+//			
+//	PARAMS:
+//		listID			- The alarm list ID number, zero-based
+//		rowID			- The row ID number, zero-based
+//			
+//	RETURNS: 
+//		0 if executed successfully or error code if failed
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION UAG_TabAlarm_Row_Disable(INT listID, INT rowID)
+	INT retValue = 274;
+	INT listHnd = _UAG_TabAlarm_GetInstance(listID);
+	INT listAN;
+	INT recNo = -1;
+	STRING field;
+	STRING clusterName;
+	INT rowStart;
+	INT rowEnd;
+	INT rowSwap;
+	INT err;
+
+	IF (listHnd < 0) THEN
+		RETURN retValue;
+	END
+
+	// check privilege
+	IF (NOT UAG_TabAlarm_GetDisablePriv(1)) THEN
+		RETURN 276;
+	END
+
+	listAN = _UAG_TabAlarm_IntMetadata(listHnd, "MasterAN");
+	IF (listAN <= 0) THEN
+		RETURN retValue;
+	END
+
+	// get selected rows
+	rowStart = _UAG_TabAlarm_IntMetadata(listHnd, "SelectedRowStart");
+	rowEnd = _UAG_TabAlarm_IntMetadata(listHnd, "SelectedRowEnd");
+	IF (rowEnd < rowStart) THEN
+		rowSwap = rowStart;
+		rowStart = rowEnd;
+		rowEnd = rowSwap;
+	END
+	IF ((rowID < rowStart) OR (rowID > rowEnd)) THEN
+		// outside selection, work on this row only
+		rowStart = rowID;
+		rowEnd = rowID;
+	END
+
+	// action on all selected rows (in reverse order to mininize shuffle under default settings)
+	clusterName = _UAG_TabAlarm_StrMetadata(listHnd, "ClusterName");
+	rowID = rowEnd;
+	retValue = 0;							 
+	WHILE (rowID >= rowStart) DO
+		err = AlarmDisable(0, listAn + rowID);
+		IF err <> 0 AND retValue = 0 THEN
+			retValue = err;
+		END
+		rowID = rowID - 1;
+	END
+
+	RETURN retValue;
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		UAG_TabAlarm_Row_Enable
+//
+//	SUMMARY:
+//		Enables the alarm displayed at the specified row.
+//			
+//	PARAMS:
+//		listID			- The alarm list ID number, zero-based
+//		rowID			- The row ID number, zero-based
+//							If this is less than 0, action applies to all selected rows
+//			
+//	RETURNS: 
+//		0 if executed successfully or error code if failed
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION UAG_TabAlarm_Row_Enable(INT listID, INT rowID = -1)
+	INT retValue = 274;
+	INT listHnd = _UAG_TabAlarm_GetInstance(listID);
+	INT listAN;
+	INT recNo = -1;
+	STRING field;
+	STRING clusterName;
+	INT rowStart;
+	INT rowEnd;
+	INT rowSwap;
+	INT err;
+
+	IF (listHnd < 0) THEN
+		RETURN retValue;
+	END
+
+	// check privilege
+	IF (NOT UAG_TabAlarm_GetDisablePriv(1)) THEN
+		RETURN 276;
+	END
+
+	listAN = _UAG_TabAlarm_IntMetadata(listHnd, "MasterAN");
+	IF (listAN <= 0) THEN
+		RETURN retValue;
+	END
+
+	// get selected rows
+	rowStart = _UAG_TabAlarm_IntMetadata(listHnd, "SelectedRowStart");
+	rowEnd = _UAG_TabAlarm_IntMetadata(listHnd, "SelectedRowEnd");
+	IF (rowEnd < rowStart) THEN
+		rowSwap = rowStart;
+		rowStart = rowEnd;
+		rowEnd = rowSwap;
+	END
+	IF ((rowID < rowStart) OR (rowID > rowEnd)) THEN
+		// outside selection, work on this row only
+		rowStart = rowID;
+		rowEnd = rowID;
+	END
+
+	// action on all selected rows (in reverse order to mininize shuffle under default settings)
+	clusterName = _UAG_TabAlarm_StrMetadata(listHnd, "ClusterName");
+	rowID = rowEnd;
+	retValue = 0;
+	WHILE (rowID >= rowStart) DO
+		err = AlarmEnable(0, listAn + rowID);
+		IF err <> 0 AND retValue = 0 THEN
+			retValue = err;
+		END
+		rowID = rowID - 1;
+	END
+
+	RETURN retValue;
+END
+
+
+//-----------------------------------------------------------------------------
+//
+//	Event Callback Functions (control type specific)
+//
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		_UAG_TabAlarm_Dsp_DataChange
+//
+//	SUMMARY:
+//		Callback function responses to data change event of an alarm list
+//			
+//	PARAMS:
+//		listAN			- The animation number of the calling list
+//			
+//	RETURNS: 
+//		0 always
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION _UAG_TabAlarm_Dsp_DataChange_alt(INT listAN)
+	INT retValue = 0;
+	INT listID = _TabAlarm_GetIDByAN(listAN);
+	INT count;
+	INT listHnd;
+
+	IF (listID < 0) THEN
+		RETURN retValue;
+	END
+
+	count = PageGetInt("_UAG_TabAlarm_" + IntToStr(listID) + "_CallbackCount");
+	PageSetInt("_UAG_TabAlarm_" + IntToStr(listID) + "_CallbackCount", count + 1);
+
+	// if the display type is changed, reload columns
+	listHnd = _UAG_TabAlarm_GetInstance(listID);
+
+
+	IF (_UAG_TabAlarm_IntMetadata(listHnd, "InitiatingCycle") = c_TABALARM_INITCYCLE_END) THEN
+		IF (_UAG_TabAlarm_IntMetadata(listHnd, "Type") <> AlarmGetInfo(listAN, 3)) THEN
+			UAG_TabAlarm_LoadConfig_alt(listID);
+			RETURN retValue;
+		END
+	END
+
+	UAG_TabAlarm_Refresh(listID);
+	
+	RETURN retValue;
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		_UAG_TabAlarm_Print_ButtonClick
+//
+//	SUMMARY:
+//		Callback function for button click event on the alarm print form
+//			
+//	PARAMS:
+//		None
+//			
+//	RETURNS: 
+//		0 if successful or error number if failed
+//
+//-----------------------------------------------------------------------------
+
+PRIVATE
+INT FUNCTION _UAG_TabAlarm_Print_ButtonClick_alt()
+	INT retValue = 274;
+	INT frmHnd;
+	INT fieldHnd;
+	INT listHnd;
+	STRING command;
+	STRING tempFile;
+	STRING outputFile;
+
+	// determine what option has been chosen by user
+	FormCurr(frmHnd, fieldHnd);
+	IF (NOT FormActive(frmHnd)) THEN
+		RETURN retValue;
+	END
+	FormGetCurrInst(listHnd, command);
+
+	// get data from the form and close it
+	FormGetData(frmHnd);
+	FormDestroy(frmHnd);
+
+	// Generate output file
+	tempFile = _UAG_TabAlarm_Print_CreateTempFile_alt(listHnd, m_TABALARM_Print_OptAllPages, m_TABALARM_Print_TxtPages);
+	IF ("" = tempFile) THEN
+		UAG_SystemInfo("_UAG_TabAlarm_Print_ButtonClick", "System", "@(Print engine failed to create temporary output file.)" ,"-","-","_",TaskCluster(),_UAG_Fehler);
+		RETURN 264;
+	END
+
+	// Send temporary file to printer / output file
+	SELECT CASE command
+	CASE "Print"
+		retValue = Exec("rundll32.exe " + GetEnv("WinDir") + "\System32\mshtml.dll,PrintHTML ^"" + tempFile + "^"", 1);
+		IF (retValue <> 0) THEN
+			UAG_SystemInfo("_UAG_TabAlarm_Print_ButtonClick", "System", "@(Print engine failed to initialize Internet Explorer.)" ,"-","-","_",TaskCluster(),_UAG_Fehler);
+		END
+	CASE "Export"
+		outputFile = FormSaveAsFile(StrToLocalText("@(Alarm Export)"), PathToStr("[Data]:\Alarm Export.html"), "Html Files|*.html|All Files (*.*)|*.*|", "html");
+		IF (StrLength(outputFile) > 0) THEN
+			IF (FileExist(outputFile + ".old")) THEN FileDelete(outputFile + ".old"); END
+			IF (FileExist(outputFile)) THEN FileRename(outputFile, outputFile + ".old"); END
+			FileCopy(tempFile, outputFile, 0);
+		END
+	END SELECT
+
+	RETURN retValue;
+END
+
+
+//-----------------------------------------------------------------------------
+//
+//	Private Helper Functions (control type specific)
+//
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		_UAG_TabAlarm_DspInit
+//
+//	SUMMARY:
+//		Initialises the last alarm list and adjust display while the page is shown.
+//		This is called by either UAG_TabAlarm_Dsp() or UAG_TabAlarm_DspLast().
+//			
+//	PARAMS:
+//		listID			- The alarm list ID number, zero-based
+//		listAN			- The AN of the alarm list used by AlarmDsp()
+//		count			- The number of alarms to display
+//		clusterName		- The clustrer name to which the alarms belong. Optional, default = "" (all clusters)
+//		listWidth		- The width of the list in pixels
+//							This parameter is optional, only applicable to
+//							alarm templates provided by Tab_Style_Include project
+//		formatName		- The custom format name defined in INI parameters [Format]
+//							Plese refer to description of the same parameters in UAG_TabAlarm_Dsp() for details. 
+//		formatString	- The custom format string to be used directly if formatName is not defined or empty
+//							This parameter is optional. If both formatName and formatString is not defined,
+//							column setting will be based on alarm format defined in alarm category 0.
+//		autoFit			- The width of the columns will be automatically adjusted continuously
+//							Plese refer to description of the same parameters in UAG_TabAlarm_Dsp() for details. 
+//		viewOnly		- Whether alarm list is view only and disable built-in GUI for controls
+//							Plese refer to description of the same parameters in UAG_TabAlarm_Dsp() for details. 
+//		listHeight		- The height of the list in pixels
+//							This parameter is optional, only applicable to
+//							alarm templates provided by Tab_Style_Include project
+//
+//	RETURNS: 
+//		0 if run successfully or error number if failed
+//
+//	REMARKS:
+//		This funciton should be called on a separate Cicode object per alarm list.
+//		Multiple alarm lists are allowed per page
+//
+//-----------------------------------------------------------------------------
+
+PRIVATE
+INT FUNCTION _UAG_TabAlarm_DspInit(INT listID, INT listAN, INT count, STRING clusterName = "", INT listWidth = -1, STRING formatName = "", STRING formatString = "", INT autoFit = 0, INT viewOnly = 0, INT listHeight = 0,int IFarbe=0)
+	INT retValue = 274;
+	INT listHnd;
+
+	IF (listID < 0) THEN
+		RETURN retValue;
+	END
+
+	listHnd = _UAG_TabAlarm_GetInstance(listID);
+	IF (listHnd < 0) THEN
+		RETURN retValue;
+	END
+
+	IF NOT m_SemRefreshTimeoutLoaded THEN
+		m_SemRefreshTimeout = StrToInt(ParameterGet("Alarm", "AlarmListRequestTimeout", "10")) + 5;
+		m_SemRefreshTimeoutLoaded = TRUE;
+	END
+							 
+	// get background color mode
+	IF (PageInfo(7) = "0") THEN
+		UAG_TabAlarm_SetBgColorMode();
+
+		// initialize customization
+		_UAG_TabAlarm_Custom_Init();
+	END
+
+	// Only do animation after Page Shown event is fired
+	IF (PageInfo(25) = "0") THEN
+		_UAG_TabAlarm_IntMetadata(listHnd, "InitiatingCycle", c_TABALARM_INITCYCLE_PRE);
+
+		// initialises meta data once at page entry
+		_UAG_TabAlarm_ResetMetadata(listHnd);
+
+		// clear row selection
+		_UAG_TabAlarm_Row_SaveSelection(listHnd, -1, -1);
+
+		_UAG_TabAlarm_IntMetadata(listHnd, "MasterAN", listAN);	// MasterAN must be set before ID
+		_UAG_TabAlarm_IntMetadata(listHnd, "ID", listID);		// to allow it to be referred by AN
+		_UAG_TabAlarm_IntMetadata(listHnd, "Rows", count);
+		_UAG_TabAlarm_StrMetadata(listHnd, "ClusterName", clusterName);
+		_UAG_TabAlarm_StrMetadata(listHnd, "FormatName", formatName);
+		UAG_TabAlarm_SetFormatStringDefault(listAN, formatString);
+		_UAG_TabAlarm_IntMetadata(listHnd, "AutoFit", autoFit);
+		_UAG_TabAlarm_IntMetadata(listHnd, "ViewOnly", viewOnly);
+		IF (listWidth > 0) THEN
+			_UAG_TabAlarm_IntMetadata(listHnd, "Width", listWidth);
+		END
+		_UAG_TabAlarm_IntMetadata(listHnd, "Height", listHeight);
+				 
+
+		// <TODO> Un-sort alarm list for now, as no easy way to work out sorting direction
+		AlarmSetInfo(listAN, 9, 0);
+		IF IFarbe THEN
+			UAG_Alarms_Set_PagingAlmDsp(listAN)
+		END
+													   
+
+
+		RETURN 0;
+	END
+	IF (_UAG_TabAlarm_IntMetadata(listHnd, "InitiatingCycle") = c_TABALARM_INITCYCLE_PRE) THEN
+		// Before Page Is shown event is triggered, ensure only execute once
+		_UAG_TabAlarm_IntMetadata(listHnd, "InitiatingCycle", c_TABALARM_INITCYCLE_ING);
+
+		// Load alarm column formats
+		TaskNew("UAG_TabAlarm_LoadConfig", IntToStr(listID) + ",^"" + formatName + "^"", 1);
+	ELSE
+		IF (_UAG_TabAlarm_IntMetadata(listHnd, "InitiatingCycle") = c_TABALARM_INITCYCLE_END) THEN
+			// after information is initialised, do runtime adjustments
+
+			// Update idle time refresh timer
+			IF _UAG_TabAlarm_IntMetadata(listHnd, "RefreshSkip") <= 0 THEN
+				_UAG_TabAlarm_IntMetadata(listHnd, "RefreshSkip", c_TABALARM_PAGESCAN_IDLEINTVAL);
+			ELSE
+				_UAG_TabAlarm_IntMetadata(listHnd, "RefreshSkip", _UAG_TabAlarm_IntMetadata(listHnd, "RefreshSkip") - 1);
+			END
+
+			// only adjust position for a limited number of page scans
+			IF (_UAG_TabAlarm_IntMetadata(listHnd, "RefreshTimer") <= 0) THEN
+				RETURN 0;
+			ELSE
+				_UAG_TabAlarm_IntMetadata(listHnd, "RefreshTimer", _UAG_TabAlarm_IntMetadata(listHnd, "RefreshTimer") - 1);
+			END
+		END
+	END
+	
+	RETURN 0;
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		_UAG_TabAlarm_Print_CreateTempFile
+//
+//	SUMMARY:
+//		Creates a temporary file listing the contents of the alarm list
+//			
+//	PARAMS:
+//		listHnd			- A unique handle number that identifies a particular list
+//		outAllPages		- output all pages of alarms available in the alarm list
+//		pages			- number of pages in the alarm list starting from current page
+//							to be output
+//			
+//	RETURNS: 
+//		The name of the temporary file created or empty string if failed
+//
+//-----------------------------------------------------------------------------
+
+PRIVATE
+STRING FUNCTION _UAG_TabAlarm_Print_CreateTempFile_alt(INT listHnd, INT outAllPages, INT pages = -1)
+	STRING retValue = "";
+	INT pageWaitMS = 300;	// wait time in millisecond between going to next page in alarm list
+	INT listAN;
+	INT errLevelOld;
+	INT fileHnd;
+	INT pageCount;
+	INT pageOffsetOld;
+	INT pageNumber;
+	INT rows;
+	INT rowCount;
+	INT columns;
+	INT colCount;
+
+	// check arguments
+	IF (listHnd < 0) THEN
+		RETURN retValue;
+	END
+
+	IF (outAllPages) THEN
+		pages = 2000000000;	// no limit for number of pages print
+	ELSE IF (pages < 1) THEN
+		pages = 1;
+	END END
+
+	listAN = _UAG_TabAlarm_IntMetadata(listHnd, "MasterAN");
+	IF (listAN <= 0) THEN
+		RETURN retValue;
+	END
+	rows = _UAG_TabAlarm_IntMetadata(listHnd, "Rows");
+	columns = _UAG_TabAlarm_IntMetadata(listHnd, "Columns");
+
+	// enable user error checking to prevent premature exit
+	errLevelOld = ErrSetLevel(1);
+
+	// generate output file by browsing alarm list
+	retValue = GetEnv("Temp") + "\_UAG_TabAlarm_Print.html";
+	fileHnd = FileOpen(retValue, "w");
+	IF (fileHnd < 0) THEN
+		ErrSetLevel(errLevelOld);
+		RETURN "";
+	END
+
+	// show feedback dialog
+	_UAG_ProgressMessageShow("@(Alarm Print Progress)", "@(Generating alarm list for printing...)", 50);
+
+	// freeze alarm list refresh
+	_UAG_TabAlarm_IntMetadata(listHnd, "RefreshEnable", 0);
+
+	FileWriteLn(fileHnd, "<HTML>^n<HEAD>^n<TITLE>Alarm Export File</TITLE>^n</HEAD>^n<BODY>");
+	FileWriteLn(fileHnd, "<TABLE BORDER=0 CELLPADDING=2>");
+
+	// print column headings
+	FileWrite(fileHnd, "<TR>");
+	colCount = 0;
+	WHILE (colCount < columns) DO
+		FileWrite(fileHnd, "<TH>");
+		FileWrite(fileHnd, StrToLocalText(_UAG_TabAlarm_Col_StrMetadata(listHnd, colCount, "LocalText")));
+		FileWrite(fileHnd, "</TH>");
+		colCount = colCount + 1;
+		SLEEPMS(10);
+	END
+	FileWriteLn(fileHnd, "</TR>");
+	
+	// print alarm rows
+	pageNumber = AlarmGetInfo(listAN, 0);
+	pageOffsetOld = AlarmGetInfo(listAN, 1);
+	IF (outAllPages) THEN
+		// go to first page if output all pages
+		AlarmSetInfo(listAN, 1, 0);
+		SleepMS(pageWaitMS);
+		pageNumber = AlarmGetInfo(listAN, 0);
+	END
+	pageCount = 0;
+	WHILE ((pageCount < pages) AND (NOT _UAG_ProgressMessageIsCancelled())) DO
+		rowCount = 0;
+		WHILE ((rowCount < rows)) DO
+			IF (AlarmGetDsp(listAN + rowCount, "RecNo") = "") THEN
+				// exit loop if row is empty
+				rowCount = rows;
+				pageCount = pages;
+			ELSE
+				// provide feedback to the user while collecting information
+				_UAG_ProgressMessageUpdate(StrToLocalText("@(Collecting alarm records from page)") + " " + IntToStr(pageNumber) + " " + StrToLocalText("@(of the alarm list...)"));
+
+				FileWrite(fileHnd, "<TR>");
+				colCount = 0;
+				WHILE (colCount < columns) DO
+					FileWrite(fileHnd, "<TD>");
+					// use custom function instead of std. AlarmGetDsp() to get formatted field value
+					FileWrite(fileHnd, _UAG_TabAlarm_AlarmGetDsp(listHnd, listAN + rowCount, _UAG_TabAlarm_Col_StrMetadata(listHnd, colCount, "FieldName")));
+					FileWrite(fileHnd, "</TD>");
+					colCount = colCount + 1;
+				END
+				FileWriteLn(fileHnd, "</TR>");
+			END
+			SleepMS(10);
+			rowCount = rowCount + 1;
+		END
+
+		// browse to next page
+		pageCount = pageCount + 1;
+		pageNumber = pageNumber + 1;
+		IF (AlarmDspNext(listAN) = 0) THEN
+			SleepMS(pageWaitMS);
+			IF (pageNumber > AlarmGetInfo(listAN, 0)) THEN
+				// exit loop as cannot browse further
+				pageCount = pages;
+			END
+		ELSE
+			// exit loop
+			pageCount = pages;
+		END
+	END
+
+	// restore page list for display
+	AlarmSetInfo(listAN, 1, pageOffsetOld);
+
+	FileWriteLn(fileHnd, "</TABLE>");
+	FileWriteLn(fileHnd, "</BODY>^n</HTML>");
+
+	FileClose(fileHnd);
+
+	// close feedback message window
+	_UAG_ProgressMessageClose();
+
+	// unfreeze alarm list refresh
+	_UAG_TabAlarm_IntMetadata(listHnd, "RefreshEnable", 1);
+
+	ErrSetLevel(errLevelOld);
+
+	RETURN retValue;
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		_UAG_TabAlarm_FitColumns
+//
+//	SUMMARY:
+//		Adjust the columns so that most of them can fit on screen
+//			
+//	PARAMS:
+//		listHnd			- A unique handle number that identifies a particular list
+//			
+//	RETURNS: 
+//		0 if executed successfully or error if failed
+//
+//-----------------------------------------------------------------------------
+
+PRIVATE
+INT FUNCTION _UAG_TabAlarm_FitColumns(INT listHnd)
+	INT pageWidth = StrToInt(PageInfo(21));
+	INT columns = _UAG_TabAlarm_IntMetadata(listHnd, "Columns");
+	INT listWidth;
+	INT calcWidth;
+	INT colWidth;
+	INT diffWidth;
+	INT colID;
+
+	// Shrink the size of columns from last to first if cannot fit all columns on screen
+	listWidth = _UAG_TabAlarm_IntMetadata(listHnd, "Width");
+	IF (listWidth <= 0) THEN
+		listWidth = pageWidth - c_TABALARM_COL_PAGEMARGIN - _UAG_TabAlarm_Col_IntMetadata(listHnd, 0, "InitPosX");
+		_UAG_TabAlarm_IntMetadata(listHnd, "Width", listWidth);
+	END
+	calcWidth = 0;
+	colID = 0;
+	WHILE (colID < columns - 1) DO
+		calcWidth = calcWidth + _UAG_TabAlarm_Col_IntMetadata(listHnd, colID, "Width") - c_TABALARM_COL_MINWIDTH;
+		colID = colID + 1;
+	END
+	calcWidth = calcWidth + _UAG_TabAlarm_Col_IntMetadata(listHnd, colID, "InitPosX") + _UAG_TabAlarm_Col_IntMetadata(listHnd, colID, "Width")
+		- _UAG_TabAlarm_Col_IntMetadata(listHnd, 0, "InitPosX");
+	IF (calcWidth > listWidth) THEN
+		WHILE (colID >= 0) DO
+			colWidth = _UAG_TabAlarm_Col_IntMetadata(listHnd, colID, "Width");
+			diffWidth = Min(colWidth - c_TABALARM_COL_MINWIDTH, calcWidth - listWidth);
+			calcWidth = calcWidth - diffWidth;
+			_UAG_TabAlarm_Col_IntMetadata(listHnd, colID, "Width", colWidth - diffWidth);
+			colID = colID - 1;
+		END
+	END
+
+	RETURN 0;
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		_UAG_TabAlarm_AutoWidth
+//
+//	SUMMARY:
+//		Sets the width of all displayed columns to display the full content of the field values.
+//			
+//	PARAMS:
+//		listHnd			- The handle to the alarm list
+//			
+//	RETURNS: 
+//		0 if successful or error number if failed
+//
+//-----------------------------------------------------------------------------
+
+PRIVATE
+INT FUNCTION _UAG_TabAlarm_AutoWidth(INT listHnd)
+	INT retValue = 274;
+	INT column;
+	INT width;
+
+	column = _UAG_TabAlarm_IntMetadata(listHnd, "Columns") - 1;
+	WHILE (column > -1) DO
+		width = _UAG_TabAlarm_Col_MaxWidth(listHnd, column);
+		IF (width > 0) THEN
+			_UAG_TabAlarm_Col_IntMetadata(listHnd, column, "Width", width);
+		END
+		column = column - 1;
+	END
+	retValue = 0;
+
+	RETURN retValue;
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		_UAG_TabAlarm_ResetRows
+//
+//	SUMMARY:
+//		Reset the ANs of alarm rows on screen
+//			
+//	PARAMS:
+//		listHnd			- A unique handle number that identifies a particular list
+//			
+//	RETURNS: 
+//		0 if executed successfully or error if failed
+//
+//-----------------------------------------------------------------------------
+
+PRIVATE
+INT FUNCTION _UAG_TabAlarm_ResetRows(INT listHnd)
+	INT retValue = 274;
+	INT rows = _UAG_TabAlarm_IntMetadata(listHnd, "Rows");
+	INT rowID;
+	INT columns = _UAG_TabAlarm_IntMetadata(listHnd, "Columns");
+	INT colID;
+
+	// do not reset the AN of the 0th row which is the master AN of the row
+	rowID = 0;
+	WHILE (rowID < rows) DO
+		colID = 0;
+		WHILE (colID < c_TABALARM_COL_MAX) DO
+			_UAG_TabAlarm_Row_IntMetadata(listHnd, rowID, "CAN" + colID:#0, 0);
+			colID = colID + 1;
+		END
+		rowID = rowID + 1;
+	END
+
+	retValue = 0;
+
+	RETURN retValue;
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		_UAG_TabAlarm_PaintRows
+//
+//	SUMMARY:
+//		Paints the alarm rows on screen
+//			
+//	PARAMS:
+//		listHnd			- A unique handle number that identifies a particular list
+//			
+//	RETURNS: 
+//		0 if executed successfully or error if failed
+//
+//-----------------------------------------------------------------------------
+
+PRIVATE
+INT FUNCTION _UAG_TabAlarm_PaintRows(INT listHnd)
+	INT retValue = 274;
+	INT listAN = _UAG_TabAlarm_IntMetadata(listHnd, "MasterAN");
+	INT rows = _UAG_TabAlarm_IntMetadata(listHnd, "Rows");
+	INT rowID;
+	INT columns = _UAG_TabAlarm_IntMetadata(listHnd, "Columns");
+	INT colID;
+
+	IF (listAN <= 0) THEN
+		RETURN retValue;
+	END
+
+	rowID = 0;
+	// paint alarm row records
+	WHILE (rowID < rows) DO
+		IF (AlarmGetDsp(listAN + rowID, "RecNo") <> "") THEN
+			_UAG_TabAlarm_Row_Paint(listHnd, rowID, columns);
+		ELSE
+			// clears content of empty rows
+			_UAG_TabAlarm_Row_Paint(listHnd, rowID, 0);
+		END
+		rowID = rowID + 1;
+	END
+
+	retValue = 0;
+
+	RETURN retValue;
+END
+
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		_UAG_TabAlarm_Row_Paint
+//
+//	SUMMARY:
+//		Paints a row of alarm fields on screen
+//			
+//	PARAMS:
+//		listHnd			- A unique handle number that identifies a particular list
+//		rowID			- A unique number that identifies a particular row
+//		columns			- Number of columns to paint
+//			
+//	RETURNS: 
+//		0 if executed successfully or error if failed
+//
+//-----------------------------------------------------------------------------
+
+PRIVATE
+INT FUNCTION _UAG_TabAlarm_Row_Paint(INT listHnd, INT rowID, INT columns)
+	INT recordAN = _UAG_TabAlarm_IntMetadata(listHnd, "MasterAN") + rowID;
+	INT posY = _UAG_TabAlarm_Row_IntMetadata(listHnd, rowID, "Pos");
+	INT fontHnd = AlarmGetDsp(recordAN, "Font");
+	INT colID;
+	INT width;
+	INT posX;
+	INT cellAN;
+	STRING text;
+
+	colID = 0;
+	WHILE (colID < columns) DO
+		posX = _UAG_TabAlarm_Col_IntMetadata(listHnd, colID, "Pos") + c_TABALARM_COL_POS_OFFSET;
+		width = _UAG_TabAlarm_Col_IntMetadata(listHnd, colID, "Width") - c_TABALARM_COL_CELLPADDING;
+
+		cellAN = _UAG_TabAlarm_Row_IntMetadata(listHnd, rowID, "CAN" + colID:#0);
+		IF (cellAN <= 0) THEN
+			cellAN = DspAnNew(posX, posY);
+			_UAG_TabAlarm_Row_IntMetadata(listHnd, rowID, "CAN" + colID:#0, cellAN);
+		ELSE
+			DspAnMove(cellAN, posX, posY);
+		END
+		// use custom function instead of std. AlarmGetDsp() to get formatted field value
+		text = _UAG_TabAlarm_AlarmGetDsp(listHnd, recordAN, _UAG_TabAlarm_Col_StrMetadata(listHnd, colID, "FieldName"));
+		WHILE StrCalcWidth(text, fontHnd)< width DO		! Wichtig zum füllen der Spalte
+			text= StrPad(text," ",StrLength(text)+1)
+		END
+		UAG_DspFixedWidthText(cellAN, text, width, fontHnd);
+
+		colID = colID + 1;
+	END
+
+	// clear contents of hidden columns
+	WHILE (colID < c_TABALARM_COL_MAX) DO
+		cellAN = _UAG_TabAlarm_Row_IntMetadata(listHnd, rowID, "CAN" + colID:#0);
+		IF (cellAN > 0) THEN
+			DspText(cellAN, fontHnd, "");
+		END
+		colID = colID + 1;
+	END
+
+	RETURN 0;
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		_UAG_TabAlarm_Row_SaveSelection
+//
+//	SUMMARY:
+//		Saves the alarm record number of the selected rows to internal storage
+//		for tracking record number movement.
+//			
+//	PARAMS:
+//		listHnd			- A unique handle number that identifies a particular list
+//		rowStart		- The row ID for the start of the selection range
+//		rowStart		- The row ID for the end of the selection range
+//			
+//	RETURNS: 
+//		0 if executed successfully or error if failed
+//
+//-----------------------------------------------------------------------------
+
+PRIVATE
+INT FUNCTION _UAG_TabAlarm_Row_SaveSelection(INT listHnd, INT rowStart, INT rowEnd)
+	INT retValue = 274;
+	INT listAN = _UAG_TabAlarm_IntMetadata(listHnd, "MasterAN");
+	INT listType;
+	STRING recIDField;
+
+	IF (listAN <= 0) THEN
+		RETURN retValue;
+	END
+	
+	listType = AlarmGetInfo(listAN, 3);
+	SELECT CASE listType
+	CASE 10
+		recIDField = "SummaryId";
+	CASE 15
+		recIDField = "RecordId";
+	CASE ELSE
+		recIDField = "RecNo";
+	END SELECT
+
+	// clear storage first
+	_UAG_TabAlarm_StrMetadata(listHnd, "SelectedClusterStart", "");
+	_UAG_TabAlarm_StrMetadata(listHnd, "SelectedRecordStart", "");
+	_UAG_TabAlarm_StrMetadata(listHnd, "SelectedClusterEnd", "");
+	_UAG_TabAlarm_StrMetadata(listHnd, "SelectedRecordEnd", "");
+	IF ((rowStart > -1) AND (rowEnd > -1)) THEN
+		// Save the alarm records for the starting and ending row only
+		_UAG_TabAlarm_StrMetadata(listHnd, "SelectedClusterStart", AlarmGetDsp(listAN + rowStart, "Cluster"));
+		_UAG_TabAlarm_StrMetadata(listHnd, "SelectedRecordStart", AlarmGetDsp(listAN + rowStart, recIDField));
+		_UAG_TabAlarm_StrMetadata(listHnd, "SelectedClusterEnd", AlarmGetDsp(listAN + rowEnd, "Cluster"));
+		_UAG_TabAlarm_StrMetadata(listHnd, "SelectedRecordEnd", AlarmGetDsp(listAN + rowEnd, recIDField));
+	END
+	
+	RETURN retValue;
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		_UAG_TabAlarm_Row_SaveSelection
+//
+//	SUMMARY:
+//		Restore the row selection according to the alarm record number saves in
+//		the internal storage.
+//			
+//	PARAMS:
+//		listHnd			- A unique handle number that identifies a particular list
+//			
+//	RETURNS: 
+//		0 if executed successfully or error if failed
+//
+//-----------------------------------------------------------------------------
+
+PRIVATE
+INT FUNCTION _UAG_TabAlarm_Row_RestoreSelection(INT listHnd)
+	INT retValue = 274;
+	INT listAN = _UAG_TabAlarm_IntMetadata(listHnd, "MasterAN");
+	INT listType;
+	INT rowID;
+	STRING recID;
+	INT rowStart = _UAG_TabAlarm_IntMetadata(listHnd, "SelectedRowStart");
+	INT rowEnd = _UAG_TabAlarm_IntMetadata(listHnd, "SelectedRowEnd");
+	STRING recCluster;
+	STRING selectedClusterStart;
+	STRING selectedRecordStart;
+	STRING selectedClusterEnd;
+	STRING selectedRecordEnd;
+	STRING recIDField;
+
+	IF (listAN <= 0) THEN
+		RETURN retValue;
+	END
+
+	// no need to restore if no rows were selected
+	IF ((rowStart < 0) OR (rowEnd < 0)) THEN
+		RETURN 0;
+	END
+
+	// update row selection according to the stored alarm record numbers
+	selectedClusterStart = _UAG_TabAlarm_StrMetadata(listHnd, "SelectedClusterStart");
+	selectedRecordStart = _UAG_TabAlarm_StrMetadata(listHnd, "SelectedRecordStart");
+	selectedClusterEnd = _UAG_TabAlarm_StrMetadata(listHnd, "SelectedClusterEnd");
+	selectedRecordEnd = _UAG_TabAlarm_StrMetadata(listHnd, "SelectedRecordEnd");
+	rowStart = -1;
+	rowEnd = -1;
+
+	rowID = 0;
+	listType = AlarmGetInfo(listAN, 3);
+	SELECT CASE listType
+	CASE 10
+		recIDField = "SummaryId";
+	CASE 15
+		recIDField = "RecordId";
+	CASE ELSE
+		recIDField = "RecNo";
+	END SELECT
+	recID = AlarmGetDsp(listAN + rowID, recIDField);
+	WHILE ((recID <> "") AND ((rowEnd < 0) OR (rowStart < 0))) DO
+		recCluster = AlarmGetDsp(listAN + rowID, "Cluster");
+		
+		// Restore selection based on starting record and ending record only
+		IF (rowStart < 0) THEN
+			IF (recCluster = selectedClusterStart) AND (recID = selectedRecordStart) THEN
+				rowStart = rowID;
+			END
+		END
+		IF (rowEnd < 0) THEN
+			IF (recCluster = selectedClusterEnd) AND (recID = selectedRecordEnd) THEN
+				rowEnd = rowID;
+			END
+		END
+
+		rowID = rowID + 1;
+		recID = AlarmGetDsp(listAN + rowID, recIDField);
+	END
+
+	// Clear selection if cannot find the starting or ending row
+	IF (rowEnd < 0) THEN
+		rowStart = -1;
+	ELSE IF (rowStart < 0) THEN
+		rowEnd = -1;
+	END END
+
+	// update the metadata
+	_UAG_TabAlarm_IntMetadata(listHnd, "SelectedRowStart", rowStart);
+	_UAG_TabAlarm_IntMetadata(listHnd, "SelectedRowEnd", rowEnd);
+
+
+	// refresh storage according to new selection
+	retValue = _UAG_TabAlarm_Row_SaveSelection(listHnd, rowStart, rowEnd);
+	
+	RETURN retValue;
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		_UAG_TabAlarm_Row_IsSelected
+//
+//	SUMMARY:
+//		Tells whether a row is selected on an alarm list.
+//			
+//	PARAMS:
+//		listHnd			- A unique handle number that identifies a particular list
+//		rowID			- A unique number that identifies a particular row
+//			
+//	RETURNS: 
+//		0 if executed successfully or error if failed
+//
+//	REMARKS:
+//		To mimick the behaviour of a standard Windows list, the starting row
+//		of a selected range can be greater than the ending row.
+//
+//-----------------------------------------------------------------------------
+
+PRIVATE
+INT FUNCTION _UAG_TabAlarm_Row_IsSelected(INT listHnd, INT rowID)
+	INT rowStart;
+	INT rowEnd;
+
+	rowStart = _UAG_TabAlarm_IntMetadata(listHnd, "SelectedRowStart");
+	rowEnd = _UAG_TabAlarm_IntMetadata(listHnd, "SelectedRowEnd");
+
+	IF (rowEnd < rowStart) THEN
+		RETURN ((rowID >= rowEnd) AND (rowID <= rowStart));
+	END
+	RETURN ((rowID >= rowStart) AND (rowID <= rowEnd));
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		_UAG_TabAlarm_Col_ToHide
+//
+//	SUMMARY:
+//		Indicate whether to hide a column
+//			
+//	PARAMS:
+//		listHnd			- A unique handle number that identifies a particular list
+//		colID			- A unique number that identifies a particular column
+//			
+//	RETURNS: 
+//		1 if should hide or 0 if should show
+//
+//-----------------------------------------------------------------------------
+
+PRIVATE
+INT FUNCTION _UAG_TabAlarm_Col_ToHide(INT listHnd, INT colID)
+	RETURN (colID >= _UAG_TabAlarm_IntMetadata(listHnd, "Columns"));
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		_UAG_TabAlarm_Col_GetIDByName
+//
+//	SUMMARY:
+//		Returns the column ID that is assigned with the specified field name in
+//		an alarm list.
+//			
+//	PARAMS:
+//		listHnd			- A unique handle number that identifies a particular list
+//		fieldName		- alarm field name assiged to a column
+//			
+//	RETURNS: 
+//		column ID that is assigned with the field name or empty string if not found
+//
+//-----------------------------------------------------------------------------
+
+PRIVATE
+INT FUNCTION _UAG_TabAlarm_Col_GetIDByName(INT listHnd, STRING fieldName)
+	INT retValue = -1;
+	INT columns = _UAG_TabAlarm_IntMetadata(listHnd, "Columns");
+	INT colID;
+
+	colID = 0;
+	WHILE (colID < columns) DO
+		IF (_UAG_TabAlarm_Col_StrMetadata(listHnd, colID, "FieldName") = fieldName) THEN
+			retValue = colID;
+			colID = columns;
+		END
+		colID = colID + 1;
+	END
+
+	RETURN retValue;
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		_UAG_TabAlarm_Col_HeadFontHnd
+//
+//	SUMMARY:
+//		Returns the font handle for the column headings.
+//			
+//	PARAMS:
+//		None
+//			
+//	RETURNS: 
+//		The font handle for the column headings, or -1 if failed
+//
+//-----------------------------------------------------------------------------
+
+PRIVATE
+INT FUNCTION _UAG_TabAlarm_Col_HeadFontHnd()
+	IF (m_TABALARM_Col_HeadFontHnd < 0) THEN
+		m_TABALARM_Col_HeadFontHnd = UAG_TabAlarm_GetCatHeadingFont(0);
+	END
+	RETURN m_TABALARM_Col_HeadFontHnd;
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		_UAG_TabAlarm_Col_MaxWidth
+//
+//	SUMMARY:
+//		Returns the maximum width of the value displayed on a column
+//			
+//	PARAMS:
+//		listHnd			- A unique handle number that identifies a particular list
+//		colID			- A unique number that identifies a particular column
+//			
+//	RETURNS: 
+//		The maximum width of the value displayed on a column, or -1 if failed
+//
+//-----------------------------------------------------------------------------
+
+PRIVATE
+INT FUNCTION _UAG_TabAlarm_Col_MaxWidth(INT listHnd, INT colID)
+	INT retValue = -1;
+	INT listAN = _UAG_TabAlarm_IntMetadata(listHnd, "MasterAN");
+	INT recordAN;
+	STRING fieldName;
+	STRING fieldValue;
+	INT fontHnd;
+	INT width;
+	INT recordANBeyond;
+
+	IF (listAN <= 0) THEN
+		RETURN retValue;
+	END
+
+	fieldName = _UAG_TabAlarm_Col_StrMetadata(listHnd, colID, "FieldName");
+	IF (fieldName = "") THEN
+		RETURN retValue;
+	END
+
+	// fit the heading column
+	fieldValue = _UAG_TabAlarm_Col_StrMetadata(listHnd, colID, "LocalText");
+	retValue = StrCalcWidth(fieldValue, _UAG_TabAlarm_Col_HeadFontHnd());
+	retValue = retValue + c_TABALARM_COL_CELLPADDING * 3;
+
+	// check the field value on all rows
+	recordAN = listAN;
+	recordANBeyond = listAN + _UAG_TabAlarm_IntMetadata(listHnd, "Rows");
+	WHILE (AlarmGetDsp(recordAN, "RecNo") <> "" AND recordAN < recordANBeyond) DO
+		// use custom function instead of std. AlarmGetDsp() to get formatted field value
+		fieldValue = _UAG_TabAlarm_AlarmGetDsp(listHnd, recordAN, fieldName);
+		fontHnd = AlarmGetDsp(recordAN, "Font");
+
+		width = StrCalcWidth(fieldValue, fontHnd) + c_TABALARM_COL_CELLPADDING;
+		IF (width > retValue) THEN
+			retValue = width;
+		END
+		recordAN = recordAN + 1;
+	END
+
+	// enforce minimum width
+	IF (retValue < c_TABALARM_COL_MINWIDTH) THEN
+		retValue = c_TABALARM_COL_MINWIDTH;
+	END
+
+	RETURN retValue;
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		_UAG_TabAlarm_Col_Shift
+//
+//	SUMMARY:
+//		Shift the colums starting from colID by ShiftInc increment.
+//		Positive increment will shift columns to right.
+//		Negative increment will shift columns to left.
+//			
+//	PARAMS:
+//		listHnd			- A unique handle number that identifies a particular list
+//		colID			- A unique number that identifies a particular column
+//		ShiftInc		- The shift increment
+//			
+//	RETURNS: 
+//		0 if columns are shifted successfully or error if failed.
+//
+//-----------------------------------------------------------------------------
+
+PRIVATE
+INT FUNCTION _UAG_TabAlarm_Col_Shift(INT listHnd, INT colID, INT shiftInc = 1)
+	INT	columns = _UAG_TabAlarm_IntMetadata(listHnd, "Columns");
+	INT colStart;
+	INT colEnd;
+	INT shiftDirection;
+
+	IF (shiftInc > 0) THEN
+		IF (colID >= c_TABALARM_COL_MAX) THEN
+			// starting column is out of bound 
+			RETURN 274;
+		END
+		IF (columns + shiftInc > c_TABALARM_COL_MAX) THEN
+			columns = c_TABALARM_COL_MAX - shiftInc;
+		END
+		shiftDirection = 1;
+		colStart = columns - 1;
+		colEnd = colID;
+	ELSE IF (shiftInc < 0) THEN
+		IF (colID + shiftInc < 0) THEN
+			colID = -shiftInc;
+		END
+		shiftDirection = -1;
+		colStart = colID;
+		colEnd = columns - 1;
+	ELSE
+		RETURN 274;
+	END END
+	columns = columns + shiftInc;
+
+	WHILE ((colStart - colEnd) * shiftDirection >= 0) DO
+		_UAG_TabAlarm_Col_StrMetadata(listHnd, colStart + shiftInc, "FieldName",	_UAG_TabAlarm_Col_StrMetadata(listHnd, colStart, "FieldName"));
+		_UAG_TabAlarm_Col_StrMetadata(listHnd, colStart + shiftInc, "LocalText",	_UAG_TabAlarm_Col_StrMetadata(listHnd, colStart, "LocalText"));
+		_UAG_TabAlarm_Col_IntMetadata(listHnd, colStart + shiftInc, "Width",		_UAG_TabAlarm_Col_IntMetadata(listHnd, colStart, "Width"));
+		_UAG_TabAlarm_Col_IntMetadata(listHnd, colStart + shiftInc, "SortDirection",_UAG_TabAlarm_Col_IntMetadata(listHnd, colStart, "SortDirection"));
+		colStart = colStart - shiftDirection;
+	END
+
+	_UAG_TabAlarm_IntMetadata(listHnd, "Columns", columns);
+
+	RETURN 0;
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		_UAG_TabAlarm_Col_IsShown
+//
+//	SUMMARY:
+//		Returns whether any column (identified by its ID) is displaying the specified
+//		alarm field.
+//			
+//	PARAMS:
+//		listHnd			- A unique handle number that identifies a particular list
+//		fieldName		- The name of the alarm field
+//			
+//	RETURNS: 
+//		1 if the column is being displayed or 0 if not
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION _UAG_TabAlarm_Col_IsShown(INT listHnd, STRING fieldName)
+	INT colID;
+	INT columns = _UAG_TabAlarm_IntMetadata(listHnd, "Columns");
+
+	colID = 0;
+	WHILE (colID < columns) DO
+		IF (_UAG_TabAlarm_Col_StrMetadata(listHnd, colID, "FieldName") = fieldName) THEN
+			RETURN 1;
+		END
+		colID = colID + 1;
+	END
+	RETURN 0;
+END
+
+
+//-----------------------------------------------------------------------------
+//
+//	Private Helper Functions (Common to any alarm list related controls)
+//
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		_UAG_TabAlarm_GetInstance
+//
+//	SUMMARY:
+//		Get the instance handle of the specified alarm list displyed on current
+//		window.
+//			
+//	PARAMS:
+//		None
+//			
+//	RETURNS: 
+//		The handle to the alarm list instance or -1 if failed
+//
+//	REMARKS:
+//		The instance number is used to local metadata found in the local page
+//		It is only unique within a page. It cannot be used as index for global
+//		array.
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION _UAG_TabAlarm_GetInstance(INT listID)
+	RETURN listID;
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		_UAG_TabAlarm_Custom_Init
+//
+//	SUMMARY:
+//		Initialize customization for tab alarm list.
+//			
+//	PARAMS:
+//		None
+//			
+//	RETURNS: 
+//		None
+//
+//-----------------------------------------------------------------------------
+
+PRIVATE
+FUNCTION _UAG_TabAlarm_Custom_Init()
+	_UAG_TabAlarm_Custom_Load();
+	// set fn ref. to local variable for fast access as it is called frequently
+	m_TABALARM_Custom_Fn_AlarmGetDsp = _UAG_TabAlarm_Custom_Get(c_TABALARM_CUSTOM_ALMGETDSP);
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		_UAG_TabAlarm_AlarmGetDsp
+//
+//	SUMMARY:
+//		Wraps the call of AlarmGetDsp with custom code override.
+//			
+//	PARAMS:
+//		listID	- The ID of the alarm list within a page
+//		AN		- The AN of the alarm record (list AN + row offset)
+//		field	- The name of the alarm field
+//			
+//	RETURNS: 
+//		the value of the specified field of alarm record identified by AN
+//
+//-----------------------------------------------------------------------------
+
+PRIVATE
+STRING FUNCTION _UAG_TabAlarm_AlarmGetDsp(INT listID, INT AN, STRING field)
+	IF ("" <> m_TABALARM_Custom_Fn_AlarmGetDsp) THEN
+		RETURN TaskCall(m_TABALARM_Custom_Fn_AlarmGetDsp, IntToStr(listID) + "," + IntToStr(AN) + ",^"" + field + "^"");
+	ELSE
+		RETURN AlarmGetDsp(AN, field);
+	END
+END

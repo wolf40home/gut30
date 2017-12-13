@@ -1,0 +1,1171 @@
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//	
+// 	FILE:	Basisfunktionen.ci
+//
+//	Beschreibung:
+//
+//		Enthält Funktionen die als Grundlage benötigt werden.
+//		Funktionen mit Version 3. sind freigegeben
+//
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	14.02.07	/	Schneider Electrik GmbH
+//	Version				75.33.11.08
+//
+//	PUBLIC FUNCTIONS:
+//
+//			GUT_TipTextEqu
+//			UAG_Status()
+//			UAG_Benutzer()
+//			UAG_Benutzer_Login()		abgekündigt
+//			UAG_LogOut()
+//			UAG_SystemInfo()
+//			UAG_DB_zugriff()
+//			UAG_Round()
+//			UAG_TipText()				abgekündigt
+//			UAG_TipText2()
+//			UAG_TipTextKom()
+//			UAG_TEXT_EINGABE()
+//			UAG_GetCluster()
+//			UAG_GetMousePos()
+//			UAG_GetMousePos_unten()		abgekündigt
+
+//			UAG_GetMousePos_mitte()
+//			uag_condxxxx()
+//			UAG_FormNumPad_REAL()
+//			UAG_CitectInfo()			abgekündigt
+//			UAG_Display_Version()
+//			UAG_Display_Marke()
+//			UAG_UpdateLoadPresets()
+//			UAG_LogoutIdle()
+//			UAG_StrToReg()
+//			_AssInfo					abgekündigt
+
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+
+// 	12.09.07 	Steiner 	_AssInfo für Version 7 erstellt
+// 	22.10.07 	Däbritz		Erstellung UAG_GetClusterName()
+//	15.11.07	Steiner	 	NE107 von ATEG übernommen. Alle Aufrufe überarbeitet auf ASS und bei den  
+//							PopUP von Supergenie auf normale Seiten umgestellt.
+//	04.12.08	Steiner		Überarbeitung und neue Funktionen
+//	16.04.14	Steiner		Alle Funktionen auf 7.40 Page Funktionen umgestellt
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+// MODULE VARIABLES
+
+INT		miDataAddress[19]	= 0x0800,0x0840,0x0880,0x08C0,0x0900,0x0940,0x0980,0x09C0,0x0E00,0x0E40,0x0E80,0x0EC0,0x0F00,0x0F40,0x0F80,0x0FC0,-1,-1,-1;
+INT		miFilesRead			= 0;
+INT		miMaxFilesRead		= 12;
+INT		miParamAddress[19]	= 0x0480,0x0500,0x0580,0x0A00,0x0A80,0x0B00,0x0B80,0x0C00,0x0C80,0x0D00,0x0D80,0x1000,0x1080,0x1100,0x1180,0x1200,0x1280,0x1300,0x1380;
+STRING	msData[12][19];
+STRING	msFilesRead[12];
+STRING	msResolutions[6]	= "Default", "VGA", "SVGA", "XGA", "SXGA", "user";
+
+
+//	UAG_Status(STRING T1, STRING  T2, STRING  T3)
+//	Übergabeparameter:	T1-T2        => String für Statuszeile
+//                      T3		     => Fehlerstatus   
+//	Rückgabewert:		---
+//	Beschreibung:		
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	14.02.07	/	Schneider Electrik GmbH
+//	Version				7.2.3.3
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//
+//  07.09.07 	Steiner		Farbumschlag zum Speichern bei Fehler
+//  22.11.07 	Steiner		Erweitert für Leiteingriffe
+//	30.11.09	Steiner		auswertung Code/DebugMessage
+//	05.12.11	Steiner		als Log wird das Systemlog genutzt
+
+// UAG_Status(T1,   T2="", IntToStr(_UAG_Fehler))
+FUNCTION UAG_Status(STRING T1, STRING  T2="", STRING  T3="")
+	INT hDev;
+	
+	ErrSet(1);
+	Status1=T1;
+
+	IF T2 <>"" THEN 
+		T1 =T1 + " | " + T2;
+		Status1=T1;
+	END	
+	SELECT CASE  T3 
+	 	CASE IntToStr(_UAG_Info) 
+	 	T3 = "Info";
+	 	giUAGStatus2_l= 0;
+	 	CASE IntToStr(_UAG_Warnung) 
+	 	T3 = "Warnung";
+	 	giUAGStatus2_l= 1;
+		CASE IntToStr(_UAG_Fehler)
+		T3 = "Fehler";
+		giUAGStatus2_l= 2;
+		CASE "99"
+		T3 = "-";
+		giUAGStatus2_l= 0;
+		
+		CASE ELSE 
+		IF T3 ="" THEN T3 ="-" END
+	END SELECT
+	Status2=T3;
+
+//	IF gbDebugEnable = TRUE THEN
+//		hDev = DevOpen("LogFile",8);
+//		DevWriteLn(hDev,(Date(9) + " " + Time(1))+ " " + T1 );
+//	END
+	DebugMsg(T1);
+	
+	Status1_sp[9]=Status1_sp[8];
+	Status1_sp[8]=Status1_sp[7];
+	Status1_sp[7]=Status1_sp[6];
+	Status1_sp[6]=Status1_sp[5];
+	Status1_sp[5]=Status1_sp[4];
+	Status1_sp[4]=Status1_sp[3];
+	Status1_sp[3]=Status1_sp[2];
+	Status1_sp[2]=Status1_sp[1];
+	Status1_sp[1]=Status1_sp[0];
+	Status1_sp[0]=T1;
+	ErrSet(0);
+END
+
+
+//	UAG_Benutzer()
+//	Übergabeparameter:	 ---     
+//                       
+//	Rückgabewert:		Benutzername oder Meldung	
+//	Beschreibung:		Gibt einen String mit dem Benutzernamen zurück	
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	21.02.07	/	Schneider Electrik GmbH
+//	Version				3.0.0.0
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//
+
+STRING FUNCTION UAG_Benutzer()
+	IF UserInfo(1) = "" THEN 
+		RETURN "@(please log in)" 
+		ELSE 
+		RETURN UserInfo(1) 
+	END
+END
+
+
+
+FUNCTION UAG_LogOut()
+
+	UAG_SystemInfo("UAG_Benutzer", "System", "Benutzer hat sich abgemeldet" ,"-",UserInfo(1),"-",TaskCluster(),_UAG_Info);
+	CodeSetMode(2, FALSE);
+	IF giLogOut THEN 
+		UAG_MM_Logout();
+	ELSE
+		UAG_MM_Logout();
+		Login(MainUser,MainUserPW);
+	END		
+
+	CodeSetMode(2, TRUE);
+END
+
+//	UAG_SystemInfo(sWER As String, sEVNTYPE As String, EVNTMSG As String, TAGNAME As String, OLDVALUE As String, VALUE As String, Optional Bereich As String)
+//	Übergabeparameter:	sWER      
+//                      sEVNTYPE
+//						sEVNTMSG 
+//						sTAGNAME 
+//						sOLDVALUE 
+//						sVALUE  
+//						sCLUSTER 
+//	Rückgabewert:		---
+//	Beschreibung:		Neue Funktion für Systeminfo nutzt je nach Parameter
+//						UAG_Datenzugriff und/oder UAG/Status
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	05.05.08	/	Schneider Electrik GmbH
+//	Version				74.33.70.00
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	06.07.09	Steiner		Erweitert um System und Usermeldungen in Sum zu trennen
+
+FUNCTION UAG_SystemInfo(STRING sWER ,STRING sEVNTYPE = "-" ,STRING sEVNTMSG = "-",
+	STRING sTAGNAME = "-", STRING sOLDVALUE="-",STRING sVALUE="-",
+	STRING sCLUSTER=TaskCluster(),INT iTyp=_UAG_Info,INT ISys=1,STRING Sinztanz="")
+	
+	STRING sUser,sTemp;
+	INT		iPos,i;
+	FOR i=0 TO StrLength(sTAGNAME)-1 DO
+		IF StrMid( sTAGNAME,i,1) = "_" THEN iPos=i END
+	END	
+	sTemp=StrLeft( sTAGNAME,iPos)
+	ErrSet(1);
+	sUser = UserInfo(1);
+	IF sUser ="" THEN 	sUser = "keiner" END;
+	IF ISys =0 THEN 
+			UAG_Alarms_Leiteingriff(sUser+ " " +sWER+ " " +sEVNTYPE+ " " +sTAGNAME+" = "+sVALUE+ " "+sEVNTMSG)
+		IF StrRight(sTAGNAME,3) ="_LW" THEN
+			IF TagInfoEx(sTemp +"_SOE",0)<> "" THEN
+				SOEEventAdd(TimestampCurrent(),UAG_String_StrToReg(sEVNTMSG,80),sTemp +"_SOE_1",sCLUSTER)
+			ELSE
+				SOEEventAdd(TimestampCurrent(),UAG_String_StrToReg(sEVNTMSG+  " " +sTemp,80))
+			END			
+		ELSE
+			IF TagInfoEx(sTemp +"_SOE",0)<> "" THEN
+				SOEEventAdd(TimestampCurrent(),UAG_String_StrToReg(sEVNTMSG+  " " +sTAGNAME+" von "+sOLDVALUE+ " nach "+sVALUE + " geändert",80),sTemp +"_SOE_1",sCLUSTER)
+			ELSE
+				SOEEventAdd(TimestampCurrent(),UAG_String_StrToReg(sEVNTMSG+  " " +sTAGNAME+" von "+sOLDVALUE+ " nach "+sVALUE + " geändert",80))
+			END			
+		END
+	ELSE
+		UAG_Alarms_Leiteingriffs(sUser+ " " +sWER+ " " +sEVNTYPE+ " " +sTAGNAME+" = "+sVALUE+ " " +sEVNTMSG)
+	END		
+	UAG_Status(sWER, sEVNTMSG + " " + uag_condStr ( (sTAGNAME ="-"),"",sTAGNAME) + " " + uag_condStr ( sVALUE="-","",sVALUE) , iTyp);
+//	IF giUI_Write=1 THEN
+		UAG_DB_zugriff(sWER, sEVNTYPE, sEVNTMSG ,sTAGNAME,sOLDVALUE,sVALUE,sCLUSTER,iTyp);
+//	END	
+	ErrSet(0);
+
+END
+
+//	UAG_DB_zugriff(sWER As String, sEVNTYPE As String, EVNTMSG As String, TAGNAME As String, OLDVALUE As String, VALUE As String, Optional Bereich As String)
+//	Übergabeparameter:	sWER      
+//                      sEVNTYPE
+//						sEVNTMSG 
+//						sTAGNAME 
+//						sOLDVALUE 
+//						sVALUE  
+//						sCLUSTER 
+//	Rückgabewert:		---
+//	Beschreibung:		
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	21.02.07	/	Schneider Electrik GmbH
+//	Version				3.2.0.0
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	23.11.07	Steiner		Reihenfolge geändert und Format angepasst da Zeile zu lang
+//	16.03.09	Steiner		Datenbank Schreiben umgestellt
+//	22.10.09	Steiner		von Cluster auf Rechnernamen umgestellt.
+
+FUNCTION 
+UAG_DB_zugriff(STRING sWER ,STRING sEVNTYPE = "-" ,STRING sEVNTMSG = "-",
+	STRING sTAGNAME = "-", STRING sOLDVALUE="-",STRING sVALUE="-",
+	STRING sCLUSTER="-",INT iTyp=_UAG_Info)
+	INT hDev,hMsg;
+	STRING sUser, sCommand, sPrimaryConnection, sStandbyConnection;
+	ErrSet(1);
+	sUser = UserInfo(1);
+	IF sUser ="" THEN 	sUser = "keiner" END;
+
+	IF sWER ="" THEN 	sWER = "-" END;
+	IF sEVNTYPE ="" THEN 	sEVNTYPE = "-" END;
+	IF sEVNTMSG ="" THEN 	sEVNTMSG = "-" END;
+	IF sTAGNAME ="" THEN 	sTAGNAME = "-" END;
+	IF sOLDVALUE ="" THEN 	sOLDVALUE = "-" END;
+	IF sVALUE ="" THEN 	sVALUE = "-" END;
+//	IF sCLUSTER ="" THEN 	sCLUSTER = TaskCluster() END;
+	sCLUSTER=gsUAGClientName;
+
+	EnterCriticalSection("LoggerSection");
+	hDev=UAG_DevOpen("OPERLOGdbP","OPERLOGdbS",8);
+
+	IF hDev >= 0 THEN
+		DevAppend(hDev);
+		DevSetField(hDev, "ZEIT",(Date(2) + " " + Time(1)));
+		DevSetField(hDev, "BENUTZER",sUser);
+		DevSetField(hDev, "WER",sWER);
+		DevSetField(hDev, "Meldung",sEVNTMSG);
+		DevSetField(hDev, "TAGNAME",sTAGNAME);
+		DevSetField(hDev, "ALTERWERT",sOLDVALUE);
+		DevSetField(hDev, "WERT",sVALUE);
+		DevSetField(hDev, "EVNTYPE",sEVNTYPE);		
+		DevSetField(hDev, "CLUSTER",sCLUSTER);
+		DevClose(hDev,True);
+	ELSE
+		DspError("@(Operlog can not be opened)");
+	END
+	ErrSet(0);
+	LeaveCriticalSection("LoggerSection");		
+END
+
+
+
+
+//	FUNCTION UAG_Round(INT w1, INT w2)
+//	Übergabeparameter:	      
+//                       
+//	Rückgabewert:	---	
+//	Beschreibung:	Teilt den ersten Wert durch den 2. und Rundet dabei immer auf.	
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	23.11.07	/	Schneider Electrik GmbH
+//	Version				3.0.0.0
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+
+
+INT FUNCTION UAG_Round(INT w1, INT w2)
+	IF (IntToReal(w1)/w2)-w1/w2 >0 THEN
+		RETURN w1/w2+1
+	ELSE
+		RETURN w1/w2
+	END
+END			
+
+
+
+//	UAG_TipTextKom(STRING sTag,STRING LT)
+//	Übergabeparameter:	Tooltip Variable, TooltipText      
+//                       
+//	Rückgabewert:	0	
+//	Beschreibung:	ändert den Tiptext des Objektes das ihn aufruft kann z.b. bei Bewegung genutzt werden
+//					der Text ist wahlweise der Inhalt oder der Kommentar der Variablen 	
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	23.02.07	/	Schneider Electrik GmbH
+//	Version				75.33.11.05
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	18.06.09	Steiner		Text aus Kommentar wurde Verkürzt
+//	30.11.15	Steiner		Erweitert für PES
+//	01.05.17	Steienr		Fehler Korrektur und anpassung für Starter
+
+INT FUNCTION UAG_TipTextKom(STRING sTag,STRING LT="")
+	INT 	hAn;
+	
+	ErrSet(1);
+	hAn=DspGetAnCur() ;
+	IF LT ="" THEN 
+		LT =sTag
+	END	
+	IF UAG_LtausKom=1  THEN
+		SELECT CASE gbPES
+			CASE 0,2
+				LT =TagGetProperty(sTag,"Description");
+			CASE 1	
+				LT =TagGetProperty(sTag,"Custom1");
+		END SELECT	
+	END
+	
+	DspSetTip(hAn,LT);
+
+	ErrSet(0);
+	RETURN 0
+END
+
+//	GUT_TipTextEqu(STRING equipName)
+//	Übergabeparameter:	Equimpent     
+//                       
+//	Rückgabewert:	0	
+//	Beschreibung:	ändert den Tiptext des Objektes das ihn aufruft kann z.b. bei Bewegung genutzt werden
+//					der Text ist der Equipment Kommentar 	
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	18.10.17	/	Schneider Electrik GmbH
+//	Version				75.11.08
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	
+
+INT FUNCTION GUT_TipTextEqu(STRING equipName,INT iret=0)
+	INT 	hAn;
+	STRING  LT;
+	ErrSet(1);
+	hAn=DspGetAnCur() ;
+	LT = EquipGetProperty(equipName,"Comment",1)	
+	DspSetTip(hAn,LT);
+
+	ErrSet(0);
+	RETURN iret
+	END
+
+//	UAG_TipTextAss(STRING sAss)
+//	Übergabeparameter:	Tooltip Variable     
+//                       
+//	Rückgabewert:	0	
+//	Beschreibung:	ändert den Tiptext des Objektes das ihn aufruft kann z.b. bei Bewegung genutzt werden
+//					der Text ist wahlweise der Inhalt oder der Kommentar der Variablen 	
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	04.09.14	/	Schneider Electrik GmbH
+//	Version				74.33.80.0
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+FUNCTION UAG_TipTextAss(STRING sAss)
+	INT 	hAn;
+	hAn=DspGetAnCur() ;
+	DspSetTip(hAn,AssInfo(sAss,16));	
+
+END
+
+//	UAG_TipText2(STRING)
+//	Übergabeparameter:	Bedingung,TooltipText      
+//                       
+//	Rückgabewert:	Testbedingung	
+//	Beschreibung:	ist gedacht um Werte im Tip Anzuzeigen	
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	23.07.07	/	Schneider Electrik GmbH
+//	Version				2.0.0.0
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	
+
+INT FUNCTION UAG_TipText2(INT itest,STRING LT)
+		UAG_TipTextKom(LT)
+	RETURN itest
+END
+
+
+//	UAG_TEXT_EINGABE()
+//	Übergabeparameter:	Text      
+//                       
+//	Rückgabewert:	geänderter Text	
+//	Beschreibung:	Form um Text zu ändern	
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	23.07.07	/	Schneider Electrik GmbH
+//	Version				2.0.0.0
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//
+
+STRING FUNCTION UAG_TEXT_EINGABE (STRING TAGNAME)
+	STRING Inputd;
+	
+	Inputd=TagRead(TAGNAME);
+	UAG_GetMousePos_mitte(300,300);
+	FormNew(TAGNAME,80,2,128);
+	FormPosition( giPosX,giPosY,0);
+	FormInput(0,0,TAGNAME,Inputd,64);
+	FormButton(40,1, "  @(OK)  ",0 , 1);
+	FormButton(1,1, " @(Cancel) ", 0, 2);  
+	IF FormRead(0) =0 THEN
+		RETURN Inputd;
+	ELSE 
+		RETURN TagRead(TAGNAME);
+	END	
+END
+
+FUNCTION UAG_TEXT_Anzeige (STRING TAGNAME)
+	UAG_GetMousePos_mitte(300,300);
+	FormNew(TAGNAME,40,2,0);
+	FormPosition( giPosX,giPosY,0);
+	FormInput(0,0,"Tagname",TAGNAME,30);
+	FormButton(17,1, " @(Close) ", 0, 2);  
+	FormRead(0)
+END
+
+//	_AssInfo
+//	Übergabeparameter:	---
+//                       
+//	Rückgabewert:		
+//	Beschreibung:	siehe AssInfo	in der Hilfe für V7.0 nachgebaut
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	23.07.07	/	Schneider Electrik GmbH
+//	Version				75.33.08
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	18.12.09	Steiner		Fehlerbehandlung eingefügt.
+//	04.01.10	Steiner		Anpassung an SP2
+
+STRING FUNCTION _AssInfo(INT nArg,INT nType)
+	INT iError;
+	ErrSet(1);
+	IsError();
+	RETURN AssInfo(nArg,nType); 
+	iError =IsError();
+	IF iError <>0 THEN UAG_Status(ErrMsg(iError), "", IntToStr(_UAG_Fehler)) END
+	ErrSet(0);
+END	
+
+
+//	STRING UAG_GetCluster()
+//	Übergabeparameter:	---
+//                         
+//	Rückgabewert:		Cluster-Name als STRING mit Punkt am Ende
+//	Beschreibung:		Wird vor dem Aufschalten eines Genies aufgerufen
+//						und vor dem Genie-Namen gesetzt.
+//
+//	Autor:				Frank Däbritz
+//	Erstellungsdatum:	22.10.07	/	Schneider Electric GmbH
+//	Version				3.0.0.0
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//
+
+STRING FUNCTION UAG_GetClusterName()
+	STRING strClusterName = "";
+	
+	strClusterName = TaskCluster();
+	IF strClusterName <> "" THEN
+		IF StrRight(strClusterName, 1) <> "." THEN
+			strClusterName = strClusterName + ".";
+		END
+	END	
+	RETURN strClusterName;
+END
+
+
+//	UAG_GetMousePos()
+//	Übergabeparameter:	unten, rechts als Versatz
+//                         
+//	Rückgabewert:		---
+//	Beschreibung:		sorgt dafür das die obere Kante eines Fensters an die Mausposition kommt
+//						
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	09.11.07	/	Schneider Electric GmbH
+//	Version				7.2.3.1
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	18.07.08	Steiner		an Doppelmonitor angepasst
+//	31.08.11	Steiner		Parameter sind Optional (Wunsch MZ)
+
+FUNCTION UAG_GetMousePos(INT unten=20, INT rechts=20)
+
+	DspGetMouse(giPosx, giPosy);
+	PageTransformCoords(WinNumber(), giPosx, giPosy, giPosx, giPosy, 0);
+		giPosX = giPosx + rechts;
+		giPosY = giPosy + unten;
+
+END 
+
+
+//	UAG_GetMousePos_unten()
+//	Übergabeparameter:	hoehe, breite  vom aufzurufenden Fenster
+//                         
+//	Rückgabewert:		---
+//	Beschreibung:		Berechnet die linke untere Kante des Fensters  damit die an die Mausposition kommt.
+//						
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	09.11.07	/	Schneider Electric GmbH
+//	Version				75.33.11.08
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	18.07.08	Steiner		an Doppelmonitor angepasst
+//	12.01.09	Steiner		x wurde nicht gesetzt.
+//	
+
+//FUNCTION UAG_GetMousePos_unten(INT hoehe=0, INT breite=0) !,INT ix=-1, INT iy=-1
+//	INT idummy,nAN,iWidth,ix=-1,iy
+//	IF ix=-1 THEN 
+//		nAN = KeyGetCursor()
+//		DspAnGetPos(nAN, ix, iy)
+//		iWidth=DspGetAnWidth(nAN)
+//		PageTransformCoords(WinNumber(), ix, iy, ix, iy, 0);
+//	
+//		ix=ix +iWidth+10;
+//		iy=iy- hoehe -30;
+//
+//		IF iy < 110 THEN 
+//			giPosY =  110;
+//		ELSE 
+//			giPosY = iy;
+//		END
+//	END	
+//		giPosY = iy;
+//		giPosX =ix;
+//
+//	
+//END 
+
+//	UAG_GetMousePos_mitte()
+//	Übergabeparameter:	hoehe, breite  vom aufzurufenden Fenster
+//                        
+//	Rückgabewert:		---
+//	Beschreibung:		Zentriert das Fenster in der mitte des Aktiven Monitor.
+//						
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	21.07.08	/	Schneider Electric GmbH
+//	Version				7.2.3.2
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	18.10.11	Steiner		CSV Funktion entfernt
+
+FUNCTION UAG_GetMousePos_mitte(INT hoehe, INT breite)
+	INT		iScreenWidth;
+	INT		iScreenHeight;
+
+	iScreenWidth = WndInfo(0);
+	giPosX =  (iScreenWidth - breite)/2;
+
+	iScreenHeight = WndInfo(1);
+	giPosY = (iScreenHeight - hoehe)/2;
+//	PageTransformCoords(WinNumber(), giPosX, giPosY, giPosX, giPosY, 0)
+
+END	
+
+
+//	FUNCTION uag_condxxxx
+//	Übergabeparameter:	MSR
+//                       
+//	Rückgabewert:		---
+//	Beschreibung:		
+//
+//	Autor:				
+//	Erstellungsdatum:	14.11.07	/	ATEG GmbH
+//	Version				3.0.0.0
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+
+STRING FUNCTION uag_condStr(INT Bedingung, STRING WennWert, STRING SonstWert)
+	IF Bedingung THEN RETURN WennWert
+	ELSE RETURN SonstWert
+	END
+END
+
+INT FUNCTION uag_condInt(INT Bedingung, INT WennWert, INT SonstWert)
+	IF Bedingung THEN RETURN WennWert
+	ELSE RETURN SonstWert
+	END
+END
+
+REAL FUNCTION uag_condREAL(INT Bedingung, REAL WennWert, REAL SonstWert)
+	IF Bedingung THEN RETURN WennWert
+	ELSE RETURN SonstWert
+	END
+END
+
+//	UAG_FormNumPad_REAL()
+//	Übergabeparameter:	Titel, Vorgabe, Min, Max
+//                         
+//	Rückgabewert:		Eingegebener Wert 
+//	Beschreibung:		Werteingabe mit Panel und überwachung der Grenzwerte
+//						
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	11.01.08	/	Schneider Electric GmbH
+//	Version				7.2.3.6
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	09.05.08	Jungbluth	Auf größer gleich und kleiner gleich geändert.
+//	06.03.09	Steiner		X,Y hinzugefügt
+//	17.01.12	Steiner		Modus wurde nicht übergeben.
+
+REAL FUNCTION UAG_FormNumPad_REAL(STRING sTitle, REAL rInput, INT iMode = 2,REAL rMin= 0, REAL rMax= 20000000,INT X=-1, INT Y=0)
+
+	REAL rIn;
+	rIn = Keypad(RealToStr(rInput,10,2),iMode,sTitle ,X,Y);
+	RETURN uag_condREAL((rIn <= rMax) AND (rIn >= rMin),rIn ,rInput)
+END
+
+//
+//	FUNCTION:		UAG_CitectInfo()
+//	DESCRIPTION:	Extension of CitectInfo() function.
+//	ARGUMENTS:		STRING	sName		project group:	Name of Citect project ("0" for current main project)
+//					STRING	sType		project group:	"0"		Project name
+//														"1"		Compilation status ("UNCOMPILED" or "COMPILED")
+//														"2"		Project description
+//														"3"		Project major revision
+//														"4"		Project minor revision
+//														"5"		Project creation date
+//														"6"		Project creation time
+//														"7"		Project creation Citect version
+//														"8"		Default page style
+//														"9"		Default page screen resolution ("1"=VGA, "2"=SVGA, "3"=XGA, "4"=SXGA)
+//														"10"	Default page show titlebar status ("0" or "1")
+//														"11"	Project Read-only status ("0" or "1")
+//														"12"	Default page background colour (palette colour number)(RGB-value as of Citect v6.0)
+//														"13"	Project privilege (obsolete as of Citect v5.0)
+//														"14"	Project ID (as of Citect v5.42)
+//														"15"	Default page background blink colour (RGB-value)(as of Citect v6.0)
+//														"16"	Reserved for future use
+//														"17"	Reserved for future use
+//														"18"	Reserved for future use
+//	RETURNED VALUE:	Requested info as string.
+//
+STRING FUNCTION UAG_CitectInfo1(STRING sName , STRING sType = "0")
+
+
+	IF sName = "0" THEN										//Get current main project name
+		sName =ParameterGet("CTEDIT","LASTDATABASE","System");
+	END
+	RETURN _GetProjectInfo1(sName, sType,gsUAGProjektUserPath);
+END
+STRING FUNCTION UAG_CitectInfoP1(STRING sName , STRING sType = "0")
+
+
+	IF sName = "0" THEN										//Get current main project name
+		sName =ParameterGet("CTEDIT","LASTDATABASE","System");
+	END
+	RETURN _GetProjectInfo1(sName, sType,gsUAGBildProjektPath);
+END
+
+
+//	Read CIT file
+//	Übergabeparameter:	Projektname
+//                         
+//	Rückgabewert:		- 
+//	Beschreibung:		 
+//						
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	14.03.08	/	Schneider Electric GmbH
+//	Version				3.1.1.1
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	30.06.09	Steiner		Erweitert um Pfadangabe
+
+PRIVATE INT FUNCTION _ReadCitFile(STRING sProject,STRING sPath = gsUAGProjektUserPath);
+	INT		hFile				= -1;
+	INT		i;
+	INT		iBlock, iData, iFileSize, iLength, iMaxBlock;
+	STRING	sData, sFile;
+	ErrSet(1);
+	sFile = sPath + "\" + sProject + "\PROJECT.CIT";
+	hFile = FileOpen(sFile, "r");
+	iFileSize = FileSize(hFile);
+	SELECT CASE iFileSize
+	CASE 4608
+		iMaxBlock = 14;
+	CASE 5120													//Citect v6 and up
+		iMaxBlock = 18;
+	CASE ELSE
+		iMaxBlock = 0;
+	END SELECT
+	
+	FOR i = 0 TO iMaxBlock DO
+		FileSeek(hFile, miParamAddress[i] + 0x0074);			//Get pointer to data block
+		FileReadBlock(hFile, sData, 4);
+		iBlock = StrGetChar(sData, 0);
+		
+		IF iBlock <= iMaxBlock THEN
+			FileSeek(hFile, miParamAddress[i] + 0x0078);		//Get length of data block
+			FileReadBlock(hFile, sData, 4);
+			iLength = StrGetChar(sData, 0);
+			iLength = iLength + StrGetChar(sData, 1) * 256;
+			IF iLength > 255 THEN
+				iLength = 255;
+			END
+			
+			FileSeek(hFile, miDataAddress[iBlock]);				//Get data
+			FileReadBlock(hFile, sData, iLength);
+			SELECT CASE i
+			CASE 9												//Resolution [VGA|SVGA|XGA|SXGA|user]
+				iData = StrGetChar(sData, 0);
+				IF iData <= 5 THEN
+					msData[miFilesRead][i] = msResolutions[iData];
+				END
+			CASE 10, 11											//Boolean [FALSE|TRUE]
+				iData = StrGetChar(sData, 0);
+				IF iData = 0 THEN
+					msData[miFilesRead][i] = "FALSE";
+				ELSE
+					msData[miFilesRead][i] = "TRUE";
+				END
+			CASE 12, 13, 15										//Positive integer (31 bit)
+				iData = StrGetChar(sData, 0);
+				iData = iData + StrGetChar(sData, 1) * Pow(2,8);
+				iData = iData + StrGetChar(sData, 2) * Pow(2,16);
+				iData = iData + (StrGetChar(sData, 3) BITAND 127) * Pow(2,24);
+				msData[miFilesRead][i] = IntToStr(iData);
+			CASE ELSE											//String
+				msData[miFilesRead][i] = StrLeft(sData, iLength);
+			END SELECT
+		END
+	END
+	
+	IF FileClose(hFile) = 0 THEN
+		msFilesRead[miFilesRead] = sProject;					//Add project name to list of read files
+		IF miFilesRead < miMaxFilesRead THEN					//Limit to array size
+			miFilesRead = miFilesRead + 1;
+		END
+		ErrSet(0);
+		RETURN miFilesRead - 1;
+	ELSE
+		ErrSet(0);
+		RETURN -1;
+	END
+	
+END
+
+
+//	Get info from PROJECT.CIT file
+ STRING FUNCTION _GetProjectInfo1(STRING sProject, STRING sType,STRING sPath = gsUAGProjektUserPath)
+	INT		i, iType;
+	INT		iProject = -1;
+	
+	sProject = StrLower(sProject);
+
+	IF miFilesRead > 0 THEN										//File already read?
+		FOR i = 0 TO miFilesRead - 1 DO
+			IF msFilesRead[i] = sProject THEN
+				iProject = i;
+			END
+		END
+	END
+	
+	IF iProject = -1 THEN										//No: read file
+		iProject = _ReadCitFile(sProject,sPath);
+		IF iProject = -1 THEN
+			RETURN "";
+		END
+	END
+	
+	iType = StrToInt(sType);									//Limit to valid info types
+	IF iType > 18 THEN
+		iType = 0;
+	END
+	
+	RETURN msData[iProject][iType];							//Look up and return data
+END
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//		FUNCTION NAME	
+//						UAG_Display_Version()
+//
+//
+//     	GENERAL DESCRIPTION
+//			
+//			Get Citect Version number in the form 5.41.128 
+//
+// 		ARGUMENTS:
+//
+//
+//     	RETURNED VALUE: 
+//
+//			Citect Version number as string
+//
+//		PSEUDO CODE:
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	24.04.08	/	Schneider Electric GmbH
+//	Version				75.33.11.08
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	08.01.09	Steiner		Änderung wegen Servicepack
+	
+STRING FUNCTION UAG_Display_Version()
+
+	STRING	sVersion
+	sVersion = Version(0)+ "." +Version(1) +"." Version(3)
+
+	RETURN sVersion;
+
+END
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//		FUNCTION NAME	
+//						UAG_Display_ServicePack()
+//
+//     	GENERAL DESCRIPTION
+//			
+//			Get Citect Service Pack/Hotfix in the form 'Service Pack A' or 'HF....' 
+//
+// 		ARGUMENTS:
+//
+//
+//     	RETURNED VALUE: 
+//
+//			Citect Service Pack as string
+//
+//		PSEUDO CODE:
+//
+//	Autor:				J.Venz
+//	Erstellungsdatum:	11.03.03	/	Schneider Electric GmbH
+//	Version				3.1.0.0
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////	
+
+STRING FUNCTION
+UAG_Display_ServicePack()
+
+	STRING 	sServicePack;
+	INT		iPos;
+	
+	! Check for service pack
+	iPos = StrSearch(0, Version(3), "Service");
+	
+	IF iPos = -1 THEN
+		! Check for hotfix
+		iPos = StrSearch(0, Version(3), "HF");
+	END
+	
+	IF iPos > -1 THEN
+		
+		sServicePack = StrMid(Version(3), iPos, StrLength(Version(3)) - iPos);
+	END
+	
+	RETURN sServicePack;
+	
+END	
+
+
+//	UAG_Display_Marke()
+//	Übergabeparameter:	Index
+//                         
+//	Rückgabewert:		Wert als Real 
+//	Beschreibung:		 
+//						
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	14.03.08	/	Schneider Electric GmbH
+//	Version				3.0.0.0
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+
+REAL FUNCTION UAG_Display_Marke(REAL rMin, REAL rMax, REAL rIndex )
+	RETURN rMax  / 10  *rIndex +rMin 
+END
+
+
+REAL FUNCTION UAG_Display_Prozent(REAL rMin, REAL rMax, REAL rIndex )
+	RETURN rMax-rMin  / 10  *rIndex +rMin 
+END
+
+
+
+
+//	UAG_UpdateLoadPresets()
+//	Übergabeparameter:	
+//                         
+//	Rückgabewert:		 
+//	Beschreibung:		Ändert Initialwerte in der Datei UAGHMIVariableInitialValues.ci 
+//						
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	21.08.08	/	Schneider Electric GmbH
+//	Version				3.0.0.0
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+
+ 
+FUNCTION UAG_UpdateLoadPresets(STRING sTag, STRING sData)
+	INT hFileNo1, hFileNo2, iDetect, iPos, iLength
+	STRING sLine, sNewLine, sFile, sFile1, sFile2
+	
+	sFile1  = gsUAGGenProjektPath + "\UAGHMIVariableInitialValues.ci"
+	// Temp file
+	sFile2 = gsUAGGenProjektPath + "\UAGHMIVariableInitialValues_Temp.ci"
+	
+	hFileNo1 = FileOpen(sFile1, "r")
+	hFileNo2 = FileOpen(sFile2 , "w")
+	
+	FileSeek(hFileNo1,0);	iDetect = -1
+	iPos = -2
+	
+	WHILE (NOT FileEOF(hFileNo1)) DO
+		sLine = FileReadLn(hFileNo1)	
+		iDetect = StrSearch(0, sLine, sTag)		
+		
+		IF iDetect > -1 THEN
+			iLength = StrLength(sTag)			
+			sNewLine = StrLeft(sLine, iLength + 8) + sData + CharToStr(34) + CharToStr(59)
+			FileWriteLn(hFileNo2, sNewLine)
+		ELSE
+			FileWriteLn(hFileNo2, sLine )
+		END	
+	END	
+			
+	FileClose(hFileNo1)
+	FileClose(hFileNo2)
+	
+	FileDelete(sFile1)
+	FileReName(sFile2, sFile1)
+
+END 
+
+/*
+**	FUNCTION NAME:	LogoutIdle
+**
+**	Set the operator logout idle time. After the idle time if the
+**	operator has done nothing the the user is logged out. The idle
+**	time is in minutes. To stop the current logout, call this function
+**	with a -ve idle time.
+**
+*/
+
+INT	hLogoutTask = -1;
+
+FUNCTION
+UAG_LogoutIdle(INT idle)
+
+
+	IF hLogoutTask > 0 THEN
+		TaskKill(hLogoutTask);
+		hLogoutTask = -1;
+	END
+
+	IF idle > 0 THEN
+		hLogoutTask = TaskNew("UAG_WaitIdle", idle, 0);
+	END
+END
+
+
+
+/*
+**	FUNCTION NAME:	_WaitIdle
+**
+**	Check if the current user has been idle for the given amount
+**	of time (minutes). If idle then display prompt to allow user
+**	to cancel and wait 5 seconds. If user does not cancel prompt
+**	then log the user out.
+**
+**	Don't call this function directly, this function is created
+**	as a task from FUNCTION LogoutIdle.
+**
+*/
+
+FUNCTION
+UAG_WaitIdle(INT idle)
+	INT	hForm;
+	INT	lastCommand;
+	INT	x,y,an;
+	INT	newx,newy,newan;
+
+	giLogOut = ParameterGet(gsUAG_LIB_NAME,"LogOut",0);
+	idle = idle * 60;
+	WHILE TRUE DO
+		Sleep(idle / 2);
+		IF StrToInt(UserInfo(0)) THEN
+			lastCommand = UserInfo(4);
+			IF TimeCurrent() - lastCommand > idle THEN
+				DspGetMouse(newx, newy);
+				newAn = KeyGetCursor();
+				IF newx = x AND newy = Y AND newAn = an THEN
+					hForm = FormNew("@(Logout)", 20, 4, 4);
+					FormPrompt(0, 0, "@(Logout idle time exceeded))");
+					FormPrompt(0, 1, "@(OK to Logout)");
+					FormButton(6, 3, "@(Cancel)", 0, 2);
+					FormRead(1);
+					Sleep(10);
+					IF FormActive(hForm) THEN
+						FormDestroy(hForm);
+						IF giLogOut THEN 
+							UAG_MM_Logout();
+						ELSE
+							UAG_MM_Logout();
+							Login(MainUser,MainUserPW);
+						END		
+					END;
+				END;
+			END;
+			DspGetMouse(x, y);
+			an = KeyGetCursor();
+		END;
+	END;
+END
+
+
+
+
+
+
+
+//	Übergabeparameter:	Arguments the same as ASS()
+//                         
+//	Rückgabewert:		Returns 0 if successful, 289 if tag does not exist, or the actual ASS error 
+//	Beschreibung:		In cicode to replace existing ASSxxx calls 
+//						
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	21.08.08	/	Schneider Electric GmbH
+//	Version				7.2.3.2
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	31.08.11	Steiner		nMode wieder eingeführt
+
+
+INT FUNCTION
+_Ass(INT hWin , INT nArg, STRING sTag,INT nMode=0, STRING sCluster = "")
+//_Ass(INT hWin , INT nArg, STRING sTag)
+//
+//
+
+	IF (TagInfo(sTag, 0) <> "") THEN  
+      
+       RETURN (Ass(hWin, nArg, sTag, 0, sCluster));
+	ELSE
+		IF gbUAGTagDebug THEN
+			TraceMsg("@(Tag Missing): "+ sCluster +"." +sTag);
+		END	
+	END
+	RETURN (289);       // Name does not exist
+
+END
+
+FUNCTION
+uag_Hupe(INT iPrio)	
+	TaskNew("uag_hupe_schreiben",IntToStr(iPrio),8)
+END	
+
+//	INT FUNCTION UAG_CloseAllPopUp()
+//	Übergabeparameter:	Bildmodus
+//                         
+//	Rückgabewert:		 
+//	Beschreibung:	Sucht nach Festern die den Bildmodus haben und schliest sie.	
+//						
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	11.08.09	/	Schneider Electric GmbH
+//	Version				3.1.1.12
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	07.09.12	Steiner		auf Winselect geändert
+
+FUNCTION UAG_CloseAllPopUp(INT iMode=giMode)
+	STRING sWinFileName;
+	INT i;
+	ErrSet(1);	
+	FOR i=0 TO giUAG_Anzahl_Fenster DO
+		WinSelect(i);
+//	WHILE (WinNext() <> -1) DO
+//		SleepMS(20);
+		sWinFileName = PageInfo(11);
+		IF StrToInt(sWinFileName) = iMode THEN
+			UAG_WinFree();
+		END	
+	END
+	ErrSet(0);
+END
+
+//	INT FUNCTION UAG_ClosePopUp()
+//	Übergabeparameter:	Faceplate Name
+//                         
+//	Rückgabewert:		 
+//	Beschreibung:	Sucht nach Festern die den Faceplate Name haben und schliest sie.	
+//						
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	11.11.09	/	Schneider Electric GmbH
+//	Version				3.1.1.6
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	
+FUNCTION UAG_ClosePopUp(STRING sName)
+	STRING sWinFileName;
+	INT i;
+	ErrSet(1);	
+	FOR i=0 TO giUAG_Anzahl_Fenster DO
+		WinGoto(i);
+		sWinFileName = PageInfo(3);
+		IF sWinFileName = sName THEN
+			UAG_WinFree();
+		END	
+	END
+	ErrSet(0);
+END
+

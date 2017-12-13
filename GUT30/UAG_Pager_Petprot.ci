@@ -1,0 +1,713 @@
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//	
+// 	FILE:	UAG_Pager_Petprot.ci
+//
+//	Beschreibung:
+//
+//      This file contains code for access to the Telstra, Link, Hutchison, PageMart PET (TAP) Protocol.
+//		The conection to a modem and the dialling of the paging service are also included in this file
+//
+//		Funktionen mit Version 3.x sind freigegeben
+//
+//
+//      Author:                 Original PET design Tony O'Donoghue
+//								Modifications, modularisation and documenting by Andrew Winter
+//	Erstellungsdatum:	29.06.01	/	Schneider Electrik GmbH
+//	Version				73.33.81.02
+//
+//
+//	NOTE:	Variable Prefixes;
+//			h	Local (function) var handle 	(INT data type)
+//			i	Local (function) var integer 	(INT data type)
+//			s	Local (function) var string 	(STRING data type)
+//			r	Local (function) var real 		(REAL data type)
+//
+//			mh	Module (file) var handle type 	(INT data type)
+//			mi	Module (file) var integer type 	(INT data type)
+//			ms	Module (file) var string type 	(STRING data type)
+//			mr	Module (file) var real type 	(REAL data type)
+//
+//			gh	Global (project) var handle type 	(INT data type)
+//			gi	Global (project) var integer type 	(INT data type)
+//			gs	Global (project) var string type 	(STRING data type)
+//			gr	Global (project) var real type 		(REAL data type)
+//
+//			_	Label defined in LABELS.DBF (remaining letters capitalised)
+//			none	All capitalised represent VARIABLE Tags
+//
+//      Notes:
+//			Functions within this file call upon general functions in GENERAL.CI.
+//
+//			The valid handle to a comport and to an ASCII text file must be supplied to most functions
+//			within this file	These are hComPort and hPETLog
+//
+//	PUBLIC FUNCTIONS:
+//
+//			// Generic service connection functions //
+//			_ConnectToPort
+//			_DisconnectPort
+//			_DialService
+//			_HangupService
+//
+//			// PET specific  functions //
+//			_PETLogin
+//			_PETSendDataBlock
+//			_PETPackageData
+//			_PETCheckSum
+//			_PETLogout
+////			
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)//
+//
+
+
+
+//	GLOBAL CONSTANTS	//
+
+//	GLOBAL VARS		//
+GLOBAL STRING	Server1_AktiverIOServer;
+//
+//	FUNCTION NAME:		_ConnectToPort
+//
+//	FUNCTION DESCRIPTION:	This function attempts to open a comm port connection.
+//
+//	REV	DATE		WHO		DESCRIP
+//	1.0	10/2/95		A.Winter	Original
+//	2.0	25/3/98		A.Winter	Renamed to From _ConnectToModem
+//
+//	SOURCE:			Called from the individual service funtions in SERVICES.CI
+//
+//	ARGUMENTS:
+//		sPort	Port to be opened
+//		hPETLog	A handle to a log file
+//
+//	RETURNED VALUE:
+//		The handle to a com port connection or -1 if unsuccessfull
+//
+//	NOTES:
+//
+//
+
+INT
+FUNCTION
+_ConnectToPort( STRING sPort, INT hPETLog)
+	INT	hComPort = -1;
+	INT hMsg;
+	STRING  sArg;
+	IF ParameterGet( gsUAG_LIB_NAME, "PagerTestMode", "0") = "1" THEN
+		LogPagingInfo("Fn._ConnectToPort. @(Paging System Test Mode). @(Simulating connecting to Port) "+sPort, _OPERATION);
+		Sleep(2);
+		RETURN(0);
+	END
+
+	hMsg = MsgOpen(Server1_AktiverIOServer, 0, 0 );
+	sArg = "^""+ sPort +"^",1"
+	hComPort = StrToInt( MsgRPC(hMsg,"ComOpen", sArg, 0))
+
+//	hComPort = ComOpen( sPort, 1 );		!Share mode with Citect
+	MsgClose(Server1_AktiverIOServer, hMsg)
+	RETURN hComPort;
+END
+
+
+//
+//	FUNCTION NAME:		_DisconnectPort
+//
+//	FUNCTION DESCRIPTION:	Closes a comm port connection.
+//
+//	REV	DATE		WHO		DESCRIP
+//	1.0	10/2/95		A.Winter	Original
+//	2.0	25/3/98		A.Winter	Renamed from _DisconnectModem
+//
+//	SOURCE:			Called from the individual service funtions in SERVICES.CI
+//
+//	ARGUMENTS:
+//		hComPort	The handle to the port to close
+//		hPETLog	A handle to a log file
+//
+//	RETURNED VALUE:
+//		The error number from the ComClose function
+//
+//	NOTES:
+//
+//
+
+INT
+FUNCTION
+_DisconnectPort( INT hComPort, INT hPETLog)
+	INT	iError;
+	INT hMsg;
+	STRING  sArg;
+	
+	IF ParameterGet( gsUAG_LIB_NAME, "PagerTestMode", "0") = "1" THEN
+		RETURN(0);
+	END
+	hMsg = MsgOpen(Server1_AktiverIOServer, 0, 0 );
+	sArg = hComPort
+	iError = StrToInt( MsgRPC(hMsg,"ComClose", sArg, 0))
+
+	IF iError <> 0 THEN
+		LogPagingInfo("ERROR.Fn._DisconnectPort. @(Error closing communication port)", _ERROR);
+	END
+	MsgClose(Server1_AktiverIOServer, hMsg)
+	RETURN iError;
+
+END
+
+
+//
+//	FUNCTION NAME:		_DialService
+//
+//	FUNCTION DESCRIPTION:	Dials a paging service
+//
+//	REV	DATE		WHO		DESCRIP
+//	1.0	10/2/95		A.Winter	Original
+//	1.1	02/01/01	E.Black		Added Sleep() to allow modem to initialize
+//
+//	SOURCE:			Called from the individual service funtions in SERVICES.CI
+//
+//	ARGUMENTS:
+//		hComPort	A handle to the comm port
+//		sStr		The telephone number as a string
+//		hPETLog		A handle to a log file
+//
+//	RETURNED VALUE:
+//		0	If connection to service successsfull
+//		-1	If connection to service unsuccesssfull
+//
+//	NOTES:
+//
+//
+
+INT
+FUNCTION
+_DialService(INT hComPort, STRING sDialStr, INT hPETLog, INT bDialModem = TRUE)
+	INT	iError		= 0;
+	INT	iLength		= 0;
+	INT	iConnectTimeout = 70;
+	INT	iConnected	= 0;
+	INT	iStart		= 0;
+	STRING	sRxStr		= "";
+	STRING	sRxChars	= "";
+	INT hMsg;
+	STRING  sArg;
+	
+
+	IF ParameterGet(gsUAG_LIB_NAME, "PagerTestMode", "0") = "1" THEN
+		LogPagingInfo("Fn._DialService. @(Paging System Test Mode.) @(Simulating dialing service)", _OPERATION);
+		Sleep(10);
+		RETURN(0);
+	END
+	IF bDialModem THEN
+		Sleep(2);		// Wait for modem to be initialized from Ports form Special Option field
+	ELSE
+		iConnectTimeout = 40;
+	END
+
+	_ClearCommsPort(hComPort);
+	sDialStr = "ATDT" + sDialStr + CharToStr(_CR);
+	iLength = Strlength(sDialStr);
+	LogPagingInfo("Fn._DialService. @(Dialing modem with) >" + sDialStr + "<", _PET );
+	iStart = TimeCurrent();
+	hMsg = MsgOpen(Server1_AktiverIOServer, 0, 0 );
+	sArg = IntToStr (hComPort) +",^"" +sDialStr +"^"," +IntToStr(iLength) +",0"
+	iError = StrToInt( MsgRPC(hMsg,"ComWrite", sArg, 0))
+	MsgClose(Server1_AktiverIOServer, hMsg);
+	Sleep (10);
+	hMsg = MsgOpen(Server1_AktiverIOServer, 0, 0 );
+	WHILE (NOT iConnected) AND iError = 0 DO
+		Sleep(1);    
+		iLength = 128;
+		sArg = IntToStr (hComPort) +",^"" +sRxChars +"^"," +IntToStr(iLength) +",0"
+		sRxChars = MsgRPC(hMsg,"r_ComRead", sArg, 0)
+
+
+		sRxStr = sRxStr + sRxChars;
+		IF StrSearch(0, sRxStr, "CONNECT") <> -1 THEN
+			iConnected = 1;
+		END
+		IF (StrSearch(0, sRxStr, "NO DIALTONE") <> -1) THEN
+			LogPagingInfo("ERROR.Fn._DialService. @(No Dialtone detected)", _OPERATION + _ERROR);
+			iError = -1;
+		END
+		IF (StrSearch(0, sRxStr, "DELAYED") <> -1) THEN
+			LogPagingInfo("ERROR.Fn._DialService. @(Delayed....)", _OPERATION);
+			iError = -1;
+		END
+		IF (StrSearch(0, sRxStr, "NO CARRIER") <> -1) THEN
+			LogPagingInfo("ERROR.Fn._DialService. @(No Carrier detected)", _OPERATION + _ERROR);
+			iError = -1;
+		END
+		IF StrSearch(0, sRxStr, "NO ANSWER") <> -1 THEN
+			LogPagingInfo("ERROR.Fn._DialService. @(No Answer signal detected)", _OPERATION + _ERROR);
+			iError = -2;
+		END
+		IF StrSearch(0, sRxStr, "BUSY") <> -1 THEN
+			LogPagingInfo("Fn._DialService. @(Busy signal detected)", _OPERATION);
+			iError = -3;
+		END
+		IF TimeCurrent() >= iStart + iConnectTimeout THEN
+			IF NOT bDialModem THEN
+				iError = 1;
+			ELSE		
+				LogPagingInfo("ERROR.Fn._DialService. @(No Connection detected)", _OPERATION + _ERROR);
+				iError = -4;
+			END
+		END
+	END
+	LogPagingInfo("Fn._DialService. @(Response from modem)  >" + sRxStr +"<", _PET );
+	MsgClose(Server1_AktiverIOServer, hMsg)
+	RETURN iError;
+END
+
+//
+//	FUNCTION NAME:		_HangupService
+//
+//	FUNCTION DESCRIPTION:	Sends the hang up commands to the MODEM.
+//
+//	REV	DATE		WHO		DESCRIP
+//	1.0	22/11/94	T.O'Donoghue	Original
+//
+//	SOURCE:			Called from the individual service funtions in SERVICES.CI
+//
+//	ARGUMENTS:
+//		hComPort	A handle to the comm port
+//
+//	RETURNED VALUE:
+//		0
+//	NOTES:
+//
+//
+
+INT
+FUNCTION
+_HangupService(INT hComPort, INT bEscapeSeq = TRUE)
+	INT	iLength,hMsg ;
+	STRING	sStr,sArg ;
+    
+	IF ParameterGet(gsUAG_LIB_NAME, "PagerTestMode", "0") = "1" THEN
+		RETURN(0);
+	END
+
+	IF bEscapeSeq THEN
+		Sleep(2);		// Modems require 2sec delay before and after +++
+		sStr = "+++";
+		iLength = StrLength(sStr);
+		LogPagingInfo("Fn._HangupService. @(Sending modem)  >" + sStr +"<", _PET );
+		hMsg = MsgOpen(Server1_AktiverIOServer, 0, 0 );
+		sArg = IntToStr (hComPort) +",^"" +sStr+"^"," +IntToStr(iLength) +",0"
+		MsgRPC(hMsg,"ComWrite", sArg, 0)		// Send logout sequence
+
+//		ComWrite(hComPort,sStr,iLength,0);
+	END
+	Sleep(2);	// Modems require 2sec delay before and after +++
+	sStr = "ath" + CharToStr(_CR);
+	iLength = StrLength(sStr);
+	LogPagingInfo("Fn._HangupService. @(Sending modem)  >" + sStr +"<", _PET );
+	sArg = IntToStr (hComPort) +",^"" +sStr+"^"," +IntToStr(iLength) +",0"
+	MsgRPC(hMsg,"ComWrite", sArg, 0)		// Send logout sequence
+//	ComWrite(hComPort, sStr, iLength,0);
+	MsgClose(Server1_AktiverIOServer, hMsg)
+	RETURN(0);
+END
+
+
+//
+//	FUNCTION NAME:		_PETLogin
+//
+//	FUNCTION DESCRIPTION:	Performs all the necessary stuff to login to the PET services
+//
+//	REV	DATE		WHO		DESCRIP
+//	1.0	?		T.O'Donoghue	Original
+//	2.0	10/2/95		A.Winter	Modified for Telstra, Link, and Hutchison Login
+//	3.0	28/12/00	E.Black		Modified for PageMart Login: Changed sequence to check for ID= before sending <CR>s
+//
+//	SOURCE:			Called from the individual service funtions in SERVICES.CI
+//
+//	ARGUMENTS:
+//		hComPort	A handle to the comm port
+//		sPassword	A password agreed upon with the service provider for each user
+//		hPETLog		A handle to a log file
+//
+//	RETURNED VALUE:
+//		0		Login successful
+//		-1		Login Failed
+//		-2		Login OK but Message go ahead not received
+//
+//	NOTES:
+//
+//
+
+INT
+FUNCTION
+_PETLogin(INT hComPort, STRING sPassword, INT hPETLog)
+	BINARY	bConnected = FALSE;
+	BINARY	bLoggedIn = FALSE;
+
+	INT	iTemp;
+	INT	iConnectTryNo = 1;
+	INT	iConnectTryMax = 3;		// Number of attempts to make contact
+	INT	iLoginTryNo = 1;
+	INT	iLoginTryMax = 3;		// Number of attempts to logon
+	INT	iLength;
+	INT	iConnectDelay = 10;
+	INT	iLoginDelay = 10;
+
+	INT		iStart		= 0,hMsg ;
+	STRING	sRxStr		= "";
+	STRING	sRxChars	= "";
+	
+    STRING  sTemp		= "^r";			// Initialize as <CR>
+	STRING 	sRxBuff		= "";			// Receive buffer
+	STRING	sLoginSeq,sArg ;					// Login password sequence
+
+	IF ParameterGet(gsUAG_LIB_NAME, "PagerTestMode", "0") = "1" THEN
+		LogPagingInfo("Fn._PETLogin. @(Paging System Test Mode). @(Simulating PET Login)", _OPERATION);
+		Sleep(1);
+		RETURN(0);
+	END
+
+	LogPagingInfo("Fn._PETLogin. @(Connecting to PET service.)", _PET);
+	hMsg = MsgOpen(Server1_AktiverIOServer, 0, 0 );
+
+	WHILE (NOT bConnected) AND (iConnectTryNo <= iConnectTryMax) DO
+
+		sRxBuff = _ComReadSequence(hComPort, "ID=", 1);
+
+		IF StrSearch(0, sRxBuff, "ID=") >= 0 THEN		// PET will answer with ID= possibly followed by <CR> and/or <LF>
+			bConnected = TRUE;
+			LogPagingInfo("Fn._PetLogin. @(PET service answered) >" + sRxBuff + "<", _PET);
+		ELSE
+			IF sRxBuff = "" THEN
+				LogPagingInfo("Fn._PETLogin. @(Sending) >" + sTemp + "<  Attempt " + iConnectTryNo:#, _PET);
+			ELSE
+				LogPagingInfo("ERROR.Fn._PETLogin. @(Unknown characters received during connect) >" + sRxBuff + "<", _PET );
+			END
+
+			_ClearCommsPort(hComPort);
+			iLength = 1;
+			sArg = IntToStr (hComPort) +",^"" +sTemp+"^"," +IntToStr(iLength) +",0"
+			iTemp = StrToInt (MsgRPC(hMsg,"ComWrite", sArg, 0))		// Send logout sequence
+//			iTemp = ComWrite(hComPort, sTemp, iLength, 0);	// Send carriage return to trigger prompt "ID="
+			iConnectTryNo = iConnectTryNo + 1;
+
+			Sleep(1);
+			iLength = 1;
+			sArg = IntToStr (hComPort) +",^"" +sTemp+"^"," +IntToStr(iLength) +",0"
+			iTemp = StrToInt (MsgRPC(hMsg,"ComWrite", sArg, 0))		// Send logout sequence
+			
+//			iTemp = ComWrite(hComPort, sTemp, iLength, 0);	// Send carriage return a second time to allow for baud rate training
+		END
+	END
+
+   	IF (NOT bConnected) THEN
+		LogPagingInfo("ERROR.Fn._PETLogin. @(No answer during connection) - @(aborted)", _ERROR + _PET);
+		RETURN (-1);
+		MsgClose(Server1_AktiverIOServer, hMsg)
+	END
+
+	sLoginSeq = CharToStr(_ESC) + "PG1" + sPassword + CharToStr(_CR);
+
+   	WHILE (NOT bLoggedIn) AND (iLoginTryNo <= iLoginTryMax) DO
+		LogPagingInfo("Fn._PETLogin. @(Logging into PET service.) @(Sending) >" + sLoginSeq + "< Attempt " + IntToStr(iLoginTryNo), _PET);
+		_ClearCommsPort(hComPort);
+		iLength = StrLength(sLoginSeq);
+		sArg = IntToStr (hComPort) +",^"" +sLoginSeq+"^"," +IntToStr(iLength) +",0"
+		iTemp = StrToInt (MsgRPC(hMsg,"ComWrite", sArg, 0))		// Send logout sequence
+
+//		iTemp = ComWrite(hComPort, sLoginSeq, iLength, 0);	// Send login password sequence //
+//
+		sRxBuff = _ComReadSequence(hComPort, "[p", iLoginDelay);
+
+		IF (_CharSearch(0, sRxBuff, _ACK) >= 0) THEN
+			bLoggedIn = TRUE;
+			IF (StrSearch(0, sRxBuff, "[p") >= 0) THEN
+				LogPagingInfo("Fn._PETLogin. @(Login successful message go ahead received.) Message >" + sRxBuff + "<", _PET);
+				MsgClose(Server1_AktiverIOServer, hMsg)
+				RETURN(0);	
+			ELSE
+				LogPagingInfo("ERROR.Fn._PETLogin. @(Login successful but message go ahead not received.) Message >" + sRxBuff + "<", _PET);
+				MsgClose(Server1_AktiverIOServer, hMsg)
+				RETURN(-2);
+			END								
+           	ELSE
+			IF (_CharSearch(0, sRxBuff, _ESC) >= 0) THEN
+				LogPagingInfo("ERROR.Fn._PETLogin. @(Forced disconnection.) Message >" + sRxBuff + "<", _PET);
+			ELSE
+				IF (_CharSearch(0, sRxBuff, _NAK) >= 0) THEN
+					LogPagingInfo("ERROR.Fn._PETLogin. @(Request login again received.) Message >" + sRxBuff + "<", _PET);
+				ELSE
+					LogPagingInfo("ERROR.Fn._PETLogin. @(Unknown characters received during login)>" + sRxBuff + "<", _PET);
+				END
+			END
+		END
+		iLoginTryNo = iLoginTryNo + 1;
+	END
+
+   	IF (NOT bLoggedIn) THEN
+		LogPagingInfo("ERROR.Fn._PETLogin. @(Login attempt failed) - aborted", _ERROR + _PET);
+		MsgClose(Server1_AktiverIOServer, hMsg)
+		RETURN (-1);
+	END
+END
+
+
+//
+//	Function Name:  _PETSendDataBlock
+//
+//	Author:		A.Winter
+//
+//	Revision	By		Date		Description
+//	1.0		A.Winter	10/2/95		Original
+//	2.0		A.Winter	29/7/95		Removed protocol dependancy
+//
+//	Function Description:	This function is the middle section of the PET protocol that sends
+//				the pager number and message.
+//				PET responses dictate whether the data block has been accepted and
+//				whether to retry or not.
+//
+//	SOURCE:			Called from the individual service funtions in SERVICES.CI
+//
+//      Arguments:	hComPort	Handle to COM port
+//			sPagerNo	The pager number
+//			sMessage	The ASCII message
+//			hPETLog	        Handle to log file
+//                      iMsgDelay       The Delay between Writing the message to the service and checking for a reply
+//
+//      Returned Value:	1	Forced Logout. Usually means successfull but message limit reached.
+//			0	Successfull
+//			-1	Unsuccessfull due to checksum or other
+//			-2	Unsuccessfull due to abandon command from service (pager invalid or message invalid)
+//
+//      Psuedo Code:
+//
+//
+
+INT
+FUNCTION
+_PETSendDataBlock( INT hComPort, STRING sPagerNo, STRING sMessage, INT hPETLog, INT iMsgDelay)
+	INT	bPageSent = FALSE;		// Indicates whether page has been sent  //
+	INT	iPageTryNo = 1;    		// Try count //
+	INT	iPageTryMax = 3;    	// Number of times to try before give up //
+	INT	iTxBlockLen = 0;		// Length of sTransBlock		 //
+	INT	iResponseLen = 128;
+	INT	iError = -1,hMsg;
+	STRING	sTransBlock = "";	// Block to send - formatted for PET	 //
+	STRING 	sResponse = "",sArg;		// Receive buffer                        //
+
+	IF ParameterGet( gsUAG_LIB_NAME, "PagerTestMode", "0") = "1" THEN
+		LogPagingInfo("Fn._PETSendDataBlock. @(Paging System Test Mode.) @(Simulating sending data blocks)", _OPERATION);
+		Sleep(1);
+		LogPagingInfo("Fn._PETSendDataBlock. Sending PagerNo >"+sPagerNo+"<", _OPERATION);
+		LogPagingInfo("Fn._PETSendDataBlock. Message >"+sMessage+"<", _OPERATION);
+		RETURN(0);
+	END
+
+	LogPagingInfo("Fn._PETSendDataBlock. Sending PagerNo >"+sPagerNo+"<", _PET);
+	LogPagingInfo("Fn._PETSendDataBlock. Message >"+sMessage+"<", _PET);
+
+	WHILE (NOT bPageSent) AND (iPageTryNo <= iPageTryMax) DO		// While page not sent and ierr = 0 //
+		sTransBlock = _PETPackageData(sPagerNo,sMessage);			// Assemble block to send to PET  //
+		iTxBlockLen = StrLength(sTransBlock);						// This involves putting the data in  //
+																	// correct format and adding checksum //
+		_ClearCommsPort(hComPort);
+		hMsg = MsgOpen(Server1_AktiverIOServer, 0, 0 );
+		sArg = IntToStr (hComPort) +",^"" +sTransBlock+"^"," +IntToStr(iTxBlockLen) +",0"
+		iError = StrToInt (MsgRPC(hMsg,"ComWrite", sArg, 0))		// Send logout sequence
+
+//		iError = ComWrite(hComPort,sTransBlock,iTxBlockLen,0);		// Write the page //
+		LogPagingInfo("Fn._PETSendDataBlock. @(Data block sent) >"+sTransBlock+"< Attempt "+IntToStr(iPageTryNo), _PET);
+		Sleep(iMsgDelay);
+		iResponseLen = 128;
+		sArg = IntToStr (hComPort) +",^"" +sResponse +"^"," +IntToStr(iResponseLen) +",8"
+		iError = StrToInt (MsgRPC(hMsg,"r_ComRead", sArg, 0))		// Wait 8 seconds for reply then timeout //
+
+//		iError = ComRead(hComPort,sResponse,iResponseLen,8);
+		LogPagingInfo("Fn._PETSendDataBlock. @(Response received) >"+sResponse+"<", _PET);
+		// Wait for reply..............                           							//
+		// Possible responses are:                                							//
+		// <CR><ACK><CR>		Page successful send next message							//
+		// <CR><RS><CR>			Abandon block Pager Id XXXXXXX is not valid 				//
+		//								or unacceptable message content						//
+		// <CR><NAK><CR>		Checksum error                    							//
+		// <CR><ACK><CR><ESC><EOT><CR>	Page successful limit reached. Forced logout		//
+
+		IF (_CharSearch(0,sResponse,_ACK) >= 0) THEN
+			bPageSent = TRUE;	   			// Success //
+			LogPagingInfo("Fn._PETSendDataBlock. @(Page successful).", _PET);
+			
+			IF (_CharSearch(0,sResponse,_EOT) >= 0) THEN
+				LogPagingInfo("Fn._PETSendDataBlock. @(Forced Logout).", _PET);
+				MsgClose(Server1_AktiverIOServer, hMsg)
+				RETURN( 1);	
+			ELSE
+				MsgClose(Server1_AktiverIOServer, hMsg)
+				RETURN( 0);
+			END
+		END
+		IF (_CharSearch(0,sResponse,_RS) >= 0) THEN
+			LogPagingInfo("ERROR.Fn._PETSendDataBlock. @(Abandon block received.)", _ERROR + _PET);
+			MsgClose(Server1_AktiverIOServer, hMsg)
+			RETURN(-2);
+		ELSE						// Non-fatal transmission error //
+			IF (_CharSearch(0,sResponse,_NAK) >= 0) THEN
+				LogPagingInfo("ERROR.Fn._PETSendDataBlock. @(Page unsuccessful bad checksum.)", _ERROR + _PET);
+			ELSE
+				LogPagingInfo("ERROR.Fn._PETSendDataBlock. @(Page unsuccessful unknown characters received.)", _ERROR + _PET);
+				MsgClose(Server1_AktiverIOServer, hMsg)
+				RETURN( -2);
+			END
+		END
+		iPageTryNo = iPageTryNo + 1;
+	END
+
+	IF (iPageTryNo > iPageTryMax) THEN
+		LogPagingInfo("ERROR.Fn._PETSendDataBlock. @(Problem with PET service. Transaction aborted.)", _ERROR + _PET);
+		MsgClose(Server1_AktiverIOServer, hMsg)
+		RETURN (-1);
+   	END
+END
+
+
+//
+//	Function Name:  _PETPackageData
+//
+//	Author:		A.Winter
+//
+//	Revision	By		Date		Description
+//	1.0		A.Winter	10/2/95		Original
+//
+//	Function Description:	Builds the PET data block and calls the checksum routine
+//
+//	SOURCE:			Called from the individual service funtions in SERVICES.CI
+//
+//      Arguments:	sPagerNo	The pager number
+//			sMessage	The ASCII message
+//
+//      Returned Value:	The formatted datablock including the checksum
+//
+//      Psuedo Code:
+//
+//
+
+STRING
+FUNCTION
+_PETPackageData(STRING sPagerNo, STRING sMessage)
+	STRING	sPETBlock = "";
+
+	sPETBlock = CharToStr(_STX) + sPagerNo + CharToStr(_CR) + sMessage + CharToStr(_CR) + CharToStr(_ETX);
+	sPETBlock = sPETBlock + _PETCheckSum(sPETBlock) + CharToStr(_CR);
+
+	RETURN sPETBlock;
+END
+
+
+//
+//	Function Name:  _PETCheckSum
+//
+//	Author:		T.O'Donoghue
+//
+//	Revision	By		Date		Description
+//	1.0		T.O'Donoghue	22/11/94	Original
+//
+//	Function Description:	This function calculates the checksum of a PET protocol block.
+//				The addition of 30H to each nibble (as outlined in the PET specification)
+//				is fudged using ASCII, rather than Hex.
+//
+//      Arguments:	sPETCheckBlock	The block to calculate the checksum on
+//
+//      Returned Value:	The checksum characters
+//
+//      Psuedo Code:
+//
+//
+
+STRING
+FUNCTION
+_PETCheckSum(STRING sPETCheckBlock)
+	INT	CheckBlockLen;	 	// Length of input string (block) //
+	INT	BCCSum = 0;		// Sum of all characters	  //
+	INT	Char;	       
+	INT	i;
+	INT	j;
+	STRING	sPETCheckSum = "";	// 3 character checksum		  //
+	STRING	sBCCSum;		// Sum of all characters (STRING) //
+	STRING	sChar_1;		// Character 1 of 3 checksum	  //
+	STRING	sChar_2;		// Character 2 of 3 checksum	  //
+	STRING	sChar_3;		// Character 3 of 3 checksum	  //
+
+	CheckBlockLen = StrLength( sPETCheckBlock);
+	FOR i = 0 TO CheckBlockLen DO			// Calculate sum of all characters //
+		BCCSum = BCCSum + StrGetChar( sPETCheckBlock, i);
+	END
+	sBCCSum = HexToStr( BCCSum, 4);			// Sum as 4 digit hex number //
+											// Only 3 least sig. digits  //
+
+	FOR j = 1 TO 3 DO						// This part satisfies the PET requirement of	//
+											// adding 30H to each nibble to make the     	//
+		Char = StrGetChar( sBCCSum, j);		// characters printable			  			    //
+		
+		IF (Char > 96) AND (Char < 103) THEN	// Hex numbers A-F //
+			Char = Char - 39;					// Convert as per PET requirements //
+			StrSetChar( sBCCSum, j, Char);
+		END
+	END
+
+	sChar_1 = CharToStr(StrGetChar(sBCCSum, 1));
+	sChar_2 = CharToStr(StrGetChar(sBCCSum, 2));
+	sChar_3 = CharToStr(StrGetChar(sBCCSum, 3));
+	sPETCheckSum = sChar_1 + sChar_2 + sChar_3;
+
+	RETURN(sPETCheckSum);
+END
+
+
+//
+//	Function Name:  _PETLogout
+//
+//	Author:		A.Winter
+//
+//	Revision	By		Date		Description
+//	1.0		A.Winter	10/2/95		Original
+//
+//	Function Description:	Sends the PET logout sequence
+//
+//      Arguments:		hComPort	A handle to the com port
+//
+//      Returned Value:		
+//
+//      Psuedo Code:
+//
+//
+
+FUNCTION
+_PETLogout( INT hComPort, INT hPETLog, INT bEOTDetect = TRUE)
+	INT	iLength;
+	INT	nChar;			// Length of PET reply       		//
+	INT	rChar,hMsg ;			// Receive character ASCII value 	//
+	STRING	sLogoutSeq		// Logout sequence	   	 	//
+	STRING	sRxBuff,sArg ;		// Receive buffer		 	//
+
+	IF ParameterGet(gsUAG_LIB_NAME, "PagerTestMode", "0") = "1" THEN
+		RETURN;
+	END
+	_ClearCommsPort(hComPort);
+	sLogoutSeq = CharToStr(_EOT) + CharToStr(_CR);
+	LogPagingInfo("Fn._PETLogout. @(Sending logout sequence) >" + sLogoutSeq + "<", _PET);	// Write to Modem log
+	iLength = 2;
+	hMsg = MsgOpen(Server1_AktiverIOServer, 0, 0 );
+	sArg = IntToStr (hComPort) +",^"" +sLogoutSeq+"^"," +IntToStr(iLength) +",2"
+	MsgRPC(hMsg,"ComWrite", sArg, 0)		// Send logout sequence
+
+//	ComWrite(hComPort, sLogoutSeq, iLength, 2);
+	
+	sRxBuff = _ComReadSequence(hComPort, CharToStr(_EOT), 8);	// Wait 8 seconds for reply then timeout
+	
+	IF (bEOTDetect AND (_CharSearch( 0, sRxBuff, _EOT) >= 0)) OR
+	  ((NOT bEOTDetect) AND (_CharSearch(0, sRxBuff, _ESC) >= 0)) THEN
+		LogPagingInfo("Fn._PETLogout. @(Logout successful) >" + sRxBuff + "<", _PET);
+        ELSE
+		LogPagingInfo("ERROR.Fn._PETLogout. @(Logout unsuccessful) >" + sRxBuff + "<", _PET);
+	END
+	MsgClose(Server1_AktiverIOServer, hMsg)
+END

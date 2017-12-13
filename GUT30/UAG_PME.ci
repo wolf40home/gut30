@@ -1,0 +1,109 @@
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//	
+// 	FILE:	UAG_PME_30.ci
+//
+//	Beschreibung:
+//
+//		Enthält Funktionen für PMESWT010000
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	03.03.2015	/	Schneider Electrik GmbH
+//	Version				75.33.11.08
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	
+//
+//	PUBLIC FUNCTIONS:
+//
+//			UAG_PME_30()
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+
+// MODULE VARIABLES
+INT 		miMonitor;
+
+
+
+//	FUNCTION UAG_PME_30()
+//	Übergabeparameter:	Tagname als String Modus      
+//                       
+//	Rückgabewert:		
+//	Beschreibung:		Waagenmodul
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	20.05.10	/	Schneider Electrik GmbH
+//	Version				75.33.11.08
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//
+//		Beispiel für Aufruf
+//		TaskNew("UAG_ISPY_20", "^"%TAG%^"0,1,^"%TAG2%^"", 8) 
+//		TaskNew("UAG_ISPY_20", "^"%TAG%^"0,2,^"%TAG2%^"", 8) 
+
+
+
+FUNCTION UAG_PME_30(STRING sTag,INT ityp=0, INT imode=1,STRING sTag2="")
+	
+
+	Ass(-2,1,"'" + sTag + "'",0);
+	_Ass(-2,2,sTag + "_M");
+	_Ass(-2,3,sTag + "_TYP");
+	_Ass(-2,4,sTag + "_LW");			
+	_Ass(-2,5,sTag + "_LT");
+	_Ass(-2,6,sTag + "_ZT");
+	UAG_LoadZT(	sTag + "_ZT",7);
+	_Ass(-2,12,sTag + "_WEIGHT");
+	_Ass(-2,13,sTag + "_ELFCUT");
+	_Ass(-2,14,sTag + "_EHFCUT");
+	_Ass(-2,15,sTag + "_M2\MD");
+	_Ass(-2,16,sTag + "_OUT\MS1");
+	_Ass(-2,17,sTag + "_M2\EXCHRPT");
+	_Ass(-2,18,sTag + "_OUT\TARE");
+	_Ass(-2,19,sTag + "_OUT\Calibration_Sequence_Code");
+	_Ass(-2,20,sTag + "_WERT\Sensor_Sensitivity");
+	_Ass(-2,21,sTag + "_WERT\Calibration_Load_1");
+	_Ass(-2,22,sTag + "_M2\DN0");
+	_Ass(-2,23,sTag + "_M2\OFFANZ");
+	_Ass(-2,24,sTag + "_M2\DSL0");
+	_Ass(-2,25,sTag + "_M2\GainTT");
+	_Ass(-2,26,sTag + "_M2\Gain2");
+	_Ass(-2,27,sTag + "_M2\BERJUST");
+	_Ass(-2,28,sTag + "_M2\GMAZ");
+	_Ass(-2,29,sTag + "_M2\DSL");
+	_Ass(-2,30,sTag + "_ESIM");
+	_Ass(-2,31,sTag + "_M2\GAINANZ");
+	_Ass(-2,32,sTag + "_OFFAN");
+	_Ass(-2,33,sTag + "_GAIND");
+	_Ass(-2,34,sTag + "_ESIM");
+	_Ass(-2,35,sTag + "_OUT\App_Firmware_Version");
+	_Ass(-2,36,sTag + "_M2\STABIZEIT");
+	_Ass(-2,37,sTag + "_M2\F1");
+	_Ass(-2,38,sTag + "_M2\F2");
+	_Ass(-2,39,sTag + "_M2\F3");
+	UAG_LoadUIBIT(50, 41,16);	
+	UAG_LoadUI( sTag + "_KT", 60)
+	UAG_LoadUIBIT(31, 71,16);
+	UAG_LoadUIBIT(36, 91,16);
+// Grenzwerte
+	IF TagInfo(sTag2 + "_AHH",0) <> "" THEN
+		Ass(-2,111,"'" + sTag2 + "'",0);
+		_Ass(-2,112,sTag2 + "_M");
+		_Ass(-2,113,sTag2 + "_TYP");
+		_Ass(-2,114,sTag2 + "_LW");
+		_Ass(-2,117,sTag2 + "_AHH");
+		_Ass(-2,118,sTag2 + "_AH");
+		_Ass(-2,119,sTag2 + "_HYS");
+		_Ass(-2,120,sTag2 + "_AL");    					
+		_Ass(-2,121,sTag2 + "_ALL");
+		_Ass(-2,122,sTag2 + "_SH");		
+		_Ass(-2,123,sTag2 + "_SHH");		
+		_Ass(-2,124,sTag2 + "_SL");
+		_Ass(-2,125,sTag2 + "_SLL");
+	END
+
+	GUT_PopupNewAt("!p_pme_sys_30",giMODE,imode )
+	_WinTitle(sTag);
+END 
+

@@ -1,0 +1,84 @@
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//	
+// 	FILE:	SFC.ci
+//
+//	Beschreibung:
+//
+//		Enhält Funktionen für SFC View.
+//		
+//
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	09.12.07	/	Schneider Electrik GmbH
+//	Version				74.33.70.00
+//
+//	PUBLIC FUNCTIONS:
+//
+//			
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	16.04.14	Steiner		Alle Funktionen auf 7.40 Page Funktionen umgestellt
+
+// MODULE VARIABLES
+
+INT SfcOverview = 0; 		! Die Schrittkette wird in der Overview-Ansicht dargestellt. 
+INT SfcDetails = 1;  		! Die Schrittkette wird in der Details-Ansicht dargestellt. 
+INT SfcDetailsSimple = 2; 	! Die Schrittkette wird in der Details Simple-Ansicht dargestellt. 
+
+
+// genutzte AktivX
+STRING  msSFCClass = "UnitySFCViewCtrl.SFCView";
+//
+
+//	UAG_SFC()
+//	Übergabeparameter:	sSPSName      
+//                       
+//	Rückgabewert:		---	
+//	Beschreibung:		ruft wenn möglich eine Seite mit SFC View auf	
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	22.11.07	/	Schneider Electrik GmbH
+//	Version				2.0.0.0
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	16.04.14	Steiner		Alle Funktionen auf Pagegoto umgestellt
+//
+
+
+
+FUNCTION UAG_SFC(STRING sSPSName)
+	OBJECT SFCView;
+	INT		iError;
+	
+	ErrSet(1);
+
+	iError = PageGoto("System_SFC")
+	
+
+	IF  iError = 0 THEN
+		SleepMS(1000);
+		
+		SFCView=DspAnCreateControlObject(250, msSFCClass, 1270, - 858);
+		SleepMS(200);
+		iError=IsError();
+			
+			_ObjectSetProperty(SFCView,"UseOPCProject",FALSE);
+			_ObjectSetProperty(SFCView,"UsePLCDiagSystem",TRUE);
+			_ObjectSetProperty(SFCView,"DetailsStepsLeft",4800);
+			_ObjectSetProperty(SFCView,"ViewMode",sfcOverview);
+			_ObjectSetProperty(SFCView,"OPCConnect",FALSE);
+			_ObjectSetProperty(SFCView,"AutomaticProjectReload",TRUE);
+			_ObjectSetProperty(SFCView,"OPCAccessPath",sSPSName);
+			_ObjectSetProperty(SFCView,"UseOPCProject",TRUE);
+			
+		iError=IsError();	
+		IF iError <>0 THEN 
+			UAG_SystemInfo("UAG_SFC", "System","SFC View:: ist auf dem Rechner nicht vorhanden","-","-","-",TaskCluster(),_UAG_Fehler)
+	    END
+	END
+	
+	ErrSet(0);
+END 
+

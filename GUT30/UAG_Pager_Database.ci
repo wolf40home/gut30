@@ -1,0 +1,294 @@
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//	
+// 	FILE:	UAG_Pager_Database.ci
+//
+//	Beschreibung:
+//
+//	This file contains some generic databse record editting functions
+//
+//		Funktionen mit Version 3.x sind freigegeben
+//
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	10.10.08	/	Schneider Electrik GmbH
+//	Version				74.33.81.02
+//
+//		NOTE:	Variable Prefixes;
+//			h	LOCAL (FUNCTION) VAR handle 	(INT data type)
+//			i	LOCAL (FUNCTION) VAR integer 	(INT data type)
+//			s	LOCAL (FUNCTION) VAR STRING 	(STRING data type)
+//			r	LOCAL (FUNCTION) VAR REAL 	(REAL data type)
+//
+//			mh	MODULE (file) VAR handle type 	(INT data type)
+//			mi	MODULE (file) VAR integer type 	(INT data type)
+//			ms	MODULE (file) VAR STRING type 	(STRING data type)
+//			mr	MODULE (file) VAR REAL type 	(REAL data type)
+//
+//			gh	GLOBAL (project) VAR handle type 	(INT data type)
+//			gi	GLOBAL (project) VAR integer type 	(INT data type)
+//			gs	GLOBAL (project) VAR STRING type 	(STRING data type)
+//			gr	GLOBAL (project) VAR REAL type 		(REAL data type)
+//
+//			_	Label defined in LABELS.DBF (remaining letters capitalised)
+//			none	All capitalised represent VARIABLE Tags
+//
+//      Notes:
+//			
+////	PUBLIC FUNCTIONS:
+//
+//	FUNCTIONS:
+//		***	System FUNCTION ***
+//		_RecordSelectForm( INT hSQL, STRING sTitle, STRING sTable, STRING sField, STRING sFilter="", INT iMode = 0)
+//		_RecordDeleteCallback()
+//		_RecordNewCallback()
+//		_RecordSelect(STRING sSELECT, STRING sFROM, STRING sWHERE, STRING sORDERBY)
+//			
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)//
+//
+//
+
+
+//	MODULE CONSTANTS
+
+//	MODULE VARS
+
+INT		mhSQL			= -1;
+INT		mhSelectForm	= -1;
+INT		mhSelectList	= -1;
+BINARY	mbDeletePending	= FALSE;
+BINARY	mbEditPending	= FALSE;
+STRING	msTable			= "";
+STRING	msField			= "";
+
+///*
+//**	FUNCTION Name:		_RecordSelectForm
+//**
+//**	FUNCTION DESCRIPTION:	Provides a generic popup combo form to allow a record to be chosen from a table.
+//**				The function filters out any records where the search field contains the
+//**				filter Name. Using modes 1 and 2 a New record callback function and a delete record 
+//**				callback function can be invoked respectively.
+//**
+//**	REV	DATE		WHO		DESCRIP
+//**	1.0	17/7/95		A.Winter	Original
+//**	2.0	1/9/95		A.Winter	Modifed to include a the New and Delete modes and callback functions
+//**	2.1	11/10/01	E.Black		Added if block to display first record in the combobox instead of a
+//**								blank record. Added ORDER BY to alphabetize list.
+//**
+//**	SOURCE:		Called from various record editting eg: PagerEdit function, ServicesEditForm function.
+//**				and paging steps (Sequence) load / save.
+//**
+//**	ARGUMENTS:
+//**		hSQL		A handle to a SQL connection ( The PAGINGV3.MDB file )
+//**		sTitle		A string to display in the popup title bar
+//**		sTable		A MS Access Table Name
+//**		sField		A field Name in the table
+//**		sFilter		A string to filter records where sFilter = data in sField.
+//**		iMode		As described above. Can be added
+//**
+//**	RETURNED VALUE:
+//**		An empty STRING OR a record field entry.
+//**
+//**	NOTES:
+//**		This FUNCTION uses globals TO allow the callback functions TO operate.
+//**		Some of the arguments passed TO this FUNCTION are mapped TO globals TO permit the callbacks TO work
+//*/
+
+STRING FUNCTION
+_RecordSelectForm( INT hSQL, STRING sTitle, STRING sTable, STRING sField, STRING sFilter="", INT iMode = 0)
+	INT	iError		= -1;
+	INT	iFormWidth	= 32;
+	INT	iFormHeight	= 3;
+	STRING	sSQLStatement	= "";
+	STRING	sName		= "";
+
+
+	IF mhSelectForm <> -1 THEN
+		RETURN( "");
+	END
+
+	mhSQL = hSQL;
+	msField = sField;
+	msTable = sTable;
+
+	sSQLStatement = " SELECT " + sField +
+			" FROM " + sTable;
+	IF sFilter <> "" THEN
+		sSQLStatement = sSQLStatement + " WHERE " + sFilter;
+	END
+	sSQLStatement = sSQLStatement + " ORDER BY " + sField;
+
+	mhSelectForm = FormNew( sTitle, iFormWidth, iFormHeight, 1 +8 );
+	ErrSet( 1);
+	iError = SQLExec( hSQL,	sSQLStatement);
+	ErrSet( 0);
+	IF iError <> 0 THEN
+		UAG_SystemInfo("_RecordSelectForm","Paging System","@(SQL SELECT error Fn) _RecordSelectForm.","-","-","-",TaskCluster(),_UAG_Fehler)
+		RETURN( -1);
+	END
+
+	IF SQLNext(hSQL) = 0 THEN
+		sName = SQLGetField( hSQL, sField);
+	END
+	FormComboBox( 1, 0, 18, 6, sName, 0);
+
+	WHILE SQLNext( hSQL) = 0 DO
+		mhSelectList = FormAddList( SQLGetField( hSQL, sField));
+	END
+
+	IF iMode BITAND 0x0001 THEN
+		FormButton( iFormWidth - 11, iFormHeight - 3, "@(&New,9,c)", _RecordNewCallback, 0);
+	END
+	IF iMode BITAND 0x0002 THEN
+		FormButton( iFormWidth - 11, iFormHeight - 2, "@(&Delete,9,c)", _RecordDeleteCallback, 0);
+	END
+	FormButton( iFormWidth - 31, iFormHeight - 1, "@(OK,9,c)", 0, 1);
+	FormButton( iFormWidth - 11, iFormHeight - 1, "@(Cancel)", 0, 2);
+	IF FormRead(0) = 0 THEN
+		IF (NOT _RecordExist( hSQL, sTable, sField, "'"+sName+"'")) OR (sName = sFilter) THEN
+			sName = "";
+		END
+	ELSE
+		sName = "";
+	END
+	mhSQL		= -1;
+	mhSelectForm	= -1;
+	mhSelectList	= -1;
+	msTable		= "";
+	msField		= "";
+	msTable 	= "";
+	RETURN( sName);
+END
+
+
+/*
+**	FUNCTION NAME:		_RecordDeleteCallback
+**
+**	FUNCTION DESCRIPTION:	Prompts for confirmation off deletion of a data table record. The mbDeletePending
+**							flag is used to prevent multiple occurances of this form.
+**
+**	REV	DATE		WHO		DESCRIP
+**	1.0	1/9/95		A.Winter	Original
+**
+**	SOURCE:			Called from the _RecordSelectForm function as callback functions
+**
+**	ARGUMENTS:
+**
+**	RETURNED VALUE:
+**		0		Serves no purpose on callback functions
+**		-1		Serves no purpose on callback functions
+**
+**	NOTES:
+*/
+
+INT
+FUNCTION
+_RecordDeleteCallback()
+	INT	iError	= -1;
+	STRING	sRecord	= "";
+
+	IF mbDeletePending = TRUE THEN
+		RETURN( -1);
+	END
+	mbDeletePending = TRUE;
+	FormGetData( mhSelectForm);
+	sRecord = FormGetText( mhSelectForm, mhSelectList);
+	IF sRecord <> "" THEN
+		IF _MessageForm( "@(Delete Record) "+sRecord, "@(Are You Sure ?)", 1) = 0 THEN
+			iError = _RecordDelete( mhSQL, msTable, msField, "'"+sRecord+"'");
+			FormDestroy( mhSelectForm);
+		END
+	END
+	mbDeletePending = FALSE;
+	RETURN( 0);
+END
+
+
+/*
+**	FUNCTION NAME:		_RecordNewCallback
+**
+**	FUNCTION DESCRIPTION:	Used to branch to the appropriate form functions for data entry into a table
+**
+**	REV	DATE		WHO		DESCRIP
+**	1.0	1/9/95		A.Winter	Original
+**
+**	SOURCE:			Called from the _RecordSelectForm function as callback functions
+**
+**	ARGUMENTS:
+**
+**	RETURNED VALUE:
+**		0		Serves no purpose on callback functions
+**		-1		Serves no purpose on callback functions
+**
+**	NOTES:
+*/
+
+INT
+FUNCTION
+_RecordNewCallback()
+	INT	iError	= -1;
+	STRING	sName	= "";
+
+	IF mbEditPending = TRUE THEN
+		RETURN( -1);
+	END
+	mbEditPending = TRUE;
+	FormGetData( mhSelectForm);
+	sName = FormGetText( mhSelectForm, mhSelectList);
+	IF msTable = "Pagers" THEN
+		_PagerEditForm( mhSQL, "@(Add new Pager)", sName, 1);
+		FormDestroy( mhSelectForm);
+	END
+	mbEditPending = FALSE;
+	RETURN( 0);
+END
+
+/*
+**	FUNCTION NAME:		_RecordSelect
+**
+**	FUNCTION DESCRIPTION:	Returns a handle to a SQL recordset selected from the paging database.
+**					
+**
+**	REV	DATE		WHO		DESCRIP
+**	1.0	29/06/01	T.Munro		Original
+**
+**	SOURCE:		<various>
+**
+**	ARGUMENTS:	sSELECT	= SQL fields to grab
+**			sFROM	= Table from which info should be grabbed
+**			sWHERE	= SQL where clause
+**			sORDERBY= Order by clause
+**
+**	RETURNED VALUE:
+**			hSQL	= handle if successful
+**				= -1 if fails
+**
+**	NOTES:
+*/
+
+INT
+FUNCTION
+_RecordSelect(STRING sSELECT, STRING sFROM, STRING sWHERE, STRING sORDERBY)
+
+	INT	hSQL = SQLConnect("DSN=PAGING");
+	STRING	sSQLStatement = "";
+
+	IF hSQL <> -1 THEN
+
+		// Build the statement
+		sSQLStatement = "SELECT " + sSELECT + " FROM " + sFROM;
+		IF sWHERE <> "" THEN
+			sSQLStatement = sSQLStatement + " WHERE " + sWHERE;
+		END
+		IF sORDERBY <> "" THEN
+			sSQLStatement = sSQLStatement + " ORDER BY " + sORDERBY;
+		END
+
+		IF SQLExec( hSQL, sSQLStatement) <> 0 THEN
+			SQLDisconnect(hSQL);
+			hSQL = -1;		
+		END
+	END
+			
+	RETURN(hSQL);
+END

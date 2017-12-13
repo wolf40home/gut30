@@ -1,0 +1,124 @@
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//	
+// 	FILE:	UAG_Pager_zzRing_Phone.ci
+//
+//	Beschreibung:
+//
+//	This file contains the cicode for the Ring Phone service.
+//
+//		Funktionen mit Version 3.x sind freigegeben
+//
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	10.10.08	/	Schneider Electrik GmbH
+//	Version				3.1.0.0
+//
+//	NOTE:	Variable Prefixes;
+//			h	Local (function) var handle 	(INT data type)
+//			i	Local (function) var integer 	(INT data type)
+//			s	Local (function) var string 	(STRING data type)
+//			r	Local (function) var real 		(REAL data type)
+//
+//			mh	Module (file) var handle type 	(INT data type)
+//			mi	Module (file) var integer type 	(INT data type)
+//			ms	Module (file) var string type 	(STRING data type)
+//			mr	Module (file) var real type 	(REAL data type)
+//
+//			gh	Global (project) var handle type 	(INT data type)
+//			gi	Global (project) var integer type 	(INT data type)
+//			gs	Global (project) var string type 	(STRING data type)
+//			gr	Global (project) var real type 		(REAL data type)
+//
+//			_	Label defined in LABELS.DBF (remaining letters capitalised)
+//
+//			none	All capitalised represent VARIABLE Tags
+//
+//	PUBLIC FUNCTIONS:
+//
+//		Ring_Phone_Send
+//			
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)//
+//
+
+
+//
+//	FUNCTION NAME:		Ring_Phone_Send
+//
+//	FUNCTION DESCRIPTION:	This service was added to allow a phone to be rung to alert somebody that 
+//				they should either look at their mobile phone for a message, their pager or
+//				just go an look at the system. Initially this service will be spawned in parrallel
+//				with each Telstra_Mobile_Ring service.
+//
+//	REV	DATE		WHO		DESCRIP
+//	1.0	22/6/98		A.Winter	Original
+//	1.1	28/06/01	T.Munro		Renamed from '_RingPhoneService()' func
+//
+//	SOURCE:			Called from the _SendToService function
+//
+//	ARGUMENTS:
+//		iServiceNo	= Number of the sevice (handle to service queue)
+//		sServiceName	= Name of the service
+//		sPort		= Citect port name on which service is to run
+//		sPassword	= Service password (not used)
+//		sPhoneNoPrefix	= Any phone number prefixes
+//
+//	RETURNED VALUE:
+//		0		If OK
+//		-1		If Error
+//
+//	NOTES:
+//
+
+INT
+FUNCTION
+Ring_Phone_Send( INT iServiceNo, STRING sServiceName, STRING sPort, STRING sPassword, STRING sPhoneNoPrefix)
+
+	INT	iError;
+	INT	iReturn = 0;
+	INT	iConnectRetry = 10;
+	INT	hComPort = -1;
+	INT	iInt = 0;
+	INT	hServiceLog = -1;
+	INT	hQueDataFmt = -1;
+	STRING	sQueData;
+	STRING	sPhoneNo;
+
+	LogPagingInfo("Fn.Ring_Phone_Send. @(Initiating Service) >"+sServiceName+"<", _OPERATION);
+	LogPagingInfo("Fn.Ring_Phone_Send. @(Citect Port)        >"+sPort+"<", _OPERATION);
+	LogPagingInfo("Fn.Ring_Phone_Send. @(Phone No prefix)    >"+sPhoneNoPrefix+"<", _OPERATION);
+
+	hQueDataFmt = FmtOpen( "ServiceQueDataFmt", gsServiceQueDataFmt, 1);
+
+	WHILE hComPort = -1 AND iConnectRetry > 0 DO
+		hComPort = _ConnectToPort( sPort, hServiceLog);
+		IF hComPort = -1 THEN
+			iConnectRetry = iConnectRetry - 1;
+			LogPagingInfo("Fn.Ring_Phone_Send. Port "+sPort+" busy for service "+sServiceName+
+				" @(delaying for 60 seconds.... Retry No) "+iConnectRetry:#, _OPERATION);
+			Sleep( 30);
+		END
+	END
+
+	IF hComPort >= 0 THEN
+		WHILE QueLength( ghServiceQue[ iServiceNo]) > 0 AND iConnectRetry >0 DO
+			QueRead( ghServiceQue[ iServiceNo] , iInt, sQueData, 0);
+			StrToFmt( hQueDataFmt, sQueData);
+			sPhoneNo = StrTrim(sPhoneNoPrefix)+StrTrim( FmtGetField( hQueDataFmt, "PagerNo"));
+                        _DialService( hComPort, sPhoneNo, hServiceLog, FALSE);
+			_HangupService( hComPort, FALSE);
+			LogPagingInfo("Fn.Ring_Phone_Send. @(Rang phone) "+sPhoneNo, _OPERATION);
+			iReturn = 0;
+			Sleep(3);
+		END
+		_DisconnectPort( hComPort, hServiceLog);
+	ELSE
+		iReturn = -1;
+		LogPagingInfo("Fn.Ring_Phone_Send. @(Unable to connect to Port) "+sPort+
+					    " may be busy. Error = "+IntToStr(hComPort), _OPERATION);
+	END
+
+	ghServiceTask[ iServiceNo] = -1;
+	FmtClose( hQueDataFmt);
+	RETURN(iReturn);
+END

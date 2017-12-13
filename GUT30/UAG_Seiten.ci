@@ -1,0 +1,1151 @@
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//	
+//
+// 	FILE:	UAG_Seiten.ci
+//
+//	Beschreibung:
+//
+//		Enhält Funktionen für einzelne Seiten .
+//		
+//
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	14.02.07	/	Schneider Electrik GmbH
+//	Version				75.33.11.08
+//
+//	PUBLIC FUNCTIONS:
+//
+//			UAG_AnzStatus1()
+//			UAG_AnzStatus2()
+//			UAG_SetAnz_x()   Mehrere Funktionen
+//			UAG_SetAnz_Textdatei()
+//			UAG_SetAnz_TextDatei_Test()
+//			UAG_SetAnz_TD_Form()
+//			UAG_GetAnz_x(INT NR)   Mehrere Funktionen
+//			UAG_Page_SelectRdb()		abgekündigt
+//			UAG_Page_SelectNr()
+//			UAG_Page_Kommentar()
+//			UAG_Page_AnlagenName()
+//			UAG_Page_ReadDB()
+//			UAG_Page_Version_verz()
+//			UAG_Page_Backup_dbf()
+//			UAG_Page_Forward()
+//			UAG_Page_Back()
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	16.04.14	Steiner		Alle Funktionen auf 7.40 Page Funktionen umgestellt
+
+// MODULE VARIABLES
+
+
+STRING  sBildNr[100];
+STRING  msInfoFormat = "{Text,40}{Datum,14}";					!Format für Info Dateien
+STRING 	msAnlagenName;
+
+// genutzte AktivX
+
+//STRING	msTreeObjectClass = "CiTreeView.Tree";
+//STRING	msComboBoxClass = "CiText.ComboBox";
+
+
+FUNCTION UAG_Page_Backup_dbf()
+END
+//	UAG_AnzStatus1() und UAG_AnzStatus2()
+//	Übergabeparameter:	--      => String für Statuszeile
+//                       
+//	Rückgabewert:		Begrenzter String
+//	Beschreibung:		
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	14.02.07	/	Schneider Electrik GmbH
+//	Version				3.0.0.0
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//
+//  07.09.07 Steiner		Farbumschlag zum Speichern bei Fehler
+
+STRING FUNCTION UAG_AnzStatus1()
+	RETURN StrLeft(Status1,100)
+END
+
+STRING FUNCTION UAG_AnzStatus2(INT t=0)
+	IF t=0 THEN
+		RETURN StrLeft(Status2,15)
+	ELSE
+		RETURN giUAGStatus2_l
+	END
+END
+
+
+
+//	FUNCTION UAG_SetAnz_x
+//	Übergabeparameter:	Statusnummer as INT, TAG, x, y, modus      
+//                       
+//	Rückgabewert:		---
+//	Beschreibung:		Setzt Parameter und ruft ein Statuspannel auf für Rechts und links	
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	20.02.07	/	Schneider Electrik GmbH
+//	Version				3.0.0.0
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	00.11.07	Steiner		erweitert für Kundenpannel
+//
+
+
+FUNCTION UAG_SetAnz_r(INT iNR, STRING sTag,INT ix, INT iy, INT iMode=0)
+	giAnzMode=iMode;
+
+	IF iMode =0 THEN
+		w_Type_r = iNR;
+		w_Type_rc = 0;
+	ELSE
+		w_Type_rc = iNR;
+		w_Type_r = 0;
+	END
+
+	_Ass(-2,1, sTag);
+	UAG_MM_WinNewAt("!p_anzeig_r16",ix,iy,giMODE,0)
+
+END
+
+FUNCTION UAG_SetAnz_l(INT iNR, STRING sTag,INT ix, INT iy, INT iMode=0)
+	giAnzMode=iMode;
+	IF iMode =0 THEN
+		w_Type_l = iNR;
+		w_Type_lc = 0;
+	ELSE
+		w_Type_lc = iNR;
+		w_Type_l = 0;
+	END
+
+	_Ass(-2,1, sTag);
+	UAG_MM_WinNewAt("!p_anzeig_l16",ix,iy,giMODE,0)
+
+END
+
+FUNCTION UAG_SetAnz_r32(INT iNR, STRING sTag,INT ix, INT iy, INT iMode=0)
+	giAnzMode=iMode;
+	IF iMode =0 THEN
+		
+		w_Type_r = iNR;
+		w_Type_rc = 0;
+	ELSE
+		w_Type_rc = iNR;
+		w_Type_r = 0;
+	END
+
+
+	_Ass(-2,1, sTag);
+	UAG_MM_WinNewAt("!p_anzeig_r32",ix,iy,giMODE,0)
+
+END
+
+FUNCTION UAG_SetAnz_l32(INT iNR, STRING sTag,INT ix, INT iy, INT iMode=0)
+	giAnzMode=iMode;
+	IF iMode =0 THEN
+		
+		w_Type_l = iNR;
+		w_Type_lc = 0;
+	ELSE
+		w_Type_lc = iNR;
+		w_Type_l = 0;
+	END
+
+
+	_Ass(-2,1, sTag);
+	UAG_MM_WinNewAt("!p_anzeig_l32",ix,iy,giMODE,0)
+
+END
+
+//	FUNCTION UAG_SetAnz_Textdatei()
+//	Übergabeparameter:	Dateiname, TAG     
+//                       
+//	Rückgabewert:		---
+//	Beschreibung:		Setzt Parameter und ruft ein Statuspannel auf mit Texten aus einer Datei	
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	14.02.08	/	Schneider Electrik GmbH
+//	Version				75.33.11.08
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	30.04.08	Steiner		auf 32 Bit erweitert
+
+
+FUNCTION UAG_SetAnz_TextDatei(STRING sDatei, STRING sTag,INT iBit=16)
+	INT hDev;
+	INT i;
+	ErrSet(1);
+	hDev = FileOpen(PathToStr(gsUAGVersionPath)+ sDatei + ".Txt","r");
+	
+	IF hDev >= 0 THEN
+
+		FOR i = 1 TO iBit DO
+			
+			IF FileEOF(hDev) = 0 THEN
+				w_Status_td[i] = FileReadLn(hDev);
+			ELSE
+				w_Status_td[i] = "-";
+			END
+		END
+	ELSE
+		DspError(sDatei +" @(can not be opened)");
+		
+	END
+	
+	FileClose(hDev);
+	ErrSet(0);
+	Ass(-2,1,"'" +  sDatei +"'",0);
+	_Ass(-2,2, sTag);
+	
+	GUT_GetMousePos_unten(185);
+	IF iBit>16 THEN
+		UAG_MM_WinNewAt(ParameterGet("Navigation" ,"anzeig_r32td" ,"!p_anzeig_r32td"),giPosX,giPosY,giMODE,0)
+	ELSE
+		UAG_MM_WinNewAt(ParameterGet("Navigation" ,"anzeig_r16td" ,"!p_anzeig_r16td"),giPosX,giPosY,giMODE,0)
+	END
+	
+END
+
+//	FUNCTION UAG_SetAnz_TD_Form()
+//	Übergabeparameter:	Dateiname, TAG, iBit     
+//                      iBit = 16 oder 32 oder 48 
+//	Rückgabewert:		---
+//	Beschreibung:		Setzt Parameter und ruft ein Form auf mit Texten aus einer Datei wenn das Bit gesetzt ist.
+//						Der Name der Variablen ist DIAG1,DIAG2,DIAG3 die erste muss vorhanden sein.	
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	02.07.08	/	Schneider Electrik GmbH
+//	Version				3.0.0.1
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	21.07.08	Steiner		Strigclean löscht auch Umlaute
+
+
+
+STRING msDatei;
+
+
+STRING FUNCTION _StrClean(STRING sTemp)
+	RETURN StrLeft(stemp,StrLength(stemp))
+END
+//INT FUNCTION UAG_TD_VERSION()
+//	UAG_VERSION(msDatei,0)
+//	RETURN 0
+//END
+
+//	FUNCTION UAG_SetAnz_TextDatei_Test()
+//	Übergabeparameter:	Dateiname     
+//                       
+//	Rückgabewert:		---
+//	Beschreibung:		Prüft ob die Datei vorhanden ist.
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	14.02.08	/	Schneider Electrik GmbH
+//	Version				3.0.0.0
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+
+INT FUNCTION UAG_SetAnz_TextDatei_Test(STRING sDatei)
+INT spath
+	ErrSet(1);
+	spath =FileOpen(PathToStr(gsUAGVersionPath)+ sDatei + ".Txt","r") ;
+	IF spath=-1 THEN
+		FileClose(spath);
+		RETURN 1
+	ELSE
+		FileClose(spath);
+		RETURN 0
+	END
+	ErrSet(0);	
+END
+
+
+//	UAG_GetAnz(INT NR)
+//	Übergabeparameter:	Zeilennummer as INT      
+//                       
+//	Rückgabewert:		---
+//	Beschreibung:		Gibt einen String zurück der aus dem Array w_Status gebildet wird	
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	20.02.07	/	Schneider Electrik GmbH
+//	Version				3.0.0.0
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	00.11.07	Steiner		Erweitert für Kundenpannel
+//
+
+STRING FUNCTION UAG_GetAnz_l(INT NR)
+	
+	IF giAnzMode = 0 THEN
+		RETURN w_Status[w_Type_l][NR]
+	ELSE
+		RETURN w_Status_c[w_Type_lc][NR]
+	END
+
+END
+
+STRING FUNCTION UAG_GetAnz_r(INT NR)
+
+	IF giAnzMode = 0 THEN
+		RETURN w_Status[w_Type_r][NR]
+	ELSE
+		RETURN w_Status_c[w_Type_rc][NR]
+	END
+END
+
+STRING FUNCTION UAG_GetAnz_r32(INT NR)
+
+	IF giAnzMode = 0 THEN
+		RETURN w_Status32[w_Type_r][NR]
+	ELSE
+		RETURN w_Status32_c[w_Type_rc][NR]
+	END
+END
+
+STRING FUNCTION UAG_GetAnz_l32(INT NR)
+
+	IF giAnzMode = 0 THEN
+		RETURN w_Status32[w_Type_l][NR]
+	ELSE
+		RETURN w_Status32_c[w_Type_lc][NR]
+	END
+END
+
+STRING FUNCTION UAG_GetAnz_td(INT NR)
+
+		RETURN w_Status_td[NR]
+END
+
+//	UAG_PageSelect()
+//	Übergabeparameter:	---
+//                       
+//	Rückgabewert:		---
+//	Beschreibung:		Listet alle Seiten der _PAGES.RDB in einer List-Box
+//                      
+//	Autor:				Frank Däbritz
+//	Erstellungsdatum:	17.01.08	/	Schneider Electric GmbH
+//	Version				75.33.11.02
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	08.02.08	Jungbluth	Feldbreite
+//	14.04.08	Steiner		Systemseiten ausblenden
+//	18.07.08	Steiner		für Doppelmonitor geändert
+//	12.10.16	Steiner		für PES angepasst
+
+FUNCTION UAG_Page_Select()
+	STRING	sFile;
+	STRING	sBuf;
+	INT hRdb;
+	INT	iRecord;
+	sBuf = PageInfo(0);
+	IF (StrToChar(sBuf) = StrToChar(" ")) OR 
+	   (StrToChar(sBuf) = StrToChar("!")) THEN
+		sBuf = "";
+	END
+	FormNew("Bildanwahl...", 38, 6, 16);
+	UAG_GetMousePos_mitte(300,300);
+	PageTransformCoords(WinNumber(), giPosX, giPosY, giPosX, giPosY, 0)	
+	FormPosition( giPosX,giPosY,0);
+	FormButton( 1, 5, "   @(OK)  ", 0, 1);
+	FormButton(17, 5, " @(Cancel) ", 0, 2);
+	FormListBox(1, 0, 36, 5, sBuf);
+	hRdb = RdbOpen("_PAGES");
+	IF (hRdb <> -1) THEN
+		iRecord = RdbFirstRec(hRdb);
+		WHILE (iRecord <> -1) DO
+			sFile = RdbGet(hRdb, "NAME");
+			// Alle Seiten filtern, welche nicht gelistet werden sollen:
+			IF (StrToChar(sFile) <> StrToChar("!")) THEN
+				IF (StrLeft(sFile, 4) <> "CSV_") THEN
+					IF (StrLeft(sFile, 7) <> "System_") THEN
+						IF (StrLeft(sFile, 4) <> "sgc_") THEN
+							IF (StrRight(sFile, 7) <> "Startup") THEN
+								IF (sFile <> "PageMenu") THEN
+									FormAddList(sFile);
+								END
+							END	
+						END	
+					END	
+				END		
+			END
+			iRecord = RdbNextRec(hRdb);
+		END
+		RdbClose(hRdb)
+	END
+	IF FormRead(0) = 0 THEN
+	PageDisplay(sBuf);
+	END
+
+END
+
+
+
+//	UAG_PageSelectNr()
+//	Übergabeparameter:	---
+//                       
+//	Rückgabewert:		---
+//	Beschreibung:		
+//
+//	Autor:				Frank Däbritz
+//	Erstellungsdatum:	11.12.07	/	Schneider Electric GmbH
+//	Version				74.33.70.00
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	
+FUNCTION UAG_Page_SelectNr()
+	STRING	sFile;
+	STRING	sBuf;
+	INT iBuf;
+	INT hDev;
+	INT iBildNr;
+	INT miStatus = 0;
+
+	sBuf = PageInfo(0);
+
+	IF (StrToChar(sBuf) = StrToChar(" ")) OR 
+	   (StrToChar(sBuf) = StrToChar("!")) THEN
+		sBuf = "";
+	ELSE
+		iBuf = StrToInt(StrRight(sBuf, 3));
+		IF (iBuf <> 0) THEN
+			sBuf = IntToStr(iBuf);
+		ELSE
+			sBuf = "";
+		END
+	END
+
+	FormNew("Bildnummer...", 28, 2, 0);
+	FormButton( 1, 1, "   @(OK)    ", 0, 1);
+	FormButton(17, 1, " @(Cancel) ", 0, 2);
+	FormComboBox(1, 0, 10, 5, sBuf);
+
+	hDev = DevOpen("UAG_Seiten");
+	IF (hDev <> -1) THEN
+		DevSeek(hDev, 1);
+		WHILE (miStatus = 0) DO
+			sFile = DevGetField(hDev, "NAME");
+			
+			IF (StrToChar(sFile) <> StrToChar("!")) THEN
+				iBildNr = StrToInt(StrRight(sFile, 3));
+				IF (iBildNr <> 0) THEN
+					sBildNr[iBildNr] = sFile;
+					FormAddList(iBildNr);
+				END	
+			END
+			
+			miStatus = DevNext(hDev);
+		END
+		DevClose(hDev)
+	END
+
+	IF FormRead(0) = 0 THEN
+		iBuf = StrToInt(sBuf);
+		IF (iBuf <> 0) THEN
+			IF (StrLength(sBildNr[iBuf]) <> 0) THEN
+				PageDisplay(sBildNr[iBuf]);
+			ELSE
+				CSV_MessageBox("Bildnummer...", "Falsche Bildnummer eingegeben!^nBitte korrigieren!", 48);	
+			END	
+		END	
+	END
+
+END
+
+
+
+//	UAG_Stunde12
+//	Übergabeparameter:	-     
+//                       
+//	Rückgabewert:	Stunde	
+//	Beschreibung:	für die Anzeige der Uhr	
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	23.07.07	/	Schneider Electrik GmbH
+//	Version				3.0.0.0
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//
+
+REAL FUNCTION UAG_Stunde12()
+	REAL t
+	
+	t= TimeHour(TimeCurrent()) +(TimeMin(TimeCurrent())*0.0166666)
+	IF (t > 12) THEN
+		RETURN t - 12 
+	ELSE
+		RETURN t
+	END
+END	
+
+//	UAG_Page_Kommentar()
+//	Übergabeparameter:	---
+//                       
+//	Rückgabewert:		Den Kommentar der aktuellen Page
+//	Beschreibung:		Da die in UAG eingetragene Bildbeschreibung in den Page Kommentar gelegt wird 
+//						wurde diese Funktion erstellt um den für die Überschrift zu nutzen.
+//                      
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	21.04.08	/	Schneider Electric GmbH
+//	Version				7.2.0.0
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	
+
+STRING FUNCTION UAG_Page_Kommentar()
+	STRING	sFile, sKom;
+	STRING	sBuf;
+	INT hRdb;
+	INT	iRecord;
+
+	IF PageGetInt (39) =1 THEN 
+		RETURN  gsPageKom[WinNumber()];
+	ELSE	
+		sBuf = PageInfo(2);
+		IF (StrToChar(sBuf) = StrToChar(""))  THEN
+			gsPageKom[WinNumber()] ="";
+			PageSetInt(39,1);
+			RETURN  gsPageKom[WinNumber()];
+		END
+
+		hRdb = RdbOpen("_PAGES");
+		IF (hRdb <> -1) THEN
+			iRecord = RdbFirstRec(hRdb);
+			WHILE (iRecord <> -1) DO
+				sFile = RdbGet(hRdb, "TITLE");
+
+				IF (sFile = sBuf) THEN
+					sKom = RdbGet(hRdb, "COMMENT");
+					gsPageKom[WinNumber()] =sKom;
+					PageSetInt(39,1);	
+				END
+				iRecord = RdbNextRec(hRdb);
+			END
+			
+		END
+		
+		RdbClose(hRdb)
+		RETURN gsPageKom[WinNumber()]
+	END
+
+
+END
+
+//	UAG_AnlagenName()
+//	Übergabeparameter:	---
+//                       
+//	Rückgabewert:		Den in der INI eingetragenen Anlagen Name
+//	Beschreibung:		
+//                      
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	29.04.08	/	Schneider Electric GmbH
+//	Version				3.1.0.0
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//
+
+	
+STRING FUNCTION UAG_Page_AnlagenName()
+	IF msAnlagenName ="" THEN
+		msAnlagenName= StrLeft(ParameterGet("Page" ,"AnlagenName" ,"UAG Demo Anlage"),25);
+	END	
+	RETURN msAnlagenName
+
+END
+
+//	FUNCTION UAG_Page_ReadDB(INT iAn, INT iAnzahl, INT iOffset)
+//	Übergabeparameter:	      
+//                       
+//	Rückgabewert:	---	
+//	Beschreibung:	macht das Anzeigen und Navigation der Operlog.dbf	
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	23.11.07	/	Schneider Electrik GmbH
+//	Version				3.1.0.1
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	07.01.2009	Steiner		Erweitert für Backup Dateien
+
+FUNCTION UAG_Page_ReadDB1(INT iAn, INT iAnzahl, INT iOffset)
+	INT hDev;
+	INT i,j;
+	STRING sFeld1;
+//	IF uag_Alarmcount_reset =1 THEN
+//		hDev = DevOpen("DB_Anzeige",0);
+//		DevZap(hDev) ;
+//		DevClose(hDev);
+//		uag_Alarmcount_reset =0;
+//	END	
+	hDev = DevOpen("DB_Anzeige",16);
+	sFeld1 = PageGetStr(7);
+	IF hDev >= 0 THEN
+		DevSeek(hDev, iOffset) 
+		IF str3 <> "" THEN
+			FOR i = iAn TO (iAn + iAnzahl-1) DO
+				DspStr(i, "UAG_OP", "");
+			END
+			FOR i = iAn TO (iAn + iAnzahl-1) DO
+				IF StrSearch(0, DevGetField(hDev, sFeld1) , str3) <> -1 THEN
+					IF DevEOF(hDev) = 0 THEN
+						DspStr(i, "UAG_OP", DevReadLn(hDev));
+					ELSE
+						DspStr(i, "UAG_OP", "");
+					END
+					j=j+1;
+					PageSetInt(2,j);
+				ELSE
+					IF DevEOF(hDev) = 0 THEN
+						i=i-1;
+						DevNext(hDev);
+					END		
+				END
+			END
+		ELSE
+			FOR i = iAn TO (iAn + iAnzahl-1) DO
+				PageSetInt(4,DevSize(hDev));
+				PageSetInt(2,DevRecNo(hDev));
+				IF DevEOF(hDev) = 0 THEN
+					DspStr(i, "UAG_OP", DevReadLn(hDev));
+				ELSE
+					DspStr(i, "UAG_OP", "");
+				END
+			END	
+		END
+
+		DevClose(hDev);
+	ELSE
+
+		UAG_SystemInfo("UAG_Page_ReadDB", "System", "Operlog @(can not be opened)" ,"-","-","_",TaskCluster(),_UAG_Fehler);
+
+	END
+END
+
+
+STRING msStralt,msDbAlt;
+INT miTempdb;
+
+
+//	FUNCTION UAG_Page_ReadDB(INT iAn, INT iAnzahl, INT iOffset)
+//	Übergabeparameter:	      
+//                       
+//	Rückgabewert:	---	
+//	Beschreibung:	macht das Anzeigen und Navigation der Operlog.dbf	
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	23.11.07	/	Schneider Electrik GmbH
+//	Version				3.1.0.1
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	07.01.2009	Steiner		Erweitert für Backup Dateien
+
+
+FUNCTION UAG_Page_ReadDB(INT iAn, INT iAnzahl, INT iOffset)
+	INT hDev;
+	INT i,j;
+	STRING sFeld1,sTmpText;
+	hDev = DevOpen("DB_Anzeige",16);
+
+	IF hDev >= 0 THEN
+		DevSeek(hDev, iOffset) 
+		IF str3 <> "" THEN
+			IF msDbAlt <> PageGetStr(6) OR msStralt <> str3 THEN
+				msDbAlt = PageGetStr(6);
+				msStralt =str3;
+				DevClose(hDev);
+				ErrSet(1);
+				TaskNew("UAG_Page_Filter_dbf","",8);
+				ErrSet(0);
+			ELSE
+				PageSetInt(4,DevSize(hDev));					
+				FOR i = iAn TO (iAn + iAnzahl-1) DO
+
+					PageSetInt(2,DevRecNo(hDev));
+					IF DevEOF(hDev) = 0 THEN
+						DspStr(i, "UAG_OP", DevReadLn(hDev));
+					ELSE
+						DspStr(i, "UAG_OP", "");
+					END
+				END
+			END		
+		ELSE
+			IF miTempdb THEN
+				DevClose(hDev);
+				DevModify("DB_Anzeige","*","*",msDbAlt ,-1);
+				hDev = DevOpen("DB_Anzeige",16);
+				miTempdb =False;
+			END	
+			PageSetInt(4,DevSize(hDev));
+			FOR i = iAn TO (iAn + iAnzahl-1) DO
+				PageSetInt(2,DevRecNo(hDev));
+				IF DevEOF(hDev) = 0 THEN
+					DspStr(i, "UAG_OP", DevReadLn(hDev));
+				ELSE
+					DspStr(i, "UAG_OP", "");
+				END
+			END	
+		END
+
+		DevClose(hDev);
+	ELSE
+
+		UAG_SystemInfo("UAG_Page_ReadDB", "System", "Operlog @(can not be opened)" ,"-","-","_",TaskCluster(),_UAG_Fehler);
+
+	END
+END
+
+//	FUNCTION UAG_Page_ReadDB_ac(INT iAn, INT iAnzahl, INT iOffset)
+//	Übergabeparameter:	      
+//                       
+//	Rückgabewert:	---	
+//	Beschreibung:	macht das Anzeigen und Navigation der AlarmCount.dbf	
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	11.12.09	/	Schneider Electrik GmbH
+//	Version				3.1.1.7
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	
+
+FUNCTION UAG_Page_ReadDB_ac(INT iAn, INT iAnzahl, INT iOffset)
+	INT hDev;
+	INT i,j;
+	STRING sFeld1,sTmpText;
+	
+
+
+//	IF uag_Alarmcount_reset =1 THEN
+//		hDev = DevOpen("DB_Anzeige",0);
+//		DevZap(hDev);
+//		DevControl(hDev,1,"");
+//		DevClose(hDev);
+//		uag_Alarmcount_reset =0;
+//	END	
+	hDev = DevOpen("DB_Anzeige",16);
+
+	IF hDev >= 0 THEN
+		DevSeek(hDev, iOffset) 
+		IF PageGetInt (6)  = 1 THEN
+			IF msDbAlt <> PageGetStr(6)THEN
+				msDbAlt = PageGetStr(6);
+				DevClose(hDev);
+				ErrSet(1);
+				TaskNew("UAG_Page_Sort_dbf","",8);
+				ErrSet(0);
+			ELSE
+				PageSetInt(4,DevSize(hDev));					
+				FOR i = iAn TO (iAn + iAnzahl-1) DO
+
+					PageSetInt(2,DevRecNo(hDev));
+					IF DevEOF(hDev) = 0 THEN
+						DspStr(i, "UAG_OP", DevReadLn(hDev));
+					ELSE
+						DspStr(i, "UAG_OP", "");
+					END
+				END
+			END		
+		ELSE
+			IF miTempdb THEN
+				DevClose(hDev);
+				DevModify("DB_Anzeige","*","*",msDbAlt ,-1);
+				hDev = DevOpen("DB_Anzeige",16);
+				miTempdb =False;
+			END	
+			PageSetInt(4,DevSize(hDev));
+			FOR i = iAn TO (iAn + iAnzahl-1) DO
+				PageSetInt(2,DevRecNo(hDev));
+				IF DevEOF(hDev) = 0 THEN
+					DspStr(i, "UAG_OP", DevReadLn(hDev));
+				ELSE
+					DspStr(i, "UAG_OP", "");
+				END
+			END	
+		END
+
+		DevClose(hDev);
+	ELSE
+
+		UAG_SystemInfo("UAG_Page_ReadDB_ac", "System", "Operlog @(can not be opened)" ,"-","-","_",TaskCluster(),_UAG_Fehler);
+
+	END
+END
+
+
+//	FUNCTION UAG_Page_Filter_dbf()
+//	Übergabeparameter:	      
+//                       
+//	Rückgabewert:	---	
+//	Beschreibung:	Datenbank Filtern	
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	12.01.09	/	Schneider Electrik GmbH
+//	Version				3.1.0.0
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+
+FUNCTION UAG_Page_Filter_dbf()
+	INT hDev,hDev2;
+	STRING sFeld1,sTmpText;
+
+	sFeld1 = PageGetStr(7);
+	hDev = DevOpen("DB_Anzeige",16);
+	hDev2 = DevOpen("DB_AnzeigeW");
+	DevZap(hDev2);
+	WHILE NOT DevEOF(hDev) DO
+//	x=DevRecNo(hDev);
+		IF StrSearch(0, DevGetField(hDev, sFeld1) , str3) <> -1 THEN
+			sTmpText=DevReadLn(hDev);
+			DevWriteLn(hDev2,sTmpText);
+		ELSE
+			DevNext(hDev);
+		END	
+	END
+	DevClose(hDev2);
+	DevClose(hDev);
+	DevModify("DB_Anzeige","*","*","[DATA]:tempdb.dbf" ,-1);
+	miTempdb = True;
+END
+
+
+//	FUNCTION UAG_Page_Sort_dbf()
+//	Übergabeparameter:	      
+//                       
+//	Rückgabewert:	---	
+//	Beschreibung:	Datenbank Filtern	
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	11.12.09	/	Schneider Electrik GmbH
+//	Version				3.1.1.7
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+
+FUNCTION UAG_Page_Sort_dbf()
+	INT hDev,hDev2;
+	STRING sTmpText;
+
+	
+	hDev = DevOpen("DB_Anzeige",0);
+	hDev2 = DevOpen("DB_AnzeigeW");
+	DevZap(hDev2);
+	WHILE NOT DevEOF(hDev) DO
+		DevNext(hDev);
+	END
+	WHILE NOT DevEOF(hDev) DO
+		sTmpText=DevReadLn(hDev);
+		DevWriteLn(hDev2,sTmpText);
+		DevPrev(hDev)
+	END	
+	DevClose(hDev2);
+	DevClose(hDev);
+	DevModify("DB_Anzeige","*","*","[DATA]:tempdb.dbf" ,-1);
+	miTempdb = True;
+END
+
+
+//	UAG_TEXT_EIN_INFO()
+//	Übergabeparameter:	
+//                         
+//	Rückgabewert:		Eingegebener Text 
+//	Beschreibung:		 
+//						
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	11.12.08	/	Schneider Electric GmbH
+//	Version				3.1.0.0
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+
+STRING FUNCTION UAG_TEXT_EIN_INFO (STRING sTag, INT iNr)
+
+	STRING InputBuffer,sText;
+	sText=Infotext[iNr][0];
+	InputBuffer=sText;
+
+	FormNew("Infotext",52,2,16);
+	FormInput(0,0,"Eingabe:",sText,41);
+	FormButton(10,1, "    @(OK)    ",0 , 1);
+	FormButton(39,1, " @(Cancel) ", 0, 2);  
+	IF FormRead(0) =0 THEN
+		IF (sText <> InputBuffer) THEN
+			Infotext[iNr][1]= UAG_ZeitStempel();
+			PageSetInt(20,1);
+			RETURN sText;
+		ELSE
+			RETURN InputBuffer;
+		END	
+	ELSE 
+		RETURN InputBuffer;
+	END	
+END
+
+//	P_Infotexte(STRING sTag)
+//	Übergabeparameter:	Tagname als String      
+//                       
+//	Rückgabewert:		
+//	Beschreibung:	Infotexte für Meßstelle aufschalten	
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	19.12.08	/	Schneider Electrik GmbH
+//	Version				7.2.0.2
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	
+INT hFmt;
+
+FUNCTION 
+UAG_Infotexte_save(STRING sTag)
+	INT hDev,i;
+	STRING sTemp;
+	
+	ErrSet(1);
+	hDev = FileOpen(PathToStr("[DATA2P]:")+ "I_"+ sTag + ".Txt","w");
+
+	
+	hFmt=FmtOpen("InfoFormat",msInfoFormat,1);
+	IF FileEOF(hDev) <> 0 THEN
+		FOR i = 0 TO 2 DO
+			FmtSetField(hFmt,"Text",Infotext[i][0]);
+			FmtSetField(hFmt,"Datum",Infotext[i][1]);
+			sTemp =FmtToStr(hFmt);
+			FileWriteLn(hDev,sTemp); 
+		END
+				
+	END
+
+	FmtClose(hFmt);
+	FileClose(hDev);
+	ErrSet(0);
+END 
+
+FUNCTION 
+UAG_Infotexte_load(STRING sTag)
+	INT hDev,i;
+	
+	ErrSet(1);
+	hDev = FileOpen(PathToStr("[DATA2P]")+ "I_"+ sTag + ".Txt","r");
+
+		
+	hFmt=FmtOpen("InfoFormat",msInfoFormat,1);
+	FOR i = 0 TO 2 DO
+			
+		IF FileEOF(hDev) = 0 THEN
+			StrToFmt(hFmt, FileReadLn(hDev));
+			Infotext[i][0] = FmtGetField(hFmt,"Text");
+			Infotext[i][1] = FmtGetField(hFmt,"Datum");
+		ELSE
+			Infotext[i][0] = "-";
+			Infotext[i][1] = "-";
+		END
+				
+	END
+
+	FmtClose(hFmt);
+	FileClose(hDev);
+	ErrSet(0);
+END
+
+	
+//	UAG_ZeitStempel()
+//	Übergabeparameter:	
+//                         
+//	Rückgabewert:		Datum und Uhrzeit 
+//	Beschreibung:		 
+//						
+//	Autor:				Frank Däbritz
+//	Erstellungsdatum:	11.12.08	/	Schneider Electric GmbH
+//	Version				3.1.0.0
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+
+PRIVATE STRING FUNCTION 
+UAG_ZeitStempel()
+	STRING sTag;
+	STRING sMonat;
+	STRING sJahr;
+	STRING sDatum;
+	
+	sTag = StrPad(IntToStr(DateDay(TimeCurrent())),"0",-2);
+	sMonat = StrPad(IntToStr(DateMonth(TimeCurrent())),"0",-2);
+	sJahr = StrPad(IntToStr(DateYear(TimeCurrent(),0)),"0",-2);
+	sDatum = sTag + "." + sMonat + "." + sJahr;
+
+	
+	RETURN sDatum + "/" + Time();
+END
+
+//	UAG_Pointer()
+//	Übergabeparameter:	
+//                         
+//	Rückgabewert:		Aktuelle AN , Monitor
+//	Beschreibung:		 
+//						
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	16.11.09	/	Schneider Electric GmbH
+//	Version				7.2.3.2
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+
+
+FUNCTION 
+UAG_Pointer(INT hAn,INT iMonitor) 
+	INT Top, Left, Bottom, Right, iWinHigth;
+//	iWinHigth = StrToInt (ParameterGet("MultiMonitors","ScreenHigh","1200"));
+	IF hAn <> -1 THEN
+		DspGetAnExtent(hAn, Top, Left, Bottom, Right);
+		Pointer_x[iMonitor] = giScreenHigh - Top+2;
+		Pointer_y[iMonitor] = Left-12;
+		pointer[iMonitor] = true;
+	ELSE
+		pointer[iMonitor] = false;	
+	END	
+	IF giPointer = false THEN pointer[iMonitor] = false END
+END
+
+//	UAG_Uhr()
+//	Übergabeparameter:	
+//                         
+//	Rückgabewert:		typ , Monitor
+//	Beschreibung:		 
+//						
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	30.11.09	/	Schneider Electric GmbH
+//	Version				7.2.3.2
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	20.10.11	Steiner		Modus bei Doppelmonitor Eanpasbar.
+//
+//
+INT FUNCTION 
+UAG_Uhr(INT iTyp) 
+	IF NOT  UAG_MM_NotMain()  THEN
+		RETURN true
+	END	
+	IF iTyp = 1 THEN
+		IF UAGUhr=0   THEN
+			RETURN true
+		ELSE
+			RETURN false
+		END		
+	ELSE	
+		IF UAGUhr=1   THEN
+			RETURN true
+		ELSE
+			RETURN false
+		END	
+	END		
+		
+END
+
+//	UAG_Page_Calc()
+//	Übergabeparameter:	
+//                         
+//	Rückgabewert:		Freigabe
+//	Beschreibung:		Wenn gewünscht ein Taschenrechner Symbol einblenden. 
+//						
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	21.10.11	/	Schneider Electric GmbH
+//	Version				7.2.3.2
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	
+//
+
+
+INT FUNCTION UAG_Page_Calc()
+	IF Page_calc =-1 THEN
+ 		RETURN false
+ 	ELSE
+ 		RETURN true
+ 	END	
+END
+
+//	UAG_Page_Back()
+//	Übergabeparameter:	---
+//                       
+//	Rückgabewert:		Fehlerstatus
+//	Beschreibung:		
+//                      
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	04.01.13	/	Schneider Electric GmbH
+//	Version				7.2.3.13
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//
+	
+//INT FUNCTION UAG_Page_Back()
+//	INT iret
+//	iret = PageBack(1)
+//	UAG_FontDefault()
+//	RETURN iret
+//END
+
+//	UAG_Page_Forward()
+//	Übergabeparameter:	---
+//                       
+//	Rückgabewert:		Fehelerstatus
+//	Beschreibung:		
+//                      
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	04.01.13	/	Schneider Electric GmbH
+//	Version				7.2.3.13
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//
+	
+//INT FUNCTION UAG_Page_Forward()
+//	INT iret
+//	iret = PageForward(1)
+//	UAG_FontDefault()
+//	RETURN iret
+//END
+
+//	FUNCTION UAG_Page_File(STRING sFile)
+//	Übergabeparameter:	MAP ID die aufgrufen werden soll
+//						Kennung ob es eine Seite aus der LIB ist.        
+//                         
+//	Rückgabewert:		---
+//	Beschreibung:		Damit kann eine Beschreibung zu einem Bild gemacht werden.
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	31.08.2016	/	Schneider Electrik GmbH
+//	Version				75.33.11.02
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	
+
+
+
+FUNCTION UAG_Page_File(STRING sFile)
+
+	INT		iError;
+	
+	ErrSet(1);
+	sFile=StrTrim(sFile);
+	Ass(-2,1,"'" + sFile+ "'",0);
+	iError = UAG_MM_WinNewAt("!p_file_dsp_20",200,200,giMODE )
+	
+	ErrSet(0);
+END 

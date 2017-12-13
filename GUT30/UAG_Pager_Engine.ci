@@ -1,0 +1,1093 @@
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//	
+// 	FILE:	UAG_Pager_Engine.ci
+//
+//	Beschreibung:
+//
+//	This file contains the cicode for the paging system engine.
+//
+//	The paging system engine is built around three primary sections;
+//		-Citect alarm event filtering and detection
+//		-Paging alarm processing and repeat pager message handling
+//		-Pager message construction and transfer to the paging services module
+//
+//	Three main queues are associated with these sections. The EventQue (Alarm event queue filled by Citect's
+//	alarm system), The PagingQue where all new paging alarms are queued and subsequently processed, and the
+//	RepeatQue where paging alarms are queued when delayed messages are buffered
+//
+//		Funktionen mit Version 3.x sind freigegeben
+//
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	10.10.08	/	Schneider Electrik GmbH
+//	Version				75.33.11.06
+//
+//	NOTE:	Variable Prefixes;
+//			h	Local (function) var handle 	(INT data type)
+//			i	Local (function) var integer 	(INT data type)
+//			s	Local (function) var string 	(STRING data type)
+//			r	Local (function) var real 		(REAL data type)
+//
+//			mh	Module (file) var handle type 	(INT data type)
+//			mi	Module (file) var integer type 	(INT data type)
+//			ms	Module (file) var string type 	(STRING data type)
+//			mr	Module (file) var real type 	(REAL data type)
+//
+//			gh	Global (project) var handle type 	(INT data type)
+//			gi	Global (project) var integer type 	(INT data type)
+//			gs	Global (project) var string type 	(STRING data type)
+//			gr	Global (project) var real type 		(REAL data type)
+//
+//			_	Label defined in LABELS.DBF (remaining letters capitalised)
+//			none	All capitalised represent VARIABLE Tags
+//
+//      Notes:
+//			
+//
+//	PUBLIC FUNCTIONS:
+//		***	User functions ***
+//		PagingSystemStart()
+//		DspPagingActivity( INT iMode=0)
+//		DspPagingEnabled()
+//		SystemControlEditForm()
+//		LogPagingInfo
+//		PagingGetLastMsg
+//
+//		***	System function ***
+//		_FilterAlarmsTask()
+//		_CleanPagingQueues( INT iRecNo)
+//		_ProcessPagingTask()
+//		_SendAndCheck( INT hSQL, INT hEventFmt, INT iRecNo)
+//		_BuildPagerMessage( INT hEventFmt, INT iRecNo, STRING sUserMessage)
+//		_PrimaryPagingOnline()
+//		_StartupCrossCheck()
+//		_ProcessReceivedMessages()
+//
+//			
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)//
+//
+//
+
+
+//	GLOBAL CONSTANTS	//
+GLOBAL	STRING	gsReceivedQueDataFmt = "{Type,16}{SourcePh,32}{Tag,32}{Data,64}";
+GLOBAL	STRING	gsEventFmt = "";
+
+//	GLOBAL VARS		//
+
+GLOBAL	INT	giPagingStarted	= FALSE;// Paging has been initialized properly //
+GLOBAL	INT	giPagingEnable	= FALSE;// Paging ist an //
+
+GLOBAL	INT	ghEventQue	= -1;	// System queue handles //
+GLOBAL	INT	ghPagingQue	= -1;
+GLOBAL	INT	ghRepeatQue     = -1;
+GLOBAL	INT	ghReceivedQue	= -1;
+
+GLOBAL	INT	ghProcessTask	= -1;	// System task handles //
+GLOBAL	INT	ghSendTask	= -1;
+
+GLOBAL	INT	ghErrLog	= -1;	// Error log file handle //
+GLOBAL	INT	ghOperLog	= -1;	// Operation log file handle //
+GLOBAL	INT	ghPETLog	= -1;	// PET log file handle //
+
+///////////////////////////////////////////////////////////////////////////////////
+//	FUNCTION PagingSystemStart
+//  
+//
+//	Übergabeparameter:	 Verzögerung
+//                       
+//	Rückgabewert:		
+//		 0		If OK
+//		-1		If Error
+//
+//	Beschreibung:		This function initialises various queues, format specifiers, and semaphores
+//				for correct operation of the paging system engine. The final bit calls the
+//				_FilterAlarms function as a constantly running task. This kicks off the monitoring
+//				of the paging alarms by the paging system.
+//
+//	Autor:				A.Winter
+//	Erstellungsdatum:	14.07.95	/	Schneider Electric GmbH
+//	Version				7.2.3.6
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	
+//	05/01/98	K. Mac		Added checking of EnableXCheck, PagingEnabled, & UniqueTagName from 
+//							MDB instead of from INI file.
+//	25/02/98	A.Winter	Added Update functions.
+//	24/02/99	K.Johnson	Added Update function for v3.62
+//	02/01/01	E.Black		Added Update function for v3.70
+//	29/06/01	T.Munro		Added updates for v3.80
+//	01/10/01	T.Munro		Updated to use gsEventFmt to avoid bug for TaskNew with . instead of ,
+// 	07/10/04	T.Chandra	PagingSystemStart spitted in TO 2 FUNCTIONs, TO RETURN the call immediately
+//							AND start the paging system after a delay. This IS due TO the paging alarms getting cleared
+//							at Startup ross check in certain systems.
+//	29/05/08	A.Winter	Merged 3.84R1 and 3.85 changes
+//	11/06/08	A.Winter	Extracted the calls to individual updates. Introduced multi process detection and citect version 7 minimum checks
+//	11.08.09	Steiner		Server Redundanz ermöglicht.
+///////////////////////////////////////////////////////////////////////////////////
+
+INT FUNCTION
+PagingSystemStart(INT iDelay=0)
+	TagWrite (gsUAG_StationName +"_PagingStarted",false,0,True);
+	TaskNew("_PagingSystemStart", iDelay, 8);
+	RETURN 0;
+END
+
+PUBLIC					// Needs to be public to allow it to be spawned by a task
+INT FUNCTION
+_PagingSystemStart(INT iDelay=0)
+	INT     iError		= -1;
+	INT     hFilterTask	= -1;
+	INT		hSQL		= -1;
+	INT		hForm		= -1;
+	STRING	sMDBVersion	= "";
+
+	Sleep(iDelay);
+
+	
+	IF giPagingStarted THEN
+		ErrLog( PagingVer() + " @(already started)");
+		RETURN(-1);
+	END
+
+
+	_InitialiseServiceVars();			// Sets global vars to -1 to prevent the services
+										// active function from displaying activity on Dsp Nodes
+	giPagingEnable=StrToInt(ParameterGet ("Paging", "PagingEnabled",1));
+	IF UAG_Server_Is_Alarm(1) = 0 THEN
+		LogPagingInfo("Fn.PagingSystemStart. " + PagingVer() + " kein ALarmserver", _ERROR);
+		
+		RETURN( -1);					// Exit if this Citect node isn't an alarm server.
+	END
+//	IF RunVersionUpdates() < 0 THEN
+//		
+//		RETURN -1;
+//	END
+//
+	ErrSet(1);
+
+
+	LogPagingInfo("Fn.PagingSystemStart. " + PagingVer() + " ---", _ERROR + _OPERATION + _PET);
+
+
+	// Load the Event data format from Parameters database
+	gsEventFmt = ParameterGet( "Alarm", "EventFmt", "");
+	LogPagingInfo("Fn.PagingSystemStart. EventData format = " + gsEventFmt, _OPERATION);
+	IF gsEventFmt = "" THEN
+		LogPagingInfo("ERROR.Fn.PagingSystemStart. @(Invalid alarm event format specifier.) @(Paging system failed to start.)", _ERROR);
+		ErrSet(0);
+		RETURN(-1);
+	END
+
+	// Setup and open the various operation queue
+	ghEventQue = AlarmEventQue();
+	LogPagingInfo("Fn.PagingSystemStart. Queue. Alarm Event.  Opened Handle =>" + ghEventQue:##, _OPERATION);
+	ghPagingQue = QueOpen("PagingQue", 1);
+	LogPagingInfo("Fn.PagingSystemStart. Queue. Paging.       Opened Handle =>" + ghPagingQue:##, _OPERATION);
+	ghRepeatQue = QueOpen("RepeatQue", 1);
+	LogPagingInfo("Fn.PagingSystemStart. Queue. Repeat.       Opened Handle =>" + ghRepeatQue:##, _OPERATION);
+	ghReceivedQue = QueOpen("ReceivedQue", 1);
+	LogPagingInfo("Fn.PagingSystemStart. Queue. Received.     Opened Handle =>" + ghReceivedQue:##, _OPERATION);
+
+	IF	ghEventQue 	>= 0 AND
+		ghPagingQue	>= 0 AND
+		ghRepeatQue	>= 0 THEN
+		IF giPagingEnable THEN
+			IF _InitialiseServices() <> 0 THEN		// Initialises and opens resources needed by the
+				ErrSet(0);
+				RETURN(-1);				// paging system services module (eg Hutchison, Link etc)
+			END
+		END	
+		hFilterTask = TaskNew("_FilterAlarmsTask", "", 0);	! Kick of the alarm event scanning
+		TaskNew("UAG_DspPagingActivity","",0);
+
+ 	ELSE
+		LogPagingInfo("ERROR.Fn.PagingSystemStart. @(Error opening system queues.) @(Paging system halted.)", _ERROR);
+		ErrSet(0);
+		RETURN(-1);
+	END
+
+	TagWrite (gsUAG_StationName +"_PagingStarted",True,0,True);
+	giPagingStarted = True;
+	ErrSet(0);
+END
+
+///////////////////////////////////////////////////////////////////////////////////
+//	FUNCTION DspPagingActivity
+//  
+//
+//	Übergabeparameter:	 
+//		iMode		BITAND combination of the following
+//				1 = Include Services in test (default)
+//				2 = Include alarm event queue in test
+//				4 = Include paging event queue in test
+//				8 = Include repeat event queue in test
+//                       
+//	Rückgabewert:		---
+//		TRUE		If the services or any of additional tested componenets are active
+//		FALSE		When the system is idle
+//	Beschreibung:		This user function returns a boolean value to allow the paging system's
+//				activity to be animated
+//
+//	Autor:				A.Winter
+//	Erstellungsdatum:	14.07.95	/	Schneider Electric GmbH
+//	Version				3.1.1.3
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	
+///////////////////////////////////////////////////////////////////////////////////
+
+BINARY
+FUNCTION
+DspPagingActivity( INT iMode=1)
+
+	IF iMode BITAND 1 THEN
+		IF ServicesActive() THEN	! A function in the services module that returns true if
+			RETURN( TRUE);			! any service tasks are active.
+		END
+	END
+	IF iMode BITAND 2 THEN
+		IF ghEventQue > 0 THEN
+			IF QueLength( ghEventQue) > 0 THEN
+				RETURN( TRUE);
+			END
+		END
+	END
+	IF iMode BITAND 4 THEN
+		IF ghPagingQue > 0 THEN
+			IF QueLength( ghPagingQue) > 0 THEN
+				RETURN( TRUE);
+			END
+		END
+	END
+	IF iMode BITAND 8 THEN
+		IF ghRepeatQue > 0 THEN
+			IF QueLength( ghRepeatQue) > 0 THEN
+				RETURN( TRUE);
+			END
+		END
+	END
+	RETURN( FALSE);
+END
+
+///////////////////////////////////////////////////////////////////////////////////
+//	FUNCTION UAG_DspPagingActivity()
+//  
+//
+//	Übergabeparameter:	
+//                       
+//	Rückgabewert:		---
+//	Beschreibung:		Hintergrund-Prozess für den Alarmserver der die Pageraktivität gebildet.
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	27.11.15	/	Schneider Electric GmbH
+//	Version				74.33.81.02
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+// 	
+///////////////////////////////////////////////////////////////////////////////////
+
+FUNCTION UAG_DspPagingActivity()
+INT	itemp;
+	WHILE TRUE DO
+		IF UAG_Server_Is_Alarm(0)=1 THEN
+
+		SleepMS(1000);
+		itemp=DspPagingActivity(1);
+		itemp=itemp + (DspPagingActivity(2)*Pow(2,2));
+		itemp=itemp + (DspPagingActivity(4)*Pow(2,4));
+		itemp=itemp + (DspPagingActivity(8)*Pow(2,8));
+		TagWrite (gsUAG_StationName + "_PagingService",itemp,0, TRUE);
+			
+		END 
+	END	
+END
+
+///////////////////////////////////////////////////////////////////////////////////
+//	FUNCTION DspPagingEnabled
+//  
+//
+//	Übergabeparameter:	---
+//                       
+//	Rückgabewert:		---
+//				0 - Paging has been started
+//				2 - Paging is not initialized. 
+//	Beschreibung:		This function is used to return the paging enabled status.
+//
+//	Autor:				K. Mac
+//	Erstellungsdatum:	24.12.95	/	Schneider Electric GmbH
+//	Version				3.1.1.3
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	
+///////////////////////////////////////////////////////////////////////////////////
+
+INT
+FUNCTION
+DspPagingEnabled()
+
+	IF IFDEF (Server1_PagingStarted,,0) THEN
+		RETURN(0);
+	ELSE
+		RETURN(2);
+	END
+END
+
+//
+//	FUNCTION NAME:		SystemControlEditForm
+//
+//	FUNCTION DESCRIPTION:	Displays a form to allow the system configuration parameters to be modified
+//
+//	REV	DATE		WHO		DESCRIP
+//	1.0	17/7/95		A.Winter	Original (DspSysPagingForm)
+//	2.0	24/12/97	K. Mac		Moved all system settings to Access Table & renamed function.
+//	2.1	08/01/01	T.Munro		Added language translation to 'sOperationMode'
+//	2.2	11/06/08	A.Winter	Removed CrossCheck and UniqueAlarms as system settings
+//
+//	SOURCE:			Called from a button on the PagingPopup page. Can also be called from a user function.
+//
+//	ARGUMENTS:
+//
+//	RETURNED VALUE:
+//		0
+//
+//	NOTES:
+//
+
+FUNCTION
+SystemControlEditForm()
+	INT	iError		= -1;
+	INT	iFormWidth	= 75;
+	INT	iFormHeight	= 9;
+	INT	hSQL		= -1;
+	STRING	sAHStart	= "";
+	STRING	sAHEnd		= "";
+	STRING	sPagingEnabled	= "";
+	STRING	sOperationMode	= "";
+	STRING	sMDBVersion	= "";
+
+		sPagingEnabled	= ParameterGet ("Paging", "PagingEnabled",1);
+		sAHStart		= ParameterGet ("Paging",  "AfterHoursStart","00:00:00");
+		sAHEnd			= ParameterGet ("Paging",  "AfterHoursEnd","00:00:00");
+		sMDBVersion		= ParameterGet ("Paging",  "Version","4,01");
+		sOperationMode	= _TranslateStrings(ParameterGet ("Paging",  "OperationMode","Sequence:UnAck All"));
+
+
+	    FormNew("@(Paging System Konfiguration)", iFormWidth, iFormHeight, 1+8+16);
+
+		FormCheckBox(2, 2, "@(Paging freigeben)", sPagingEnabled);
+		FormPrompt(35, 1, "@(Operation Mode,15,r):");
+		FormListBox(52, 1, 22, 2, sOperationMode, 0);
+
+		FormAddList(_OP_MODE_UNACK_ALL_L);
+		FormAddList(_OP_MODE_UNACK_ON_L);
+		FormInput(2, 4, "@(end of work ^(24hr^),30,l):", sAHStart, 12);
+		FormInput(2, 5, "@(starting work ^(24hr^),30,l):", sAHEnd, 12);
+		FormPrompt(52, 4, "@(Paging Code Ver,20,r): " + PagingVer(1));
+		FormPrompt(52, 5, "@(Paging Data Ver,20,r): " + sMDBVersion);
+
+		FormButton(iFormWidth - 26, iFormHeight - 1, " @(OK) ", 0, 1);
+		FormButton(iFormWidth - 11, iFormHeight - 1, " @(Cancel) ", 0, 2);
+
+		FormGroupBox(0, 0, iFormWidth, iFormHeight);
+		FormPrompt(3, 0, "@(System control)");
+
+		IF FormRead(0) = 0 THEN
+
+			// Convert any user selections strings back to the db internal strings
+			sOperationMode = _TranslateStrings(sOperationMode,1);
+
+			IF _24HrTimeOK(sAHStart) AND _24HrTimeOK(sAHEnd) THEN
+
+//				iError = SQLExec( hSQL, " UPDATE SystemControl "+
+//							" SET PagingEnabled = '" + sPagingEnabled+"'," +
+//							" OperationMode = '" + sOperationMode+"'," +
+//							" AfterHoursStart = '" + sAHStart+"'," +
+//							" AfterHoursEnd = '" + sAHEnd+"'");
+							ParameterPut ("Paging", "PagingEnabled", sPagingEnabled);
+							ParameterPut ("Paging",  "OperationMode", sOperationMode);
+							ParameterPut ("Paging",  "AfterHoursStart", sAHStart);
+							ParameterPut ("Paging",  "AfterHoursEnd",sAHEnd);
+			ELSE
+				LogPagingInfo("SystemControlEditForm @(Hours) [ " + sAHStart + " ] @(or) [ " + sAHEnd + " ] @(are in the wrong format). @(Please re enter thus) [hh:mm:ss]", _ERROR)
+			END
+		END
+//	END
+
+//	SQLDisconnect(hSQL);
+END
+
+//	FUNCTION LogPagingInfo
+//	Übergabeparameter:	      
+//		sStr		The text to log
+//		iMode		Mode passed as a label. Can be added;
+//				_ERROR		(1)
+//				_OPERATION	(2)
+//				_PET		(4)
+//	Rückgabewert:		---
+//	Beschreibung:		Writes lines of text to various logging files setup for the system.
+//	Autor:				A.Winter
+//	Erstellungsdatum:	10.02.95	/	Schneider Electrik GmbH
+//	Version				74.33.81.02
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	30.11.09	Steiner		Änderung auf Code/DebugMessage 
+//	30.11.15	Steiner		für 7.40 geändert.
+
+FUNCTION
+LogPagingInfo(STRING sStr, INT iMode = 0)
+
+
+    // filter the string to change ASCII control codes into readable text //
+    sStr = StrToPrint(sStr);
+
+	// Setup and open system logging files //
+
+	ErrSet(1);
+		IF iMode BITAND 0x0001 THEN
+				DebugMsg("PSERRLOG"+ " System "+ sStr)
+		END
+		IF iMode BITAND 0x0002 THEN
+				DebugMsg("PSOPRLOG"+ " System "+ sStr)
+		END
+		IF iMode BITAND 0x0004 THEN
+				DebugMsg("PSPETLOG"+ " System "+ sStr)
+		END
+	ErrSet(0);
+	TagWrite (gsUAG_StationName +"_PagingLastMessage",UAG_String_StrToReg(sStr,100), 0, True);// Record error message for PagingGetLastMsg()
+		
+END
+
+//
+//	FUNCTION NAME:		PagingGetLastMsg
+//
+//	FUNCTION DESCRIPTION:	Gets the last message that was logged to any paging log. Can be used to display the message onscreen
+//
+//	REV	DATE		WHO		DESCRIP
+//	1.0	30/1/01		E.Black		Original
+//
+//	SOURCE:
+//
+//	ARGUMENTS:
+//
+//	RETURNED VALUE:		Log Message
+//
+//	NOTES:
+//
+
+STRING FUNCTION
+PagingGetLastMsg()
+	RETURN Server1_PagingLastMessage;
+END
+
+
+//
+//	_FilterAlarmsTask
+//	Übergabeparameter:	 
+//                          
+//	Rückgabewert:		
+//		0		If OK
+//		-1		If Error
+
+//	Beschreibung:	Continually monitors alarms being generated by Citect. When an alarm
+//				state change occurs it is checked and filtered based on the paging system
+//				acknowledge mode. The alarm record number is then checked to see if it
+//				is designated as a paging alarm (exists in the MS-Acces table "PagingAlarms".
+//				If it is a paging alarm then it is filtered as either an ON Unacknowledged
+//				alarm event (ie new alarm) or an acknowledgment being received.
+//
+//				If the acknowledge mode is set to "sequence" then when an acknowledgement
+//				is detected all paging alarms for that alarm record number are cleared from the
+//				paging and repeat queues.
+	
+//
+//	Autor:				A.Winter
+//	Erstellungsdatum:	14.07.95	/	Schneider Electrik GmbH
+//	Version				7.2.33.70.01
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//
+//  25.06.09 	Steiner		Erweitert für Auswertung Alarmhäufigkeit.
+//  21.02.13	Steiner		Sleep verkürzt
+
+INT FUNCTION
+_FilterAlarmsTask()
+	INT     iError;
+	INT     iRecNo		= -1;
+	INT     hEventFmt	= -1;
+	INT     hSQL		= -1;
+	BINARY  bStdbyPaging	= FALSE;
+	STRING  sEventData	= "";
+	STRING  sState		= "";
+	STRING  sType		= "";
+	STRING  sComment	= "";
+	STRING	sOperationMode	= "";
+	STRING	sAlmTag		= "";
+	STRING	sTemp		= "";
+	
+	IF giPagingEnable THEN
+		hSQL = SQLConnect("DSN=PAGING");
+		IF hSQL < 0 THEN
+			LogPagingInfo("Fn._FilterAlarmsTask.Paging System @(Error connecting to ^"PAGING^" ODBC data source). @(Paging system halted).",_ERROR)
+			RETURN(-1);
+		END
+		LogPagingInfo("Fn._FilterAlarmsTask. SQL connection.FilterAlarms Handle =>" + hSQL:##, _OPERATION);
+	END
+	
+	hEventFmt = FmtOpen("EventFmt", gsEventFmt, 1);
+	IF hEventFmt = -1 THEN
+		LogPagingInfo("Fn._FilterAlarmsTask.Paging System @(Failed to open event format specifier). @(Paging system halted).",_ERROR)
+//		SQLDisconnect(hSQL);
+		RETURN(-1);
+	END
+
+	WHILE TRUE DO
+		Sleep(0);
+		IF QueRead(ghEventQue, iRecNo, sEventData, 1) = 0 THEN	!Blocking mode
+			! Only process the que entry if this Citect node is the primary alarm server, otherwise discard it.
+			IF UAG_Server_Is_Alarm(0) = 1 THEN
+				Server1_PagingServerName=GetEnv("COMPUTERNAME");
+//				IF giPagingEnable THEN
+//					SQLExec(hSQL, "SELECT * FROM SystemControl");
+//					SQLNext(hSQL);
+//					sOperationMode = SQLGetField(hSQL, "OperationMode");
+//				END
+				sOperationMode = ParameterGet ("Paging",  "OperationMode","Sequence:UnAck All")
+				StrToFmt(hEventFmt, sEventData);
+//				sState = StrTrim(FmtGetField(hEventFmt, "STATE"));
+				sComment=StrTrim(FmtGetField(hEventFmt, "DESC"));
+				//STATE is not always ON when Active
+				//For Digital Alarms it works, but for Analog Alarms, STATE reads "HIGH HIGH"/"LOW" etc. when turns ON and turns OFF
+				//However LOGSTATE reads INACTIVE when alarm turns OFF (both Analog and Digital)
+				sState = StrTrim(FmtGetField(hEventFmt, "LOGSTATE"));
+				IF sState <> UAG_Alarms_AlarmStates(8) THEN
+					sState = UAG_Alarms_AlarmStates(0)
+				ELSE
+					sState = UAG_Alarms_AlarmStates(1)
+				END
+				sAlmTag = AlarmGetFieldRec( iRecNo, "TAG");
+				sType = StrUpper(StrTrim(FmtGetField(hEventFmt, "TYPE")));
+				IF sState <> UAG_Alarms_AlarmStates(1) AND sType = UAG_Alarms_AlarmTypes(1) THEN
+					UAG_AlarmCount_Save(sAlmTag,sComment);  //Zähler Alarmanzahl
+					
+//					IF StrTrim(SQLGetField(hSQL, "PagingEnabled")) = "1" THEN
+					IF giPagingEnable THEN
+
+	        			IF _RecordExist(hSQL, "PagingAlarms", "TAG", "'"+sAlmTag+"'") THEN
+	        				sTemp = SQLGetField(hSQL, "TX")
+        					IF sTemp  = "1" THEN
+        						_CleanPagingQueues(iRecNo);
+        						FmtSetField(hEventFmt, "ScheduleTime", TimeCurrent():#);
+        						FmtSetField(hEventFmt, "STATE", "PS0");
+        						iError = QueWrite(ghPagingQue, iRecNo, FmtToStr(hEventFmt));
+        						IF ghProcessTask = -1 THEN
+        							ghProcessTask = TaskNew("_ProcessPagingTask", "", 0);
+        						END
+	        				END
+        				END
+					END
+				ELSE
+					IF ((sType = UAG_Alarms_AlarmTypes(0)) AND (sOperationMode = _OP_MODE_UNACK_ALL_E)) OR
+       					(((sState = UAG_Alarms_AlarmStates(1)) OR (sType = UAG_Alarms_AlarmTypes(0))) AND (sOperationMode = _OP_MODE_UNACK_ON_E)) THEN
+						_CleanPagingQueues(iRecNo);
+						! Future acknowledge pager should (SeqAndAck) go in here. ie: If an ack comes in get the last one from the
+						! paging queue and send an ack page if required
+					END
+        		END
+        	END
+         END
+	END
+	FmtClose(hEventFmt);
+//	SQLDisconnect(hSQL);
+	RETURN(0);
+END
+
+
+
+//
+//	FUNCTION NAME:		_CleanPagingQueues
+//
+//	FUNCTION DESCRIPTION:   Flushes all occurances of iRecNo out of the Paging Queue and the Repeat Queue.
+//
+//	REV	DATE		WHO		DESCRIP
+//	1.0	1/9/95		A.Winter	Original
+//
+//	SOURCE:			This function is called from the filter alarms task
+//
+//	ARGUMENTS:
+//		iRecNo		The Citect alarm record number
+//
+//	RETURNED VALUE:
+//		0
+//
+//	NOTES:
+//
+
+INT
+FUNCTION
+_CleanPagingQueues(INT iRecNo)
+
+	_QueClean(ghRepeatQue, iRecNo);
+	_QueClean(ghPagingQue, iRecNo);
+	RETURN(0);
+END
+
+//
+//	FUNCTION NAME:		_ProcessPagingTask
+//
+//	FUNCTION DESCRIPTION:   Continually processes both the PagingQue (new alarms) and the RepeatQue (delayed alarms)
+//				whilever either of these two queues contain elements. New alarms are prioritised and 
+//				sent first then the delayed alarms are processed.
+//
+//				This function passes data through to a send routine (_SendAndCheck) which in turn sends 
+//				the alarm on to respective services.
+//
+//	REV	DATE		WHO		DESCRIP
+//	1.0	14/7/95		A.Winter	Original
+//	1.1	01/10/01	T.Munro		Updated to use gsEventFmt
+//	2.0	11/06/08	A.Winter	Modified to look up alarm tag rather than record number from PAGING.MDB. The queues still operate on an alarm record number
+//
+//	SOURCE:			This function is called as a task from the _FilterAlarms task whenever this function is
+//				not currently running and something is placed into the paging queue.
+//	ARGUMENTS:
+//		<none>
+//
+//	RETURNED VALUE:
+//		0
+//
+//	NOTES:
+//
+
+INT
+FUNCTION
+_ProcessPagingTask()
+	INT     iError		= -1;
+	INT     iRecNo		= -1;
+	INT     hSQL		= -1;
+	INT     hEventFmt	= -1;
+	STRING  sEventData	= "";
+	STRING	sAlmTag		= "";
+
+	hSQL = SQLConnect("DSN=PAGING");
+	IF hSQL < 0 THEN
+		LogPagingInfo("_ProcessPagingTask  @(Error connecting to ^"PAGING^" ODBC data source). _ProcessPagingTask @(failed).",_ERROR)
+		ghProcessTask = -1;
+		RETURN(-1);
+	END
+	hEventFmt = FmtOpen("EventFmt", gsEventFmt, 1);
+	IF hEventFmt = -1 THEN
+		LogPagingInfo("_ProcessPagingTask  @(Failed to initialise event data handle). _ProcessPagingTask @(failed).",_ERROR)
+		SQLDisconnect(hSQL);
+		ghProcessTask = -1;
+		RETURN(-1);
+	END
+
+	WHILE QueLength(ghPagingQue) > 0 OR QueLength(ghRepeatQue) > 0 DO
+		Sleep(1);
+		WHILE QueLength(ghPagingQue) > 0 DO							!Priority on paging queue (ie new alarms)
+			Sleep(1);
+			IF QueRead(ghPagingQue, iRecNo, sEventData, 0) = 0 THEN		!Get from the head of the list
+				sAlmTag = AlarmGetFieldRec( iRecNo, "TAG");
+				IF QuePeek(ghPagingQue, iRecNo, sEventData, 2) = 0 THEN	!If there are more recent elements of same type
+					sEventData = _QueLast(ghPagingQue, iRecNo);		!then get it instead
+				END
+				StrToFmt(hEventFmt, sEventData);
+       				IF _RecordExist(hSQL, "PagingAlarms", "TAG", "'"+sAlmTag+"'") THEN	!Used to position (select) the correct record
+					_SendAndCheck(hSQL, hEventFmt, iRecNo);
+				END
+			END
+		END
+		IF QueLength(ghRepeatQue) > 0 THEN							!Check repeat queue
+			IF QueRead(ghRepeatQue, iRecNo, sEventData, 0) = 0 THEN		!Get from the head of the list
+				StrToFmt(hEventFmt, sEventData);
+				IF TimeCurrent() > StrToInt(FmtGetField(hEventFmt, "ScheduleTime")) THEN
+					_SendAndCheck(hSQL, hEventFmt, iRecNo);
+				ELSE
+					iError = QueWrite(ghRepeatQue, iRecNo, sEventData);	!Put back in queue if its not ready
+				END
+			END
+		END
+	END
+	FmtClose(hEventFmt);
+	SQLDisconnect(hSQL);
+	ghProcessTask = -1;
+	RETURN(0);
+END
+
+
+//
+//	FUNCTION NAME:		_SendAndCheck
+//
+//	FUNCTION DESCRIPTION:	This function checks which step in the paging sequence the alarm
+//				is up to and determines which pager name to send to. It checks whether
+//				there are further pagers to send to and whether there are delays to be processed.
+//
+//	REV	DATE		WHO		DESCRIP
+//	1.0	14/7/95		A.Winter	Original
+//	2.0	21/7/95		A.Winter	Re-written to handle database step no's
+//	2.1	1/12/95		A.Winter	Added special return code check for Voice Modem Service
+//	2.2	11/06/08	A.Winter	Modified to look up alarm tag rather than record number from PAGING.MDB. Alarm record numbers may change.
+//
+//	SOURCE:			Called from the _ProcessPagingTask when there is a new alarm or a delayed alarm is
+//				ready to be processed.
+//	ARGUMENTS:
+//		hSQL		A handle to the MS-Access paging database
+//		hEventFmt	A handle to a format data structure containing the alarm event data
+//		iRecNo		The Citect alarm record number
+//
+//	RETURNED VALUE:
+//		0
+//
+//	NOTES:
+//		If the Voice Modem service is sent to, then this function is held up until the voice modem
+//		operation has completed.
+//
+
+INT FUNCTION
+_SendAndCheck(INT hSQL, INT hEventFmt, INT iRecNo);
+	INT		iError		= 0;
+    INT     iSendStatus     = 0;
+	INT		iNextStepNo	= 0;		!0-99
+	STRING	sPagerName	= "";
+	STRING	sPagerMessage	= "";
+	STRING	sStepData	= "";
+	STRING	sAlmTag			= "";
+		
+	ErrSet(1);
+	iNextStepNo = StrToInt(StrMid(FmtGetField(hEventFmt, "STATE"), 2, 2));
+	ErrSet(0);
+	sAlmTag = AlarmGetFieldRec( iRecNo, "TAG");
+	WHILE iError = 0 DO
+	// Re-Select all step records for alarm iRecNo //
+		iError = SQLExec(hSQL,	" SELECT * " +
+					" FROM PagingAlarms" +
+					" WHERE TAG = '" + sAlmTag +"'" +
+					" ORDER BY StepNo"	);
+		iError = SQLNext(hSQL);
+		IF iError = 0 THEN
+			WHILE StrToInt(SQLGetField(hSQL, "STEPNO")) < iNextStepNo AND iError = 0 DO
+				iError = SQLNext(hSQL);
+			END
+			IF iError = 0 THEN
+				sPagerName = SQLGetField(hSQL, "STEPName");
+				sStepData = SQLGetField(hSQL, "STEPData");
+				IF sPagerName = _STEP_GOTO_E THEN
+					FmtSetField(hEventFmt, "ScheduleTime", TimeCurrent():#);
+					StrWord(sStepData);
+					FmtSetField(hEventFmt, "STATE", "PS" + StrPad(StrTrim(sStepData), "0", -2));
+					iError = QueWrite(ghRepeatQue, iRecNo, FmtToStr(hEventFmt));
+					RETURN(0);
+				END
+				IF sPagerName = _STEP_DELAY_E THEN
+					FmtSetField(hEventFmt, "ScheduleTime", (TimeCurrent() + StrToInt(sStepData)):#);
+					FmtSetField(hEventFmt, "STATE", "PS" + StrPad(IntToStr(iNextStepNo + 1), "0", -2));
+					iError = QueWrite(ghRepeatQue, iRecNo, FmtToStr(hEventFmt));
+					RETURN(0);
+				ELSE
+					sPagerMessage = _BuildPagerMessage(hSQL, hEventFmt, sPagerName, iRecNo, sStepData);
+					iSendStatus = _SendToService(hSQL, sPagerName, sPagerMessage);
+					iNextStepNo = iNextStepNo + 1;
+				END
+			END
+		ELSE
+			iError = -1;
+		END
+	END
+	RETURN(0);
+END
+
+
+//
+//	FUNCTION NAME:		_BuildPagerMessage
+//
+//	FUNCTION DESCRIPTION:	This function builds a message string out of bits of alarm information 
+//				and a user message string to make up a the final string sent to the pager.
+//				The Citect alarm fields are used when their respective system parameter
+//				select bits are flagged.
+//
+//	REV	DATE		WHO		DESCRIP
+//	1.0	18/7/95		A.Winter	Original
+//	1.1	28/06/01	T.Munro		Added TxReplyInfo field for replying devices
+//	1.2	27/07/01	E.Black		Added TxValue field
+//	2.0	11/06/08	A.Winter	Removed TxRecNo as this may change at anytime. Not suitable to send to user.
+//
+//	SOURCE:			Called from the _SendAndCheck function.
+//
+//	ARGUMENTS:
+//		hSQL		A handle to the MS-Access paging database
+//		hEventFmt	A handle to a format data structure containing the alarm event data
+//		sPagerName	The name of pager to send to
+//		iRecNo		The Citect alarm record number
+//		sUserMessage	The message data in the paging sequence step
+//
+//	RETURNED VALUE:
+//		The final message string to send to the pager
+//
+//	NOTES:
+//
+
+PRIVATE STRING
+FUNCTION
+_BuildPagerMessage(INT hSQL, INT hEventFmt, STRING sPagerName, INT iRecNo, STRING sUserMessage)
+	INT	iOnTimeDate = 0;
+	STRING	sMsgData = "";
+
+	IF _RecordExist(hSQL, "Pagers", "Name", "'" + sPagerName + "'") THEN	!Used to select the appropriate range
+		IF SQLGetField(hSQL, "TxHeader") = "1" THEN
+			sMsgData = sMsgData + " " + SQLGetField(hSQL, "Header");
+		END
+		IF SQLGetField(hSQL, "TxTag") = "1" THEN
+			sMsgData = sMsgData + " " + StrTrim(AlarmGetFieldRec(iRecNo, "TAG"));
+		END
+		IF SQLGetField(hSQL, "TxName") = "1" THEN
+			sMsgData = sMsgData + " " + StrTrim(AlarmGetFieldRec(iRecNo, "NAME"));
+		END
+		IF SQLGetField(hSQL, "TxDesc") = "1" THEN
+			sMsgData = sMsgData + " " + StrTrim(AlarmGetFieldRec(iRecNo, "DESC"));
+		END
+		IF SQLGetField(hSQL, "TxOnTime") = "1" THEN
+			iOnTimeDate = StrToTime(FmtGetField(hEventFmt, "TIME")) + StrToDate(FmtGetField(hEventFmt, "DATE"));
+			sMsgData = sMsgData + StrToLocalText(" @(On Time): ") + TimeToStr(iOnTimeDate, 1) + " " + TimeToStr(iOnTimeDate, 9);
+		END
+		IF SQLGetField(hSQL, "TxValue") = "1" THEN
+			sMsgData = sMsgData + StrToLocalText(" @(Value): ") + StrTrim(AlarmGetFieldRec(iRecNo, "VALUE"));
+		END
+		IF SQLGetField(hSQL, "TxType") = "1" THEN
+			sMsgData = sMsgData + " " + StrTrim(FmtGetField(hEventFmt, "Type"));
+		END
+		IF SQLGetField(hSQL, "TxUserMsg") = "1" THEN
+			sMsgData = sMsgData + " " + sUserMessage;
+		END
+		IF SQLGetField(hSQL, "TxReplyInfo") = "1" THEN
+			sMsgData = sMsgData + "<A " + StrTrim(AlarmGetFieldRec(iRecNo, "TAG")) + ">";
+		END
+	END
+	RETURN(sMsgData);
+END
+
+
+//
+//	FUNCTION NAME:		_PrimaryOnline
+//
+//	FUNCTION DESCRIPTION:	A boolean check of the online status of the Primary paging server
+//
+//	REV	DATE		WHO		DESCRIP
+//	1.0	14/7/95		A.Winter	Original template
+//
+//	SOURCE:			Called from the _FilterAlarmsTask
+//
+//	ARGUMENTS:
+//
+//	RETURNED VALUE:
+//		TRUE		If the Primary paging server is online
+//		FALSE		If the Primary paging server is offline
+//	NOTES:
+//
+
+BINARY
+FUNCTION
+_PrimaryPagingOnline()
+	! For future redundancy checking
+
+	RETURN(TRUE);
+END
+
+
+//
+//	FUNCTION NAME:		_ProcessReceivedMessages
+//
+//	FUNCTION DESCRIPTION:	Processes all received messages.
+//
+//	REV	DATE		WHO		DESCRIP
+//	1.0	28/06/01	T.Munro		Original
+//	1.1	27/08/01	T.Munro		Added 'Cicode', 'SetPagerNo', 'SetPagerNoAH', 'AlarmEnable',
+//						'AlarmDisable'
+//	2.0	11/06/08	A.Winter	Modified TagInfo functions to TagInfoEx to support Citect V7
+//
+//	SOURCE:		<various>
+//
+//	ARGUMENTS:	<none>
+//
+//	RETURNED VALUE:
+//			<none>
+//
+//	NOTES:
+//		Any other thread that adds an item to the 'ReceivedQue' should then spawn
+//		this task thus:
+//			TaskNew("_ProcessReceivedMessages", "", 8);
+//
+//		See '_SMS_Message_Process()' for an example.
+//
+
+FUNCTION
+_ProcessReceivedMessages()
+
+	STRING	sQueData = "";
+	STRING	sPagerName = "";	// Name of pager that sent message
+	STRING 	sMsgType = ""; 		// Type of data received ("AlarmAck", "TagWrite", "TagRead" etc ...)
+	STRING 	sMsgSourcePh = "";	// Source of message (Pager phone number)
+	STRING 	sMsgTag = ""; 		// Citect tag/function related to the message
+	STRING 	sMsgData = ""; 		// Any data for processing the message
+	STRING	sOutMsg = "";		// Any new message to be sent
+
+	INT	iInt = 0;
+	INT	iError = 0;
+	INT	hRecord = -1;
+	INT	iRxPriv = 0;
+	INT	bFailedSecurity = FALSE;
+	INT	hQueDataFmt = FmtOpen("ReceivedQue", gsReceivedQueDataFmt, 1);
+
+	// Process all queue items
+	WHILE QueLength( ghReceivedQue) > 0 DO
+
+		// Get the next queue item
+		QueRead( ghReceivedQue, iInt, sQueData, 0);
+		StrToFmt( hQueDataFmt, sQueData);
+		sMsgType = StrTrim( FmtGetField( hQueDataFmt, "Type"));
+		sMsgSourcePh = StrTrim( FmtGetField( hQueDataFmt, "SourcePh"));
+		sMsgTag = StrTrim( FmtGetField( hQueDataFmt, "Tag"));
+		sMsgData = StrTrim( FmtGetField( hQueDataFmt, "Data"));
+
+		// Determine the name of the source pager and the receved message security level
+		sPagerName = _GetPagerInfo("", sMsgSourcePh, "Name");
+		IF sPagerName <> "" THEN
+
+			iRxPriv = StrToInt(_GetPagerInfo(sPagerName, "", "RxPriv"));
+		END
+
+		SELECT CASE sMsgType
+		CASE "AlarmAck"
+			IF iRxPriv > 0 THEN
+				hRecord = AlarmFirstTagRec(sMsgTag, "", "");
+				IF hRecord <> -1 THEN
+					// Allow for duplicate tags
+					WHILE hRecord <> -1 DO
+						AlarmAckRec(hRecord);
+						hRecord = AlarmNextTagRec(hRecord, sMsgTag, "", "");
+					END
+				ELSE
+					// Invalid tag
+					iError = -1;
+				END
+			ELSE
+				bFailedSecurity = TRUE; 
+			END
+
+		CASE "TagRead"
+			IF iRxPriv > 0 THEN
+				IF TagInfoEx(sMsgTag, 0) <> "" THEN
+					sOutMsg = sMsgTag+"="+TagRead(sMsgTag);
+				ELSE
+					// Invalid tag
+					sOutMsg = StrToLocalText("@(Invalid Tag)");				
+				END
+			ELSE
+				bFailedSecurity = TRUE; 
+			END
+
+		CASE "AlarmDisable"
+			IF iRxPriv > 1 THEN
+				hRecord = AlarmFirstTagRec(sMsgTag, "", "");
+				IF hRecord <> -1 THEN
+					// Allow for duplicate tags
+					WHILE hRecord <> -1 DO
+						AlarmDisableRec(hRecord);
+						hRecord = AlarmNextTagRec(hRecord, sMsgTag, "", "");
+					END
+				ELSE
+					// Invalid tag
+					iError = -1;
+				END
+			ELSE
+				bFailedSecurity = TRUE; 
+			END
+
+		CASE "AlarmEnable"
+			IF iRxPriv > 1 THEN
+				hRecord = AlarmFirstTagRec(sMsgTag, "", "");
+				IF hRecord <> -1 THEN
+					// Allow for duplicate tags
+					WHILE hRecord <> -1 DO
+						AlarmEnableRec(hRecord);
+						hRecord = AlarmNextTagRec(hRecord, sMsgTag, "", "");
+					END
+				ELSE
+					// Invalid tag
+					iError = -1;
+				END
+			ELSE
+				bFailedSecurity = TRUE; 
+			END
+
+		CASE "TagWrite"
+			IF iRxPriv > 1 THEN
+				IF TagInfoEx(sMsgTag, 0) <> "" THEN
+					TagWrite(sMsgTag, sMsgData);
+				ELSE
+					// Invalid tag
+					iError = -1;				
+				END
+
+			ELSE
+				bFailedSecurity = TRUE; 
+			END
+
+		CASE "SetPagerNo"
+			IF iRxPriv > 1 THEN
+				iError = _SetPagerInfo(sPagerName, "PagerNo", sMsgData);
+			ELSE
+				bFailedSecurity = TRUE; 
+			END
+
+		CASE "SetPagerNoAH"
+			IF iRxPriv > 1 THEN
+				iError = _SetPagerInfo(sPagerName, "PagerNoAH", sMsgData);
+			ELSE
+				bFailedSecurity = TRUE; 
+			END
+				
+		CASE "Cicode"
+			IF iRxPriv > 2 THEN
+				IF TaskNew(sMsgTag, sMsgData, 0) = -1 THEN
+					iError = -1;
+				END
+			ELSE
+				bFailedSecurity = TRUE; 
+			END
+
+		CASE ELSE
+			iError = -1;
+
+		END SELECT
+		
+		IF bFailedSecurity THEN
+			LogPagingInfo( "Fn._ProcessReceivedMessage. @(Message source failed security check (see below details))", _OPERATION);
+			iError = -1;
+		END
+
+		IF NOT iError THEN
+			LogPagingInfo( "Fn._ProcessReceivedMessage. @(Message processed OK) >Type:"+sMsgType+",SrcPh:"+sMsgSourcePh+",Pager:"+sPagerName+",Tag:"+sMsgTag+",Data:"+sMsgData+"<", _OPERATION);
+		ELSE
+			LogPagingInfo( "Fn._ProcessReceivedMessage. @(Message processing failed) >Type:"+sMsgType+",SrcPh:"+sMsgSourcePh+",Pager:"+sPagerName+",Tag:"+sMsgTag+",Data:"+sMsgData+"<", _OPERATION);
+		END
+
+		// Send any required outbound message
+		IF sOutMsg <> "" AND sPagerName <> "" THEN
+			SendManualPager(sPagerName, sOutMsg);
+		END
+
+		iError = 0;
+		sQueData = "";
+		sOutMsg = "";
+		Sleep(1);
+	END
+
+	FmtClose(hQueDataFmt);
+END

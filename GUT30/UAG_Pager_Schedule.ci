@@ -1,0 +1,138 @@
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//	
+// 	FILE:	UAG_Pager_Schedule.ci
+//
+//	Beschreibung:
+//
+//	This file contains the cicode for the paging services currently supported by
+//	the Citect V3 paging system
+//
+//		Funktionen mit Version 3.x sind freigegeben
+//
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	10.10.08	/	Schneider Electrik GmbH
+//	Version				3.1.0.1
+//
+//
+//	NOTE:	Variable Prefixes;
+//			h	Local (function) var handle 	(INT data type)
+//			i	Local (function) var integer 	(INT data type)
+//			s	Local (function) var string 	(STRING data type)
+//			r	Local (function) var real 		(REAL data type)
+//
+//			mh	Module (file) var handle type 	(INT data type)
+//			mi	Module (file) var integer type 	(INT data type)
+//			ms	Module (file) var string type 	(STRING data type)
+//			mr	Module (file) var real type 	(REAL data type)
+//
+//			gh	Global (project) var handle type 	(INT data type)
+//			gi	Global (project) var integer type 	(INT data type)
+//			gs	Global (project) var string type 	(STRING data type)
+//			gr	Global (project) var real type 		(REAL data type)
+//
+//			_	Label defined in LABELS.DBF (remaining letters capitalised)
+//
+//			none	All capitalised represent VARIABLE Tags
+//
+//      Notes:
+//			
+//
+//	PUBLIC FUNCTIONS:
+//
+//		AfterHours()
+//			
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)//
+//
+
+//
+//	FUNCTION NAME:		AfterHours
+//
+//	FUNCTION DESCRIPTION:	Used to check if the current time is within the after hours time period during a day.
+//				The Time period is specified in the CITECT.INI file under the PAGINGV3 group as;
+//					AfterHoursStart=10:00:00
+//					AfterHoursEnd=15:00:00
+//				Note: The time must be specified in 24 hr format as above.
+//					
+//
+//	REV	DATE		WHO		DESCRIP
+//	1.0	12/12/95	A.Winter	Original
+//	1.1	7/01/98		K.Mac		Modified code to get after hours time from MDB instaed of INI.
+//	1.2	22/12/98	A.Winter	Modified to allow tag based after hours selection (from INI file).
+//	1.3	28/04/99	A.Winter	Changed to interpret an end time before a start time as meaning 
+//								the next day.
+//
+//	SOURCE:			Called from the _SendToService function above.
+//
+//	ARGUMENTS:
+//
+//	RETURNED VALUE:
+//		TRUE		If currently after hours.
+//		FALSE		If currently not after hours.
+//
+//	NOTES:
+//		
+//
+
+BINARY FUNCTION
+AfterHours()
+	INT	iError		= -1;
+	INT	hSQL		= -1;
+	INT	iAHStart	= 0;
+	INT	iAHEnd		= 0;
+	INT	iCurrentTime	= 0;
+
+	STRING	sAHStart	= "";
+	STRING	sAHEnd		= "";
+	STRING	sCurrentDate	= "";
+	STRING	sAfterHoursTag	= "";
+
+	IF ParameterGet( gsUAG_LIB_NAME, "PagerAfterHoursMode", "Time") = "Tag" THEN
+		sAfterHoursTag = ParameterGet( gsUAG_LIB_NAME, "PagerAfterHoursTag", "");
+		IF sAfterHoursTag <> "" THEN
+			IF TagRead(sAfterHoursTag) = "1" THEN
+				RETURN (TRUE);
+			ELSE
+				RETURN (FALSE);
+			END
+		END
+
+	END
+
+	sCurrentDate = Date( 9);
+
+	hSQL = SQLConnect("DSN=PAGING");
+	IF hSQL < 0 THEN
+		UAG_SystemInfo("AfterHours","Paging System","@(Error connecting to ^"PAGING^" ODBC data source).","-","-","-",TaskCluster(),_UAG_Fehler);
+		RETURN( -1);
+	END
+
+	iError = SQLExec( hSQL,	" SELECT * FROM SystemControl" );
+	iError = SQLNext( hSQL);
+
+	IF iError = 0 THEN
+		sAHStart	= StrTrim( SQLGetField( hSQL, "AfterHoursStart"));
+		sAHEnd		= StrTrim( SQLGetField( hSQL, "AfterHoursEnd"));
+	END
+	SQLDisconnect( hSQL);
+
+	iAHStart	= StrToDate(sCurrentDate) + StrToTime(sAHStart);
+	iAHEnd		= StrToDate(sCurrentDate) + StrToTime(sAHEnd);
+	iCurrentTime	= TimeCurrent();
+	
+	IF iAHEnd < iAHStart THEN	! Spans across midnight so work it out based on normal hours
+		IF iCurrentTime >= iAHEnd AND iCurrentTime <= iAHStart THEN
+			RETURN( FALSE);
+		ELSE
+			RETURN( TRUE);
+		END
+	END
+
+	IF iCurrentTime > iAHStart AND iCurrentTime < iAHEnd THEN
+		RETURN( TRUE);
+	ELSE
+		RETURN( FALSE);
+	END
+END
+

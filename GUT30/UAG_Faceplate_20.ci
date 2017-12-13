@@ -1,0 +1,1881 @@
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//	
+// 	FILE:	UAG_Faceplate_20.ci
+//
+//	Beschreibung:
+//
+//		Enthält Funktionen zum aufschalten der neue Oberfläche
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	20.01.09	/	Schneider Electrik GmbH
+//	Version				75.33.11.08
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	11.08.09	Steiner		Erweiterung für offene Fenster
+//	16.04.14	Steiner		Alle Funktionen auf 7.40 Page Funktionen umgestellt
+//
+//	PUBLIC FUNCTIONS:
+//
+//			UAG_MOT0R_20()
+//			UAG_MOT0R_i_20()
+//			UAG_ANA_IN_20()
+//			UAG_REG_20()
+//			UAG_PLC_STAT_QP_20()
+//			UAG_PLC_STAT_M340_20()
+//			UAG_Quitt01_1T_20()
+//			UAG_Leiten_20()
+//			UAG_Leiten_21()
+//			UAG_P_Soll_20()
+//			UAG_P_YHand_20
+//			UAG_MELDNA_20()
+//			UAG_MELD_20()
+//			UAG_NS_20()
+//			UAG_msgbox_20()
+//			UAG_HTML_20()
+//			UAG_P_Interlock_20()
+//			UAG_P_Freigabe_20()
+//			UAG_P_Info_20
+//			UAG_P_Transition_20()
+//			UAG_TREND_20()
+//			UAG_Infotexte_20
+//			UAG_Status_alt_20()
+//			UAG_client_20
+//			UAG_server_20
+//			UAG_ServerInfo20()
+//			UAG_DOS_20
+//			UAG_ISPY_20()
+//			UAG_ISPY_GWOH_20()
+
+//			UAG_AssChainPopUp_20()
+//			UAG_KT_20()
+
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+
+// MODULE VARIABLES
+STRING	 	msTypeOfStop;
+STRING 		msTag;
+INT 		miFound;
+INT 		miMonitor;
+
+// genutzte AktivX
+STRING	mswebClass = "Shell.Explorer.2";
+
+//	FUNCTION UAG_MOT0R_20(STRING sTag,STRING sTagI="",INT ityp=0, INT imode=1,STRING sTagIL="")
+//	Übergabeparameter:	Tagname als String, Interlock Tag,Typ, Modus, 2. Interlock      
+//                       
+//	Rückgabewert:		
+//	Beschreibung:	Typ vorgabe
+//					0 = Motor
+//					1 = Ventil	Vertikal	
+//					2 = Ventil	Horizontal	
+//					3 = Klappe	Vertikal	
+//						
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	28.01.09	/	Schneider Electrik GmbH
+//	Version				75.33.11.08
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	11.08.09	Steiner		Erweiterung für offene Fenster
+//	20.10.11	Steiner		2. Interlock / Freigabe hinzugefügt.
+//	21.11.11	Steiner		Änderung für Doppelklick
+//	08.04.14	Steiner		Klappe hinzugefügt
+
+// Motor Funktion
+// Liste der Symbole
+
+// 0	Motor
+// 01	Zellenrad
+// 02	Lüfter
+// 03	Motor 05
+// 04	Pumpe LR
+// 05	Pumpe OU
+// 06	Pumpe UO
+// 07	Pumpe RL
+// 08	Ventilator LR
+// 09	Ventilator OU
+// 10	Ventilator RL
+// 11	Ventilator UO
+// 12	Mühle OU
+// 13	Mühle UO
+// 14	Mühle RL
+// 15	Mühle LR
+// 16	Heizung
+
+// Ventil Funktion
+// Liste der Symbole
+
+
+// 0	Ventil W und S
+// 1	WO  SL ola
+// 2	WO SL olz
+// 3	WU SR olz
+// 4	WU SR ola
+// 5	WO SL Hand
+// 6	WO SL Gewicht
+// 7	WU SR Gewicht
+// 8	WO SL Membran
+// 9	WU SR Membran
+// 10	WO SL Motor
+// 11	WU SR Motor
+// 12	WU SR Hand
+// 13	WO SL 3 Weg
+// 14	WU SR 3 Weg
+
+// Klappe Funktion
+// Liste der Symbole
+
+
+// 0	Ventil W und S
+// 1	Klappe
+// 2	klappe_ola
+// 3	klappe_olz
+
+
+
+//		Beispiel für Aufruf
+//		TaskNew("UAG_MOT0R_20", "^"%TAG%^"", 8)
+//		TaskNew("UAG_MOT0R_20", "^"%TAG%^",^"^",0,2", 8)  
+  
+FUNCTION UAG_MOT0R_20(STRING sTag,STRING sTagI="",INT ityp=0, INT imode=1,STRING sTagIL="")
+	
+	miMonitor =GUT_PopupNewAt("!p_Motor_20",gimode,imode )
+	IF miMonitor <> -1 THEN
+		Ass(-3,1,"'" + sTag + "'",0);
+		_Ass(-3,2,sTag + "_M");
+		_Ass(-3,3,sTag + "_TYP");
+		_Ass(-3,4,sTag + "_LW");			
+		_Ass(-3,5,sTag + "_LT");
+		_Ass(-3,6,sTag + "_ZT");
+		UAG_LoadZT(	sTag + "_ZT",7,4,-3);
+		_Ass(-3,12,sTagI + "_MI");
+		_Ass(-3,15,sTagI + "_LW");
+		Ass(-3,13,"'" + sTagI + "'",0);
+		Ass(-3,14,"'" + IntToStr (ityp) + "'",0);
+		IF sTagIL <>"" THEN
+			_Ass(-3,16,sTagIL + "_MI");
+			_Ass(-3,19,sTagIL + "_LW");
+			Ass(-3,17,"'" + sTagIL + "'",0);
+		END
+		IF TagInfo(sTag + "_BST",0) <> "" THEN
+			_Ass(-3,20,sTag + "_BST");
+			_Ass(-3,21,sTag + "_BEINS");	
+		END	
+		UAG_LoadUI( sTag + "_KT", 60,7,-3);
+		PageGoto("!p_Motor_20");	
+		_WinTitle(sTag);
+	ELSE
+		UAG_Status("@(Too many windows open)","","1");	
+	END
+END 
+
+//	FUNCTION UAG_MOT0R_i_20()
+//	Übergabeparameter:	Tagname als String, Interlock Tag, Modus      
+//                       
+//	Rückgabewert:		
+//	Beschreibung:		Motor mit Interlock
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	06.07.09	/	Schneider Electrik GmbH
+//	Version				75.33.11.08
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	20.10.11	Steiner		2. Interlock / Freigabe hinzugefügt.
+//	21.11.11	Steiner		Änderung für Doppelklick
+//
+
+//		Beispiel für Aufruf
+//		TaskNew("UAG_MOT0R_i_20", "^"%TAG%^",^"%TAGI%^"", 8)
+//		TaskNew("UAG_MOT0R_i_20", "^"%TAG%^",^"%TAGI%^",0,2", 8) 
+
+
+FUNCTION UAG_MOT0R_i_20(STRING sTag,STRING sTagI="",INT ityp=0, INT imode=1,STRING sTagIL="")
+	
+	miMonitor = GUT_PopupNewAt("!p_Motor_i_20",giMODE,imode )
+	IF miMonitor <> -1 THEN
+		Ass(-3,1,"'" + sTag + "'",0);
+		_Ass(-3,2,sTag + "_M");
+		_Ass(-3,3,sTag + "_TYP");
+		_Ass(-3,4,sTag + "_LW");			
+		_Ass(-3,5,sTag + "_LT");
+		_Ass(-3,6,sTag + "_ZT");
+		UAG_LoadZT(	sTag + "_ZT",7,4,-3);
+		_Ass(-3,12,sTagI + "_MI");
+		_Ass(-3,15,sTagI + "_LW");
+		Ass(-3,13,"'" + sTagI + "'",0);
+		Ass(-3,14,"'" + IntToStr (ityp) + "'",0);
+		IF TagInfo(sTag + "_BST",0) <> "" THEN
+			_Ass(-3,20,sTag + "_BST");
+			_Ass(-3,21,sTag + "_BEINS");	
+		END	
+		UAG_LoadUI( sTag + "_KT", 60,7,-3);
+
+		Ass(-3,31,"'" + sTagI + "'",0);
+		_Ass(-3,32,sTagI + "_MI");
+		_Ass(-3,34,sTagI + "_LW");
+		_Ass(-3,35,sTagI + "_LT");
+
+		UAG_LoadInterlock(sTagI + "_MI", 41, 15,-3);
+		PageGoto("!p_Motor_i_20")	
+		_WinTitle(sTag);
+	ELSE
+		UAG_Status("@(Too many windows open)","","1");	
+	END
+		
+END 
+
+
+//	FUNCTION UAG_ANA_IN_20()
+//	Übergabeparameter:	Branch Messung  als String    
+//                       
+//	Rückgabewert:		
+//	Beschreibung:	Messwert  aufschalten
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	26.01.09	/	Schneider Electrik GmbH
+//	Version				75.33.11.08
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	21.11.11	Steiner		Änderung für Doppelklick
+//	
+
+
+
+//		Beispiel für Aufruf
+//		TaskNew("UAG_ANA_IN_20", "^"%TAG%^"", 8)
+//		TaskNew("UAG_ANA_IN_20", "^"%TAG%^",2", 8) 
+
+FUNCTION UAG_ANA_IN_20(STRING sTag, INT imode=1)
+
+	miMonitor = GUT_PopupNewAt("!p_ana_in_20",giMODE,imode )
+	IF miMonitor <> -1 THEN
+		Ass(-3,1,"'" + sTag + "'",0);
+		_Ass(-3,2,sTag + "_M");
+		_Ass(-3,3,sTag + "_TYP");
+		_Ass(-3,4,sTag + "_LW");
+		_Ass(-3,5,sTag + "_LT");
+		_Ass(-3,6,sTag + "_X");			
+		_Ass(-3,7,sTag + "_AHH");
+		_Ass(-3,8,sTag + "_AH");
+		_Ass(-3,9,sTag + "_HYS");
+		_Ass(-3,10,sTag + "_AL");    					
+		_Ass(-3,11,sTag + "_ALL");
+		_Ass(-3,12,sTag + "_SH");		
+		_Ass(-3,13,sTag + "_SHH");		
+		_Ass(-3,14,sTag + "_SL");
+		_Ass(-3,15,sTag + "_SLL");
+		_Ass(-3,16,sTag + "_ESIM");
+		UAG_LoadUI( sTag + "_KT", 60,7,-3);
+		PageGoto("!p_ana_in_20");
+		_WinTitle(sTag);
+	ELSE
+		UAG_Status("@(Too many windows open)","","1");	
+	END
+		
+END 
+
+//	FUNCTION UAG_ISPY_GWOH_20()
+//	Übergabeparameter:	Branch Messung  als String    
+//                       
+//	Rückgabewert:		
+//	Beschreibung:	Alarme und Schaltpunkte für ISPY
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	09.12.11	/	Schneider Electrik GmbH
+//	Version				75.33.11.08
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	
+//	
+//		Beispiel für Aufruf
+//		TaskNew("UAG_ISPY_GWOH_20", "^"%TAG%^"", 8)
+//		TaskNew("UAG_ISPY_GWOH_20", "^"%TAG%^",2", 8) 
+
+
+FUNCTION UAG_ISPY_GWOH_20(STRING sTag, INT imode=1)
+
+	miMonitor = GUT_PopupNewAt("!p_meld_gwoh_30",giMODE,imode )
+	IF miMonitor <> -1 THEN
+		Ass(-3,1,"'" + sTag + "'",0);
+		_Ass(-3,2,sTag + "_M");
+		_Ass(-3,3,sTag + "_TYP");
+		_Ass(-3,4,sTag + "_LW");
+		_Ass(-3,5,sTag + "_LT");
+		_Ass(-3,6,sTag + "_X");			
+		_Ass(-3,7,sTag + "_AHHein");
+		_Ass(-3,8,sTag + "_AHHaus");
+		_Ass(-3,9,sTag + "_AHein");    					
+		_Ass(-3,10,sTag + "_AHaus");
+		_Ass(-3,11,sTag + "_ALein");		
+		_Ass(-3,12,sTag + "_ALaus");		
+		_Ass(-3,13,sTag + "_ALLein");
+		_Ass(-3,14,sTag + "_ALLaus");
+		_Ass(-3,15,sTag + "_SHHein");
+		_Ass(-3,16,sTag + "_SHHaus");
+		_Ass(-3,17,sTag + "_SHein");    					
+		_Ass(-3,18,sTag + "_SHaus");
+		_Ass(-3,19,sTag + "_SLein");		
+		_Ass(-3,20,sTag + "_SLaus");		
+		_Ass(-3,21,sTag + "_SLLein");
+		_Ass(-3,22,sTag + "_SLLaus");
+		UAG_LoadUI( sTag + "_KT", 60,7,-3);
+		PageGoto("!p_meld_gwoh_30");
+		_WinTitle(sTag);
+	ELSE
+		UAG_Status("@(Too many windows open)","","1");	
+	END
+		
+END 
+
+
+//	FUNCTION UAG_REG_20()
+//	Übergabeparameter:	Branch Messung und Regler  als String      
+//                       
+//	Rückgabewert:		
+//	Beschreibung:	Regler aufschalten	
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	30.01.09	/	Schneider Electrik GmbH
+//	Version				75.33.11.08
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	21.11.11	Steiner		Änderung für Doppelklick
+//	19.06.12	Steiner		Anzeige WE
+
+//		Beispiel für Aufruf
+//		TaskNew("UAG_REG_20", "^"%TAG%^",^"%REG%^"", 8)
+//		TaskNew("UAG_REG_20", "^"%TAG%^",^"%REG%^",2", 8) 
+
+FUNCTION UAG_REG_20(STRING sTag,STRING sReg="-", INT imode=1)
+
+	miMonitor = GUT_PopupNewAt("!p_reg_20",giMODE,imode );
+	IF miMonitor <> -1 THEN
+		// Messstelle
+		Ass(-3,1,"'" + sTag + "'",0);
+		_Ass(-3,2,sTag + "_M");
+		_Ass(-3,3,sTag + "_TYP");
+		_Ass(-3,4,sTag + "_LW");
+		_Ass(-3,5,sTag + "_LT");
+		_Ass(-3,6,sTag + "_X");			
+		_Ass(-3,7,sTag + "_AHH");
+		_Ass(-3,8,sTag + "_AH");
+		_Ass(-3,9,sTag + "_HYS");
+		_Ass(-3,10,sTag + "_AL");    					
+		_Ass(-3,11,sTag + "_ALL");
+		_Ass(-3,12,sTag + "_SH");		
+		_Ass(-3,13,sTag + "_SHH");		
+		_Ass(-3,14,sTag + "_SL");
+		_Ass(-3,15,sTag + "_SLL");
+		_Ass(-3,16,sTag + "_ESIM");
+		Ass(-3,21,"'-'",0);
+
+		// Regler
+		IF sReg <> "-" THEN
+			Ass(-3,1,"'" + sReg + "'",0);
+			Ass(-3,21,"'" + sTag + "'",0);
+			_Ass(-3,22,sReg + "_M");
+			_Ass(-3,3,sReg + "_TYP");
+			_Ass(-3,24,sReg + "_LW");
+			_Ass(-3,25,sReg + "_LT");
+			_Ass(-3,26,sReg + "_W");
+			_Ass(-3,27,sReg + "_Y");
+			_Ass(-3,28,sReg + "_YMIN");
+			_Ass(-3,29,sReg + "_YMAX");
+			_Ass(-3,30,sReg + "_KP");
+			_Ass(-3,31,sReg + "_TN");
+			_Ass(-3,32,sReg + "_TV");
+			_Ass(-3,33,sReg + "_WH");
+			_Ass(-3,34,sReg + "_YH");
+			_Ass(-3,35,sReg + "_RMY");
+			_Ass(-3,36,sReg + "_WHU");
+			_Ass(-3,37,sReg + "_WHO");
+			_Ass(-3,41,sReg + "_YHU");
+			_Ass(-3,42,sReg + "_YHO");
+			_Ass(-3,43,sReg + "_WE");
+			IF TagInfo(sReg + "_TMAX",0) <> "" THEN
+				_Ass(-3,38,sReg + "_TMAX");
+				_Ass(-3,39,sReg + "_STEPA");
+				_Ass(-3,40,sReg + "_DIAG");
+			END	
+			UAG_LoadUI( sReg + "_KT", 60,7,-3);
+		ELSE
+			UAG_LoadUI( sTag + "_KT", 60,7,-3);
+		END	
+		PageGoto("!p_reg_20");
+		_WinTitle(sReg+ " " +sTag);
+	ELSE
+		UAG_Status("@(Too many windows open)","","1");	
+	END
+		
+END 
+
+//	FUNCTION UAG_PLC_STAT_QP_20()
+//	Übergabeparameter:	Tagname und Name der EA als String      
+//                       
+//	Rückgabewert:		
+//	Beschreibung:	Unity SPS pannel aufschalten	
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	28.01.09	/	Schneider Electrik GmbH
+//	Version				75.33.11.08
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	02.03.09	Steiner		Anzeigen erweitert
+//	21.11.11	Steiner		Änderung für Doppelklick
+
+//		Beispiel für Aufruf
+//		TaskNew("UAG_PLC_STAT_QP_20", "^"%TAG%^",^"%EA%^",^"%IOName%^"", 8)
+ 
+
+FUNCTION UAG_PLC_STAT_QP_20(STRING sTag,STRING sEA,STRING sIOName, INT imode=1)
+
+	miMonitor = GUT_PopupNewAt("!p_CPUDIAG_QP_20",giMODE,imode )
+	IF miMonitor <> -1 THEN
+
+		Ass(-3,1,"'" + sTag + "'",0);
+		_Ass(-3,2,sTag + "_M");
+		_Ass(-3,4,sTag + "_LW");
+		_Ass(-3,5,sTag + "_LT");
+
+		//Segment of Communication
+		_Ass(-3,7,sTag + "_HMISW\36");
+		_Ass(-3,8,sTag + "_HMISW\25");
+		_Ass(-3,9,sTag + "_HMISW\26");
+	
+		//Segment of CPU Version
+		_Ass(-3,10,sTag + "_HMISW\27");
+		_Ass(-3,11,sTag + "_HMISW\28");
+		_Ass(-3,12,sTag + "_HMISW\29");
+
+		//Segment of MAST time			
+		_Ass(-3,13,sTag + "_HMISW\1");	
+		_Ass(-3,14,sTag + "_HMISW\2");		
+		_Ass(-3,15,sTag + "_HMISW\3");	
+		_Ass(-3,16,sTag + "_HMISW\4");
+
+		//Segment of RTC
+		_Ass(-3,17,sTag + "_HMISW\31");	
+		_Ass(-3,18,sTag + "_HMISW\32");		
+		_Ass(-3,19,sTag + "_HMISW\33");	
+		_Ass(-3,20,sTag + "_HMISW\34");
+		_Ass(-3,21,sTag + "_HMISW\30");
+
+		// Sonstige
+		Ass(-3,22,"'" + sEA + "'",0);
+		Ass(-3,23,"'" + sIOName + "'",0);
+		_Ass(-3,24,sTag + "_LZSPS");
+		_Ass(-3,25,sTag + "_RUN");
+		_Ass(-3,26,sTag + "_WDOG");	
+		_Ass(-3,27,sTag + "_HMISW\35");	
+		PageGetInt(1)
+		//Segment of Last stop time
+		_Ass(-3,30,sTag + "_HMISW\20");	
+		_Ass(-3,31,sTag + "_HMISW\21");		
+		_Ass(-3,32,sTag + "_HMISW\22");	
+		_Ass(-3,33,sTag + "_HMISW\23");
+		_Ass(-3,34,sTag + "_HMISW\24");
+	
+		//Segment of FAST time			
+		_Ass(-3,35,sTag + "_HMISW\5");
+		_Ass(-3,36,sTag + "_HMISW\6");
+		_Ass(-3,37,sTag + "_HMISW\7");
+
+		//Segment of AUX0 time	
+		_Ass(-3,39,sTag + "_HMISW\8");
+		_Ass(-3,40,sTag + "_HMISW\9");
+		_Ass(-3,41,sTag + "_HMISW\10");
+
+		//Segment of AUX1 time	
+		_Ass(-3,43,sTag + "_HMISW\11");
+		_Ass(-3,44,sTag + "_HMISW\12");
+		_Ass(-3,45,sTag + "_HMISW\13");
+
+		//Segment of AUX2 time	
+		_Ass(-3,47,sTag + "_HMISW\14");
+		_Ass(-3,48,sTag + "_HMISW\15");
+		_Ass(-3,49,sTag + "_HMISW\16");
+
+		//Segment of AUX3 time	
+		_Ass(-3,51,sTag + "_HMISW\17");
+		_Ass(-3,52,sTag + "_HMISW\18");
+		_Ass(-3,53,sTag + "_HMISW\19");
+				
+		UAG_LoadUI( sTag + "_KT", 60,7,-3);
+					
+		PageGoto("!p_CPUDIAG_QP_20");
+		_WinTitle(sTag);
+	ELSE
+		UAG_Status("@(Too many windows open)","","1");	
+	END
+
+END  
+
+//	FUNCTION UAG_PLC_STAT_M340_20()
+//	Übergabeparameter:	Tagname und Name der EA als String      
+//                       
+//	Rückgabewert:		
+//	Beschreibung:	Unity SPS pannel aufschalten	
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	28.01.09	/	Schneider Electrik GmbH
+//	Version				75.33.11.08
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	11.12.08	Steiner		Anzeige WDog 
+//	21.11.11	Steiner		Änderung für Doppelklick
+//
+
+//		Beispiel für Aufruf
+//		TaskNew("UAG_PLC_STAT_M340_20", "^"%TAG%^",^"%EA%^",^"%IOName%^"", 8)
+
+FUNCTION UAG_PLC_STAT_M340_20(STRING sTag,STRING sEA,STRING sIOName, INT imode=1)
+
+	miMonitor = GUT_PopupNewAt("!p_CPUDIAG_M340_20",giMODE,imode )
+	IF miMonitor <> -1 THEN
+		Ass(-3,1,"'" + sTag + "'",0);
+		_Ass(-3,2,sTag + "_M");	
+		_Ass(-3,4,sTag + "_LW");	
+		_Ass(-3,5,sTag + "_LT");
+
+		//Segment of Communication
+		_Ass(-3,7,sTag + "_HMISW\36");
+		_Ass(-3,8,sTag + "_HMISW\25");
+		_Ass(-3,9,sTag + "_HMISW\26");
+	
+		//Segment of CPU Version
+		_Ass(-3,10,sTag + "_HMISW\27");
+		_Ass(-3,11,sTag + "_HMISW\28");
+		_Ass(-3,12,sTag + "_HMISW\29");
+
+		//Segment of MAST time			
+		_Ass(-3,13,sTag + "_HMISW\1");	
+		_Ass(-3,14,sTag + "_HMISW\2");		
+		_Ass(-3,15,sTag + "_HMISW\3");	
+		_Ass(-3,16,sTag + "_HMISW\4");
+
+		//Segment of RTC
+		_Ass(-3,17,sTag + "_HMISW\31");	
+		_Ass(-3,18,sTag + "_HMISW\32");		
+		_Ass(-3,19,sTag + "_HMISW\33");	
+		_Ass(-3,20,sTag + "_HMISW\34");
+		_Ass(-3,21,sTag + "_HMISW\30");
+
+		// Sonstige
+		Ass(-3,22,"'" + sEA + "'",0);
+		Ass(-3,23,"'" + sIOName + "'",0);
+		_Ass(-3,24,sTag + "_LZSPS");
+		_Ass(-3,25,sTag + "_RUN");
+		_Ass(-3,26,sTag + "_WDOG");	
+		_Ass(-3,27,sTag + "_HMISW\35");	
+	
+		//Segment of Last stop time
+		_Ass(-3,30,sTag + "_HMISW\20");	
+		_Ass(-3,31,sTag + "_HMISW\21");		
+		_Ass(-3,32,sTag + "_HMISW\22");	
+		_Ass(-3,33,sTag + "_HMISW\23");
+		_Ass(-3,34,sTag + "_HMISW\24");
+	
+		//Segment of FAST time			
+		_Ass(-3,35,sTag + "_HMISW\5");
+		_Ass(-3,36,sTag + "_HMISW\6");
+		_Ass(-3,37,sTag + "_HMISW\7");
+	
+		UAG_LoadUI( sTag + "_KT", 60,7,-3)
+			
+		PageGoto("!p_CPUDIAG_M340_20")
+		_WinTitle(sTag);
+	ELSE
+		UAG_Status("@(Too many windows open)","","1");	
+	END
+
+END 
+
+//	FUNCTION UAG_Quitt01_1T_20()
+//	Übergabeparameter:	Branch Leitbefehl  als String    
+//                       
+//	Rückgabewert:		
+//	Beschreibung:	Leitbefehl Quittierung aufschalten ( 1 Taste )
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	20.01.09	/	Schneider Electric GmbH
+//	Version				75.33.11.08
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	21.11.11	Steiner		Änderung für Doppelklick
+//	02.10.15	Steiner		Fehler im Aufruf
+//	
+//		Beispiel für Aufruf
+//		TaskNew("UAG_Quitt01_1T_20", "^"%TAG%^"", 8)
+//		TaskNew("UAG_Quitt01_1T_20", "^"%TAG%^",2", 8) 
+
+
+FUNCTION UAG_Quitt01_1T_20(STRING sTag, INT imode=1)
+		
+	miMonitor = GUT_PopupNewAt("!p_quitt01_1T_20",giMODE,imode)
+	IF miMonitor <> -1 THEN
+		Ass(-3,1,"'" + sTag + "'",0);
+		_Ass(-3,4,sTag + "_LW");			
+		_Ass(-3,5,sTag + "_LT");
+		_Ass(-3,6,sTag + "_KT");		// = ?STRING 6?		Kurztext MSR-Name
+		_Ass(-3,7,sTag + "_ZT");		// = ?STRING 7?	Tastenbeschriftung
+		UAG_LoadUI( sTag + "_KT", 60,7,-3);
+		
+		PageGoto("!p_quitt01_1T_20")
+		_WinTitle(sTag);	
+	ELSE
+		UAG_Status("@(Too many windows open)","","1");	
+	END
+END 
+
+//	FUNCTION UAG_Leiten_20()
+//	Übergabeparameter:	Branch Leitbefehl  als String    
+//                       
+//	Rückgabewert:		
+//	Beschreibung:	Leitbefehl  aufschalten
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	04.02.09	/	Schneider Electrik GmbH
+//	Version				75.33.11.08
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	21.11.11	Steiner		Änderung für Doppelklick
+//	
+//		Beispiel für Aufruf
+//		TaskNew("UAG_Leiten_20", "^"%TAG%^",^"%sTagI%^"", 8)
+//		TaskNew("UAG_Leiten_20", "^"%TAG%^",^"%sTagI%^",2", 8) 
+
+FUNCTION UAG_Leiten_20(STRING sTag,STRING sTagI="", INT imode=1)
+
+	miMonitor = GUT_PopupNewAt("!p_leiten_20",giMODE,imode )
+	IF miMonitor <> -1 THEN
+		Ass(-3,1,"'" + sTag + "'",0);
+		_Ass(-3,2,sTag + "_M");
+		_Ass(-3,3,sTag + "_TYP");
+		_Ass(-3,4,sTag + "_LW");			
+		_Ass(-3,5,sTag + "_LT");
+		_Ass(-3,6,sTag + "_ZT");
+		UAG_LoadZT(	sTag + "_ZT",7,6,-3);
+	
+		_Ass(-3,30,sTagI + "_MI");
+		_Ass(-3,31,sTagI + "_LW");
+		Ass(-3,32,"'" + sTagI + "'",0);
+
+		UAG_LoadUI( sTag + "_KT", 60,7,-3);
+		
+		
+		PageGoto("!p_leiten_20");
+		_WinTitle(sTag);	
+	ELSE
+		UAG_Status("@(Too many windows open)","","1");	
+	END
+END 
+
+//	FUNCTION UAG_Leiten_21()
+//	Übergabeparameter:	Branch Leitbefehl  als String    
+//                       
+//	Rückgabewert:		
+//	Beschreibung:	Leitbefehl  aufschalten Logtext wird je nach Bitzustand verändert.
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	22.06.10	/	Schneider Electrik GmbH
+//	Version				75.33.11.08
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	21.11.11	Steiner		Änderung für Doppelklick
+//	
+//		Beispiel für Aufruf
+//		TaskNew("UAG_Leiten_21", "^"%TAG%^",^"%sTagI%^"", 8)
+//		TaskNew("UAG_Leiten_21", "^"%TAG%^",^"%sTagI%^",2", 8) 
+
+FUNCTION UAG_Leiten_21(STRING sTag,STRING sTagI="", INT imode=1)
+
+	miMonitor = GUT_PopupNewAt("!p_leiten_21",giMODE,imode )
+	IF miMonitor <> -1 THEN
+		Ass(-3,1,"'" + sTag + "'",0);
+		_Ass(-3,2,sTag + "_M");
+		_Ass(-3,3,sTag + "_TYP");
+		_Ass(-3,4,sTag + "_LW");			
+		_Ass(-3,5,sTag + "_LT");
+		_Ass(-3,6,sTag + "_ZT");
+		UAG_LoadZT(	sTag + "_ZT",7,6,-3);
+	
+		_Ass(-3,30,sTagI + "_MI");
+		_Ass(-3,31,sTagI + "_LW");
+		Ass(-3,32,"'" + sTagI + "'",0);
+
+		UAG_LoadUI( sTag + "_KT", 60,7,-3);
+		PageGoto("!p_leiten_21");
+		_WinTitle(sTag);	
+	ELSE
+		UAG_Status("@(Too many windows open)","","1");	
+	END
+END 
+
+
+//	UAG_P_Soll_20(STRING sTag)
+//	Übergabeparameter:	Tagname als String      
+//                       
+//	Rückgabewert:		
+//	Beschreibung:	Sollwertpannel für SW_LS aufschalten	
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	30.01.09	/	Schneider Electrik GmbH
+//	Version				75.33.11.08
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	01.04.09	Eßer    	Aktiver Sollwert W auf Ass 9 
+//	21.11.11	Steiner		Änderung für Doppelklick
+//
+
+//		Beispiel für Aufruf
+//		TaskNew("UAG_P_Soll_20", "^"%TAG%^"", 8)
+//		TaskNew("UAG_P_Soll_20", "^"%TAG%^",2", 8) 
+
+FUNCTION UAG_P_Soll_20(STRING sTag, INT imode=1)
+
+	miMonitor = GUT_PopupNewAt("!P_sw_ls_20",giMODE,imode)
+	IF miMonitor <> -1 THEN
+
+		Ass(-3,1,"'" + sTag + "'",0);
+		_Ass(-3,2,sTag + "_M");
+		_Ass(-3,3,sTag + "_TYP");		
+		_Ass(-3,4,sTag + "_LW");			
+		_Ass(-3,5,sTag + "_LT");
+		_Ass(-3,6,sTag + "_WH");	
+		_Ass(-3,7,sTag + "_WHU");
+		_Ass(-3,8,sTag + "_WHO");
+		_Ass(-3,9,sTag + "_W");
+		UAG_LoadUI( sTag + "_KT", 60,7,-3);
+		PageGoto("!P_sw_ls_20");
+		_WinTitle(sTag+ "_WH");
+	ELSE
+		UAG_Status("@(Too many windows open)","","1");	
+	END
+
+END
+
+//	UAG_Sollwert_20(STRING sTag)
+//	Übergabeparameter:	Tagname als String      
+//                       
+//	Rückgabewert:		
+//	Beschreibung:	Sollwertpannel  aufschalten	
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	22.06.11	/	Schneider Electrik GmbH
+//	Version				7.2.0.2
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	
+
+FUNCTION UAG_Sollwert_20(STRING sTag)
+
+	Ass(-2,1,"'" + sTag + "'",0);
+	_Ass(-2,2,sTag);
+
+	UAG_MM_PopUP("!P_sollwert_20")
+END
+
+//	UAG_SollwertH_20(STRING sTag)
+//	Übergabeparameter:	Tagname als String      
+//                       
+//	Rückgabewert:		
+//	Beschreibung:	Sollwertpannel  aufschalten	
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	22.06.11	/	Schneider Electrik GmbH
+//	Version				7.2.0.2
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	
+
+FUNCTION UAG_SollwertH_20(STRING sTag,STRING SMin,STRING sMax)
+
+	Ass(-2,1,"'" + sTag + "'",0);
+	_Ass(-2,2,sTag);
+	_Ass(-2,7,SMin);
+	_Ass(-2,8,sMax);
+	UAG_MM_PopUP("!P_sollwertH_20")
+END
+
+//	UAG_P_YHand_20(STRING sTag)
+//	Übergabeparameter:	Tagname als String      
+//                       
+//	Rückgabewert:		
+//	Beschreibung:	Sollwertpannel für SW_LS aufschalten	
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	30.01.09	/	Schneider Electrik GmbH
+//	Version				75.33.11.08
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+// 	01.04.09  	Eßer    	Aktiver Sollwert Y auf Ass 9 
+//	21.11.11	Steiner		Änderung für Doppelklick
+
+//		Beispiel für Aufruf
+//		TaskNew("UAG_P_YHand_20", "^"%TAG%^"", 8)
+//		TaskNew("UAG_P_YHand_20", "^"%TAG%^",2", 8) 
+
+FUNCTION UAG_P_YHand_20(STRING sTag, INT imode=1)
+
+	miMonitor = GUT_PopupNewAt("!P_sw_ls_20",giMODE,imode)
+	IF miMonitor <> -1 THEN
+		Ass(-3,1,"'" + sTag + "'",0);
+		_Ass(-3,2,sTag + "_M");
+		_Ass(-3,3,sTag + "_TYP");		
+		_Ass(-3,4,sTag + "_LW");			
+		_Ass(-3,5,sTag + "_LT");
+		_Ass(-3,6,sTag + "_YH");	
+		_Ass(-3,7,sTag + "_YHU");
+		_Ass(-3,8,sTag + "_YHO");
+		_Ass(-3,9,sTag + "_Y");
+		UAG_LoadUI( sTag + "_KT", 60,7,-3)
+
+		PageGoto("!P_sw_ls_20")
+		_WinTitle(sTag+ "_YH");
+	ELSE
+		UAG_Status("@(Too many windows open)","","1");	
+	END
+
+END
+
+//	FUNCTION UAG_MELDNA_20()
+//	Übergabeparameter:	Branch Nothalt  als String      
+//                       
+//	Rückgabewert:		
+//	Beschreibung:	Nothalt aufschalten.	
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	04.02.09	/	Schneider Electrik GmbH
+//	Version				7.2.3.3
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	21.11.11	Steiner		Änderung für Doppelklick
+//
+//		Beispiel für Aufruf
+//		TaskNew("UAG_MELDNA_20", "^"%TAG%^"", 8)
+//		TaskNew("UAG_MELDNA_20", "^"%TAG%^",2", 8) 
+
+FUNCTION UAG_MELDNA_20(STRING sTag, INT imode=1)
+
+	miMonitor = GUT_PopupNewAt("!p_meld_na_20",giMODE,imode )
+	IF miMonitor <> -1 THEN
+		Ass(-3,1,"'" + sTag + "'",0);
+		_Ass(-3,2,sTag + "_M");
+		_Ass(-3,3,sTag + "_TYP");
+		_Ass(-3,4,sTag + "_LW");
+		_Ass(-3,5,sTag + "_LT");
+		UAG_LoadUI( sTag + "_KT", 60,7,-3)
+
+		PageGoto("!p_meld_na_20")
+		_WinTitle(sTag);
+	ELSE
+		UAG_Status("@(Too many windows open)","","1");	
+	END
+END 
+
+//	FUNCTION UAG_MELD_20()
+//	Übergabeparameter:	Branch Nothalt  als String      
+//                       
+//	Rückgabewert:		
+//	Beschreibung:	Nothalt aufschalten.	
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	11.08.09	/	Schneider Electrik GmbH
+//	Version				75.33.11.08
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	21.11.11	Steiner		Änderung für Doppelklick
+//
+//		Beispiel für Aufruf
+//		TaskNew("UAG_MELD_20", "^"%TAG%^"", 8)
+//		TaskNew("UAG_MELD_20", "^"%TAG%^",2", 8) 
+
+FUNCTION UAG_MELD_20(STRING sTag, INT imode=1)
+
+	miMonitor = GUT_PopupNewAt("!p_meld_20",giMODE,imode )
+	IF miMonitor <> -1 THEN
+		Ass(-3,1,"'" + sTag + "'",0);
+		_Ass(-3,2,sTag + "_M");
+		_Ass(-3,3,sTag + "_TYP");
+		_Ass(-3,4,sTag + "_LW");
+		_Ass(-3,5,sTag + "_LT");
+		_Ass(-3,6,sTag + "_ZT");
+		UAG_LoadUI( sTag + "_KT", 60,7,-3)
+		_Ass(-2,70,sTag + "_M_b14.Ack");
+
+		PageGoto("!p_meld_20")
+		_WinTitle(sTag);
+	ELSE
+		UAG_Status("@(Too many windows open)","","1");	
+	END
+END 
+
+
+//	FUNCTION UAG_msgbox_20()
+//	Übergabeparameter:	Branch   als String      
+//                       
+//	Rückgabewert:		
+//	Beschreibung:	Meldung aufschalten.	
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	11.03.09	/	Schneider Electrik GmbH
+//	Version				75.33.11.08
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//
+
+FUNCTION UAG_msgbox_20(STRING sTag, INT imode=1)
+	
+	Ass(-2,1,"'" + sTag + "'",0);
+	_Ass(-2,2,sTag + "_ME");
+	_Ass(-2,3,sTag + "_TYP");
+	_Ass(-2,4,sTag + "_LW");
+	_Ass(-2,5,sTag + "_LT");
+	_Ass(-2,6,sTag + "_ZT");	
+	UAG_LoadZT(	sTag + "_ZT",7,2);
+	_Ass(-2,10,sTag + "_DATA1");
+	_Ass(-2,11,sTag + "_DATA2");
+	UAG_LoadUI( sTag + "_KT", 60)
+
+	GUT_PopupNewAt("!p_msgbox2_20",giMODE,imode )
+	_WinTitle(sTag);
+END
+
+
+//	FUNCTION UAG_HTML_20()
+//	Übergabeparameter:	Name der Seite
+//                         
+//	Rückgabewert:		 
+//	Beschreibung:		Anzeige von Webseiten
+//						
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	04.02.09	/	Schneider Electrik GmbH
+//	Version				3.1.1.0
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//
+//		Beispiel für Aufruf
+//		TaskNew("UAG_HTML_20", "^"%Adresse%^",^"%Wintitel%^"", 8)
+
+
+FUNCTION 
+UAG_HTML_20(STRING sAdresse,STRING sWintitel)
+	OBJECT WEBView;
+	INT		iError;
+	ErrSet(1);
+
+	Ass(-2,1,"'" + sWintitel + "'",0);
+
+	
+	iError = UAG_MM_WinNewAt("!p_web_20",150,150,giMODE,0)
+	
+	IF  iError <> -1 THEN
+		SleepMS(1000);
+		
+		WEBView=DspAnCreateControlObject(250, msWEBClass, 1024, - 768);
+		PageSetInt(1,WEBView);
+		SleepMS(200);
+		iError=IsError();
+			
+			_ObjectCallMethod(WEBView,"Navigate",sAdresse);
+
+		iError=IsError();	
+		IF iError <>0 THEN 
+			UAG_SystemInfo("UAG_HTML_20", "System","WEB View: ist auf dem Rechner nicht vorhanden","-","-","-",TaskCluster(),_UAG_Fehler)
+	    END
+	END
+	
+	ErrSet(0);
+END 
+
+//	UAG_P_Interlock_20(STRING sTag)
+//	Übergabeparameter:	Tagname als String      
+//                       
+//	Rückgabewert:		
+//	Beschreibung:	Interlock Pannel aufschalten	
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	22.01.09	/	Schneider Electrik GmbH
+//	Version				3.1.1.0
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//
+
+FUNCTION UAG_P_Interlock_20(STRING sTag)
+
+	Ass(-2,1,"'" + sTag + "'",0);
+	_Ass(-2,2,sTag + "_MI");
+	_Ass(-2,4,sTag + "_LW");
+	_Ass(-2,5,sTag + "_LT");
+
+	UAG_LoadInterlock(sTag + "_MI", 21, 15);
+	UAG_LoadUI( sTag + "_KT", 60)
+	UAG_MM_PopUP("!P_Interlock_20")
+	_WinTitle(sTag);
+
+END
+
+//	UAG_P_Freigabe_20(STRING sTag)
+//	Übergabeparameter:	Tagname als String      
+//                       
+//	Rückgabewert:		
+//	Beschreibung:	Freigabe Pannel aufschalten	
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	26.06.09	/	Schneider Electrik GmbH
+//	Version				3.1.1.0
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//
+
+//		Beispiel für Aufruf
+//		TaskNew("UAG_P_Freigabe_20", "^"%TAGI%^"", 8)
+ 
+
+FUNCTION UAG_P_Freigabe_20(STRING sTag)
+
+	Ass(-2,1,"'" + sTag + "'",0);
+	_Ass(-2,2,sTag + "_MI");
+	_Ass(-2,4,sTag + "_LW");
+	_Ass(-2,5,sTag + "_LT");
+
+	UAG_LoadInterlock(sTag + "_MI", 21, 15);
+	UAG_LoadUI( sTag + "_KT", 60)
+	UAG_MM_PopUP("!P_Freigabe_20")
+	_WinTitle(sTag);
+
+END
+//	UAG_P_Info_20(STRING sTag)
+//	Übergabeparameter:	Tagname als String      
+//                       
+//	Rückgabewert:		
+//	Beschreibung:	Info Pannel aufschalten	die Texte werden am Baustein Info1_20 Projektiert
+//					zur Zeit max 2 Worte
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	05.02.09	/	Schneider Electrik GmbH
+//	Version				72.33.70.05
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	09.11.11	Steiner		Erweitert um das Faceplate mit Rot/Grün zu nutzen
+//	27.03.14	Steiner		Ass 1 geändert
+
+FUNCTION UAG_P_Info_20(STRING sTag,INT iMode=False)
+
+	Ass(-2,1,"'" + sTag + "_DIAG1"+ "'",0);
+	_Ass(-2,6, sTag + "_DIAG1");
+	Ass(-2,2,"'0'",0);
+	Ass(-2,3,"'-'",0);
+	UAG_LoadInterlock(sTag + "_DIAG1", 10, 16);
+	IF TagInfo(sTag + "_DIAG2",0) = sTag + "_DIAG2" THEN
+		_Ass(-2,4,sTag + "_DIAG2");
+		Ass(-2,5,"'1'",0);
+
+		UAG_LoadInterlock(sTag + "_DIAG2", 26, 16);
+	ELSE
+		Ass(-2,5,"'0'",0);
+	END			
+
+//	UAG_LoadUI( sTag + "KT", 60)
+	IF iMode THEN
+		UAG_MM_PopUP("!p_anzeig_rot20")
+	ELSE
+		UAG_MM_PopUP("!p_anzeig_20")
+	END
+	
+	_WinTitle(sTag);
+
+END
+
+//	UAG_P_Transition_20(STRING sTag)
+//	Übergabeparameter:	Tagname als String      
+//                       
+//	Rückgabewert:		
+//	Beschreibung:	Info Pannel aufschalten	die Texte werden am Baustein Info1_20 Projektiert
+//					zur Zeit max 2 Worte
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	26.05.09	/	Schneider Electrik GmbH
+//	Version				3.1.1.0
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//
+
+FUNCTION UAG_P_Transition_20(STRING sTag)
+
+	Ass(-2,1,"'" + sTag + "'",0);
+	_Ass(-2,2,sTag + "_DIAG1");
+	_Ass(-2,3,sTag + "_TYP");
+	_Ass(-2,5,sTag + "_LT");
+	UAG_LoadInterlock(sTag + "_DIAG1", 8, 16);
+
+  	UAG_LoadUI( sTag + "_KT", 60)
+	UAG_MM_PopUP("!p_transition_20")
+	_WinTitle(sTag);
+
+END
+//	FUNCTION UAG_TREND_20()
+//	Übergabeparameter:	3 Tag als String für Trendpopup  
+//                       
+//	Rückgabewert:		
+//	Beschreibung:	Trendpannel aufschalten	
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	04.02.09	/	Schneider Electrik GmbH
+//	Version				3.1.1.3
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	11.12.07	Steiner		ist so flexibler da die Stifte getrennt übergeben werden.
+//
+//		Beispiel für Aufruf
+//		TaskNew("UAG_TREND_20", "^"%pen1%^",^"%pen2%^",^"%pen3%^"", 8)
+//		TaskNew("UAG_TREND_20", "^"%pen1%^",^"%pen2%^",^"%pen3%^",2", 8)
+
+FUNCTION UAG_TREND_20P(INT iX,INT iW,INT iY, INT imode=1)
+	STRING	stemp;
+	stemp= "^"" +_AssInfo(iX,0) + "^",^"" +_AssInfo(iW,0) +"^",^"" +_AssInfo(iY,0) +"^"," +IntToStr(imode)
+	TaskNew("UAG_TREND_20",stemp, 8)
+	
+END	
+
+FUNCTION UAG_TREND_20(STRING sX,STRING sW,STRING sY, INT imode=1)
+
+	Ass(-2,1,"'" +"Regler Trend: "  + sY + "'",0);
+	giPosX =StrToInt(PageInfo(14)) + StrToInt(PageInfo(12) );
+	giPosY= StrToInt(PageInfo(15)); 
+	IF UAG_MM_WinNewAt("!p_reg_trend_20",giPosX,giPosY,giMODE,imode )> 0 THEN
+		SleepMS(200);
+		TrnSetPen(86, 1, sX);
+		TrnSetPen(86, 2, sW);
+		TrnSetPen(86, 3, sY);
+	END
+END
+
+//	FUNCTION UAG_TREND_21P()
+//	Übergabeparameter:	3 Tag als String für Trendpopup  
+//                       
+//	Rückgabewert:		
+//	Beschreibung:	Analystpannel aufschalten	
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	14.12.09	/	Schneider Electrik GmbH
+//	Version				75.33.11.03
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	30.11.16	Steiner		farbcode geändert
+//
+//		Beispiel für Aufruf
+//		UAG_TREND_21P(%pen1%,%pen2%,%pen3%)
+
+
+FUNCTION UAG_TREND_21P(INT iX,INT iW,INT iY, INT imode=1)
+	STRING	stemp;
+	stemp= "^"" +_AssInfo(iX,0) + "^",^"" +_AssInfo(iW,0) +"^",^"" +_AssInfo(iY,0) +"^"," +IntToStr(imode)
+	TaskNew("UAG_TREND_21",stemp, 8)
+	
+END	
+
+FUNCTION UAG_TREND_21(STRING sX,STRING sW,STRING sY, INT imode=1,STRING sText="")
+	IF sText="" THEN
+		Ass(-2,1,"'" +"Trend: "  +sX +" , " + sW+" , "+ sY + "'",0);
+	ELSE
+		Ass(-2,1,"'" +"Trend: "  + sText + "'",0);
+	END		
+	giPosX =StrToInt(PageInfo(14)) + StrToInt(PageInfo(12) );
+	giPosY= StrToInt(PageInfo(15)); 
+	IF UAG_MM_WinNewAt("!p_reg_trend_21",giPosX,giPosY,giMODE,imode )> 0 THEN
+		SleepMS(200);
+		UAG_PA_Anzeige_Stifte(sX,1,_UAG_PF_schwarz)
+		IF sW <> "" THEN UAG_PA_Anzeige_Stifte(sW,1,_UAG_PF_hellblau) END;
+		IF sY <> "" THEN UAG_PA_Anzeige_Stifte(sY,1,_UAG_PF_gelb) END;
+	END
+END
+
+//	FUNCTION UAG_TREND_22()
+//	Übergabeparameter:	8 Tag als String für Trendpopup  
+//                       
+//	Rückgabewert:		
+//	Beschreibung:	Analystpannel aufschalten	
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	26.10.10	/	Schneider Electrik GmbH
+//	Version				7.2.0.0
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	
+//		Beispiel für Aufruf
+//		TaskNew("UAG_TREND_21", "^"%pen1%^",^"%pen2%^",^"%pen3%^",^"%pen4%^",^"%pen5%^",^"%pen6%^",^"%pen7%^",^"%pen8%^"", 8)
+//		TaskNew("UAG_TREND_21", "^"%pen1%^",^"%pen2%^",^"%pen3%^",^"%pen4%^",^"%pen5%^",^"%pen6%^",^"%pen7%^",^"%pen8%^",2", 8)
+
+FUNCTION UAG_TREND_22(STRING sPen1,STRING sPen2="",STRING sPen3="",STRING sPen4="",STRING sPen5="",STRING sPen6="",STRING sPen7="",STRING sPen8="" ,INT imode=1)
+
+	Ass(-2,1,"'" +"@(Controller trend): "  + sPen1 + "'",0);
+	giPosX =StrToInt(PageInfo(14)) + StrToInt(PageInfo(12) );
+	giPosY= StrToInt(PageInfo(15)); 
+	IF UAG_MM_WinNewAt("!p_reg_trend_21",giPosX,giPosY,giMODE,imode )> 0 THEN
+		SleepMS(200);
+		UAG_PA_Anzeige_Stifte(sPen1,1,1)
+		IF sPen2 <> "" THEN UAG_PA_Anzeige_Stifte(sPen2,1,2) END;
+		IF sPen3 <> "" THEN UAG_PA_Anzeige_Stifte(sPen3,1,3) END;
+		IF sPen4 <> "" THEN UAG_PA_Anzeige_Stifte(sPen4,1,4) END;
+		IF sPen5 <> "" THEN UAG_PA_Anzeige_Stifte(sPen5,1,5) END;
+		IF sPen6 <> "" THEN UAG_PA_Anzeige_Stifte(sPen6,1,6) END;
+		IF sPen7 <> "" THEN UAG_PA_Anzeige_Stifte(sPen7,1,7) END;
+		IF sPen8 <> "" THEN UAG_PA_Anzeige_Stifte(sPen8,1,8) END;
+	END
+END
+
+
+//	UAG_TREND_ANA()
+//	Übergabeparameter:	 ---     
+//                       
+//	Rückgabewert:		 
+//	Beschreibung:		Prozessanalyst mit x, GW und Alarm aufschalten	
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	06.08.13	/	Schneider Electrik GmbH
+//	Version				7.2.33.70.03
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	
+
+FUNCTION UAG_TREND_ANA(STRING sTag,INT imode=0)
+	STRING sTemp
+
+	Ass(-2,1,"'" +"@(Mess Trend): "  + sTag + "'",0);
+	giPosX =StrToInt(PageInfo(14)) + StrToInt(PageInfo(12) );
+	giPosY= StrToInt(PageInfo(15)); 
+	IF UAG_MM_WinNewAt("!p_reg_trend_21",giPosX,giPosY,giMODE,imode )> 0 THEN
+		SleepMS(200);
+	UAG_PA_ANA(sTag)
+
+	END
+
+
+
+//TaskNew("UAG_TREND_22",sTemp,8)
+
+END
+			
+//	UAG_Infotexte_20(STRING sTag)
+//	Übergabeparameter:	Tagname als String      
+//                       
+//	Rückgabewert:		
+//	Beschreibung:	Infotexte für Meßstelle aufschalten	
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	04.02.09	/	Schneider Electrik GmbH
+//	Version				7.2.3.2
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	15.11.11	Steiner		LT geändert.
+FUNCTION UAG_Infotexte_20(STRING sTag)
+	INT i;
+	STRING sTemp;
+	
+	UAG_Infotexte_load_20(sTag);
+	Ass(-2,1,"'" + sTag + "'",0);
+	IF TagInfo(sTag + "_LT",0) <> "" THEN
+		_Ass(-2,2,sTag + "_LT");		// = ?STRING 2?
+	ELSE
+		Ass(-2,2,"'-'",0);	
+	END	
+	UAG_MM_PopUP("!p_infotexte_20")
+	_WinTitle(sTag);
+END 
+
+//	UAG_Status_alt_20()
+//	Übergabeparameter:	--      
+//                       
+//	Rückgabewert:		--      
+//	Beschreibung:		Zeigt die letzten 10 Einträge aus dem Status an.
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	04.02.09	/	Schneider Electrik GmbH
+//	Version				7.2.3.13
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//
+//  
+
+FUNCTION UAG_Status_alt_20()
+INT iX,iy,ian;
+ian =KeyGetCursor()
+DspAnGetPos(ian , iX, iY)
+UAG_MM_WinNewAt("!p_statusA_20",iX,iY-204,128+16+32+64);
+
+END
+
+//	UAG_client_20(STRING sTag)
+//	Übergabeparameter:	Tagname als String      
+//                       
+//	Rückgabewert:		
+//	Beschreibung:	Client aufschalten	
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	02.03.09	/	Schneider Electrik GmbH
+//	Version				3.1.1.0
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	
+FUNCTION UAG_client_20(STRING sName,STRING sTag)
+	
+
+	Ass(-2, 1, "'" + sName + "'", 0);
+	_Ass(-2,5,sTag + "_LT");
+ 	UAG_LoadUI( sTag + "_KT", 60)
+	
+	UAG_MM_PopUP("!p_client_20")
+	_WinTitle(sName);
+
+END
+
+//	UAG_client_21(STRING sTag)
+//	Übergabeparameter:	Tagname als String      
+//                       
+//	Rückgabewert:		
+//	Beschreibung:	Client aufschalten	
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	18.10.11	/	Schneider Electrik GmbH
+//	Version				7.2.3.2
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	
+FUNCTION UAG_client_21(STRING sName,STRING sTag)
+	
+
+	Ass(-2, 1, "'" + sName + "'", 0);
+	_Ass(-2,5,sTag + "_LTCL");
+ 	UAG_LoadUI( sTag + "_KT", 60)
+
+	UAG_MM_PopUP("!p_client_20")
+	_WinTitle(sName);
+
+END
+
+//	UAG_server_20(STRING sTag)
+//	Übergabeparameter:	Tagname als String      
+//                       
+//	Rückgabewert:		
+//	Beschreibung:	Client aufschalten	
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	02.03.09	/	Schneider Electrik GmbH
+//	Version				3.1.1.0
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	
+
+FUNCTION UAG_server_20(STRING sName, STRING sTag)
+	
+
+	Ass(-2, 1, "'" + sName + "'", 0);
+	_Ass(-2,5,sTag + "_LT");
+	
+ 	UAG_MM_PopUP("!p_server_20")
+ 	_WinTitle(sName);
+
+END
+
+
+//	FUNCTION UAG_ServerInfo20()
+//	Übergabeparameter:	---      
+//                       
+//	Rückgabewert:		---
+//	Beschreibung:	Zeigt das Versionsfenster an.	
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	28.07.09	/	Schneider Electrik GmbH
+//	Version				7.2.3.13
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	23.11.12	Steiner		andere Fenster werden nicht geschlossen.
+
+FUNCTION UAG_ServerInfo20()
+	Ass(-2,1,"''",0);
+	
+	UAG_MM_WinNewAt("!p_server_info_20",200,200,giMODE,0 )
+
+END 
+
+//	FUNCTION UAG_DOS_20()
+//	Übergabeparameter:	Tagname als String Modus      
+//                       
+//	Rückgabewert:		
+//	Beschreibung:		Dosierung
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	17.08.09	/	Schneider Electrik GmbH
+//	Version				75.33.11.08
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	21.11.11	Steiner		Änderung für Doppelklick
+//	05.10.15	Steiner		X Simulation eingefügt
+
+//		Beispiel für Aufruf
+//		TaskNew("UAG_DOS_20", "^"%TAG%^",1, "^"%TAGI%^"", 8)
+//		TaskNew("UAG_DOS_20", "^"%TAG%^",2, "^"%TAGI%^"", 8) 
+
+FUNCTION UAG_DOS_20(STRING sTag,INT imode=1,STRING sTagi="")
+
+	miMonitor = GUT_PopupNewAt("!p_dos_20",giMODE,imode );
+	IF miMonitor <> -1 THEN
+	
+		Ass(-3,1,"'" + sTag + "'",0);
+		_Ass(-3,2,sTag + "_M");
+		_Ass(-3,3,sTag + "_TYP");
+		_Ass(-3,4,sTag + "_LW");			
+		_Ass(-3,5,sTag + "_LT");
+		_Ass(-3,6,sTag + "_ZT");
+		UAG_LoadZT(	sTag + "_ZT",7,4,-3);
+		_Ass(-3,12,sTag + "_Q");
+		_Ass(-3,13,sTag + "_QH");
+		_Ass(-3,14,sTag + "_QW");	
+		_Ass(-3,16,sTag + "_ESIM");	
+
+		_Ass(-3,20,sTagI + "_MI");
+		_Ass(-3,21,sTagI + "_LW");
+		Ass(-3,22,"'" + sTagI + "'",0);
+
+		UAG_LoadUI( sTag + "_KT", 60,7,-3)
+
+		PageGoto("!p_dos_20")
+		_WinTitle(sTag);
+	ELSE
+		UAG_Status("@(Too many windows open)","","1");	
+	END
+END 
+
+
+//	FUNCTION UAG_IO_Info_PopUp_20
+//	Übergabeparameter:	Name IO Gerät     
+//                       
+//	Rückgabewert:		---
+//	Beschreibung:		Statuspannel für IO aufrufen	
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	30.09.09	/	Schneider Electrik GmbH
+//	Version				75.33.11.08
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	11.10.11	Steiner		Aufruf für UAG_Info_Server_IO geändert
+//	23.11.12	Steiner		andere Fenster werden nicht geschlossen.
+
+FUNCTION UAG_IO_Info_PopUp_20(STRING sDevice)
+	Ass(-2,1,"'" + sDevice + "'",0);
+	GUT_PopupNewAt("!p_ioInfo_20",giMODE,0); 
+	UAG_Info_Server_IO(sDevice);
+		
+END
+
+//	FUNCTION UAG_NS_20()
+//	Übergabeparameter:	Tagname als String, Modus      
+//                       
+//	Rückgabewert:		
+//	Beschreibung:		Leistungsschalter
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	23.11.09	/	Schneider Electrik GmbH
+//	Version				75.33.11.08
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	21.11.11	Steiner		Änderung für Doppelklick
+//
+//		Beispiel für Aufruf
+//		TaskNew("UAG_NS_20", "^"%TAG%^"", 8)
+//		TaskNew("UAG_NS_20", "^"%TAG%^",2", 8) 
+
+
+
+FUNCTION UAG_NS_20(STRING sTag, INT imode=1)
+
+	miMonitor = GUT_PopupNewAt("!p_NS_20",giMODE,imode )
+	IF miMonitor <> -1 THEN
+		Ass(-3,1,"'" + sTag + "'",0);
+		_Ass(-3,2,sTag + "_M");
+		_Ass(-3,3,sTag + "_TYP");
+		_Ass(-3,4,sTag + "_LW");			
+		_Ass(-3,5,sTag + "_LT");
+		_Ass(-3,6,sTag + "_ZT");
+		UAG_LoadZT(	sTag + "_ZT",7,4,-3);
+		IF TagInfo(sTag + "_A",0) <> "" THEN
+			_Ass(-3,20,sTag + "_A");
+			_Ass(-3,21,sTag + "_V");	
+		END	
+		UAG_LoadUI( sTag + "_KT", 60,7,-3)
+
+		PageGoto("!p_NS_20")
+		_WinTitle(sTag);
+	ELSE
+		UAG_Status("@(Too many windows open)","","1");	
+	END
+END 
+
+//	FUNCTION UAG_ISPY_20()
+//	Übergabeparameter:	Tagname als String Modus      
+//                       
+//	Rückgabewert:		
+//	Beschreibung:		Waagenmodul
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	20.05.10	/	Schneider Electrik GmbH
+//	Version				75.33.11.08
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//
+//		Beispiel für Aufruf
+//		TaskNew("UAG_ISPY_20", "^"%TAG%^"0,1,^"%TAG2%^"", 8) 
+//		TaskNew("UAG_ISPY_20", "^"%TAG%^"0,2,^"%TAG2%^"", 8) 
+
+
+
+FUNCTION UAG_ISPY_20(STRING sTag,INT ityp=0, INT imode=1,STRING sTag2="")
+	
+
+	Ass(-2,1,"'" + sTag + "'",0);
+	_Ass(-2,2,sTag + "_M");
+	_Ass(-2,3,sTag + "_TYP");
+	_Ass(-2,4,sTag + "_LW");			
+	_Ass(-2,5,sTag + "_LT");
+	_Ass(-2,6,sTag + "_ZT");
+	UAG_LoadZT(	sTag + "_ZT",7);
+	_Ass(-2,12,sTag + "_WEIGHT");
+	_Ass(-2,13,sTag + "_ELFCUT");
+	_Ass(-2,14,sTag + "_EHFCUT");
+	_Ass(-2,15,sTag + "_M2\MD");
+	_Ass(-2,16,sTag + "_M2\CHFLT");
+	_Ass(-2,17,sTag + "_M2\EXCHRPT");
+	_Ass(-2,18,sTag + "_ZELLE");
+	_Ass(-2,19,sTag + "_ZELLENANZ");
+	_Ass(-2,20,sTag + "_S");
+	_Ass(-2,21,sTag + "_ESTDLOAD");
+	_Ass(-2,22,sTag + "_M2\DN0");
+	_Ass(-2,23,sTag + "_M2\OFFANZ");
+	_Ass(-2,24,sTag + "_M2\DSL0");
+	_Ass(-2,25,sTag + "_M2\GainTT");
+	_Ass(-2,26,sTag + "_M2\Gain2");
+	_Ass(-2,27,sTag + "_M2\BERJUST");
+	_Ass(-2,28,sTag + "_M2\GMAZ");
+	_Ass(-2,29,sTag + "_M2\DSL");
+	_Ass(-2,30,sTag + "_ESIM");
+	_Ass(-2,31,sTag + "_M2\GAINANZ");
+	_Ass(-2,32,sTag + "_OFFAN");
+	_Ass(-2,33,sTag + "_GAIND");
+	_Ass(-2,34,sTag + "_ESIM");
+	_Ass(-2,35,sTag + "_M2\STABI");
+	_Ass(-2,36,sTag + "_M2\STABIZEIT");
+	_Ass(-2,37,sTag + "_M2\F1");
+	_Ass(-2,38,sTag + "_M2\F2");
+	_Ass(-2,39,sTag + "_M2\F3");
+	UAG_LoadUIBIT(32, 41,16);	
+	UAG_LoadUI( sTag + "_KT", 60)
+	UAG_LoadUIBIT(31, 71,16);
+	UAG_LoadUIBIT(36, 91,16);
+// Grenzwerte
+	IF TagInfo(sTag2 + "_AHH",0) <> "" THEN
+		Ass(-2,111,"'" + sTag2 + "'",0);
+		_Ass(-2,112,sTag2 + "_M");
+		_Ass(-2,113,sTag2 + "_TYP");
+		_Ass(-2,114,sTag2 + "_LW");
+		_Ass(-2,117,sTag2 + "_AHH");
+		_Ass(-2,118,sTag2 + "_AH");
+		_Ass(-2,119,sTag2 + "_HYS");
+		_Ass(-2,120,sTag2 + "_AL");    					
+		_Ass(-2,121,sTag2 + "_ALL");
+		_Ass(-2,122,sTag2 + "_SH");		
+		_Ass(-2,123,sTag2 + "_SHH");		
+		_Ass(-2,124,sTag2 + "_SL");
+		_Ass(-2,125,sTag2 + "_SLL");
+	END
+
+	GUT_PopupNewAt("!p_ispy_20",giMODE,imode )
+	_WinTitle(sTag);
+END 
+
+FUNCTION UAG_ISPY_PRINT_20(STRING sTag)
+	INT hDev;
+	STRING sData;
+	DevModify("Scratch","*","*", "[DATA]ISPY" +IntToStr (TimeCurrent())+".txt",ASCII_DEV);
+	hDev = DevOpen("Scratch");
+	sData = UAG_String_Center("Parameter für Waage: " +sTag,80);
+	DevWriteLn(hDev, sData);
+	DevWriteLn(hDev, "");
+	sData = UAG_String_Center(TagRead(sTag + "_LT"),80);
+	DevWriteLn(hDev, sData);
+	DevWriteLn(hDev, "");
+	DevWriteLn(hDev, "     Waagenjustierung");
+	DevWriteLn(hDev, "");
+	DevWriteLn(hDev, UAG_String_FmtToStr2("{Speisespannung:#32} {10V#16}"));
+	DevWriteLn(hDev, UAG_String_FmtToStr2("{Auflösung:#32}{1048576#16}"));
+	DevWriteLn(hDev, "");
+	sData = UAG_String_FmtToStr2("{akuelles Gewicht:#32}{" + UAG_TagReadEx(sTag + "_WEIGHT")+"#16}");
+	DevWriteLn(hDev, sData);
+
+	sData = UAG_String_FmtToStr2("{Gewicht einer Zelle:#32}{" + UAG_TagReadEx(sTag + "_ZELLE")+"#16}");
+	DevWriteLn(hDev, sData);
+
+	sData = UAG_String_FmtToStr2("{Anzahl der Zellen:#32}{" + UAG_TagReadEx(sTag + "_ZELLENANZ")+"#16}");
+	DevWriteLn(hDev, sData);
+
+	sData = UAG_String_FmtToStr2("{Kennwert:#32}{" + UAG_TagReadEx(sTag + "_S")+"#16}");
+	DevWriteLn(hDev, sData);
+
+	DevWriteLn(hDev, "");
+	DevWriteLn(hDev, "     Justage mit Eichgewicht");
+	DevWriteLn(hDev, "");
+	sData = UAG_String_FmtToStr2("{akuelles Gewicht:#32}{" + UAG_TagReadEx(sTag + "_WEIGHT")+"#16}");
+	DevWriteLn(hDev, sData);
+
+	sData = UAG_String_FmtToStr2("{Eichgewicht:#32}{" + UAG_TagReadEx(sTag + "_ESTDLOAD")+"#16}");
+	DevWriteLn(hDev, sData);
+
+	sData = UAG_String_FmtToStr2("{Eigengewicht:#32}{" + UAG_TagReadEx(sTag + "_M2\DN0")+"#16}");
+	DevWriteLn(hDev, sData);
+
+	sData = UAG_String_FmtToStr2("{Eigengewicht (Bunkertara):#32}{" + UAG_TagReadEx(sTag + "_M2\OFFANZ")+"#16}");
+	DevWriteLn(hDev, sData);
+
+	sData = UAG_String_FmtToStr2("{Justagegewicht:#32}{" + UAG_TagReadEx(sTag + "_M2\DSL0")+"#16}");
+	DevWriteLn(hDev, sData);
+
+	sData = UAG_String_FmtToStr2("{Soll Steilheit:#32}{" + UAG_TagReadEx(sTag + "_M2\GainTT")+"#16}");
+	DevWriteLn(hDev, sData);
+
+	sData = UAG_String_FmtToStr2("{Ist Steilheit:#32}{" + UAG_TagReadEx(sTag + "_M2\Gain2")+"#16}");
+	DevWriteLn(hDev, sData);
+
+	sData = UAG_String_FmtToStr2("{Berechn. Justage:#32}{" + UAG_TagReadEx(sTag + "_M2\BERJUST")+"#16}");
+	DevWriteLn(hDev, sData);
+
+	DevWriteLn(hDev, "     Angepasste Justage");
+	DevWriteLn(hDev, "");
+	sData = UAG_String_FmtToStr2("{Eigengewicht (Totlast):#32}{" + UAG_TagReadEx(sTag + "_M2\OFFANZ")+"#16}");
+	DevWriteLn(hDev, sData);
+
+	sData = UAG_String_FmtToStr2("{aktuelle Steilheit:#32}{" + UAG_TagReadEx(sTag + "_M2\GAINANZ")+"#16}");
+	DevWriteLn(hDev, sData);
+
+	DevFlush(hDev);
+	DevClose(hDev)
+END
+//	FUNCTION UAG_PathInfo_20()
+//	Übergabeparameter:	-      
+//                       
+//	Rückgabewert:		
+//	Beschreibung:		Leistungsschalter
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	12.01.10	/	Schneider Electrik GmbH
+//	Version				75.33.11.08
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//
+
+
+
+FUNCTION UAG_PathInfo_20()
+	
+	GUT_PopupNewAt("!p_pathinfo_20",giMODE )
+
+END 
+
+//	FUNCTION UAG_AssChainPopUp_20()
+//	Übergabeparameter:	-      
+//                       
+//	Rückgabewert:		
+//	Beschreibung:		Neues Fenster mit gleichen Variablen öffnen
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	17.08.10	/	Schneider Electrik GmbH
+//	Version				74.33.81.02
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	05.10.15	Steiner		Aufruf geändert
+
+INT FUNCTION
+UAG_AssChainPopUp_20(STRING sPage)
+	giPosX =  StrToInt(PageInfo(14));
+	giPosY = StrToInt(PageInfo(15));
+	AssChain(-2, WinNumber(), 0);
+	RETURN UAG_MM_WinNewAt(sPage,giPosX,giPosY,giMODE,1 );
+END
+
+//	UAG_P_UIEdit_20(STRING sTag)
+//	Übergabeparameter:	Tagname als String      
+//                       
+//	Rückgabewert:		
+//	Beschreibung:	Tastentext Pannel aufschalten	
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	11.02.11	/	Schneider Electrik GmbH
+//	Version				7.2.0.1
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//
+
+FUNCTION UAG_P_UIEdit_20(STRING sTag)
+
+	Ass(-2,1,"'" + sTag + "_ZT",0);
+	_Ass(-2,5, sTag  + "_LT");
+	UAG_LoadZT(	sTag + "_ZT",21,15);
+	UAG_MM_PopUP("!P_UIEdit_20")
+	_WinTitle(sTag);
+
+END
+
+
+//	FUNCTION UAG_KT_20()
+//	Übergabeparameter:	Branch  als String    
+//                       
+//	Rückgabewert:		
+//	Beschreibung:	Zusatzinfo Anzeigen
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	07.03.11	/	Schneider Electric GmbH
+//	Version				75.33.11.08
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	
+
+FUNCTION UAG_Kt_20(STRING sTag, INT imode=1)
+		
+	Ass(-2,1,"'" + sTag + "'",0);
+	_Ass(-2,5,sTag + "_KT");		// = ?STRING 6?		Kurztext MSR-Name
+	UAG_LoadUI( sTag + "_KT", 60)
+		
+	GUT_PopupNewAt("!p_kt_20",giMODE,imode)
+	_WinTitle(sTag);	
+END
+ 
+//	FUNCTION UAG_DiagUnity_20()
+//	Übergabeparameter:	IP Adresse  als String
+//						Section Name als String    
+//                       
+//	Rückgabewert:		
+//	Beschreibung:	PLC Viewer auf NOE77111 aufrufen
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	22.07.11	/	Schneider Electric GmbH
+//	Version				7.2.0.3
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	
+
+FUNCTION UAG_DiagUnity_20(STRING sIP,STRING sSection,STRING sObjectID="",STRING sshowTreevie="0",STRING sshowConsole="0")
+	STRING sTemp;
+	sTemp= "http://" + sIP +"/unsecure/system/plcv.htm?showTreeview=" + sshowTreevie +"&showConsole=" +sshowConsole +"&";
+	sTemp= sTemp + "section=" +sSection;
+	IF sObjectID <> "" THEN
+		sTemp= sTemp + "|" + sObjectID 
+	END			
+	UAG_HTML_20(sTemp,sSection + ": ")	
+END
+
+//****************************************************************
+//	FUNCTION UAG_INT01_20()
+//	Übergabeparameter:	Tagname als String Modus      
+//                       
+//	Rückgabewert:		
+//	Beschreibung:		Integrierer 
+//
+//	Autor:				Wolfgang Jungbluth
+//	Erstellungsdatum:	09.09.10	/	Cegelec AT GmbH & CO. KG
+//	Version				75.33.11.08
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	21.11.11	Steiner		Änderung für Doppelklick
+//
+
+//		Beispiel für Aufruf
+//		TaskNew("UAG_INT01_20", "^"%TAG%^"", 8)
+//		TaskNew("UAG_INT01_20", "^"%TAG%^",2", 8) 
+
+
+FUNCTION UAG_INT01_20(STRING sTag, INT imode=1)
+
+	miMonitor = GUT_PopupNewAt("!p_int01_20",giMODE,imode )
+	IF miMonitor <> -1 THEN
+		Ass(-3,1,"'" + sTag + "'",0);
+		_Ass(-3,2,sTag + "_M");
+		_Ass(-3,3,sTag + "_TYP");
+		_Ass(-3,4,sTag + "_LW");			
+		_Ass(-3,5,sTag + "_LT");
+		_Ass(-3,6,sTag + "_ZT");
+		UAG_LoadZT(	sTag + "_ZT",7,4,-3);
+		_Ass(-3,12,sTag + "_Q");
+//	_Ass(-2,13,sTag + "_QH");
+		_Ass(-3,14,sTag + "_SKE");	// autom. Normierung bei SKE	
+		UAG_LoadUI( sTag + "_KT", 60,7,-3)
+
+		PageGoto("!p_int01_20")
+		_WinTitle(sTag);
+	ELSE
+		UAG_Status("@(Too many windows open)","","1");	
+	END
+END 
+
+FUNCTION UAG_Genie_test_20()
+
+	miMonitor =GUT_PopupNewAt("!p_genie_test_20",giMODE )
+	IF miMonitor <> -1 THEN
+		Ass(-3,1,"'SIMUM'",0);
+		_Ass(-3,2,"SIMUM_M");
+		_Ass(-3,3,"SIMUM_TYP");
+		_Ass(-3,4,"SIMUM_LW");			
+		_Ass(-3,5,"SIMUM_LT");
+		_Ass(-3,6,"SIMUM_X");
+		_Ass(-3,7,"SIMUR_M");
+		PageGoto("!p_genie_test_20");	
+		_WinTitle("SIMUM");
+	ELSE
+		UAG_Status("@(Too many windows open)","","1");	
+	END
+END 
+
+
+

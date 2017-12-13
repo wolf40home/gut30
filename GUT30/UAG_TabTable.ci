@@ -1,0 +1,166 @@
+//-----------------------------------------------------------------------------
+//	Copyright © 2012 Schneider Electric (Australia) Pty Ltd.
+//	All rights reserved.
+//
+// 	FILE:		UAG_TabTable.ci
+//
+//	CREATED:	18/04/2012
+//
+//	SUMMARY:
+//
+//		Contains related functions to interact with table display (for tab style
+//		templates) on CitectSCADA windows uisng thetable genies provided
+//		in the Library_Controls project.
+//
+//	PUBLIC FUNCTIONS:
+//
+//		UAG_TabTable_AutoFit
+//		UAG_TabTable_GetDspSelectedCount
+//		UAG_TabTable_ShowRowActionConfirmForm
+//
+// 	REMARKS: 
+//
+//		This file contains the helper functions to interact with the
+//		new Library Control Table (lib_controls.table) genie.
+//
+//	USAGE:
+//		Genie based on the lib_controls.table genie should be pasted on a page.
+//
+//		Multiple tables could be pasted on a page. Each of the tables
+//		within a page should be assigned a unique list ID as its name.
+//
+//-----------------------------------------------------------------------------
+
+
+//-----------------------------------------------------------------------------
+//
+//	Constants
+//
+//-----------------------------------------------------------------------------
+
+STRING	c_TABLEPROP_COLCOUNT			= "ColCount";		// Number of columns
+STRING	c_TABLEPROP_ROWDSPUSED			= "RowDspUsed";		// Number of used rows on display
+
+
+//-----------------------------------------------------------------------------
+//
+//	Public Functions
+//
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		UAG_TabTable_AutoFit
+//
+//	SUMMARY:
+//		Sets the width of all displayed columns to display the full content of the field values.
+//			
+//	PARAMS:
+//		tableID			- The table name
+//			
+//	RETURNS: 
+//		0 if successful or error number if failed
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION UAG_TabTable_AutoFit(STRING tableID)
+	INT retValue = 274;
+	INT colID;
+	INT columns;
+
+	colID = 1;
+	columns = LibTable_GetPropertyInt(tableID, c_TABLEPROP_COLCOUNT);
+	FOR colID = 1 TO columns DO
+		LibTable_SetColWidth(tableID, colID);
+	END
+
+	RETURN retValue;
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		UAG_TabTable_GetDspSelectedCount
+//
+//	SUMMARY:
+//		Get the number of selected rows currently displayed.
+//			
+//	PARAMS:
+//		tableID			- The table name
+//			
+//	RETURNS: 
+//		The number of selected rows
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION UAG_TabTable_GetDspSelectedCount(STRING tableID)
+	INT selCount = 0;
+	INT rowCount = LibTable_GetPropertyInt(tableID, c_TABLEPROP_ROWDSPUSED);
+	INT rowID;
+
+	WHILE (rowID < rowCount) DO
+		IF (LibTable_IsRowDspSelected(tableID, rowID + 1)) THEN
+			selCount = selCount + 1;
+		END
+		rowID = rowID + 1;
+	END
+	RETURN selCount;
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		UAG_TabTable_ShowRowActionConfirmForm
+//
+//	SUMMARY:
+//		Shows a confirmation dialog for acting on multiple rows in event
+//		that some of them are not currently on screen.
+//			
+//	PARAMS:
+//		tableID			- The table name
+//		title			- title of the confirmation dialog
+//			
+//	RETURNS: 
+//		0 if confirmed to proceed or error code if failed
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION UAG_TabTable_ShowRowActionConfirmForm(STRING tableName, STRING title = "@(Action)")
+	INT retValue = 0;
+	INT index = 0;
+	INT formHnd;
+	INT formWidth;
+	STRING text;
+	STRING continueText
+	STRING cancelText;
+	INT errLevelOld = ErrSetLevel(1);
+
+	// check if any selected records are not currenlty viewable
+	WHILE (retValue = 0 AND LibTable_GetSelectedRow(tableName, index) > 0) DO
+		IF (NOT LibTable_IsSelectedRowDsp(tableName, index)) THEN
+			retValue = 299;	// selected row not visible, prompt user to continue
+		END
+		index = index + 1;
+	END
+
+	// prompt user for whether to proceed
+	IF (0 <> retValue) THEN
+		text = StrToLocalText("@(Some selected records are not viewable.) @(Do you wish to continue?)");
+		formWidth = StrLength(text);
+		formHnd = FormNew(title, formWidth, 2, 16);
+		IF (formHnd < 0) THEN
+			RETURN 256;	// general software error
+		END
+		FormPrompt(0, 0, text);
+		continueText = StrToLocalText("@(Continue)");
+		cancelText = StrToLocalText(" @(Cancel) ");
+		FormButton(formWidth/2 - StrLength(continueText) - 2, 1, continueText, 0, 1);
+		FormButton(formWidth/2 + 2, 1, cancelText, 0, 2);
+		retValue = FormRead(0);
+		IsError();	// clear error
+	END
+	ErrSetLevel(errLevelOld);
+
+	RETURN retValue;
+END

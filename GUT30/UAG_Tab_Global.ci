@@ -1,0 +1,63 @@
+//-----------------------------------------------------------------------------
+//	Copyright © 2010 Schneider Electric (Australia) Pty Ltd.
+//	All rights reserved.
+//
+// 	FILE:		Global.ci
+//
+//	CREATED:	04/03/2010
+//
+//	AUTHOR:		Michael Yip
+//
+//	SUMMARY:
+//
+//		Contains related functions for initializing the UAG_Tab style features.
+//
+//	PUBLIC FUNCTIONS:
+//
+//		UAG_Tab_Style_Startup
+//
+//	REMARKS:
+//
+//
+//	DEPENDENCY:
+//		Page.ci
+//
+//-----------------------------------------------------------------------------
+
+
+//-----------------------------------------------------------------------------
+//
+//	Public Functions
+//
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		UAG_Tab_Style_Startup
+//
+//	SUMMARY:
+//		Initialize the global features used by the UAG_Tab style templates
+//			
+//	PARAMS:
+//		None
+//			
+//	RETURNS: 
+//		0 if successful or error code if failed
+//
+//	REMARKS:
+//		This function needs to be called as a new task at _CitectBegin()
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION UAG_Tab_Style_Startup()
+	INT retValue = 0;
+
+	// Initialize page related events
+	retValue = UAG_PageInitEvents();
+
+	// <TODO> Initialize alarm sound tasks
+	UAG_TabAlarmSnd_Start()
+
+	RETURN retValue;
+END

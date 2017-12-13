@@ -1,0 +1,163 @@
+///////////////////////////////////////////////////////////////////////////////////
+//	
+// 	FILE:	GUT_IODevice.ci
+//
+//	Beschreibung:
+//
+//		I/O Device Funktionen.
+//		
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	06.09.17	/	Schneider Electric GmbH
+//	Version				75.33.11.08
+//
+//	PUBLIC FUNCTIONS:
+//
+//			GUT_IODeviceInfo()
+//			UAG_IODeviceControl()
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	
+///////////////////////////////////////////////////////////////////////////////////
+
+// MODULE VARIABLES
+INT iError;
+
+
+STRING
+FUNCTION GUT_IODeviceInfo(STRING sServer,STRING sDevice,INT iMODE)
+	INT hMsg;
+	STRING sFunktion
+	ErrSet(1);
+	iError=IsError();
+
+
+	sFunktion= "^"Port^",^"" +sDevice +"^","
+	hMsg= MsgOpen(sServer,0,0,TaskCluster() );
+	iError=IsError();
+
+	RETURN MsgRPC(hMsg,"CitectInfo",sfunktion +IntToStr(iMODE),0);
+	iError=IsError();
+	IF iError <>0 THEN 
+		UAG_SystemInfo("UAG_IODeviceInfo", "System",ErrMsg(ierror),"-","-","-",TaskCluster(),_UAG_Fehler) 
+	END;
+			
+	MsgClose(sServer,hMsg);
+	ErrSet(0);
+		
+END
+
+FUNCTION UAG_IODeviceControl(STRING sDevice,INT MODE)
+	INT hMsg;
+	STRING sFunktion
+	ErrSet(1);
+	iError=IsError();
+
+
+	sFunktion= "^"" + sDevice + "^",1,"
+	hMsg= MsgOpen(IODeviceInfo(GetFirstIODevice(), 17),0,0,TaskCluster() );
+	MsgRPC(hMsg,"IODeviceControl",sFunktion + IntToStr(MODE),0);
+
+	iError=IsError();
+	IF iError <>0 THEN 
+		UAG_SystemInfo("UAG_IODeviceControl", "System",ErrMsg(ierror),"-","-","-",TaskCluster(),_UAG_Fehler) 
+	END;
+			
+	MsgClose(IODeviceInfo(GetFirstIODevice(), 17),hMsg);
+	ErrSet(0);
+		
+END
+
+//	FUNCTION GUT_IO_Info_PopUp
+//	Übergabeparameter:	Name IO Gerät     
+//                       
+//	Rückgabewert:		---
+//	Beschreibung:		Statuspannel für IO aufrufen	
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	07.09.17	/	Schneider Electrik GmbH
+//	Version				75.33.11.08
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	
+FUNCTION GUT_IO_Info_PopUp(STRING sDevice,STRING sIOServer)
+	Ass(-2,1,"'" + sDevice + "'",0);
+	
+	GUT_PopupNewAt("!p_ioInfo_20",giMODE,0); 
+	GUT_Info_Server_IO(sDevice,sIOServer);
+		
+END
+//	GUT_Info_Server_IO
+//	Übergabeparameter:	--      
+//                       
+//	Rückgabewert:		
+//	Beschreibung:	Ereignis für den IO- Server	und Genie Quantum
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	07.09.17	/	Schneider Electrik GmbH
+//	Version				75.33.11.07
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	
+FUNCTION GUT_Info_Server_IO(STRING sDevice,STRING sIOServer)
+	ErrSet(1);
+	STRING sfunktion
+	sfunktion="^""+sDevice+ "^",^"" +sIOServer +"^"";
+	TaskNew("_GUT_Info_Server_IO",sfunktion,1);
+	ErrSet(0);
+
+
+END
+
+
+FUNCTION _GUT_Info_Server_IO(STRING sDevice,STRING sIOServer)
+	INT hMsg;
+	STRING sfunktion,sTask = TaskCluster();
+	sfunktion="^"Port^",^"" +sDevice +"^",";
+	ErrSet(1);
+	iError=IsError();
+
+	_WinTitle ("Statistik I/O " +sDevice);
+	WHILE TRUE DO
+
+		iError=IsError();
+
+		IF iError <>0 THEN 
+			UAG_SystemInfo("UAG_ServerInfo", "System",ErrMsg(ierror),"-","-","-",sTask ,_UAG_Fehler) 
+		END;
+
+		hMsg= MsgOpen(sIOServer,0,0,sTask );
+		iError=IsError();
+
+		PageSetStr(1,MsgRPC(hMsg,"CitectInfo",sfunktion +"15",0));
+		PageSetStr(2,MsgRPC(hMsg,"CitectInfo",sfunktion +"16",0));
+		iError=IsError();
+
+		PageSetStr(3,MsgRPC(hMsg,"CitectInfo",sfunktion +"14",0));
+		iError=IsError();
+		PageSetStr(4,MsgRPC(hMsg,"CitectInfo",sfunktion +"0",0));
+		iError=IsError();
+		PageSetStr(5,MsgRPC(hMsg,"CitectInfo",sfunktion +"2",0));
+		iError=IsError();
+		PageSetStr(6,MsgRPC(hMsg,"CitectInfo",sfunktion +"1",0));
+		iError=IsError();
+		PageSetStr(7,MsgRPC(hMsg,"CitectInfo",sfunktion +"3",0));	
+		iError=IsError();
+		PageSetStr(8,MsgRPC(hMsg,"CitectInfo",sfunktion +"13",0));
+		iError=IsError();
+		PageSetStr(9,MsgRPC(hMsg,"CitectInfo",sfunktion +"10",0));
+		iError=IsError();
+//		PageSetStr(10,IODeviceInfo(sDevice,16,sTask));
+
+		iError=IsError();
+		IF iError <>0 THEN 
+			UAG_SystemInfo("UAG_ServerInfo", "System",ErrMsg(ierror),"-","-","-",sTask,_UAG_Fehler) 
+		END;
+		
+		MsgClose(sIOServer,hMsg);
+		SleepMS(3000);
+	END	
+	ErrSet(0);
+	
+END

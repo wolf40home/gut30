@@ -1,0 +1,598 @@
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//	
+// 	FILE:	UAG_MultiMonitors.ci
+//
+//	Beschreibung:
+//
+//		Contains functions to support a multiple-monitor environment .
+//		
+//
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	12.01.09	/	Schneider Electrik GmbH
+//	Version				75.33.11.08
+//
+//
+//	PUBLIC FUNCTIONS:
+//
+//				UAG_MM_ConfigInit()
+//				UAG_MM_WinNewAt()
+//				UAG_MM_PopUP
+//				CSV_MM_WinPopup()
+//				UAG_MM_ParameterGet
+//				UAG_MM_Scale
+//					
+//				UAG_CloseAllPopUp()
+//
+//	NOTES:
+//		 
+//		The following functions can be used to replace original cicode functions 
+//		where multi-monitor support is required:
+//
+//			Multi-Monitor Function:					Original Function:
+//
+//
+//			UAG_PageSelectRdb()						PageSelect
+//			
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	16.04.14	Steiner		Alle Funktionen auf 7.40 Page Funktionen umgestellt
+//
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+//	GLOBAL VARIABLES
+GLOBAL INT	gbDelayPageRepaint = 0;	! Wait for animation points to be updated before repainting new page
+
+//	MODULE CONSTANTS
+
+INT		miScreenWidth = 1024;	! Width of monitor (pixels)
+INT		miLastPageStackSize = 10;		! Number of pages on "last page" stack
+INT		miLastPageStackSizeMax = 10;	! Maximum number of pages on "last page" stack 
+
+INT 	mbMenuDisable	  = -1;	! Disable menu bar for all pages
+INT		miLogoutDisplayStartup = 1;	! All monitors display startup page after user logs out
+STRING	c_MM_PARAM_NOT_INITIALISED = "<N/A>";
+
+
+
+//	MODULE VARIABLES
+
+INT		miParentWindowNo[6];	! Window no. of main window for each monitor
+INT		miParentWindowXPos[6];	! X position of main window for each monitor
+STRING	msParentWindowPage[6];	! Name of main page displayed on each monitor
+STRING	msParentWindowStartupPage[6];	! Name of startup page displayed on each monitor
+
+STRING	msLastPageQue[6][10][2];! "Last page" stack for each monitor
+STRING	msLastPageQue_[6][10][2];! Used when msLastPageQue > 127 characters
+INT		miLastPageQuePtr[6];
+STRING	msRecentAction[6];
+STRING	msRecentAction_[6]; ! Used when msRecentAction > 127 characters
+
+INT		mbMonitorsInit;			! Multi-Monitor parameters have been initialised
+INT		mbMonitorPagesInit;		! Multi-Monitor pages have been initialised
+INT		miWinDrag;				! Dragging window in progress
+STRING	m_MM_Param_Monitors 	= "<N/A>";
+STRING	m_MM_Param_StartupPage[8]	= "<N/A>", "<N/A>", "<N/A>", "<N/A>", "<N/A>", "<N/A>", "<N/A>", "<N/A>";
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//		FUNCTION NAME	
+//						UAG_MM_ConfigInit()
+//
+//     	GENERAL DESCRIPTION
+//
+//			Initialise parameters required for mult-monitor functionality.
+//			Initialise queues for storing last pages displayed (last page stack)
+//			
+//			Parameter values are read from .ini file "MultiMonitors" Section:	
+//
+//				-Number of monitors 				(parameter = "Monitors", default = 1)
+//				-Screen width of monitor			(parameter = "ScreenWidth", default = 1024)	
+//				-Startup pages for each monitor		(parameter = "Startup1","Startup2",...  
+//															etc. depending on number of monitors, default = "Startup")
+//				-Size of last page stack			(parameter = "LastPageStackSize", default = 10)
+//				
+// 		ARGUMENTS:
+//
+//     	RETURNED VALUE: 
+//
+//		PSEUDO CODE:
+//
+//	Autor:				J.Venz
+//	Erstellungsdatum:	21.03.03	/	Schneider Electric GmbH
+//	Version				75.33.11.01
+//
+//	Historie:
+//
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	19.08.16	Steiner		Standard Startpage auf Homepage geändert
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+FUNCTION
+UAG_MM_ConfigInit()
+
+	INT		iMonitorNo;
+	INT		iScreenWidth;
+//	INT		iLastPageStackSize;
+//	INT		iWindowNo;
+	STRING	sStartupPage;
+	
+	IF mbMonitorsInit THEN
+	
+		! multi-monitors already initialised
+		RETURN;
+		
+	END
+	
+	mbMenuDisable=StrToInt(ParameterGet(gsUAG_LIB_NAME, "MenuBarDisable", 0));
+	iScreenWidth = StrToInt(ParameterGet("MultiMonitors", "ScreenWidth", miScreenWidth));
+	IF iScreenWidth > 0 THEN
+		miScreenWidth = iScreenWidth;	
+	END
+
+//	iLastPageStackSize = StrToInt(ParameterGet("MultiMonitors", "LastPageStackSize", miLastPageStackSize));
+//	IF iLastPageStackSize <= miLastPageStackSizeMax THEN
+//		miLastPageStackSize = iLastPageStackSize;	
+//	ELSE
+//		miLastPageStackSize = miLastPageStackSizeMax;
+//	END
+			
+	
+	FOR iMonitorNo = 1 TO UAG_MM_Anzahl  DO
+		! Get Startup page names
+		sStartupPage = ParameterGet("MultiMonitors", "StartupPage" + 
+			IntToStr(iMonitorNo), ParameterGet("Page" ,"HomePage" ,"System_Start"));
+			
+		IF NOT PageExists(sStartupPage) THEN
+			msParentWindowStartupPage[iMonitorNo] = "System_Start";
+		ELSE
+			msParentWindowStartupPage[iMonitorNo] = sStartupPage;
+		END
+		
+		! Set window number to -1 to indicate monitor has yet to display a page
+		miParentWindowNo[iMonitorNo] = -1;
+					
+	END
+
+	miLogoutDisplayStartup = ParameterGet("Security", "XPStyleLogoutDisplayStartupPage", 1);
+	gbDelayPageRepaint	= ParameterGet("Page", "DelayRepaint",  gbDelayPageRepaint);
+	
+	! multi-monitor parameters have been initialised
+	mbMonitorsInit = 1;
+	
+END	
+	 
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//		FUNCTION NAME	
+//						UAG_MM_Logout()
+//
+//     	GENERAL DESCRIPTION
+//
+//			Multimonitor logout
+//			
+// 		ARGUMENTS:
+//
+//     	RETURNED VALUE:
+//
+//		PSEUDO CODE:
+//			normal logout
+//			if displaystartup flag is set
+//				reset the stack of last pages and recent actions
+//				on each monitor
+//					display the startup pages 
+//
+//	Autor:				D.Sun
+//	Erstellungsdatum:	19.01.05	/	Schneider Electric GmbH
+//	Version				75.33.11.01
+//
+//	Historie:
+//
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	16.04.14	Steiner		Pagedisplay geändert
+//	19.08.16	Steiner		Confinit eingefügt
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+FUNCTION
+UAG_MM_Logout()
+	INT	iMonitorNo;
+	UAG_MM_ConfigInit()
+	Logout();
+	UAG_MM_ConfigInit()
+	IF miLogoutDisplayStartup THEN
+		FOR iMonitorNo = 1 TO UAG_MM_Anzahl  DO
+			! Display all startup pages
+			UAG_PageDisplay20(msParentWindowStartupPage[iMonitorNo], iMonitorNo);
+		END
+	END
+END	
+	
+	 
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//		FUNCTION NAME	
+//						CSV_MM_WinPopup()
+//
+//		REV	DATE		WHO			DESCRIPTION
+//		0	24/07/03	J.Venz		Original
+//
+//     	GENERAL DESCRIPTION
+//
+//			Display popup window at x and y coordinates relative to top left corner of active monitor.
+//			
+//     	ARGUMENTS:
+//
+//			sWindow			- name of page/window to display
+//			iX				- x offset to display window at relative to left of monitor 
+//			iY				- y offset to display window at relative to top of monitor
+//			iHideTitleBar	- 0 -> display window standard title bar
+//							  1 -> don't display title bar (for XP style window)
+//
+//			Note:
+//				The entire window will be displayed within the borders of a single screen.
+//				If iX = -1 and iY = -1 then the window will be centred on the screen.
+//	
+//     	RETURNED VALUE: 
+//
+//			The window number of the window, or -1 if the window cannot be opened.
+//
+//		PSEUDO CODE:
+//
+//
+//
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	
+INT
+FUNCTION
+CSV_MM_WinPopup(STRING sWindow, INT iX = -1, INT iY = -1, INT iHideTitleBar = 1)
+
+	INT		iMode;
+	INT		iWindow;
+	
+	iHideTitleBar = NOT (NOT iHideTitleBar);
+	
+	iMode = 2 + (16 * iHideTitleBar) + 256;
+	
+	IF iX = -1 AND iY = -1 THEN
+	
+		iMode = iMode + 8192;
+	END
+	
+	iWindow = UAG_WinNewAt(sWindow, iX, iY, iMode);
+
+	RETURN iWindow;
+END
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//		FUNCTION NAME	
+//						_CSV_MM_GetFunction()
+//
+//		REV	DATE		WHO			DESCRIPTION
+//		0	25/03/03	J.Venz		Original
+//
+//     	GENERAL DESCRIPTION
+//
+//			Get the function name from a specified page/menu action.				 
+// 
+// 		ARGUMENTS:
+//
+//			sAction		-	action to process
+//
+//     	RETURNED VALUE: 
+//
+//			Function name if the action is a function call, otherwise "".
+//
+//		PSEUDO CODE:
+//
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+STRING
+FUNCTION
+_CSV_MM_GetFunction(STRING sAction)
+
+	STRING	sFunction;
+	
+	IF StrLeft(sAction, 1) = "?" THEN
+		
+		sFunction = StrWord(sAction);
+		
+		sFunction = StrMid(sFunction, 1, StrLength(sFunction) - 1);
+	END
+	
+	RETURN sFunction
+END
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//		FUNCTION NAME	
+//						_CSV_MM_GetArgument()
+//
+//     	GENERAL DESCRIPTION
+//
+//			Get the function arguments from a specified page/menu action.				 
+// 
+// 		ARGUMENTS:
+//
+//			sAction		-	action to process
+//
+//     	RETURNED VALUE: 
+//
+//			Comma-separated function arguments.
+//
+//		PSEUDO CODE:
+//
+//	Autor:				J.Venz
+//	Erstellungsdatum:	11.03.03	/	Schneider Electric GmbH
+//	Version				3.1.0.0
+//
+//	Historie:
+//
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	09.01.09	Steiner		führendes Leerzeichen beim ersten Argument entfernt.
+//
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+STRING
+FUNCTION
+_CSV_MM_GetArgument(STRING sAction)
+
+	STRING	sActionTmp;
+	STRING	sArgument;
+	STRING	sArguments;
+	INT		iCommaPos;
+	INT		iOffset;
+	INT		iLength;
+	
+	sActionTmp = sAction;
+	StrWord(sActionTmp);
+	
+	WHILE iCommaPos > -1 DO
+		iCommaPos = StrSearch(iOffset, sActionTmp, ",");
+		
+		IF iCommaPos > -1 THEN
+			iLength = iCommaPos - iOffset;
+			
+		ELSE
+			iLength = StrLength(sActionTmp) - iOffset;			
+		END
+		
+		IF iLength > 0 THEN
+			sArgument = StrTrim(StrMid(sActionTmp, iOffset, iLength));
+		ELSE
+			sArgument = "";
+		END
+		
+		iOffset = iCommaPos + 1;
+			
+		sArguments = sArguments + sArgument	+ ",";
+		
+	END
+
+	IF sArguments <> "" THEN
+		sArguments = StrLeft(sArguments, StrLength(sArguments) - 1);
+	END
+		
+	sArguments = "^"" + UAG_String_Replace(sArguments, ",", "^",^"") + "^"";	
+	
+	RETURN sArguments;
+	
+END
+
+//	INT FUNCTION UAG_MM_WinNewAt()
+//	Übergabeparameter:	Bildname
+//						x,Y Position
+//						Modus
+//						andere Fenster schliessen
+//                         
+//	Rückgabewert:		Fensternummer als INT 
+//	Beschreibung:		Vereinfacht den aufruf eines POP-UP unter 7.0
+//						
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	08.11.07	/	Schneider Electric GmbH
+//	Version				3.1.1.3
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	10.11.07	Steiner		ist jetzt als Label gemacht
+//	08.12.07	Steiner		erweitert um alle POP UP zu schliessen
+//	24.06.09	Steiner		Fehler bei Multimonitor
+
+INT FUNCTION UAG_MM_WinNewAt(STRING sBild,INT giPosX,INT giPosY,INT iMODE=giMODE,INT iclose=1)
+	INT temp;
+	ErrSet(1);
+	temp= WinGetFocus()
+	SELECT CASE iclose
+	CASE 1
+		UAG_CloseAllPopUp()
+
+	CASE 2
+		iMODE= 1384;
+	END SELECT
+	WinSelect(temp)
+	ErrSet(0);
+
+RETURN WinNewAt(sBild,giPosX,giPosY,iMODE ,TaskCluster())
+
+END
+
+
+//	INT FUNCTION UAG_MM_PopUP()
+//	Übergabeparameter:	Bildname
+//                         
+//	Rückgabewert:		Fensternummer als INT 
+//	Beschreibung:		Vereinfacht den aufruf eines POP-UP unter 7.0
+//						Fenster ist an Mauspos andere PopUp werden nicht geschlossen
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	15.12.07	/	Schneider Electric GmbH
+//	Version				75.33.11.08
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	13.11.09	Steiner		Sonderbehandlung für Bild "!P_sollwert_20"
+//	23.11.11	Steiner		Meldung bei zu vielen fenstern
+
+INT FUNCTION UAG_MM_PopUP(STRING sPage)
+	INT nAN,iHeight,ix,iy,Bottom,Left
+	INT miMonitor;
+	nAN = KeyGetCursor()
+	DspGetAnExtent(nAN, iy, Left, Bottom, ix);
+	iHeight=PageFileInfo(sPage, 1)
+	PageTransformCoords(WinNumber(), ix, iy, ix, iy, 0);
+	ix=ix +10;
+	iy=iy- iHeight;
+	IF sPage= "!P_sollwert_20" THEN
+		UAG_ClosePopUp("!P_sollwert_20");
+	END
+	miMonitor =WinNewAt(sPage,ix,iy,giMODE ,TaskCluster()); 
+	IF miMonitor = -1 THEN
+		UAG_Status("@(too many windows open or window not found)","","1");
+	END	
+	RETURN miMonitor
+END
+
+	
+//	INT FUNCTION UAG_MM_NotMain()
+//	Übergabeparameter:	
+//                         
+//	Rückgabewert:		 
+//	Beschreibung:	zum Unsichtbar machen wenn der Monitor nicht der Hauptmonitor ist
+//						
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	16.11.09	/	Schneider Electric GmbH
+//	Version				7.2.3.2
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+
+INT miDMv=-1
+INT FUNCTION 
+UAG_MM_NotMain()
+
+	IF miDMv=-1 THEN
+		miDMv= StrToInt( ParameterGet(gsUAG_LIB_NAME,"DMv","0"));
+	END	
+	IF miDMv=1 THEN
+		RETURN ((WinNumber() > 1) AND (UAG_MM_Anzahl > 1))
+	END
+	RETURN 0	
+END
+
+//	INT FUNCTION UAG_MM_WinTest()
+//	Übergabeparameter:	
+//                         
+//	Rückgabewert:		 
+//	Beschreibung:	Stellt Fehlende Winwos bei Multimonitor wieder her.
+//						
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	05.12.12	/	Schneider Electric GmbH
+//	Version				7.2.3.4
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+FUNCTION UAG_MM_WinTest()
+INT i,iError;
+	FOR i=1 TO UAG_MM_Anzahl DO
+		iError= WinGoto(i);
+		IF iError <> i THEN
+			UAG_PageDisplay20(ParameterGet("MultiMonitors","StartupPage" + IntToStr(i),"System_Start"),i)
+		END
+	END		
+
+
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		MM_ParameterGet
+//
+//	SUMMARY:
+//		Get Citect.INI parameter from [MultiMonitors] section
+//			
+//	PARAMS:
+//		id	- string ID of the INI entry
+//			
+//	RETURNS: 
+//		Citect.INI entry value
+//
+//-----------------------------------------------------------------------------
+STRING FUNCTION UAG_MM_ParameterGet(STRING id)
+	INT monitorIndex;
+
+	IF ("Monitors" = id) THEN
+		IF (c_MM_PARAM_NOT_INITIALISED = m_MM_Param_Monitors) THEN
+			m_MM_Param_Monitors = ParameterGet("MultiMonitors", id, "");
+		END
+		RETURN m_MM_Param_Monitors;
+	ELSE
+		// assume id = StartupPage#
+		monitorIndex = StrToInt(StrRight(id, 1)) - 1;
+		IF ((monitorIndex < 0) OR (monitorIndex >= 8)) THEN
+			RETURN ParameterGet("MultiMonitors", id, "");
+		END
+			
+		IF (c_MM_PARAM_NOT_INITIALISED = m_MM_Param_StartupPage[monitorIndex]) THEN
+			m_MM_Param_StartupPage[monitorIndex] = ParameterGet("MultiMonitors", id, "");
+		END
+		RETURN m_MM_Param_StartupPage[monitorIndex];
+	END
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		MM_Move
+//
+//	SUMMARY:
+//		Position the monitor dynamic object in the screen block
+//			
+//	PARAMS:
+//		monitor		OS identify number of the monitor, 0 is the virtual screen
+//		direction	code for direction: 0 for horizontal, 1 for vertical
+//			
+//	RETURNS: 
+//		Ratio of moving in the range of [-0.5, 0.5]
+//
+//-----------------------------------------------------------------------------
+REAL FUNCTION UAG_MM_Move(INT monitor, INT direction)
+	REAL	vsSizeMax 	= Max(WndMonitorInfo(0,2), WndMonitorInfo(0,3));
+	REAL	monCenter 	= (WndMonitorInfo(monitor, direction)*2+WndMonitorInfo(monitor, direction + 2))/2;
+	REAL	vsCenter 	= (WndMonitorInfo(0,       direction)*2+WndMonitorInfo(0,       direction + 2))/2;
+	RETURN (monCenter - vsCenter) / vsSizeMax;
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		MM_Scale
+//
+//	SUMMARY:
+//		Resize the monitor dynamic object in the screen block
+//			
+//	PARAMS:
+//		monitor		OS identify number of the monitor, 0 is the virtual screen
+//		direction	code for direction: 0 for horizontal, 1 for vertical
+//			
+//	RETURNS: 
+//		Ratio of scaling in the range of [0.0, 1.0]
+//
+//-----------------------------------------------------------------------------
+REAL FUNCTION UAG_MM_Scale(INT monitor, INT direction)
+	RETURN WndMonitorInfo(monitor, direction + 2)/Max(WndMonitorInfo(0,2),WndMonitorInfo(0,3));
+END
+
+STRING FUNCTION UAG_MM_ScreenWidth()
+	RETURN miScreenWidth
+END
+
+
+
+
+

@@ -1,0 +1,609 @@
+///////////////////////////////////////////////////////////////////////////////////
+//	
+// 	FILE:	UAG_Server.ci
+//
+//	Beschreibung:
+//
+//		Enhält Ereignisse für die Einzelen Server.
+//		
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	27.03.08	/	Schneider Electric GmbH
+//	Version				75.33.11.08
+//
+//	PUBLIC FUNCTIONS:
+//
+//			UAG_Server_Info()
+//			UAG_Server_projektStart()
+//			UAG_Alarm_projektStart()
+//			UAG_Trend_projektStart()
+//			UAG_Server_ClientInfo()
+//			UAG_Server_Is_IO()
+//			UAG_Server_Is_Alarm()
+//			UAG_Server_Is_Trend()
+//			UAG_Server_Is_Report()
+//			UAG_Server_Ping_it()
+//			UAG_TaskInfo()
+//			UAG_PLC_DateTime()
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	16.04.14	Steiner		Alle Funktionen auf 7.40 Page Funktionen umgestellt
+///////////////////////////////////////////////////////////////////////////////////
+
+// MODULE VARIABLES
+INT UAG_IO_initial;
+INT UAG_Alarm_initial;
+INT UAG_Trend_initial;
+INT UAG_Report_initial;
+INT iError;
+
+
+//	UAG_Server_Info()
+//	Übergabeparameter:	--      
+//                       
+//	Rückgabewert:		--      
+//	Beschreibung:		Server Info aufrufen
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	23.11.07	/	Schneider Electrik GmbH
+//	Version				75.33.11.08
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//
+//  
+
+FUNCTION UAG_Server_Info()
+
+	GUT_PopupNewAt("!p_server_info_20",giMODE);
+
+END
+
+//	Projektstart
+//	Übergabeparameter:	--      
+//                       
+//	Rückgabewert:		
+//	Beschreibung:	Ereignis für den IO- Server	
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	20.02.07	/	Schneider Electrik GmbH
+//	Version				3.1.0.1
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//
+// Schreiben von Parameter in Citect.INI
+// ab Citect 7.1 nicht mehr genutzt
+
+FUNCTION UAG_Server_projektStart()
+
+	IF UAG_IO_initial THEN
+	
+		!UAG already initialised
+		RETURN;	
+	END
+
+	ErrSet(1);
+	SleepMS(15000);
+	IF UAG_Server_Is_IO() THEN
+		UAG_Parameter_Server()
+		iError=IsError();
+		IF iError <>0 THEN 
+			UAG_SystemInfo("UAG_projektStart", "System",ErrMsg(ierror),"-","-","-",TaskCluster(),_UAG_Fehler) 
+		END;
+
+		// Start the process line client side code
+		// SPC Pareto simulation occurs on the client component, as these are local variables.
+		//TaskNew( "UAG_PID", "^"Test_4711^"", 0 );	!Start PID Simulations
+//		TaskNew("UAG_Server_Ping_it",IntToStr (giUAGClientAnz),0);
+		iError=IsError();
+		IF iError <>0 THEN 
+			UAG_SystemInfo("UAG_projektStart", "Simulation",ErrMsg(ierror),"-","-","-",TaskCluster(),_UAG_Fehler)
+		END;
+		UAG_SystemInfo("UAG_projektStart", "System","Server Start fertig" ,"-","-","-",TaskCluster());    
+	ELSE
+		UAG_SystemInfo("UAG_projektStart", "System","Server Start abbruch" ,"-","-","-",TaskCluster());
+
+	END
+	ErrSet(0);
+    UAG_IO_initial=TRUE;   
+END
+
+//	Projektstart Alarm
+//	Übergabeparameter:	--      
+//                       
+//	Rückgabewert:		
+//	Beschreibung:	Ereignis für den Alarm- Server	
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	12.12.08	/	Schneider Electrik GmbH
+//	Version				74.33.70.00
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	03.01.12	Steiner		Parameter der Server Vereinheitlicht.
+//
+
+
+FUNCTION UAG_Alarm_projektStart()
+
+	IF UAG_Alarm_initial THEN
+	
+		!UAG already initialised
+		RETURN;	
+	END
+
+	ErrSet(1);
+
+	IF UAG_Server_Is_Alarm(1) THEN
+//		Login("kernel","kernel");
+		UAG_Parameter_Server()
+//		TaskNew("UAG_Server_Ping_it",IntToStr (giUAGClientAnz),0);
+		TaskNew("_OEM_Alarm_Server","",0);
+		PagingSystemStart(1);
+		UAG_Ereignisse_Load("A");
+		UAG_SystemInfo("UAG_projektStart", "System","Server Start fertig" ,"-","-","-",TaskCluster());    
+
+
+	END
+	ErrSet(0);
+
+	UAG_Alarm_initial = 1;
+       
+END
+
+//	Projektstart Trend
+//	Übergabeparameter:	--      
+//                       
+//	Rückgabewert:		
+//	Beschreibung:	Ereignis für den Trend- Server	
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	28.10.10	/	Schneider Electrik GmbH
+//	Version				7.2.3.4
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	03.01.12	Steiner		Parameter der Server Vereinheitlicht.
+
+
+FUNCTION UAG_Trend_projektStart()
+
+	IF UAG_Trend_initial THEN
+	
+		!UAG already initialised
+		RETURN;	
+	END
+
+	ErrSet(1);
+
+	IF UAG_Server_Is_Trend(1) THEN
+//		Login("kernel","kernel");
+		UAG_Parameter_Server()
+		TaskNew("_OEM_Trend_Server","",0);
+		UAG_Ereignisse_Load("T");
+		UAG_SystemInfo("UAG_projektStart", "System","Trend Server Start fertig" ,"-","-","-",TaskCluster());    
+
+
+	END
+	ErrSet(0);
+
+	UAG_Trend_initial = 1;
+       
+END
+
+//	Projektstart Report
+//	Übergabeparameter:	--      
+//                       
+//	Rückgabewert:		
+//	Beschreibung:	Ereignis für den Report- Server	
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	22.12.11	/	Schneider Electrik GmbH
+//	Version				75.33.11.07
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//
+
+
+FUNCTION UAG_Report_projektStart()
+
+	IF UAG_Report_initial THEN
+	
+		!UAG already initialised
+		RETURN;	
+	END
+
+	ErrSet(1);
+
+	IF UAG_Server_Is_Report(1) THEN
+//		Login("kernel","kernel");
+		UAG_Parameter_Server()
+		GUT_SNMP_List()
+		TaskNew("UAG_Server_Ping_it",IntToStr (giUAGClientAnz),0);
+		TaskNew("_OEM_Report_Server","",0);
+		UAG_Ereignisse_Load("R");
+		UAG_SystemInfo("UAG_projektStart", "System","Report Server Start fertig" ,"-","-","-",TaskCluster());    
+
+
+	END
+	ErrSet(0);
+
+	UAG_Report_initial = 1;
+       
+END
+
+//	UAG_Server_ClientInfo()
+//	Übergabeparameter:	--      
+//                       
+//	Rückgabewert:		
+//	Beschreibung:	Informationen über die Client	
+//	zugehörende Funktionen:
+//			_UAG_Server_ClientInfo
+//			UAG_ClientInfo_Type
+//			UAG_ClientInfo_ort
+//			UAG_ClientInfo_key
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	26.06.08	/	Schneider Electrik GmbH
+//	Version				3.0.0.0
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//
+FUNCTION UAG_Server_ClientInfo(STRING sType)
+	
+	ErrSet(1);
+	TaskNew("_UAG_Server_ClientInfo",sType,1);
+	ErrSet(0);
+END
+
+FUNCTION _UAG_Server_ClientInfo(STRING sServer)
+	INT hMsg,i;
+	INT iCLAnz;
+
+	
+	ErrSet(1);
+	iError=IsError();
+	WHILE TRUE DO
+		hMsg= MsgOpen(IODeviceInfo(GetFirstIODevice(), 17),0,0);
+		iCLAnz= StrToInt( MsgRPC(hMsg,"ServerInfoEx","^"Server^",1,^"" +sServer +"^"",0));
+		PageSetStr(3,  " Anzahl Client an "+ServerInfoEx("0",0,sServer)+": " + IntToStr(iCLAnz));
+		gsUAGClientListe="";
+		iError=IsError();
+		FOR i = 0 TO iCLAnz-1 DO
+			gsUAGClientListe = gsUAGClientListe + MsgRPC(hMsg,"ServerInfoEx","^"" +IntToStr(i) +"^",2,^"" +sServer +"^"",0)
+			+" ";
+			PageSetStr(i+4,StrPad(IntToStr(i+1)+ "."," ",4) 	 
+			+StrPad( MsgRPC(hMsg,"ServerInfoEx","^"" +IntToStr(i) +"^",2,^"" +sServer +"^"",0)," ",15)
+			+"  "+StrPad(MsgRPC(hMsg,"ServerInfoEx","^"" +IntToStr(i) +"^",1,^"" +sServer +"^"",0)," ",12)
+		 	+"  "+UAG_ClientInfo_key(MsgRPC(hMsg,"ServerInfoEx","^"" +IntToStr(i) +"^",6,^"" +sServer +"^"",0))
+		 	+"  "+UAG_ClientInfo_Type(MsgRPC(hMsg,"ServerInfoEx","^"" +IntToStr(i) +"^",7,^"" +sServer +"^"",0))
+		 	+"  "+UAG_ClientInfo_ort(MsgRPC(hMsg,"ServerInfoEx","^"" +IntToStr(i) +"^",8,^"" +sServer +"^"",0)));
+		END
+		FOR i = iCLAnz+4 TO 23 DO
+			PageSetStr(i,"")
+		END	
+
+		iError=IsError();
+		IF iError <>0 THEN 
+			UAG_SystemInfo("UAG_ServerInfo", "System",ErrMsg(ierror),"-","-","-",TaskCluster(),_UAG_Fehler) 
+		END;
+		MsgClose(IODeviceInfo(GetFirstIODevice(), 17),hMsg);
+		SleepMS(3000);
+	END	
+	ErrSet(0);
+END
+
+INT FUNCTION UAG_ClientInfo_Liste(STRING sName)
+	IF StrSearch(0,gsUAGClientListe,sName)=-1 THEN
+		RETURN 0
+	ELSE
+		RETURN 1
+	END
+END
+	
+STRING FUNCTION UAG_ClientInfo_Type(STRING sServer)
+
+	SELECT CASE sServer
+		CASE "0"
+			RETURN "Voll   ";
+		CASE "1"
+			RETURN "Manager";
+		CASE "2"
+			RETURN "Display";
+	END SELECT
+END			
+STRING FUNCTION UAG_ClientInfo_ort(STRING sServer)
+
+	SELECT CASE sServer
+		CASE "0"
+			RETURN "local ";
+		CASE "1"
+			RETURN "remote";
+
+	END SELECT
+END	
+
+STRING FUNCTION UAG_ClientInfo_key(STRING sServer)
+
+	SELECT CASE sServer
+		CASE "0"
+			RETURN " ja ";
+		CASE "1"
+			RETURN "nein";
+
+	END SELECT
+END	
+
+
+
+//	UAG_Server_Is_IO
+//	Übergabeparameter:	--      
+//                       
+//	Rückgabewert:	1 wenn ja	
+//	Beschreibung:	ist der Task der Aktive Alarmserver
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	25.10.08	/	Schneider Electrik GmbH
+//	Version				3.1.0.0
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//
+
+INT FUNCTION
+UAG_Server_Is_IO(INT iTyp=0)
+	IF iTyp=0 THEN
+		RETURN StrToInt (ParameterGet( gsUAG_LIB_NAME, "Server", "0"));
+	ELSE
+		RETURN ProcessIsServer("IOServer");	
+	END	
+END
+
+
+//	UAG_Server_Is_Alarm
+//	Übergabeparameter:	--      
+//                       
+//	Rückgabewert:	1 wenn ja	
+//	Beschreibung:	ist der Task der Aktive Alarmserver
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	25.10.08	/	Schneider Electrik GmbH
+//	Version				3.1.0.0
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//
+
+INT FUNCTION
+UAG_Server_Is_Alarm(INT iTyp=0)
+	IF iTyp=0 THEN
+		RETURN ServerInfoEx ( "Alarm", 0,"Alarm");
+	ELSE
+		RETURN ProcessIsServer("Alarm");	
+	END	
+END
+
+//	UAG_Server_Is_Trend
+//	Übergabeparameter:	--      
+//                       
+//	Rückgabewert:	1 wenn ja	
+//	Beschreibung:	ist der Task der Aktive Trendserver
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	25.10.08	/	Schneider Electrik GmbH
+//	Version				3.1.0.0
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//
+
+INT FUNCTION
+UAG_Server_Is_Trend(INT iTyp=0)
+		IF iTyp=0 THEN
+		RETURN ServerInfoEx ( "Trend", 0,"");
+	ELSE
+		RETURN ProcessIsServer("Trend");
+	END	
+END
+
+//	UAG_Server_Is_Report
+//	Übergabeparameter:	--      
+//                       
+//	Rückgabewert:	1 wenn ja	
+//	Beschreibung:	ist der Task der Aktive Reportserver
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	25.10.08	/	Schneider Electrik GmbH
+//	Version				3.1.0.0
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//
+
+INT FUNCTION
+UAG_Server_Is_Report(INT iTyp=0)
+		IF iTyp=0 THEN
+		RETURN ServerInfoEx ( "Report", 0,"");
+	ELSE
+		RETURN ProcessIsServer("Report");
+	END	
+END
+
+
+
+
+
+///////////////////////////////////////////////////////////////////////////////////
+//	FUNCTION UAG_Server_Ping_it()
+//  
+//
+//	Übergabeparameter:	Anzahl der Client
+//                       
+//	Rückgabewert:		---
+//	Beschreibung:		Hintergrund-Prozess für den Reportserver , welcher die Clientrechner testet und den Todmann der Steuerungen Prüft.
+//						Hier wird auch die Pageraktivität gebildet und die Betriebsstunden gesichert.
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	02.10.08	/	Schneider Electric GmbH
+//	Version				75.33.11.04
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+// 	07.11.08	Steiner		erweitert zum Abfragen ob die Steuerungen laufen
+// 	08.07.09	Steiner		Betriebsstunden nach Initialwerten sichern
+// 	17.07.09	Steiner		Pager Info wird hier gebildet.
+//	09.04.14	Steiner		Ping nur wenn kein Ping Projekt
+//	16.04.16	Steiner		Ping mit .Net Funktion
+//	15.03.17	Steiner		Extrene Funktionen auf Tasknew Umgestellt.
+//	31.07.17	Steiner		Überwachung für SNMP Geräte
+
+///////////////////////////////////////////////////////////////////////////////////
+
+FUNCTION UAG_Server_Ping_it(INT imax)
+
+	INT TimeOut = 1000;
+	INT i,j,itemp,iRun30,iRun30_temp;
+	INT iSPS = StrToInt (ParameterGet(gsUAG_LIB_NAME,"SPSAnzahl","10"));   ! wert von 1-xx  
+
+	STRING  sIP;
+	ErrSet(1);
+
+	WHILE TRUE DO
+		IF UAG_Server_Is_Report(0)=1 THEN
+			IF (TimeMin(TimeCurrent())=0 OR TimeMin(TimeCurrent())=30) AND iRun30=0 THEN
+			iRun30=1;
+			iRun30_temp=1;
+			END
+			IF (TimeMin(TimeCurrent())=1 OR TimeMin(TimeCurrent())=31)  THEN iRun30=0 END;
+			FOR i=1 TO imax DO
+				sIP = TagRead (gsUAG_StationName + "_PingIp\"+ IntToStr (i));
+				IF sIP="" THEN sIP="127.0.0.1" END
+//				IF giPingProjekt =0 THEN 
+					GUT_CitPing(sIP, TimeOut,i) 
+					Sleep(0);
+					
+//				END;	
+				FOR j=1 TO iSPS DO
+					UAG_SPS_TESTRUN (j)
+					Sleep(0);
+				END
+				GUT_SNMP_TESTRUN ()
+				SleepMS(1000);
+			END
+			TaskNew("_OEM_Report_Server_RUN","",0);
+		END	
+		Sleep(0);
+		itemp=DspPagingActivity(1);
+		itemp=itemp + (DspPagingActivity(2)*Pow(2,2));
+		itemp=itemp + (DspPagingActivity(4)*Pow(2,4));
+		itemp=itemp + (DspPagingActivity(8)*Pow(2,8));
+		TagWrite (gsUAG_StationName + "_PagingService",itemp,0, TRUE);
+		IF iRun30=1 AND iRun30_temp=1 THEN
+			TaskNew("UAG_LoadBS","",0);
+			TaskNew("UAG_SPS_Time","",0);
+			iRun30_temp=0;
+			TaskNew("_OEM_Report_Server_RUN30","",0);
+		END
+			
+	END 
+	ErrSet(0);
+END
+
+//	UAG_SPS_TESTRUN ()
+//	Übergabeparameter:	SPS Nummer
+//                         
+//	Rückgabewert:		 
+//	Beschreibung:		Todmann für SPS benötigt den Scott System_xxx pro SPS 
+//						
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	07.11.08	/	Schneider Electric GmbH
+//	Version				75.33.11.07
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+
+FUNCTION
+UAG_SPS_TESTRUN (INT SPS)
+	INT hQue,itemp;
+	STRING sValue
+	hQue=QueOpen("WDOG_ALT", 2);
+	QuePeek(hQue, SPS, sValue, 10)
+	itemp= StrToInt(sValue)
+	IF 	UAG_SPS_WDOG (SPS) <> itemp THEN
+		UAG_SPS_RUN(1,SPS)	// SPS-Programm läuft 
+	ELSE
+		UAG_SPS_RUN(0,SPS)// SPS-Programm steht
+	END
+	sValue=UAG_SPS_WDOG (SPS);	
+	QueWrite(hQue,SPS ,sValue)
+END
+
+//
+//		IF 	UAG_SPS_WDOG (SPS) <> WDOG_ALT[SPS] THEN
+//			UAG_SPS_RUN(1,SPS)	// SPS-Programm läuft 
+//		ELSE
+//			UAG_SPS_RUN(0,SPS)// SPS-Programm steht
+//		END
+//		WDOG_ALT[SPS] = UAG_SPS_WDOG (SPS);		
+//
+//	UAG_TaskInfo()
+//	Übergabeparameter:	
+//                         
+//	Rückgabewert:		 
+//	Beschreibung:		 
+//						
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	06.07.09	/	Schneider Electric GmbH
+//	Version				7.2.3.6
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	17.01.12	Steiner		es wurden nicht alle Task angezeigt.
+STRING FUNCTION
+UAG_TaskInfo()
+	STRING sTemp,sTemp1;
+	INT I,Count=20;
+	ErrSet(1);
+//	Count=KernelTableItemCount("CiCode");
+	FOR I=0 TO Count DO
+		sTemp1 = KernelTableInfo("CiCode", IntToStr(I), "Name");
+		IF (sTemp1 <>"" AND sTemp1 <>"UAG_TaskInfo" AND sTemp1 <>"PageFG")THEN
+			sTemp = sTemp +sTemp1 + CharToStr(_CR);
+		END
+	END
+	IsError()
+	ErrSet(0);
+	RETURN sTemp
+END			
+
+
+///////////////////////////////////////////////////////////////////////////////////
+//	FUNCTION UAG_PLC_DateTime()
+//  
+//
+//	Übergabeparameter:	name der SPS
+//                       
+//	Rückgabewert:		---
+//	Beschreibung:		Datum und uhrzeit an den SPS Baustein schicken.
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	29.04.14	/	Schneider Electric GmbH
+//	Version				74.33.70.00
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+// 	
+//	
+///////////////////////////////////////////////////////////////////////////////////
+
+FUNCTION UAG_PLC_DateTime(STRING sTag)
+	TagWrite(sTag+ "_NTP\Sec",StrToHex(IntToStr(TimeSec(TimeCurrent()))+"00"));
+	TagWrite(sTag+ "_NTP\Minute",StrToHex("00"+IntToStr(TimeMin(TimeCurrent()))));
+	TagWrite(sTag+ "_NTP\Hour",StrToHex(IntToStr(TimeHour(TimeCurrent()))+"00"));
+	TagWrite(sTag+ "_NTP\Dat",StrToHex("00"+IntToStr(DateDay(TimeCurrent()))));
+	TagWrite(sTag+ "_NTP\Month",StrToHex(IntToStr(DateMonth(TimeCurrent()))+"00"));
+	TagWrite(sTag+ "_NTP\Year",StrToHex(IntToStr(DateYear(TimeCurrent(),1))));
+	TagWrite(sTag+ "_LW",1);
+
+END		

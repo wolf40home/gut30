@@ -1,0 +1,1050 @@
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//	
+// 	FILE:	UAG_Info.CI
+//
+//	Beschreibung:
+//
+//		Enhält Funktionen für debug Info.
+//		
+//
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	11.01.08	/	Schneider Electrik GmbH
+//	Version				75.33.11.07
+//
+//	PUBLIC FUNCTIONS:
+//
+//			UAG_Info_IODeviceStats()
+//			UAG_Info_InfoForm()
+//			UAG_Info_FormAn()
+//			UAG_Info_VarForm()
+//			UAG_Info_Server_IO()
+//			UAG_Info_Server_Admin()
+//
+//	NOTES:		Moved InfoForm Functions from System Directory into this file 12/96.
+//				Ausehen Angepasst und übersetzt.
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	04.01.10	Steiner		an SP2 angepasst.
+
+
+//      ---------------------- MODULE VARIABLES - IODeviceStats Functions --------------------
+
+
+
+
+
+
+INT	MAX_DEVICE_ID		= 4095;		// Largest valid device identifier
+INT	hIODevice;			        // IODevice number
+STRING	sIODevice;			        // IODevice name
+INT	hIODeviceForm           = BAD_HANDLE;	// form handle
+INT	hIODeviceField[12];		        // field handles
+STRING	sIODeviceFieldData[12];		        // field dynamic data
+STRING	sIODeviceFieldText[12] =
+	"@(Name)",
+	"@(Status Client)",
+	"@(Start mode)",
+	"@(General error)",
+	"@(Driver error) (Hex)",
+	"@(Number of errors)",
+	"@(Restarts)",
+	"@(Min Response Time)",
+	"@(Max Response Time)",
+	"@(Avg Response Time)",
+	"@(Read the number)",
+	"@(Total CPU Usage (%)9";
+STRING	sGeneralFieldData[30];		        // field dynamic data
+STRING	sGeneralFieldText[30] =
+	"@(CPU usage)",
+	"@(kernel Cycles per second)",
+	"@(kernel Tasks per second)",
+	"@(Kernel boot time)",
+	"@(Kernel running time)",
+	"@(Citect startup time)",
+	"@(Citect running time)",
+	"-",
+	"@(Total read requests)",
+	"@(Total Read requests per second)",
+	"@(Total write requests)",
+	"@(Total write requests per second)",
+	"@(Total Physical read requests)",
+	"@(Total Physical read requests per second)",
+	"@(Total Physical write requests)",
+	"@(Total Physical write requests per second)",
+	"@(Total Blocked read requests)",
+	"@(Total Blocked write requests)",
+	"@(Total Digital read requests)",
+	"@(Total Register read requests)",
+	"@(Total Digital read requests per second)",
+	"@(Total Register read requests per second)",
+	"@(Total Cache reads count)",
+	"@(Total Cache reads %)",
+	"-",
+	"-",
+	"-",
+	"-",
+	"-",
+	"@(Dynamic point count currently in use)";
+STRING msIODevice="";
+INT msServer=0;
+INT iError;	
+STRING FUNCTION UAG_GeneralFildText(INT iNr)
+	RETURN sGeneralFieldText[iNr]
+END	
+
+//      ---------------------MODULE VARIABLES - InfoForm Functions --------------------------
+
+
+INT		hWriteField		= BAD_HANDLE;  	// Handle of Tag Write Field
+INT 	hExpTextField		= BAD_HANDLE;  	// Handle of Expression Text Field
+INT		hResTextField		= BAD_HANDLE;  	// Handle of Result Text Field
+INT		hContextPrompt		= BAD_HANDLE;  	// Handle of Context Prompt
+INT 	hInfo			= BAD_HANDLE;  	// Handle for DspInfoNew
+INT 	hForm			= BAD_HANDLE;  	// Handle of Form
+
+INT     iTagIndex		= 0;		// index into tag in the variable information block
+INT     iExpressionIndex	= 0;		// index into expression in the variable information block
+INT     iNumberOfTags		= 0;		// Number of tags in given expression at An
+INT     iNumberOfExpressions	= 0;		// Number of expressions at An	
+INT 	iRowOffset		= 0;	        // Row offset for start of tag fields
+INT		iArrayTagOffset	        = 0;		// Tag Array Offset
+INT		bOffsetError		= 0;		// Tag Array Offset error Flag 
+	
+STRING  sTagname 		= "";		// current tag
+STRING  sValue 	        	= "";		// Buffer for Value to Write to Tag
+
+INT	hEditField[ 14];			// handles to form fields
+
+
+//      Tag Form Field  names and Descriptions	
+
+STRING  sEditField[13][2] =
+				"Cluster", 		" @(Cluster):",
+				"Name",			" @(Variable Tag Name):",			
+				"Type", 		" @(Data Type):", 	
+				"Unit", 		" @(I/O Device)", 
+				"Addr", 		" @(Adresse):", 			
+				"Raw_Zero", 	" @(Zero Scale):", 	
+				"Raw_Full", 	" @(Max.):", 	
+				"Eng_Zero", 	" @(Min. Scale):", 	
+				"Eng_Full",		" @(Max. Scale):", 	
+				"Eng_Value",	" @(Value):", 	
+				"Eng_Units", 	" @(Engineering Units):", 	
+				"Comment", 		" @(Comment):";	
+
+STRING  sInputText[14];				// Text buffers for form fields
+
+
+
+/*
+**	FUNCTION:	UAG_Info_IODeviceStats()
+**
+**	DESCRIPTION	This function displays stats on each of the IODevices in a form.
+**			The form is updated each second until the user closes the form.
+**			You may select a IODevice by pressing the next, prev or search buttons.
+**
+**	AUTHOR:		Tom Purcell
+**
+**	DATE:		November 1993
+**
+**	REVISION:							DATE:
+**
+**	1.	"prev" and "search" functions added			09/94
+**		to the IODeviceStats() function.
+**	2.	labels on form changed,					02/96
+**		return value for Status on client improved
+**      3.      Modified to ensure single instance only                 12/96
+**              Added PRIVATE / PUBLIC Functions
+**	NOTES:
+**
+*/
+
+PUBLIC INT FUNCTION UAG_Info_IODeviceStats()
+
+	STRING	sBuffer;
+	INT	i;
+
+	hIODevice = 0;
+    IF giP2 THEN
+		UAG_GetMousePos_mitte(281,326);
+		PageTransformCoords(WinNumber(), giPosX, giPosY, giPosX, giPosY, 0)	
+		
+		_GetNextIODevice();	
+		UAG_MM_WinNewAt("!p_ioinfo_Server_20",giPosX,giPosY,giMODE );
+		TaskNew("RefreshIODeviceStats","",1);
+	ELSE		
+    	IF FormActive(hIODeviceForm) THEN
+        	FormGoto(hIODeviceForm);
+        	RETURN(0);
+    	END
+		ErrSet(1);
+
+		_GetNextIODevice();
+		hIODeviceForm = FormNew("@(I/O Device statistics)", 34, 17, 5);
+		FormPosition( giPosX,giPosY,0);
+
+		FOR i = 0 TO 11 DO
+        	FormPrompt(2, i, sIODeviceFieldText[i]);
+			hIODeviceField[i] = FormField(22, i, 12, 1, 3, sBuffer, "      ", 0);
+		END
+		FormButton(20, 13, "    @Next)    ", _GetNextIODevice, 0);
+		FormButton( 5, 13, "  @(Prev)   ", _GetPrevIODevice, 0);
+		FormButton(20, 15, " @Close) ", 0, 1);
+		FormButton( 5, 15, "   @(search)   ", _IODeviceSearch, 0);
+		FormRead(1);
+		WHILE FormActive(hIODeviceForm) DO
+			_RefreshIODeviceStats();
+			Sleep(1);
+		END
+		ErrSet(0)
+	END	
+END
+
+FUNCTION RefreshIODeviceStats()
+	WHILE True DO
+		_RefreshIODeviceStats()
+		SleepMS(1000)
+	END
+END		
+
+STRING FUNCTION UAG_sIODeviceFieldData(INT iNr)
+	RETURN sIODeviceFieldData[iNr]
+END	
+
+/*
+**	FUNCTION	_RefreshIODeviceStats
+**
+**	This function get the stats from the IODevices and
+**	displays them on the form.
+**
+*/
+PRIVATE INT FUNCTION _RefreshIODeviceStats()
+
+	INT	iStatus;
+	INT	iMode;
+	INT	i;
+	INT hMsg;
+	STRING sFunktion
+	sFunktion= "^"IODevice^",^"" + sIODevice + "^","
+	ErrSet(1);
+//
+	hMsg= MsgOpen(uag_IOServer(msServer),0,0,ClusterFirst());
+
+	sIODeviceFieldData[0] = sIODevice;
+	sIODeviceFieldData[1] = IntToStr(CitectInfo("IODevice", sIODevice, 0));
+	FOR i = 2 TO 10 DO
+		sIODeviceFieldData[i] = MsgRPC(hMsg,"CitectInfo",sFunktion + IntToStr(i),0);
+	END
+	iStatus	= StrToInt(sIODeviceFieldData[1]);
+	IF iStatus = 1 THEN
+		sIODeviceFieldData[1] = "@(Run)";
+	ELSE IF iStatus = 2 THEN
+		sIODeviceFieldData[1] = "@(Standby)";
+	ELSE IF iStatus = 16 THEN
+		sIODeviceFieldData[1] = "@(Offline)";
+	ELSE IF iStatus = 128 THEN
+		sIODeviceFieldData[1] = "@(Remote)";
+	ELSE
+		sIODeviceFieldData[1] = "@(not found)";
+	END END END END
+	iMode = StrToInt(sIODeviceFieldData[2]);
+	IF iMode THEN
+		sIODeviceFieldData[2] = "@(Standby)";
+	ELSE
+		sIODeviceFieldData[2] = "@(Primary)";
+	END
+        sIODeviceFieldData[4]  = HexToStr(sIODeviceFieldData[4], 7);
+        sIODeviceFieldData[11] = IntToStr(CitectInfo("General", "General", 0));
+	IF NOT giP2 THEN
+		FOR i = 0 TO 11 DO
+			FormSetText(hIODeviceForm, hIODeviceField[i], sIODeviceFieldData[i]);
+		END
+	ELSE
+		FOR i = 0 TO 6 DO
+			sGeneralFieldData[i] = MsgRPC(hMsg,"CitectInfo","^"General^",^"General^"," + IntToStr(i),0);
+		END	
+		FOR i = 8 TO 27 DO
+			sGeneralFieldData[i] = MsgRPC(hMsg,"CitectInfo","^"General^",^"General^"," + IntToStr(i),0);
+		END	
+		sGeneralFieldData[29] = CitectInfo("General","General",29);
+
+	END	
+	MsgClose(uag_IOServer(msServer),hMsg);
+	ErrSet(0);
+
+	RETURN 0;
+END
+
+STRING FUNCTION UAG_GeneralFieldData(INT iNr)
+	RETURN sGeneralFieldData[iNr]
+END
+/*
+**	FUNCTION	_GetNextIODevice
+**
+**	This function gets the next valid IODevice.
+**
+*/
+
+INT FUNCTION _GetNextIODevice()
+    INT hMsg;
+   	sIODevice = "";
+ 	hMsg= MsgOpen(uag_IOServer(msServer),0,0,ClusterFirst());
+
+   	WHILE sIODevice = "" DO
+		IF hIODevice < MAX_DEVICE_ID THEN
+			hIODevice = hIODevice + 1;
+		ELSE
+			hIODevice = 0;
+		END
+		sIODevice = MsgRPC(hMsg,"IODeviceInfo",IntToStr(hIODevice),0);
+		SleepMS(10);
+	END
+	MsgClose(uag_IOServer(msServer),hMsg);
+	_RefreshIODeviceStats();
+
+	RETURN 0;
+END
+
+//	FUNCTION GetFirstIODevice()
+//	Übergabeparameter:	      
+//                       
+//	Rückgabewert:		Die Nummer des ersten I/O Device
+//	Beschreibung:		
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	28.01.09	/	Schneider Electrik GmbH
+//	Version				7.2.3.7
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	23.04.12	Steiner		Änderung für Display Client
+
+STRING FUNCTION GetFirstIODevice()
+	IF gbUAGClientMode=true THEN
+		TaskNew("_GetFirstIODevice","",8);
+		RETURN msIODevice;
+	END	
+END
+FUNCTION _GetFirstIODevice()
+    INT hMsg,hIODevice2;
+    STRING sIODevice2;
+    
+    IF msIODevice="" THEN
+   		sIODevice2 = "";
+   		WHILE msServer <10 AND sIODevice2 = "" DO
+   			hIODevice2=0;
+ 			hMsg= MsgOpen(uag_IOServer(msServer),0,0,ClusterFirst());
+
+   			WHILE sIODevice2 = "" AND hIODevice2 < MAX_DEVICE_ID DO
+				hIODevice2 = hIODevice2 + 1;
+				sIODevice2 = MsgRPC(hMsg,"IODeviceInfo",IntToStr(hIODevice2),0);
+				SleepMS(10);
+			END
+			MsgClose(uag_IOServer(msServer),hMsg);
+			IF sIODevice2 = "" THEN
+				msServer=msServer+1;
+			END	
+		END	
+		msIODevice=IntToStr (hIODevice2);
+	END
+	msServer=0;
+//	RETURN msIODevice;
+END
+
+/*
+**	FUNCTION	_GetPrevIODevice
+**
+**	This function gets the previous valid IODevice.
+**
+*/
+
+ INT FUNCTION _GetPrevIODevice()
+    INT hMsg;
+   	sIODevice = "";
+ 	hMsg= MsgOpen(uag_IOServer(msServer),0,0,ClusterFirst());
+       	WHILE sIODevice = "" DO
+		IF hIODevice > 0 THEN
+			hIODevice = hIODevice - 1;
+		ELSE
+			hIODevice = MAX_DEVICE_ID;
+		END
+		sIODevice = MsgRPC(hMsg,"IODeviceInfo",IntToStr(hIODevice),0);
+		SleepMS(10);
+	END
+	MsgClose(uag_IOServer(msServer),hMsg);
+	_RefreshIODeviceStats();
+	RETURN 0;
+END
+
+/*
+**	FUNCTION	_IODeviceSearch()
+**
+**	This function will search for a given IODevice name.
+**
+*/
+
+PRIVATE INT FUNCTION _IODeviceSearch()
+
+	STRING	search;
+	STRING	sTemp;
+	INT	hForm;
+	INT	hRead;
+	INT	iTemp;
+       	
+   	iTemp = hIODevice;
+   	sTemp = sIODevice;
+	UAG_GetMousePos_mitte(281,326);		
+
+   	FormNew("IODevice suche", 40, 4, 5);
+	FormPosition( giPosX,giPosY,0);
+   	FormInput(1, 1, "@(IODevice Enter the name)", search, 20);
+   	FormButton(10, 3, "   @(OK)  ", 0, 1);
+   	FormButton(22, 3, " @(Cancel) ", 0, 2);
+   	hRead = FormRead(0);
+   	IF  NOT hRead THEN 
+   		IF (search <> "") THEN
+        	hIODevice = 0;
+       		WHILE NOT (sIODevice = search) DO
+				sIODevice = IODeviceInfo(hIODevice, 0);
+				IF hIODevice < MAX_DEVICE_ID THEN
+					hIODevice = hIODevice + 1;
+				ELSE
+					hIODevice = iTemp;
+					sIODevice = sTemp;
+					Message("@(Device)", search + "  @(not found)",48);
+					FormGoto(hIODeviceForm);
+					RETURN 0; 
+				END
+			END
+		ELSE
+			Message("@(Device)", search + "  @(NOT found)",48);
+			FormGoto(hIODeviceForm);
+			RETURN 0;
+		END
+	END
+	_RefreshIODeviceStats();
+	FormGoto(hIODeviceForm);
+	RETURN 0;
+END
+
+
+//      ---------------------------------  InfoForm Functions --------------------------------
+
+/*
+**	FUNCTION :		UAG_Info_InfoForm
+**
+**      DESCRIPTION:            Obtains the AN at the current mouse position then calls
+**                              the UAG_InfoFormAn Function
+**
+**	REVISION:  		2.0
+**	DATE:			16 Dec 1996
+**	BY:			Steve Schilg
+**	COMMENTS:		Rewritten to 	1. allow writes to variables.
+**						2. display long expressions, tagnames, addresses etc.
+**						3. Display more tags.
+**						4. allow different privilege levels for the write button (DK)
+**
+**
+**	RETURNED VALUE:	0 if Successful,  -1 if no animation exists, -2 if form already active
+**
+**	NOTES:
+*/
+
+PUBLIC INT FUNCTION  UAG_Info_Form(INT mode=0)
+
+	INT 	iError			= 0;
+	INT	x			= 0;
+	INT	y			= 0;
+	INT	hAn			= 0;
+	INT	hParentAn		= 0;
+	
+	DspGetMouse(x, y);
+	hAn = DspGetAnFromPoint(x, y);
+	IF hAn = 0 THEN
+		hAn = DspGetNearestAn(x, y);
+	END
+	IF hAn > 0 THEN
+		hParentAn = DspGetParentAn(hAn);
+
+		SELECT CASE hParentAn
+			CASE IS > 0
+				SELECT CASE mode
+					CASE 0
+					iError = UAG_Info_FormAn(hParentAn, 0);
+					CASE ELSE
+					iError = UAG_Info_FormAn(hParentAn, 1);
+				END SELECT
+			CASE ELSE
+				SELECT CASE mode
+					CASE 0
+					iError = UAG_Info_FormAn(hAn, 0);
+					CASE ELSE
+					iError = UAG_Info_FormAn(hAn, 1);
+				END SELECT
+		END SELECT
+
+	END
+	RETURN(iError);
+END
+
+/*
+**      FUNCTION:       UAG_Info_FormAn
+**
+**	DESCRIPTION : 	This function creates a form to be displayed on the
+**		      	screen and fills it with all the field data associated
+**		      	with the variables database.
+**		      	The function does not exit immediately but sits in a loop
+**		      	continuously updating the fields who's data may change.
+**			The mode passed into the function determines the status of
+**			the write button. It also allows for backward compatibility.(DK)
+**
+**	RETURNED VALUE:	0 if Successful,  -1 if no animation exists, -2 if form already active
+**
+*/
+
+PUBLIC INT FUNCTION UAG_Info_FormAn(INT AN, INT mode=0)
+
+	INT	bHasMultipleTags        = FALSE;
+	INT	bHasMultipleExpressions = FALSE;
+	INT 	FormWidth 		= 70;
+	INT 	FormHeight		= 3;
+	INT 	FormDelta		= 0;
+	STRING	sExpText		= "";
+	STRING	sResText		= "";
+
+	IF FormActive(hForm) THEN
+                FormGoto(hForm);
+		RETURN(-2);
+	END
+	
+	sValue			= "";
+	sTagname	 	= "";
+	hInfo    = DspInfoNew(An);
+	UAG_GetMousePos_mitte(281,326);		
+
+ 	IF (hInfo > -1) THEN
+		iNumberOfExpressions = StrToInt(DspInfo(hInfo, 7, 0));
+
+		IF (iNumberOfExpressions > 0) THEN
+			IF (iNumberOfExpressions > 1) THEN
+				bHasMultipleExpressions = TRUE;
+			END
+
+			FOR iExpressionIndex = 0 TO iExpressionIndex < iNumberOfExpressions DO
+				iNumberOfTags = StrToInt(DspInfo(hInfo, 8, iExpressionIndex));
+
+				IF (iNumberOfTags > 1) THEN
+					bHasMultipleTags = TRUE;
+					iExpressionIndex = iNumberOfExpressions;
+				END
+			END
+
+			IF ((bHasMultipleTags) AND (bHasMultipleExpressions)) THEN
+				FormDelta = 1;
+			END
+
+			iExpressionIndex = 0;
+			iTagIndex = 0;
+			iNumberOfTags = StrToInt(DspInfo(hInfo, 8, iExpressionIndex));
+	
+			IF ((bHasMultipleExpressions) OR (iNumberOfTags > 0)) THEN
+				FormHeight = 15 + FormDelta;
+			END
+	
+			hForm = FormNew(DspInfo(hInfo, 0, 0) + " @(information)", FormWidth, FormHeight, 1);
+			FormPosition( giPosX,giPosY,0);
+
+			sExpText = DspInfo(hInfo, 1, iExpressionIndex);
+			hExpTextField = FormInput(0, 0, " @(command): ", sExpText, 56);
+	
+			sResText = DspInfo(hInfo, 2, iExpressionIndex);
+			hResTextField = FormInput(0, 1, " @(Result):          ", sResText, 32);
+		
+			sTagname = DspInfo(hInfo, 10, iTagIndex);
+			iArrayTagOffset = _InfoFormArrayTagOffset();
+			iRowOffset = 2;	
+		
+			IF ((bHasMultipleExpressions) OR (iNumberOfTags > 0)) THEN
+				FormPrompt(0, 10 + iRowOffset, "@(Context) : ");
+				hContextPrompt = FormPrompt(22, 10 + iRowOffset, "                                ");
+				FormSetText(hForm, hContextPrompt, DspInfo(hInfo, 6, iExpressionIndex));
+				
+				_InfoField( 0, 0,  0, 32, 20);	!Cluster
+				_InfoField( 0, 1,  1, 32, 20);	!Tag
+				_InfoField( 0, 2,  2, 16, 20);	!Type
+				_InfoField( 0, 3,  3, 16, 20);	!Unit
+				_InfoField( 0, 4,  4, 16, 20);	!Addr	
+				_InfoField( 0, 5,  5, 10, 20);	!Raw Zero
+				_InfoField(36, 5,  6, 10,  8);	!Raw Full
+				_InfoField( 0, 6,  7, 10, 20);	!Eng Zero
+				_InfoField(36, 6,  8, 10,  8);	!Eng Full
+				_InfoField( 0, 7,  9, 34, 20);	!Eng Value
+				_InfoField( 0, 8,  10, 10, 20);	!Eng Units
+				_InfoField( 0, 9, 11, 48, 20);	!Comment	
+				
+				
+				IF mode = 0 THEN
+					FormButton(FormWidth - 13, FormHeight - FormDelta - 2,  "  @(write)  ", _InfoFormWriteTag, 0);
+					hWriteField = FormEdit(0, FormHeight - FormDelta - 2, sValue, FormWidth - 14);
+				END
+
+				IF (bHasMultipleTags) THEN
+					FormButton(22, FormHeight - FormDelta - 1, "  @(next Tag)  ", _InfoFormNextVar, 0);
+					FormButton(0,  FormHeight - FormDelta - 1, "  @(prev Tag)  ", _InfoFormPrevVar, 0);
+				END
+	
+				IF (bHasMultipleExpressions) THEN
+					FormButton(22, FormHeight - 1, " @(next Function) ", _InfoFormNextExpression, 0);
+					FormButton(0,  FormHeight - 1, " @(prev Function) ", _InfoFormPrevExpression, 0);
+				END
+
+				FormButton(FormWidth - 13, FormHeight - FormDelta - 1, "  @(Close)  ", 0, 2);
+		
+            	    		FormRead(1);
+								
+				WHILE (FormActive(hForm) AND DspInfoValid(hForm)) DO
+					FormSetText(hForm, hContextPrompt, DspInfo(hInfo, 6, iExpressionIndex));
+	
+					sExpText = DspInfo(hInfo, 1, iExpressionIndex);
+					FormSetText(hForm, hExpTextField, sExpText);
+					sResText = DspInfo(hInfo, 2, iExpressionIndex);
+					FormSetText(hForm, hResTextField, sResText);
+
+					IF (bOffsetError = 0) THEN	
+						IF (sTagname = "") THEN
+							FormSetText(hForm, hEditField[ 9], "");
+						ELSE
+							FormSetText(hForm, hEditField[ 9], TagRead(sTagname, iArrayTagOffset));
+						END
+					ELSE
+						FormSetText(hForm, hEditField[ 9], "@(Cannot resolve array offset)");
+					END
+
+					Sleep(1);
+				END			
+			ELSE
+				FormButton((FormWidth / 2) - 3, FormHeight - 1, " @(Close) ", 0, 2);
+				FormRead(0);
+			END
+		END
+	END
+        DspInfoDestroy(hInfo);
+
+	IF hInfo > -1 THEN
+		RETURN(0);
+	ELSE
+		RETURN(hInfo);
+	END
+END
+
+/*
+**	FUNCTION:	_InfoField
+**	DESCRIPTION:	Builds each row in the form
+**      iColumn		Column Where Form Input is located
+**	iRow		Row Where Form Input is located
+**	iIndex		Array pointer to data
+**	iWidth		Width of FormInput field
+**	iPromptWidth	Width of Prompt (padded to get fields to align vertically)
+*/
+
+PRIVATE INT FUNCTION _InfoField(INT iColumn, INT iRow, INT iIndex,  INT iWidth, INT iPromptWidth)
+
+	sInputText[iIndex] = DspInfoField(hInfo, sTagname, sEditField[iIndex][0]);
+	sEditField[iIndex][1] = StrPad(sEditField[iIndex][1], " ", iPromptWidth);
+	hEditField[iIndex] = FormInput(iColumn, iRowOffset + iRow, sEditField[iIndex][1], sInputText[iIndex], iWidth);
+	RETURN(0);
+END
+
+/*
+**	FUNCTION	_InfoFormNextVar
+**	DESCRIPTION	Callback function for Next button. Increments the index to next tag.
+*/
+
+PRIVATE INT FUNCTION _InfoFormNextVar()
+
+	IF (iTagIndex < (iNumberOfTags - 1)) THEN
+		iTagIndex = iTagIndex + 1; 
+		sTagname = DspInfo(hInfo, 10, iTagIndex);
+		_InfoFormUpdateForm();
+	END
+
+	RETURN(0);
+END
+
+/*
+**     FUNCTION:       _InfoFormPrevVar
+*/
+
+PRIVATE INT FUNCTION _InfoFormPrevVar()
+
+	IF (iTagIndex > 0) THEN
+		iTagIndex = iTagIndex - 1; 
+		sTagname = DspInfo(hInfo, 10, iTagIndex);
+		_InfoFormUpdateForm();
+	END
+
+	RETURN(0);
+END
+
+/*
+**	FUNCTION	_InfoFormNextExpression
+**	DESCRIPTION	Callback function for Next button. Increments the index to next expression.
+*/
+
+PRIVATE INT FUNCTION _InfoFormNextExpression()
+
+	IF (iExpressionIndex < (iNumberOfExpressions - 1)) THEN
+		iExpressionIndex = iExpressionIndex + 1; 
+		iNumberOfTags = DspInfo(hInfo, 8, iExpressionIndex);
+		sTagname = DspInfo(hInfo, 10, iTagIndex);
+		iTagIndex = 0;
+		_InfoFormUpdateForm();
+	END
+
+	RETURN(0);
+END
+
+/*
+**     FUNCTION:       _InfoFormPrevExpression
+*/
+
+PRIVATE INT FUNCTION _InfoFormPrevExpression()
+
+	IF (iExpressionIndex > 0) THEN
+		iExpressionIndex = iExpressionIndex - 1; 
+		iNumberOfTags = DspInfo(hInfo, 8, iExpressionIndex);
+		sTagname = DspInfo(hInfo, 10, iTagIndex);
+		iTagIndex = 0;
+		_InfoFormUpdateForm();
+	END
+
+	RETURN(0);
+END
+
+/*
+**      FUNCTION:       _InfoFormUpdateForm()
+**	DESCRIPTION:	Updates the form when the tag is changed
+**
+*/
+
+PRIVATE FUNCTION _InfoFormUpdateForm()
+
+	INT 	i;
+
+	sTagname = DspInfo(hInfo, 10, iTagIndex);	// get next tagname
+	iArrayTagOffset = _InfoFormArrayTagOffset();
+
+	FOR i = 0 TO 10	DO
+		sInputText[i] = DspInfoField(hInfo, sTagname, sEditField[i][0]);
+		FormSetText(hForm, hEditField[i], sInputText[i]);
+	END
+
+	IF (sTagname = "") THEN
+		sValue = "";
+	ELSE
+		sValue = TagRead(sTagname, iArrayTagOffset);
+	END
+
+	FormSetText(hForm, hWriteField, sValue);	
+	FormSetData(hForm);
+END
+
+/*
+**	FUNCTION:	_InfoFormWriteTag
+**      DESCRIPTION:    Writes to Tag then reads back value from tag 
+**                      and displays it in the Write field
+*/
+	
+PRIVATE INT FUNCTION _InfoFormWriteTag()
+
+	FormGetData(hForm);
+
+	IF ((bOffsetError = 0) AND NOT (sTagname = ""))	THEN
+		TagWrite(sTagname, FormGetText(hForm, hWriteField), iArrayTagOffset);
+		FormSetText(hForm, hWriteField, TagRead(sTagname, iArrayTagOffset)); // Update the write value on the form
+	END
+
+	RETURN(0);
+END
+
+/*
+**	FUNCTION:	_InfoFormArrayTagOffset
+**	DESCRIPTION:	Gets the offset into an array tag for the tag currently
+**			being displayed in the form.
+**	Return Value:	Array offset or 0 if not an array tag.
+*/
+
+PRIVATE INT FUNCTION _InfoFormArrayTagOffset()
+	
+	INT     iFoundLeft;
+	INT     iFoundRight;
+	INT     iExpOffset;
+	STRING  sExpText;
+	STRING  sOffset;
+	STRING	sTag; // tag  name without cluster
+
+	bOffsetError = 0;								// Clear error flag
+	
+	// Expression may contain tagname with cluster or without cluster
+	// First check if it contains tagname with cluster
+	sExpText = DspInfo(hInfo, 1, iExpressionIndex);								// Read Expression Text
+	iExpOffset = StrSearch(0, sExpText, sTagname); 	        					// Find tagname in Expression
+
+	IF (iExpOffset = -1) THEN
+		// Second check if it contains tagname without cluster
+		sTag = DspInfo(hInfo, 3, iTagIndex);									// get tag name without cluster
+		iExpOffset = StrSearch(0, sExpText, sTag); 								// Find tagname in Expression
+		iFoundLeft = StrSearch(iExpOffset + StrLength(sTag), sExpText, "[");	// Look for [ after tagname
+	ELSE
+		iFoundLeft = StrSearch(iExpOffset + StrLength(sTagname), sExpText, "[");// Look for [ after tagname
+	END
+
+
+	IF iFoundLeft = -1 THEN
+		RETURN (0);
+	END
+	
+	iFoundRight = StrSearch(iFoundLeft, sExpText, "]"); 
+	sOffset = StrMid(sExpText, iFoundLeft + 1, iFoundRight - iFoundLeft - 1);
+	
+	ErrSet(1);					
+	StrToInt(sOffset);
+
+	IF (IsError() = 274) THEN			// Test if not an Integer 
+		sOffset = TagRead(sOffset, 0);		// If a string then assume it is a tag containing the offset and try to read offset..
+
+		IF (IsError() = 289) THEN		// if couldn't find tag
+			bOffsetError = 1;		// Mark offset as bad
+		END
+	END
+
+	ErrSet(0);
+
+	RETURN(StrToInt(sOffset));
+END
+
+/*
+**      FUNCTION:       UAG_Info_VarForm
+**      DESCRIPION:     Displays a form containing tag information for an object.
+**                      Function is called as a callback function from a form that
+**                      currently has a DspInfo block open and has called
+**                      FormSetInst(form, but, hInfo, DspInfo(hInfo, 3, index));
+**                      This function is retained in its original form for 
+**                      backward compatibility.
+**
+**
+*/
+
+
+INT FUNCTION UAG_Info_VarForm()
+
+	STRING	sTag;
+	INT	hInfo;
+	INT	form;
+	INT	engfield;
+	UAG_GetMousePos_mitte(281,326);		
+
+	FormGetCurrInst(hInfo, sTag);
+
+	form = FormNew("Variable Information", 35, 15, 6);
+	FormPosition( giPosX,giPosY,0);
+	FormPrompt(0,  0,  "NAME      ...");
+	FormPrompt(0,  1,  "TYPE      ...");
+	FormPrompt(0,  2,  "UNIT      ...");
+	FormPrompt(0,  3,  "ADDR      ...");
+	FormPrompt(0,  4,  "RAW_ZERO  ...");
+	FormPrompt(0,  5,  "RAW_FULL  ...");
+	FormPrompt(0,  6,  "ENG_UNITS ...");
+	FormPrompt(0,  7,  "ENG_ZERO  ...");
+	FormPrompt(0,  8,  "ENG_FULL  ...");
+	FormPrompt(0,  9,  "COMMENT   ...");
+	FormPrompt(0,  10, "FORMAT    ...");
+	FormPrompt(0,  12, "ENG_VALUE ...");
+
+	FormPrompt(16, 0,  DspInfoField(hInfo, sTag, "NAME"));
+	FormPrompt(16, 1,  DspInfoField(hInfo, sTag, "TYPE"));
+	FormPrompt(16, 2,  DspInfoField(hInfo, sTag, "UNIT"));
+	FormPrompt(16, 3,  DspInfoField(hInfo, sTag, "ADDR"));
+	FormPrompt(16, 4,  DspInfoField(hInfo, sTag, "RAW_ZERO"));
+	FormPrompt(16, 5,  DspInfoField(hInfo, sTag, "RAW_FULL"));
+	FormPrompt(16, 6,  DspInfoField(hInfo, sTag, "ENG_UNITS"));
+	FormPrompt(16, 7,  DspInfoField(hInfo, sTag, "ENG_ZERO"));
+	FormPrompt(16, 8,  DspInfoField(hInfo, sTag, "ENG_FULL"));
+	FormPrompt(16, 9,  DspInfoField(hInfo, sTag, "COMMENT"));
+	FormPrompt(16, 10, DspInfoField(hInfo, sTag, "FORMAT"));
+
+	engfield = FormPrompt(16, 12, DspInfoField(hInfo, sTag, "ENG_VALUE"));
+
+	FormButton(12, 14, "@(&Cancel)", 0, 2);
+
+	FormRead(1);
+	WHILE FormActive(form) AND DspInfoValid(hInfo) DO
+		FormSetText(form, engfield, DspInfoField(hInfo, sTag, "ENG_VALUE"));
+		Sleep(1);
+	END;
+	FormDestroy(form);
+	RETURN 0;
+END
+
+
+//	UAG_Info_Server_IO
+//	Übergabeparameter:	--      
+//                       
+//	Rückgabewert:		
+//	Beschreibung:	Ereignis für den IO- Server	und Genie Quantum
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	27.03.08	/	Schneider Electrik GmbH
+//	Version				75.33.11.07
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	11.10.11	Steiner		Änderung für Citect 7.2
+//	29.04.14	Steiner		Änderung für Citect 7.40
+//	06.09.17	Steiner		Device Name Geändert.
+FUNCTION UAG_Info_Server_IO(STRING sDevice)
+	ErrSet(1);
+	TaskNew("_UAG_Info_Server_IO",sDevice,1);
+	ErrSet(0);
+
+
+END
+
+
+FUNCTION _UAG_Info_Server_IO(STRING sDevice)
+	INT hMsg;
+	STRING sfunktion,sTask = TaskCluster();
+	sfunktion="^"Port^",^"" +sDevice +"^",";
+	ErrSet(1);
+	iError=IsError();
+
+	_WinTitle ("Statistik I/O " +sDevice);
+	WHILE TRUE DO
+
+		iError=IsError();
+
+		IF iError <>0 THEN 
+			UAG_SystemInfo("UAG_ServerInfo", "System",ErrMsg(ierror),"-","-","-",sTask ,_UAG_Fehler) 
+		END;
+
+		hMsg= MsgOpen(IODeviceInfo(sDevice, 17,sTask ),0,0,sTask );
+		iError=IsError();
+
+		PageSetStr(1,MsgRPC(hMsg,"CitectInfo",sfunktion +"15",0));
+		PageSetStr(2,MsgRPC(hMsg,"CitectInfo",sfunktion +"16",0));
+		iError=IsError();
+
+		PageSetStr(3,MsgRPC(hMsg,"CitectInfo",sfunktion +"14",0));
+		iError=IsError();
+		PageSetStr(4,MsgRPC(hMsg,"CitectInfo",sfunktion +"0",0));
+		iError=IsError();
+		PageSetStr(5,MsgRPC(hMsg,"CitectInfo",sfunktion +"2",0));
+		iError=IsError();
+		PageSetStr(6,MsgRPC(hMsg,"CitectInfo",sfunktion +"1",0));
+		iError=IsError();
+		PageSetStr(7,MsgRPC(hMsg,"CitectInfo",sfunktion +"3",0));	
+		iError=IsError();
+		PageSetStr(8,MsgRPC(hMsg,"CitectInfo",sfunktion +"13",0));
+		iError=IsError();
+		PageSetStr(9,MsgRPC(hMsg,"CitectInfo",sfunktion +"10",0));
+		iError=IsError();
+//		PageSetStr(10,IODeviceInfo(sDevice,16,sTask));
+
+		iError=IsError();
+		IF iError <>0 THEN 
+			UAG_SystemInfo("UAG_ServerInfo", "System",ErrMsg(ierror),"-","-","-",sTask,_UAG_Fehler) 
+		END;
+		
+		MsgClose(uag_IOServer(msServer),hMsg);
+		SleepMS(3000);
+	END	
+	ErrSet(0);
+	
+END
+
+
+//	UAG_Info_Server_Admin
+//	Übergabeparameter:	--      
+//                       
+//	Rückgabewert:		
+//	Beschreibung:	Ereignis für den IO- Server	und Tools Seite
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	27.03.08	/	Schneider Electrik GmbH
+//	Version				7.2.3.4
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	17.10.11	Steiner		Umstellung auf 7.2
+//	22.12.11	Steiner		Anzeige Report Tasks hinzugefügt.
+
+FUNCTION UAG_Info_Server_Admin()
+	
+	ErrSet(1);
+	TaskNew("_UAG_Info_Server_Admin","",1);
+	ErrSet(0);
+
+
+END
+
+FUNCTION _UAG_Info_Server_Admin()
+	INT hMsg;
+	
+	ErrSet(1);
+	iError=IsError();
+	WHILE TRUE DO
+
+
+		Admin_Speicher=StrToReal (CitectInfo("Memory","MB",2));
+		Admin_SpeicherG=StrToReal (CitectInfo("Memory","MB",4));
+		Admin_LWC =StrToReal ( CitectInfo("Disk","3",2) ) / 1024 /1024;
+		Admin_LWD =StrToReal ( CitectInfo("Disk","4",2) ) / 1024 /1024;
+		Admin_LWCG =StrToReal ( CitectInfo("Disk","3",3) ) / 1024 /1024;
+		Admin_LWDG =StrToReal ( CitectInfo("Disk","4",3) ) / 1024 /1024;
+		_RefreshIODeviceStats()
+		hMsg= MsgOpen(uag_IOServer(msServer),0,0);
+		PageSetStr(1,MsgRPC(hMsg,"ServerInfoEx","^"Server^",1,^"IOServer^"",0))
+		PageSetStr(5,sGeneralFieldData[26]);
+		PageSetStr(3,sGeneralFieldData[24]);
+		PageSetStr(4,sGeneralFieldData[25]);
+		PageSetStr(6,sGeneralFieldData[8]);
+		PageSetStr(7,sGeneralFieldData[12]);
+		PageSetStr(8,sGeneralFieldData[10]);
+		PageSetStr(9,sGeneralFieldData[14]);	
+		PageSetStr(10,sGeneralFieldData[9]);
+		PageSetStr(11,ServerInfoEx("Client", StrToInt(ServerInfo("Trend",2))+1, "Trend"));
+		PageSetStr(12,ServerInfoEx("Client", StrToInt(ServerInfo("Alarm",2))+1, "Alarm"));
+		PageSetStr(13,ServerInfoEx("Client", StrToInt(ServerInfo("Report",2))+1, "Report"));
+		PageSetStr(14,TimeToStr(StrToInt(CitectInfo("General","",5)), 9));
+		PageSetStr(15,TimeToStr(StrToInt(CitectInfo("General","",5)), 1));
+//		PageSetStr(17,MsgRPC(hMsg,"UAG_TaskInfo","",0));
+		iError=IsError();
+		IF iError <>0 THEN 
+			UAG_SystemInfo("UAG_ServerInfo_Admin", "System",ErrMsg(ierror),"-","-","-",TaskCluster(),_UAG_Fehler) 
+		END;
+		
+		MsgClose(uag_IOServer(msServer),hMsg);
+
+		hMsg= MsgOpen("Alarm", 0,0);
+		PageSetStr(16,MsgRPC(hMsg,"UAG_TaskInfo","",0));
+		MsgClose("Alarm",hMsg);
+		hMsg= MsgOpen("Trend", 0,0);
+		PageSetStr(17,MsgRPC(hMsg,"UAG_TaskInfo","",0));
+		MsgClose("Trend",hMsg);
+		hMsg= MsgOpen("Report", 0,0);
+		PageSetStr(18,MsgRPC(hMsg,"UAG_TaskInfo","",0));
+		MsgClose("Report",hMsg);
+		iError=IsError();
+		IF iError <>0 THEN 
+			UAG_SystemInfo("UAG_ServerInfo", "System",ErrMsg(ierror),"-","-","-",TaskCluster(),_UAG_Fehler) 
+		END;
+		SleepMS(3000);
+	END	
+	ErrSet(0);
+	
+END
+
+
+

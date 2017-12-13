@@ -1,0 +1,608 @@
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//	
+// 	FILE:	UAG_Strings.ci
+//
+//	Beschreibung:
+//
+//		Enhält Funktionen für string Manipulation .
+//		
+//
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	12.01.09	/	Schneider Electrik GmbH
+//	Version				3.1.1.9
+//
+//	PUBLIC FUNCTIONS:
+//
+//		UAG_String_Replace()
+//		UAG_String_GetLines()
+//		UAG_String_GetField()
+//		UAG_String_StrToReg()
+//		UAG_String_FmtToStr()
+//		UAG_String_FmtSetField()
+//		UAG_String_FmtGetField()
+//		UAG_String_FormattedStringGetField()
+//		UAG_String_FmtToStr2()
+// 	NOTES:
+//		
+//
+//			
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//	
+//		FUNCTION Name	
+//						UAG_String_Replace()
+//
+//     	GENERAL DESCRIPTION
+//			
+//			Returns a string in which a specified substring has been replaced with another substring
+//			a specified number of times.
+//
+//     	ARGUMENTS:
+//
+//			sText		String expression containing substring to replace. 
+//			sFind 		Substring being searched for. 
+//			sReplace	Replacement substring. 
+//			iStart 		Optional. Position within expression where substring search is to begin. 
+//						If omitted, 0 is assumed. 
+//			iCount 		Optional. Number of substring substitutions to perform. If omitted, the default value is –1, 
+//						which means make all possible substitutions. 	
+//
+//     	RETURNED VALUE: 
+//
+//
+//		PSEUDO CODE:
+//
+//	Autor:				J.Venz
+//	Erstellungsdatum:	11.03.03	/	Schneider Electric GmbH
+//	Version				3.1.0.0
+//
+//	Historie:
+//
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+STRING FUNCTION
+UAG_String_Replace(STRING sText, STRING sFind, STRING sReplace, INT	iStart = 0, INT iCount = -1)
+
+
+	STRING	sResult;
+	STRING	sResultLeft;
+	STRING	sResultRight;
+	INT		iFindLen;
+	INT		iReplaceLen;
+	INT		iResultLen;
+	INT		iSearchPos;
+	INT		iReplaceCount;
+	INT		bEndReplace = 0;	
+	
+	sResult = sText;
+	iFindLen = StrLength(sFind);
+	iReplaceLen = StrLength(sReplace);
+	
+	IF iCount = 0 THEN
+		bEndReplace = 1;
+	END
+	
+	IF iStart > 0 THEN
+		iSearchPos = iStart;
+	END
+	
+	WHILE NOT bEndReplace DO
+	
+		iSearchPos = StrSearch(iSearchPos, sResult, sFind);
+		
+		IF iSearchPos > -1 THEN
+			
+			iResultLen = StrLength(sResult);
+			sResultLeft =  StrLeft(sResult, iSearchPos);
+			sResultRight = StrRight(sResult, iResultLen - iFindLen - iSearchPos);
+			sResult = sResultLeft + sReplace + sResultRight;
+			
+			iReplaceCount = iReplaceCount + 1;
+			
+			IF (iReplaceCount >= iCount) AND (iCount <> -1) THEN
+				bEndReplace = 1;
+			END 
+			
+			iSearchPos = iSearchPos + iReplaceLen;
+			
+		ELSE
+		
+			bEndReplace = 1;
+		END
+		
+	END
+	
+	RETURN sResult;
+	
+END  
+
+	
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//		FUNCTION NAME	
+//						UAG_String_GetLines()
+//
+//     	GENERAL DESCRIPTION
+//			
+//			Returns the number of lines in a string, given a maximum number of characters per line.
+//
+// 		ARGUMENTS:
+//
+//			sText		- 	Text to convert to lines
+//			iChars		-	Maximum number of characters per line
+//
+//     	RETURNED VALUE: 
+//
+//			Number of lines text would be converted to.
+//
+//		PSEUDO CODE:
+//
+//	Autor:				J.Venz
+//	Erstellungsdatum:	11.03.03	/	Schneider Electric GmbH
+//	Version				3.1.0.0
+//
+//	Historie:
+//
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+INT FUNCTION
+UAG_String_GetLines(STRING sText, INT iChars)
+
+	INT		iLines;
+	STRING	sTextTmp;
+	INT		iOffset;
+	
+	sTextTmp = sText;
+	
+	IF sTextTmp = "" THEN
+	
+		RETURN 0;
+	END
+	
+	IF iChars > 0 THEN
+		StrToLines(sTextTmp, iChars, iLines);
+	END
+
+	iLines = 1;	
+	
+	iOffset = StrSearch(iOffset, sTextTmp, "^n");
+	
+	WHILE iOffset > -1 AND iOffset < StrLength(sTextTmp) DO
+	
+		iLines = iLines + 1;
+		iOffset = StrSearch(iOffset + 1, sTextTmp, "^n");	
+	END
+		
+	RETURN iLines;
+END
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//		FUNCTION NAME	
+//						UAG_String_GetField()
+//
+//     	GENERAL DESCRIPTION
+//			
+//			Get a field value (text) from a string, where the string consists of a number of fields separated by
+//			a field separation character.
+//
+//			Example:
+//				sText = "ab?cde?fghi?j";
+//				sField = UAG_String_GetField(sText,3,"?");
+//
+//			In this case sField = "fghi"			
+//
+// 		ARGUMENTS:
+//
+//			sText			- string containing fields
+//			iField			- index of field value to return (starting at 1)
+//			sFieldSeparator	- 
+//
+//     	RETURNED VALUE: 
+//
+//			Field value as string.
+//
+//		PSEUDO CODE:
+//
+//	Autor:				J.Venz
+//	Erstellungsdatum:	11.03.03	/	Schneider Electric GmbH
+//	Version				3.1.0.0
+//
+//	Historie:
+//
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+STRING FUNCTION
+UAG_String_GetField(STRING sText, INT iField, STRING sFieldSeparator = ",")
+
+	INT	iOffset		= 0;
+	INT	iPos		= 0;
+	INT	iIndex		= 1;
+
+	ErrSet(1);
+	
+	WHILE (sText <> "") AND (iIndex <= iField) DO
+
+		iPos = StrSearch(iOffset, sText, sFieldSeparator);
+		IF (iPos < 0) THEN 
+		
+			iPos = StrLength(sText); 
+		END
+
+		IF (iField = iIndex) THEN
+
+			IF iPos > iOffset THEN
+				RETURN(StrMid(sText, iOffset, iPos-iOffset));
+			ELSE
+				RETURN "";
+			END
+		ELSE
+			iIndex = iIndex + 1;
+			iOffset = iPos + 1 ;
+		END
+	END
+
+	ErrSet(0);
+	
+	RETURN("");
+
+END
+
+//	UAG_String_ToReg()
+//	Übergabeparameter:	int Anzahl der Register, Text
+//                         
+//	Rückgabewert:		 
+//	Beschreibung:		Begrenzt den String damit Platz bleibt für die HEX 0 am Ende 
+//						
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	11.12.08	/	Schneider Electric GmbH
+//	Version				3.1.0.1
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+
+
+STRING FUNCTION 
+UAG_String_StrToReg(STRING sText, INT iLength )
+
+	RETURN StrLeft(sText,iLength-1)
+END
+//	UAG_String_Center()
+//	Übergabeparameter:	 Text, Zeilenbreite
+//                         
+//	Rückgabewert:		 
+//	Beschreibung:		Füllt den String so auf das der Text mittig ist 
+//						
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	09.06.10	/	Schneider Electric GmbH
+//	Version				3.1.1.9
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+
+
+STRING FUNCTION 
+UAG_String_Center(STRING sText, INT iLength )
+	iLength =iLength*-1;
+	RETURN StrPad(sText," ",iLength-(StrLength(sText)/2))
+END
+
+
+//	UAG_String_FmtToStr()
+//	Übergabeparameter:	Format nach dem Muster {ZEIT,19}{BENUTZER,16}
+//                         
+//	Rückgabewert:		 
+//	Beschreibung:		Bildet aus dem Format einen Text mit den entsprechenden Zeilenabständen 
+//						
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	11.12.08	/	Schneider Electric GmbH
+//	Version				3.1.0.1
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+
+
+STRING FUNCTION
+UAG_String_FmtToStr(STRING sFormat)
+	STRING sText,sTmp,sFormat1;
+	INT I,G,L;
+	
+	sFormat1 = StrTrim(sFormat);
+	
+	FOR I=0 TO StrLength(sFormat) DO
+		sTmp = CharToStr(StrGetChar(sFormat1,I));
+		IF sTmp = "{" THEN
+			I=I+1;
+			G = StrSearch(I, sFormat1, ",")-I;
+			sTmp =StrMid(sFormat1,I,G);
+			I=I+G+1;
+			G = StrSearch(I, sFormat1, "}")-I;
+			L = StrToInt(StrMid(sFormat1,I,G));
+			I=I+G;
+			sTmp = StrPad(sTmp, " ", L);
+			sText = sText + sTmp;
+			str2 =sText;
+		END	
+	END
+	RETURN sText
+END
+
+//	UAG_String_FmtToStr()
+//	Übergabeparameter:	Format nach dem Muster {ZEIT#19}{BENUTZER#16}
+//                         
+//	Rückgabewert:		 
+//	Beschreibung:		Bildet aus dem Format einen Text mit den entsprechenden Zeilenabständen 
+//						
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	09.06.10	/	Schneider Electric GmbH
+//	Version				3.1.1.9
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+
+
+STRING FUNCTION
+UAG_String_FmtToStr2(STRING sFormat)
+	STRING sText,sTmp,sFormat1;
+	INT I,G,L;
+	
+	sFormat1 = StrTrim(sFormat);
+	
+	FOR I=0 TO StrLength(sFormat) DO
+		sTmp = CharToStr(StrGetChar(sFormat1,I));
+		IF sTmp = "{" THEN
+			I=I+1;
+			G = StrSearch(I, sFormat1, "#")-I;
+			sTmp =StrMid(sFormat1,I,G);
+			I=I+G+1;
+			G = StrSearch(I, sFormat1, "}")-I;
+			L = StrToInt(StrMid(sFormat1,I,G));
+			I=I+G;
+			sTmp = StrPad(sTmp, " ", L);
+			sText = sText + sTmp;
+			str2 =sText;
+		END	
+	END
+	RETURN sText
+END
+
+
+
+//
+//	FUNCTION NAME:		UAG_String_FmtSetField
+//
+//	FUNCTION DESCRIPTION:	Sets a field value into a formatted string. Allows us to, for
+//				example, substitute a phone number into an AT command string.
+//
+//	SOURCE:			
+//		<various>
+//
+//	ARGUMENTS:
+//		sFormatString	= Formatted string (eg "ATD{PhoneNum}")
+//		sFormatField	= Field to update (eg "PhoneNum")
+//		sFormatData	= Data to be placed into the field (eg "+31629550471")
+//
+//	RETURNED VALUE:
+//		sReturn		= The formatted string with then field replaced with the data
+//
+//	Autor:				T.Munro
+//	Erstellungsdatum:	21.06.01	/	Schneider Electric GmbH
+//	Version				3.1.0.0
+//
+//	Historie:
+//
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//
+
+STRING FUNCTION
+UAG_String_FmtSetField(STRING sFormatString, STRING sFormatField, STRING sFormatData)
+
+	INT	iStartPos = StrSearch(0, sFormatString, "{"+sFormatField); // Start of format field
+	INT	iEndPos = StrSearch(iStartPos, sFormatString, "}"); // End of format field
+
+	STRING	sReturn = "";
+
+	IF iStartPos <> -1 AND iEndPos <> -1 THEN
+
+		// Build the return string
+		sReturn = StrLeft(sFormatString, iStartPos) + sFormatData +
+			  StrRight(sFormatString, StrLength(sFormatString) - iEndPos - 1);
+
+	ELSE
+		// Format field not found ...
+		sReturn = sFormatString;
+	END
+
+	// Return the new string
+	RETURN(sReturn);
+END
+
+//
+//	FUNCTION NAME:		UAG_String_FmtGetField
+//
+//	FUNCTION DESCRIPTION:	Retrieves a parameter value from a format string.
+//
+//	SOURCE:		
+//		<various>	
+//
+//	ARGUMENTS:
+//		sFormatString	= Format string (eg "{Find1,aaaa}{Find2,bb}{End,ccc}
+//		sFormatField	= Field sought (eg "Find2")
+//
+//	RETURNED VALUE:
+//		sReturn		= Parameter associated with the field (eg "bb")
+//
+//
+//	Autor:				T.Munro
+//	Erstellungsdatum:	21.06.01	/	Schneider Electric GmbH
+//	Version				3.1.0.0
+//
+//	Historie:
+//
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//
+
+STRING FUNCTION
+UAG_String_FmtGetField(STRING sFormatString, STRING sFormatField)
+
+	INT	iStartPos = StrSearch(0, sFormatString, "{"+sFormatField); // Start of format field
+	INT	iEndPos = StrSearch(iStartPos, sFormatString, "}"); // End of format field
+
+	STRING	sReturn = "";
+
+	IF iStartPos <> -1 AND iEndPos <> -1 THEN
+
+		// Get the value, removing the field info.
+		iStartPos = iStartPos + StrLength(sFormatField) + 2
+		sReturn = StrMid(sFormatString, iStartPos, iEndPos - iStartPos)
+
+	END
+
+	// Return the string
+	RETURN(sReturn);
+
+END
+
+//
+//	FUNCTION NAME:		UAG_String_FormattedStringGetField
+//
+//	FUNCTION DESCRIPTION:	Determines the value of a parameter stored within a 
+//				a formatted text string. Takes a search sequence and
+//				moves through the formatted string until the field
+//				is located.
+//
+//	SOURCE:			<various>
+//
+//	ARGUMENTS:
+//		sFormattedString	= Formatted text string
+//		sFormat			= Format template to apply to string. This
+//					is the search sequence (see below).
+//
+//	RETURNED VALUE:
+//		sFieldValue		= Value of the field
+//
+//	NOTES:
+//		The format string is specified thus:
+//		{Find1,<Search1>}{Find2,<Search2>}..{Find#,<Search#>}{End,<Search#+1>}
+//		So the function will start from position 0 in the formatted string and
+//		find the position of sub-string "Search1". It will then, starting from 
+//		this position, search for sub-string "Search2". This contines until the 
+//		"End" parameter is reached. The data between the last "Search#" item and
+//		the "End" item is returned.					
+//
+//		This allows the use of generic code to sort through strings of different
+//		formats to find a common items. For example, when we poll BrandA modem for
+//		the SMS Message in position 1 it may respond with:
+//
+//		SomeData,+31629550471,SomeData2
+//		My SMS Message
+//		OK
+//
+//		and BrandB modem may respond with:
+//
+//		+31629550471,SomeData,SomeData2,"My SMS Message"
+//		OK
+//
+//		So, for BrandA modem the format string for finding the phone num is:
+//		{Find1,,}{End,,}
+//		Message text:
+//		{Find1,_CR}{End,_CR}
+//		And for BrandA modem the format string for finding the phone num is:
+//		{End,,}
+//		Message text:
+//		{Find1,"}{End,"}
+//
+//		See function '_SMSMessageGetField()' for an example of how this function
+//		may be used.
+//
+//
+//	Autor:				T.Munro
+//	Erstellungsdatum:	21.06.01	/	Schneider Electric GmbH
+//	Version				3.1.0.0
+//
+//	Historie:
+//
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//
+
+STRING FUNCTION
+UAG_String_FormattedStringGetField(STRING sFormattedString, STRING sFormat)
+
+	INT	iCount = 1;
+	INT	iStartPos = 0;
+	INT	iEndPos = 0;
+
+	STRING	sFieldValue = "";
+	STRING	sSearchString = "";
+
+	// Continue until we have found the field start position
+	sSearchString = UAG_String_FmtGetField(sFormat, "Find"+IntToStr(iCount));
+	WHILE (iStartPos <> -1) AND (sSearchString <> "") DO
+
+		iStartPos = StrSearch(iStartPos, sFormattedString, sSearchString);
+		IF iStartPos <> -1 THEN
+			iStartPos = iStartPos + StrLength(sSearchString);
+		END
+
+		iCount = iCount + 1;
+		sSearchString = UAG_String_FmtGetField(sFormat, "Find"+IntToStr(iCount));
+
+	END
+
+	// Find the end of the field saught
+	sSearchString = UAG_String_FmtGetField(sFormat, "End");
+	IF sSearchString = "" THEN
+		iEndPos = StrLength(sFormattedString);
+	ELSE
+		iEndPos = StrSearch(iStartPos, sFormattedString, sSearchString);
+	END
+
+	// Grab the data
+	IF iStartPos <> -1 AND iEndPos <> -1 THEN
+		sFieldValue = StrMid(sFormattedString, iStartPos, iEndPos - iStartPos);
+	END
+
+	RETURN(sFieldValue);
+
+END
+
+//	UAG_String_FmtToStr()
+//	Übergabeparameter:	Pc Name
+//                         
+//	Rückgabewert:		Bereinigter Name 
+//	Beschreibung:		 
+//						
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	14.01.11	/	Schneider Electric GmbH
+//	Version				7.2.0.1
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+
+
+STRING FUNCTION
+UAG_String_PCName_Queue(STRING sFormat)
+	STRING sText,sTmp;
+	INT I;
+	
+	sTmp = StrTrim(sFormat);
+	sFormat = StrUpper(sTmp);
+	FOR I=0 TO StrLength(sFormat) DO
+		sTmp = CharToStr(StrGetChar(sFormat,I));
+		IF sTmp = "-" THEN
+			sTmp="_";	
+		END
+		sText = sText + sTmp;
+	END
+	RETURN sText
+END
+
+

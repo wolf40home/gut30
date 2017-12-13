@@ -1,0 +1,10 @@
+﻿:(Mode)update
+:(Mode)update
+:(IODriver)ComputerName	AltComputerName	StoreForwardMode	StoreForwardPath	MinMBThreshold	Enabled	StoreForwardDuration	AutonomousStartupTimeout	BufferCount	FileChunkSize	ForwardingDelay	ConnectionTimeout
+$local		Off		16	Yes	180	60	128	65536	0	60
+:(Mode)update
+:(IODriver)ComputerName	AltComputerName	StoreForwardMode	StoreForwardPath	MinMBThreshold	Enabled	StoreForwardDuration	AutonomousStartupTimeout	BufferCount	FileChunkSize	ForwardingDelay	ConnectionTimeout
+$local		Off		16	Yes	180	60	128	65536	0	60
+:(IOServer)ComputerName	ApplicationName	AltComputerName	IDASComputerName	ProtocolType
+$local	FSGateway		$local	SuiteLink
+:(Topic)Name	ApplicationName	ComputerName	TimeOut	LateData	IdleDuration	ProcessingInterval

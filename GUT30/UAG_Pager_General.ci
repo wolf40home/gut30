@@ -1,0 +1,1013 @@
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//	
+// 	FILE:	UAG_Pager_General.ci
+//
+//	Beschreibung:
+//
+//	This file contains generic cicode functions
+//
+//		Funktionen mit Version 3.x sind freigegeben
+//
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	10.10.08	/	Schneider Electrik GmbH
+//	Version				75.33.11.06
+//
+//	NOTE:	Variable Prefixes;
+//			h	Local (function) var handle 	(INT data type)
+//			i	Local (function) var integer 	(INT data type)
+//			s	Local (function) var string 	(STRING data type)
+//			r	Local (function) var real 		(REAL data type)
+//
+//			mh	Module (file) var handle type 	(INT data type)
+//			mi	Module (file) var integer type 	(INT data type)
+//			ms	Module (file) var string type 	(STRING data type)
+//			mr	Module (file) var real type 	(REAL data type)
+//
+//			gh	Global (project) var handle type 	(INT data type)
+//			gi	Global (project) var integer type 	(INT data type)
+//			gs	Global (project) var string type 	(STRING data type)
+//			gr	Global (project) var real type 		(REAL data type)
+//
+//			_	Label defined in LABELS.DBF (remaining letters capitalised)
+//			none	All capitalised represent VARIABLE Tags
+//
+//      Notes:
+//			
+////	PUBLIC FUNCTIONS:
+//
+//		///	User functions ///
+//		
+//
+//		///	System function ///
+//		_ComReadSequence
+//		_ComWriteSequence
+//		_ComSendCommand
+//		_ClearCommsPort
+//		_CharSearch
+//		_IsStrInt(STRING sData)
+//		_IsNum(INT iChar);
+//		_IsAlpha(INT iChar);
+//		_QueFlush(INT hQue)
+//		_QueClean(INT hQue, INT iInt)
+//		_QueLast(INT hQue, INT iInt = 0)
+//		_QueFirst(INT hQue, INT iInt=0)
+//
+//		_RecordExist(INT hSQL, STRING sMDBTables, STRING sFieldName, STRING sSearchStr)
+//		_RecordDelete(INT hSQL, STRING sMDBTable, STRING sFieldName, STRING sSearchStr)
+//
+//		_MessageForm(STRING sTitle,STRING sMessage,INT iMode = 0)
+//		StrToPrint(STRING sRaw)
+//		_24HrTimeOK(STRING sTime)
+//		AdvInput(STRING sTitle, STRING sPrompt, STRING sDefault, INT iMode = 25)
+//			
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)//
+//
+
+
+
+//	MODULE CONSTANTS	//
+
+//	MODULE VARS		//
+
+
+//
+//	Function Name:  _ComReadSequence
+//
+//	Author:		E.Black
+//
+//	Revision	By		Date		Description
+//	1.0		E.Black		28/12/00	Original
+//	1.1		T.Munro		27/06/01	Extended max length to 255 chars
+//	1.2		T.Munro		25/09/01	Added 'iMaxRead' param (setting = 1 allows receive buffer to be
+//							assembled and return immediately upon finding a buffer terminator.
+//							Without	this option the ComRead() may delay up to 1 sec which
+//							causes problems for more realtime communications).
+//
+//	Function Description:	Reads characters from Com port and keeps appending them to a string until a specific 
+//				sequence of characters is found or the timeout expires. This is needed because ComRead()
+//				doesn't wait until it receives the number of characters requested or until the timeout
+//				occurs, so it may miss characters if it reads while a transmission is still coming in.
+//
+//      Arguments:		hComPort		A handle to the com port
+//				sSequence = <CR>	The text sequence to search for
+//				iTimeout = 1		The maximum number of seconds to wait for the sequence
+//				iMaxRead = 128		The maximum number of chars to read in a single ComRead()
+//
+//      Returned Value:		STRING		The text string received from ComRead(). Up to 255 characters long.
+//
+//      Psuedo Code:
+//				WHILE (ReceivedString doesn't contain sSequence), (Length(ReceivedString) < 255 or Max), (Timeout hasn't expired) DO
+//					ReceivedString = ReceivedString + ComRead()
+//				END
+//				RETURN ReceivedString
+//
+
+STRING
+FUNCTION
+_ComReadSequence(INT hComPort, STRING sSequence = "^r", INT iTimeout = 1, INT iMaxRead = 128)
+
+	STRING	sReceived;
+	STRING	sBuffer,sArg;
+	INT	iLength,hMsg;
+	INT	iEndTime;
+
+	IF iTimeOut > 0 THEN
+
+		iEndTime = TimeCurrent() + iTimeout;
+		hMsg = MsgOpen(Server1_AktiverIOServer, 0, 0 );
+
+		WHILE (StrSearch(0, sReceived, sSequence) = -1) AND (StrLength(sReceived) < 255) AND (TimeCurrent() < iEndTime) DO
+			iLength = Min(iMaxRead, 255-StrLength(sReceived)); // Max read = 128 chars
+			sArg = IntToStr (hComPort) +",^"" +sBuffer+"^"," +IntToStr(iLength) +",1"
+			sBuffer = MsgRPC(hMsg,"r_ComRead", sArg, 0)
+//			ComRead(hComPort, sBuffer, iLength, 1);
+			sReceived = sReceived + sBuffer;
+		END
+	ELSE
+		// If 0 or negative timeout is specified, sequence search doesn't apply
+		iLength = iMaxRead;
+		sArg = IntToStr (hComPort) +",^"" +sReceived +"^"," +IntToStr(iLength) +"," +IntToStr(iTimeout)
+		sReceived = MsgRPC(hMsg,"r_ComRead", sArg, 0)
+
+//		ComRead(hComPort, sReceived, iLength, iTimeout);
+	END
+	MsgClose(Server1_AktiverIOServer, hMsg)
+	RETURN sReceived;
+END
+
+//
+//	Function Name:  _ComWriteSequence
+//
+//	Author:		Tim Munro
+//
+//	Revision	By		Date		Description
+//	1.0		T.Munro		28/12/00	Original
+//	1.1		T.Munro		27/09/01	Updated to split strings > 128 chars into multiple ComWrite() calls
+//							to support ComWrite() limit.
+//
+//	Function Description:	Writes a stream of characters to a com port. Will split the stream of data
+//				into sub-strings, with pauses between each.
+//
+//      Arguments:		hComPort  =		A handle to the com port
+//				sSequence = 		The text sequence to search for
+//
+//      Returned Value:		INT 	= 0 if successful
+//					= -1 if fails
+//
+//
+
+INT
+FUNCTION
+_ComWriteSequence(INT hComPort, STRING sSequence = "")
+
+	STRING	sSeqCurr = "";
+	STRING	sArg;
+	INT	iLength = -1;
+	INT	iDelay = 0;
+	INT	iStartPos = 0;
+	INT	iEndPos = -1;
+	INT	iError = 0,hMsg;
+
+	// Clear old data from the com port
+	_ClearCommsPort(hComPort);
+	hMsg = MsgOpen(Server1_AktiverIOServer, 0, 0 );
+	// Continue untile we have finished sending
+	WHILE NOT iError AND StrLength(sSequence) <> 0 DO
+		iStartPos = StrSearch(0, sSequence, "{Wait");
+		IF (iStartPos = -1) OR (iStartPos > 128) THEN
+			// No delay ... send the first 128 chars
+			iDelay = 0;
+			sSeqCurr = StrLeft(sSequence, 128);
+			sSequence = StrRight(sSequence, StrLength(sSequence) - StrLength(sSeqCurr));
+		ELSE
+			// Delay after sending
+			iEndPos = StrSearch(iStartPos, sSequence, "}");
+			iDelay = StrToInt(StrTrim(StrMid(sSequence, iStartPos + 6, iEndPos - iStartPos - 6)));
+			sSeqCurr = StrLeft(sSequence, iStartPos);
+			sSequence = StrRight(sSequence, StrLength(sSequence) - iEndPos - 1);
+		END
+
+		// Send request to modem
+		iLength = StrLength(sSeqCurr);
+		sArg = IntToStr (hComPort) +",^"" +sSeqCurr+"^"," +IntToStr(iLength) +",5"
+		iError = StrToInt (MsgRPC(hMsg,"ComWrite", sArg, 0))
+//		iError = ComWrite(hComPort, sSeqCurr, iLength, 5);
+
+		// Wait the determined time
+		Sleep(iDelay);
+	END
+
+	// Return the status of any errors
+	IF NOT iError THEN
+		MsgClose(Server1_AktiverIOServer, hMsg)
+		RETURN(0);
+	ELSE
+		MsgClose(Server1_AktiverIOServer, hMsg)
+		RETURN(-1);
+	END
+END
+
+//
+//	FUNCTION NAME:		_ComSendCommand
+//
+//	FUNCTION DESCRIPTION:	Sends a command string directly to a Citect port and returns
+//				any response from that command.
+//
+//	REV	DATE		WHO		DESCRIP
+//	1.0	27/06/01	T.Munro		Original
+//
+//	SOURCE:			<various>
+//
+//	ARGUMENTS:
+//		sPort		= The Citect Port Name port used to connect to this service
+//		sCommand	= Command to send to modem
+//					= "" to allow for manual entry of command
+//		sReply		= Wait for this reply (default is "OK")
+//		iTimeout	= Timeout for device reply (default = 2 secs)
+//
+//	RETURNED VALUE:
+//		sResponse	= Response from device on port
+//
+//	NOTES:
+//	To allow for Citect multi-threading conflicts any other code using the port
+//	must use the semaphore of the same name as the port.
+//
+
+STRING
+FUNCTION
+_ComSendCommand(STRING sPort = "", STRING sCommand = "", STRING sReply = "@(OK)", INT iTimeout = 2)
+
+	INT	hComPort;
+ 	INT	hSem = SemOpen(sPort, 2);
+
+	STRING	sResponse = "";
+
+	// Allow manual command entry
+	IF sCommand = "" THEN
+		sCommand = AdvInput("@(Enter command)", "", "");
+	END
+
+	// Execute the command
+	IF sCommand <> "" THEN
+
+		// Get the semaphore to access the port ...
+		IF SemWait(hSem, _PORT_LOCKED_TIMEOUT) = 0 THEN
+
+			// Open the com port
+			hComPort = _ConnectToPort(sPort, -1);
+			IF hComPort <> -1 THEN
+
+				// Send the string
+				_ComWriteSequence(hComPort,sCommand);
+				sResponse = _ComReadSequence(hComPort, sReply, iTimeout);
+
+				// Close the com port
+				_DisconnectPort( hComPort, -1);
+
+			ELSE
+				// Failed to get com port
+				LogPagingInfo("Fn._ComSendCommand. @Cannot open port) >"+sPort+"<", _OPERATION);
+			END
+
+			// Signal the semaphore
+			SemSignal(hSem);
+		ELSE
+			// Failed to get com port
+			LogPagingInfo("Fn._ComSendCommand. @(Cannot access semaphore) '"+sPort+"' to open port>"+sPort+"<", _OPERATION);
+
+		END
+	END
+
+	RETURN(sResponse);
+END
+
+//
+//	FUNCTION NAME:		_ClearCommsPort
+//
+//	FUNCTION DESCRIPTION: 	This function reads everything out of the read buffer until
+//				the buffer is empty.
+//
+//	REV	DATE		WHO		DESCRIP
+//	1.0	10/02/95	A.Winter	Original
+//	1.1	27/06/01	T.Munro		Only send to log when some chars are read. Allows
+//						polling services to call regularly without filling
+//						the log.
+//
+//	SOURCE:	
+//
+//	ARGUMENTS:
+//		hComPort	A handle to the com port
+//
+//	RETURNED VALUE:
+//		0
+//
+//	NOTES:
+//
+
+FUNCTION
+_ClearCommsPort(INT hComPort)
+
+	INT 	iLength;
+	INT		hMsg;
+	STRING 	sStr = "A";
+	STRING 	sArg;
+	hMsg = MsgOpen(Server1_AktiverIOServer, 0, 0 );
+	WHILE sStr <> "" DO
+		iLength = 128;
+			
+		sArg = IntToStr (hComPort) +",^"" +sStr +"^"," +IntToStr(iLength) +",0"
+		sStr = MsgRPC(hMsg,"r_ComRead", sArg, 0)
+		iLength = IntToStr(sStr)
+		IF iLength =0 THEN
+			sStr =""
+		ELSE
+			LogPagingInfo("Fn._ClearCommsPort. Cleared >" + sStr + "<", _PET);
+		END
+	END
+	MsgClose(Server1_AktiverIOServer, hMsg)
+
+
+END
+
+//
+//	FUNCTION NAME:		_CharSearch
+//
+//	FUNCTION DESCRIPTION:	Utility function that returns the position in a string that
+//				a given ASCII character number is positioned ( or -1 if not 
+//				found).
+//
+//	REV	DATE		WHO		DESCRIP
+//	1.0	10/2/95		A.Winter	Original
+//
+//	SOURCE:
+//
+//	ARGUMENTS:
+//		iOffset		An offset beginning from character position 0 into the string.
+//		sString		The string to be searched.
+//		iChar		The ASCII character number.
+//
+//
+//	RETURNED VALUE:
+//		The position in the string from 0. OR -1 if not found
+//
+//	NOTES:
+//
+
+INT
+FUNCTION
+_CharSearch(INT iOffset, STRING sString, INT iChar)
+	INT	iError;
+
+	iError=StrSearch( iOffset, sString, CharToStr(iChar));
+	RETURN(iError);
+END			
+
+
+//
+//	FUNCTION NAME:		_IsStrInt
+//
+//	FUNCTION DESCRIPTION:	Returns true if the string passed is a valid string 
+//	representation of an integer
+//
+//	REV	DATE		WHO		DESCRIP
+//	1.0	10/08/95	A.Winter	Original
+//
+//	SOURCE:
+//
+//	ARGUMENTS:
+//		sData		The string data to be checked
+//
+//	RETURNED VALUE:
+//		TRUE		If the string is a valid integer
+//		FALSE		If the string is not a valid integer
+//
+//	NOTES:
+//
+
+BINARY
+FUNCTION
+_IsStrInt( STRING sData)
+	INT	iCount	= 0;
+	STRING	sFirstChar	= "";
+
+	sData = StrTrim( sData);
+	sFirstChar = StrLeft( sData, 1);
+	IF sFirstChar = "-" OR sFirstChar = "+" OR _IsNum( StrToChar( sFirstChar)) THEN
+		FOR iCount = 1 TO StrLength( sData) - 1 DO
+			IF NOT _IsNum( StrGetChar( sData, iCount)) THEN
+				RETURN( FALSE);
+			END
+		END
+		RETURN( TRUE);
+	ELSE
+		RETURN( FALSE);
+	END
+END
+
+
+//
+//	FUNCTION NAME:		_IsNum
+//
+//	FUNCTION DESCRIPTION:	Checks a character to see if it is numeric ( 0-9 )
+//
+//	REV	DATE		WHO		DESCRIP
+//	1.0	10/8/95		A.Winter	Original
+//
+//	SOURCE:
+//
+//	ARGUMENTS:
+//		iChar		The character to check
+//
+//	RETURNED VALUE:
+//		TRUE		If the character is between 0 and 9.
+//		FALSE		If the character is not between 0 and 9.
+//
+//	NOTES:
+//
+
+BINARY
+FUNCTION
+_IsNum( INT iChar);
+	IF iChar >= 48 AND iChar <= 57 THEN
+		RETURN( TRUE);
+	ELSE
+		RETURN( FALSE);
+	END
+END
+
+
+//
+//	FUNCTION NAME:		_IsAlpha
+//
+//	FUNCTION DESCRIPTION:	Checks a character to see if it is alphabetic ( A-Z ) OR (a-z)
+//
+//	REV	DATE		WHO		DESCRIP
+//	1.0	10/8/95		A.Winter	Original
+//
+//	SOURCE:
+//
+//	ARGUMENTS:
+//		iChar		The charater to check
+//
+//	RETURNED VALUE:
+//		TRUE		If the character is between A and Z OR a AND z.
+//		FALSE		If the character is not between A and Z OR a AND z.
+//
+//	NOTES:
+//
+
+BINARY
+FUNCTION
+_IsAlpha( INT iChar);
+	IF ( iChar >= 65 AND iChar <= 90) OR (iChar >= 97 AND iChar <= 122) THEN
+		RETURN( TRUE);
+	ELSE
+		RETURN( FALSE);
+	END
+END
+
+
+//
+//	FUNCTION NAME:		_QueFlush
+//
+//	FUNCTION DESCRIPTION:	Flushes all elements from a Citect queue
+//
+//	REV	DATE		WHO		DESCRIP
+//	1.0	6/7/95		A.Winter	Original
+//
+//	SOURCE:
+//
+//	ARGUMENTS:
+//		hQue		A handle to a queue
+//
+//	RETURNED VALUE:
+//		0
+//
+//	NOTES:
+//
+
+INT
+FUNCTION
+_QueFlush( INT hQue)
+	INT	iInt;
+	STRING	sStr = "";
+
+	WHILE QueRead( hQue, iInt, sStr, 0) = 0 DO
+		;
+	END
+	RETURN( 0);
+END
+
+
+//
+//	FUNCTION NAME:		_QueClean
+//
+//	FUNCTION DESCRIPTION:	Flushes all elements of a specific integer type from a Citect queue
+//
+//	REV	DATE		WHO		DESCRIP
+//	1.0	6/7/95		A.Winter	Original
+//
+//	SOURCE:
+//
+//	ARGUMENTS:
+//		hQue		A handle to a queue
+//		iInt		A queue element type
+//
+//	RETURNED VALUE:
+//		0
+//
+//	NOTES:
+//
+
+INT
+FUNCTION
+_QueClean( INT hQue, INT iInt = -1)
+	STRING	sStr = "";
+
+	WHILE QuePeek( hQue, iInt, sStr, 2+8) = 0  DO
+		;
+	END
+	RETURN( 0);
+END
+
+
+//
+//	FUNCTION NAME:		_QueLast
+//
+//	FUNCTION DESCRIPTION:	Flushes all elements of a specific integer type from a Citect queue
+//				and returns the last queue element's string data
+//
+//	REV	DATE		WHO		DESCRIP
+//	1.0	6/7/95		A.Winter	Original
+//
+//	SOURCE:
+//
+//	ARGUMENTS:
+//		hQue		A handle to a queue
+//		iInt		A queue element type
+//
+//	RETURNED VALUE:
+//		The last element's string data OR "";
+//
+//	NOTES:
+//
+
+STRING
+FUNCTION
+_QueLast( INT hQue, INT iInt = -1)
+	INT	iError= -1;
+	STRING	sStr = "";
+
+	iError = QuePeek( hQue, iInt, sStr, 2)
+	IF iError = 0 THEN
+		WHILE QuePeek( hQue, iInt, sStr, 2+8) = 0  DO
+			;
+		END
+	END
+	RETURN( sStr);
+END
+
+
+//
+//	FUNCTION NAME:		_QueFirst
+//
+//	FUNCTION DESCRIPTION:	Gets the string data from the first element of a specific type number.
+//				If the type is found then the first element is removed.
+//
+//	REV	DATE		WHO		DESCRIP
+//	1.0	6/7/95		A.Winter	Original
+//
+//	SOURCE:
+//
+//	ARGUMENTS:
+//		hQue		A handle to a queue
+//		iInt		A queue element type
+//
+//	RETURNED VALUE:
+//		The last element's string data OR "";
+//
+//	NOTES:
+//
+
+STRING
+FUNCTION
+_QueFirst( INT hQue, INT iInt = -1)
+	INT	iError= -1;
+	STRING	sStr = "";
+
+	iError = QuePeek( hQue, iInt, sStr, 2)
+	IF iError = 0 THEN
+		iError = QuePeek( hQue, iInt, sStr, 2+8)
+	END
+	RETURN( sStr);
+END
+
+
+//
+//	FUNCTION NAME:		_RecordExist
+//
+//	FUNCTION DESCRIPTION:	This function returns a boolean result of the check on the 
+//				existance of a record or set of records in an SQL device
+//
+//				The function is also used as a way of selecting an appropriate
+//				range of records in the database table.
+//
+//	REV	DATE		WHO		DESCRIP
+//	1.0	17/07/95	A.Winter	Original
+//
+//	SOURCE:
+//
+//	ARGUMENTS:
+//		hSQL		A handle to an SQL connection
+//		sMDBTables	A Database table name
+//		sFieldName	A field in the table
+//		sSearchStr	The selection criteria
+//
+//	RETURNED VALUE:
+//		TRUE		If there are records
+//		FALSE		If no records exist
+//
+//	NOTES:
+//
+
+BINARY
+FUNCTION
+_RecordExist( INT hSQL, STRING sMDBTables, STRING sFieldName, STRING sSearchStr)
+	INT     iError = -1;
+
+	IF hSQL = -1 OR sMDBTables = "" OR sFieldName = "" OR sSearchStr = "" THEN
+		RETURN( FALSE);
+	END
+
+	ErrSet(1);
+	iError = SQLExec( hSQL, " SELECT *" +
+				" FROM "+sMDBTables +
+				" WHERE "+sFieldName+" = "+sSearchStr);
+
+	ErrSet(0);
+	IF iError <> 0 THEN
+		LogPagingInfo( "ERROR. Fn._RecordExist. SQL select error >"+SQLErrMsg(), _ERROR);
+	END
+
+	iError = SQLNext( hSQL);	!Checks if the record exists
+	IF iError = 0 THEN
+		RETURN( TRUE);
+	ELSE
+		RETURN( FALSE);
+	END
+END
+
+
+//
+//	FUNCTION NAME:		_RecordDelete
+//
+//	FUNCTION DESCRIPTION:	Deletes record from an SQL device where a field name matches a certain
+//				string.
+//
+//	REV	DATE		WHO		DESCRIP
+//	1.0	17/7/95		A.Winter	Original
+//
+//	SOURCE:
+//
+//	ARGUMENTS:
+//		hSQL		A handle to an SQL connection
+//		sMDBTables	A Database table name
+//		sFieldName	A field in the table
+//		sSearchStr	The deletion criteria
+//
+//	RETURNED VALUE:
+//		0		If OK
+//		-1		If error
+//
+//	NOTES:
+//
+
+INT FUNCTION
+_RecordDelete( INT hSQL, STRING sMDBTables, STRING sFieldName, STRING sSearchStr)
+	INT     iError = -1;
+	IF hSQL = -1 OR sMDBTables = "" OR sFieldName = "" OR sSearchStr = "" THEN
+		RETURN( -1);
+	END
+	IF _RecordExist( hSQL, sMDBTables, sFieldName, sSearchStr) THEN
+		ErrSet(1);
+		iError = SQLExec( hSQL,  " DELETE FROM "+sMDBTables+
+					 " WHERE "+sFieldName+" = "+sSearchStr);
+		ErrSet(0);
+		IF iError <> 0 THEN
+			LogPagingInfo( "ERROR. Fn._RecordDelete. SQL delete error >"+SQLErrMsg(), _ERROR);
+			UAG_SystemInfo("_RecordDelete","Paging System","@(Unable to delete record). @(Record may be referenced by other database tables).","-","-","-",TaskCluster(),_UAG_Fehler)
+			RETURN( -1);
+		END
+	END
+	RETURN( 0);
+END
+
+
+
+//
+//	FUNCTION NAME:		_MessageForm
+//
+//	FUNCTION DESCRIPTION:	An auto sizing message form that is on top always.
+//				Three modes are supported as follows;
+//				0	OK button only	(default)
+//				1	OK and Cancel buttons and returns choice
+//				2	No buttons, displays the form and does not wait for user
+//					and returns a handle to the form
+//
+//	REV	DATE		WHO		DESCRIP
+//	1.0	14/7/95		A.Winter	Original
+//
+//	SOURCE:			Anywhere and everywhere
+//
+//	ARGUMENTS:
+//		sTitle		Text to go on the form title bar
+//		sMessage	Text to display in the form
+//		iMode		0,1,2	as described above
+//
+//	RETURNED VALUE:
+//		-1			If form failed to open (FormRead)
+//		0			OK button pressed
+//		299 (306)	Cancel button pressed
+//		A handle to the form (if iMode = 2)
+//
+//	NOTES:
+//
+
+INT
+FUNCTION 
+_MessageForm(STRING sTitle,STRING sMessage,INT iMode = 0)
+
+	INT	hForm		= 0;
+	INT	iTitleLen	= 0;
+	INT	iMessLen	= 0;
+	INT	iFormWidth	= 20;
+	INT	iMessOffset	= 0;
+	INT	iButtonOffset	= 0;
+	INT	iError		= -1;
+
+
+	iTitleLen = StrLength( sTitle);
+	iMessLen = StrLength( sMessage);
+
+	iFormWidth = Max( iFormWidth, iTitleLen + 2);
+	iFormWidth = Max( iFormWidth, iMessLen + 2);
+
+	iMessOffset = (iFormWidth - iMessLen)/2;
+	hForm = FormNew( sTitle, iFormWidth, 2, 1+8+16);
+	FormPrompt( iMessOffset, 0, sMessage);
+
+	IF iMode = 0 THEN
+		iButtonOffset = ( iFormWidth/2) - 4;
+		FormButton( iButtonOffset, 1, " @(OK) ", 0, 1);
+	END	
+	IF iMode = 1 THEN
+		iButtonOffset = ( iFormWidth/2) - 10;
+		FormButton( iButtonOffset, 1, " @(OK) ", 0, 1);
+		FormButton( iButtonOffset+12, 1, " @(Cancel) ", 0, 2);
+	END
+	IF iMode = 2 THEN
+		iError = FormRead( 1);
+		IF iError = 0 THEN
+			RETURN( hForm);
+		ELSE
+			RETURN( -1);
+		END
+	ELSE
+		iError = FormRead( 0);
+		RETURN( iError);
+	END
+END
+
+//
+//	FUNCTION NAME:		StrToPrint
+//
+//	FUNCTION DESCRIPTION:	This function searches through an input string for unprintable characters
+//                              and replaces them with printable reprsentations.
+//
+//	REV	DATE		WHO		DESCRIP
+//	1.0	2/6/97		M.Pattison	Original
+//	2.0	12/02/98	M.Pattison	Changed while loop to use length instead of checking for 0x00.
+//	2.1	27/12/00	E.Black		Changed []s around char names to <>s. Changed IFs to SELECT CASE. Added <NUL>, <LF>, and <xxx>. 
+//	2.11	28/12/00	E.Black		Replaced ASCII codes with labels
+//	2.12	26/09/01	T.Munro		Added some more of the control characters
+//
+//	SOURCE:			Called from the any Logging or Trace functions
+//
+//	ARGUMENTS:
+//		sRaw	        Raw Input String To Be Checked.
+//
+//	RETURNED VALUE:
+//		sProcessed      Processed String, containing no unprintable characters.
+//                              -1 if Input String is too long.
+//
+//	NOTES:
+//
+//
+
+STRING
+FUNCTION
+StrToPrint(STRING sRaw)
+
+        INT iRawOffset = 0;
+        INT iProcOffset = 0;
+        INT iNewOffset = 0;
+        INT iChar = 0;
+
+        STRING sProcessed = "";
+
+	WHILE (iRawOffset < StrLength(sRaw)) AND (iProcOffset < 250) DO
+
+		IF iRawOffset >= 128 THEN
+			sRaw = StrMid(sRaw, 128, StrLength(sRaw) - 128);
+			iRawOffset = 0;
+		END
+
+                iChar = StrGetChar(sRaw, iRawOffset);
+
+		SELECT CASE iChar
+		CASE 32 TO 127
+			// Printable characters
+			sProcessed = sProcessed + StrMid(sRaw, iRawOffset, 1);
+                        iProcOffset = iProcOffset +1;
+		CASE _NULL
+			sProcessed = sProcessed + "<NUL>";
+			iProcOffset = iProcOffset + 5;
+		CASE _STX
+			sProcessed = sProcessed + "<STX>";
+			iProcOffset = iProcOffset + 5;
+		CASE _ETX
+			sProcessed = sProcessed + "<ETX>";
+                        iProcOffset = iProcOffset + 5;
+		CASE _EOT
+			sProcessed = sProcessed + "<EOT>";
+			iProcOffset = iProcOffset + 5;
+		CASE _ACK
+			sProcessed = sProcessed + "<ACK>";
+			iProcOffset = iProcOffset + 5;
+		CASE _TAB
+			sProcessed = sProcessed + "<TAB>";
+			iProcOffset = iProcOffset + 5;
+		CASE _LF
+			sProcessed = sProcessed + "<LF>";
+                        iProcOffset = iProcOffset + 4;
+		CASE _CR
+                        sProcessed = sProcessed + "<CR>";
+                        iProcOffset = iProcOffset + 4;
+		CASE _NAK
+                        sProcessed = sProcessed + "<NAK>";
+                        iProcOffset = iProcOffset + 5;
+		CASE _ESC
+			sProcessed = sProcessed + "<ESC>";
+			iProcOffset = iProcOffset + 5;
+		CASE _RS
+			sProcessed = sProcessed + "<RS>";
+                        iProcOffset = iProcOffset + 4;
+		CASE _US
+			sProcessed = sProcessed + "<US>";
+                        iProcOffset = iProcOffset + 4;
+		CASE _ENQ
+			sProcessed = sProcessed + "<ENQ>";
+			iProcOffset = iProcOffset + 5;
+		CASE _SOH
+			sProcessed = sProcessed + "<SOH>";
+			iProcOffset = iProcOffset + 5;
+		CASE ELSE							// All non printable chars will display as ASCII codes like <157> 
+			sProcessed = sProcessed + "<" + iChar:#0# + ">";
+                        iProcOffset = iProcOffset + 5;
+                END SELECT
+
+		iRawOffset = iRawOffset + 1;
+        END
+
+	IF iProcOffset >= 250 THEN
+		TraceMsg("Fn.StrToPrint. @(Processed String Too Long)");
+	END
+
+        RETURN sProcessed;
+END
+
+
+//
+//	FUNCTION NAME:		_24HrTimeOK
+//
+//	FUNCTION DESCRIPTION:	This function checks the time format of a string to be in
+//				hh:mm:ss format.
+//
+//
+//	REV	DATE		WHO		DESCRIP
+//	1.0	18/02/98	K.Mac		Original
+//	1.1	18/3/98		A.Winter	Modified to check for hrs > 23
+//	1.2	31/01/01	E.Black		Modified to work for 00:00:00 (TimeToStr returns 0 seconds, but 0 can also indicate an invalid time).
+//
+//	SOURCE:
+//
+//	ARGUMENTS:
+//			sTime	The time to check as a string.
+//
+//	RETURNED VALUE:
+//			0	The string is invalid 24hr time
+//			1	The string is in valid 24hr time
+//
+//	NOTES:
+//
+//
+
+INT
+FUNCTION
+_24HrTimeOK(STRING sTime)
+
+	INT	iSeconds = -1;
+
+	iSeconds = StrToTime(sTime);
+	IF ((TimeToStr(iSeconds, 5) = sTime) AND (iSeconds < 86400)) OR (sTime = "00:00:00") THEN
+		RETURN(1);
+	ELSE
+		RETURN(0);
+	END
+END
+
+//
+//	FUNCTION NAME:		AdvInput
+//
+//	FUNCTION DESCRIPTION:	This function is an advanced version of the Citect internal
+//				'Input()' function. This function allows the mode of the popup
+//				window to be set, thus allowing the popup to appear in front
+//				of other 'Always On Top' popups.
+//
+//	REV	DATE		WHO		DESCRIP
+//	1.0	02-06-01	TM		Original
+//
+//	SOURCE:
+//
+//	ARGUMENTS:
+//			sTitle		= Popup title
+//			sPrompt 	= Prompt string
+//			sDefault 	= Default value
+//			iMode		= Form display mode
+//
+//	RETURNED VALUE:
+//			Operator input
+//			= "" if cancel is pressed
+//
+//	NOTES:
+//
+//
+
+STRING
+FUNCTION
+AdvInput(STRING sTitle, STRING sPrompt, STRING sDefault, INT iMode = 25)
+
+
+	INT	iFormWidth = 32;
+	INT	iFormHeight = 3;
+	INT	hForm = FormNew(sTitle, iFormWidth, iFormHeight, iMode);
+
+	FormPrompt(0, 0, sPrompt);
+	FormInput(0, 1, "", sDefault, iFormWidth-4);
+	FormButton(iFormWidth - 26, iFormHeight - 1, " @(OK) ", 0, 1);
+	FormButton(iFormWidth - 11, iFormHeight - 1, " @(Cancel) ", 0, 2);
+	
+	IF FormRead(0) = 0 THEN
+		RETURN(sDefault);
+	ELSE
+		RETURN("")
+	END
+
+END
+
+//
+//	FUNCTION NAME:		SQLGetTrimField
+//
+//	FUNCTION DESCRIPTION:	Simply calls SQLGetField and trims the string result.
+//
+//	REV	DATE		WHO			DESCRIP
+//	1.0	03-06-08	A.Winter	Original
+//
+//	SOURCE:
+//
+//	ARGUMENTS:
+//
+//	RETURNED VALUE:
+//
+//	NOTES:
+//
+//
+
+STRING
+FUNCTION
+SQLGetTrimField(INT hSQL, STRING sField)
+	RETURN StrTrim(SQLGetField(hSQL, sField))
+END
+
+STRING
+FUNCTION
+r_ComRead (INT hPort,STRING sBuffer, INT iLength,INT iTimeOut)
+
+	ComRead(hPort, sBuffer, iLength, iTimeOut)
+	
+	RETURN  sBuffer
+END 
+
+

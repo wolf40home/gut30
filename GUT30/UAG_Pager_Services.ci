@@ -1,0 +1,588 @@
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//	
+// 	FILE:	UAG_Pager_Services.ci
+//
+//	Beschreibung:
+//
+//	This file contains the cicode for the paging services currently supported by
+//	the Citect V3 paging system
+//
+//		Funktionen mit Version 3.x sind freigegeben
+//
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	10.10.08	/	Schneider Electrik GmbH
+//	Version				74.33.81.02
+//
+//	NOTE:	Variable Prefixes;
+//			h	Local (function) var handle 	(INT data type)
+//			i	Local (function) var integer 	(INT data type)
+//			s	Local (function) var string 	(STRING data type)
+//			r	Local (function) var real 	(REAL data type)
+//
+//			mh	Module (file) var handle type 	(INT data type)
+//			mi	Module (file) var integer type 	(INT data type)
+//			ms	Module (file) var string type 	(STRING data type)
+//			mr	Module (file) var real type 	(REAL data type)
+//
+//			gh	Global (project) var handle type 	(INT data type)
+//			gi	Global (project) var integer type 	(INT data type)
+//			gs	Global (project) var string type 	(STRING data type)
+//			gr	Global (project) var real type 		(REAL data type)
+//
+//			_	Label defined in LABELS.DBF (remaining letters capitalised)
+//
+//			none	All capitalised represent VARIABLE Tags
+//
+//      Notes:
+//			
+//
+//	PUBLIC FUNCTIONS:
+//		ServicesActive
+//		ServicesEditForm
+//		KillPendingMsgs
+//
+//	FUNCTIONS:
+//
+//		///	System function ///
+//		_InitialiseServiceVars
+//		_InitialiseServices
+//		_SendToService
+//		_GetServiceInfo
+//			
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)//
+//
+
+//	GLOBAL CONSTANTS	//
+
+GLOBAL	STRING	gsServiceQueDataFmt = "{PagerNo,32}{Message,220}";
+GLOBAL	STRING	gsServiceNames[ _MAXSERV];
+
+//	GLOBAL VARS		//
+GLOBAL	INT		ghServiceQue[ _MAXSERV];
+GLOBAL	INT		ghServiceTask[ _MAXSERV];
+
+//
+//	FUNCTION NAME:		ServicesActive
+//
+//	FUNCTION DESCRIPTION:	A boolean check of the active status of any services.
+//
+//	REV	DATE		WHO		DESCRIP
+//	1.0	28/07/95	A.Winter	Original
+//
+//	SOURCE:			Called from the DspPagingActivity function in the ENGINE.CI file. 
+//				Can be called from a user function.
+//
+//	ARGUMENTS:
+//		<none>
+//
+//	RETURNED VALUE:
+//		TRUE		If any services are active sending messages
+//		FALSE		If no services are active
+//
+//	NOTES:
+//
+
+BINARY
+FUNCTION
+ServicesActive()
+	INT	iCount = -1;
+
+	FOR iCount = 0 TO _MAXSERV-1 DO
+		IF ghServiceTask[ iCount] > -1 THEN
+			RETURN( TRUE);
+		END
+	END
+
+	RETURN( FALSE);
+END
+
+
+//
+//	FUNCTION NAME:		ServicesEditForm
+//
+//	FUNCTION DESCRIPTION:	Opens a form to allow the selected servce details to be edited.
+//
+//	REV	DATE		WHO		DESCRIP
+//	1.0	28/07/95	A.Winter	Original
+//
+//	SOURCE:			Called from a button on the PagingPopup page. Can be called from a user function.
+//
+//	ARGUMENTS:
+//
+//	RETURNED VALUE:
+//		0		If OK
+//		-1		If Error
+//
+//	NOTES:
+//
+
+INT FUNCTION
+ServicesEditForm()
+
+	INT	iError		= -1;
+	INT	hSQL		= -1;
+	INT	iFormWidth	= 58;
+	INT	iFormHeight	= 8;
+	STRING	sName		= "";
+	STRING	sProtocol	= "";
+	STRING	sPhoneNo	= "";
+	STRING	sPassword	= "";
+	STRING	sPort		= "";
+
+	hSQL = SQLConnect("DSN=PAGING");
+	IF hSQL < 0 THEN
+		UAG_SystemInfo("ServicesEditForm","Paging System","@(Error connecting to ^"PAGING^" ODBC data source).","-","-","-",TaskCluster(),_UAG_Fehler);
+		RETURN(-1);
+	END
+	sName = _RecordSelectForm(hSQL, "@(Select Service to edit)", "Services", "Name", "Name <> '" + _SERVICE_NULL_E + "'");
+	IF sName <> "" THEN
+		iError = SQLExec(hSQL,	" SELECT * FROM Services WHERE Name = '" + sName + "'");
+		iError = SQLNext(hSQL);
+		IF iError = 0 THEN
+			sPhoneNo	= SQLGetField(hSQL, "PhoneNo");
+			sPassword	= SQLGetField(hSQL, "Password");
+			sPort		= SQLGetField(hSQL, "Port");
+			sProtocol	= SQLGetField(hSQL, "Protocol");
+
+			FormNew("@(Service Edit,13,r)", iFormWidth, iFormHeight, 1+8+16);
+
+			FormGroupBox(0, 0, iFormWidth, 8);
+			FormPrompt(3, 0, "@(SERVICE DETAILS,17,c)");
+			FormPrompt(2, 1, "@(Service Name.,18,l)");
+			FormPrompt(21, 1, sName);
+			FormPrompt(2, 2, "@(Protocol.,18,l)");
+			FormPrompt(21, 2, sProtocol);
+			FormInput(2, 3, "@(Phone &No.,18,l)", sPhoneNo, 20);
+			FormInput(2, 4, "@(&Passwort.,18,l)", sPassword, 20);
+			FormInput(2, 5, "@(&Citect Port Name.,18,l)", sPort, 20);
+			FormButton(iFormWidth - 26, iFormHeight - 1, " @(OK) ", 0, 1);
+			FormButton(iFormWidth - 11, iFormHeight - 1, " @(Cancel) ", 0, 2);
+
+			IF FormRead(0) = 0 THEN
+				iError = SQLExec(hSQL,	" UPDATE Services " +
+							" SET PhoneNo = '" + sPhoneNo + "'," +
+							" Password = '" + sPassword + "'," +
+							" Port = '" + sPort + "'" +
+							" WHERE Name = '" + sName + "'");
+
+				IF iError <> 0 THEN
+					LogPagingInfo("ERROR. Fn.ServicesEditForm. @(SQL Update error) " + SQLErrMsg(), _ERROR);
+				ELSE
+
+					// Re-initialise services. Means that - for example - polling tasks on ports will
+					// be kicked off
+					Sleep(5);
+					_InitialiseServices()
+				END
+			END
+		ELSE
+			LogPagingInfo("ERROR. Fn.ServicesEditForm. @(SQL Select Services error) " + SQLErrMsg(), _ERROR);
+			RETURN(-1);
+		END
+	END
+	SQLDisconnect(hSQL);
+	RETURN(0);
+END
+
+//
+//	FUNCTION NAME:		KillPendingMsgs
+//
+//	FUNCTION DESCRIPTION:	Used to clear the service queues of messages. Can only be called on the paging server only
+//					
+//
+//	REV	DATE		WHO		DESCRIP
+//	1.0	5/2/97		A.Winter	Original
+//
+//	SOURCE:
+//
+//	ARGUMENTS:
+//
+//	RETURNED VALUE:
+//
+//	NOTES:
+//
+
+FUNCTION
+KillPendingMsgs()
+	INT	iServiceNo;
+
+	IF _MessageForm( "@(WARNING)", "@(Clear all pending alarm pager messages). @(Are You Sure ?)", 1) = 0 THEN
+		FOR iServiceNo = 0 TO _MAXSERV-1 DO
+			_QueFlush( ghServiceQue[ iServiceNo]);
+		END
+	END
+END
+
+//
+//	FUNCTION NAME:		_InitialiseServiceVars
+//
+//	FUNCTION DESCRIPTION:	Sets globals vars to -1
+//
+//	REV	DATE		WHO		DESCRIP
+//	1.0	08/01/97	A.Winter	Original
+//
+//	SOURCE:			Called from a the PagingSystemStart function in ENGINE.CI
+//
+//	ARGUMENTS:
+//		<none>
+//
+//	RETURNED VALUE:
+//		0
+//
+//	NOTES:
+//
+
+INT
+FUNCTION
+_InitialiseServiceVars()
+
+	INT	iService;
+	FOR iService = 0 TO _MAXSERV - 1 DO
+		ghServiceTask[iService] = -1;
+		ghServiceQue[iService] = -1;
+	END
+
+	RETURN(0);
+END
+
+//
+//	FUNCTION NAME:		_InitialiseServices
+//
+//	FUNCTION DESCRIPTION:	Carries out any required tasks when a service is initiated. As
+//				some services require commands to be sent to the modems this
+//				function should be called whenever a new service is added.
+//
+//	REV	DATE		WHO		DESCRIP
+//	1.0	17/07/95	A.Winter	Original
+//	2.0	26/06/01	T.Munro		Updated to call a service specific startup task
+//						to allow, for example, monitoring of ports for
+//						incoming messages.
+//
+//	SOURCE:			Called from a the PagingSystemStart function in ENGINE.CI. Only
+//				executed on alarm servers.
+//
+//	ARGUMENTS:
+//		<none>
+//
+//	RETURNED VALUE:
+//		0		If succesful
+//		-1		If fails
+//
+//	NOTES:
+//
+
+INT
+FUNCTION
+_InitialiseServices()
+
+	STRING	sServiceName	= "";
+	STRING	sServicePort 	= "";
+	STRING	sServicePass	= "";
+	STRING	sServicePhone	= "";
+
+	INT	iService 	= 0;
+	INT	iError 		= 0;
+	INT	hSQL		= _RecordSelect("*", "Services", "Name NOT LIKE '"+_SERVICE_NULL_E +"'", "Name");
+
+	IF hSQL <> -1 THEN
+
+		// Carry out for all services ...
+		WHILE SQLNext(hSQL) = 0 AND (iService < _MAXSERV) DO
+
+			sServiceName = SQLGetField(hSQL, "Name");
+			sServicePort = SQLGetField(hSQL, "Port");
+			sServicePass = SQLGetField(hSQL, "Password");
+			sServicePhone = SQLGetField(hSQL, "PhoneNo");
+
+			// All services require creation of a Citect queue
+			gsServiceNames[iService] = sServiceName;
+			IF ghServiceQue[iService] = -1 THEN
+				ghServiceQue[iService] = QueOpen(sServiceName, 1);
+			END
+
+			IF ghServiceQue[iService] = -1 THEN
+				LogPagingInfo("Fn._InitialiseServices. @(Paging system start service failed) >Name:"+gsServiceNames[iService]+"<", _OPERATION);
+				iError = -1;
+			ELSE
+				// Spawn any service initialisation task
+				LogPagingInfo("Fn._InitialiseServices. @(Paging system start service OK)     >Name:"+StrPad(gsServiceNames[iService]," ", 16)+",Num:"+iService:#+",Que Hndl:"+ghServiceQue[iService]:#+"<", _OPERATION);
+				TaskNew(gsServiceNames[iService]+"_Initialise", "^""+sServicePort+"^",^""+sServicePass+"^",^""+sServicePhone+"^"", 0); 
+			END
+
+			iService = iService + 1;
+
+		END
+
+		// Disconnect from SQL 
+		SQLDisconnect(hSQL);
+	ELSE
+		LogPagingInfo("Fn._InitialiseServices. @(Paging system start failed) >@(Cannot connect to database)<", _ERROR);
+		iError = -1;
+	END
+
+	RETURN(iError);
+END
+
+//
+//	FUNCTION NAME:		_SendToService
+//
+//	FUNCTION DESCRIPTION:   Decodes which service to send the pager message to and intiates a service
+//				processing task for each service name.
+//
+//	REV	DATE		WHO		DESCRIP
+//	1.0	17/07/95	A.Winter	Original
+//	2.0	01/12/95	E.Dickinson	Added code to send to VoiceModem Service
+//	2.1	12/12/95	A.Winter	Added code for after hours pager number handling
+//	2.2	20/02/98	A.Winter	Added Ascom_T940 code.
+//	2.3	28/04/99	A.Winter	Removed the default use of normal hours if an after hours 
+//						pager number is not configured. This allows the AH to be used as
+//						a time filter to not page the user.
+//	2.4	02/01/01	E.Black		Added PageMart service. Changed IF blocks to SELECT CASE
+//	3.0	26/02/01	T.Munro		Added SMS_Modem service, made code more generic
+//	3.1	02/01/02	T.Munro		Updated to allow the sending of messages to pagers that are NOT
+//									in the paging database (i.e. dynamic pagers)
+//
+//	SOURCE:			Called from _SendAndCheck (ENGINE.CI), SendManualPager (PAGERS.CI) and other assorted
+//				functions.
+//
+//	ARGUMENTS:
+//		hSQL			= A handle to the MS-Access paging database
+//				 		= -1 to create a temporary handle
+//		sPagerName		= The name of pager to send the message to
+//				 		= "" if this is a dynamic pager (no entry in the paging DB)
+//		sPagerMessage	= The complete text string to be sent to the pager
+//		sPagerNo 		= The phone number / ID number of the pager
+//				 		= "" if this is to be retrieved from the paging DB
+//		sServiceName 	= The paging service associated with the pager
+//				 		= "" if this is to be retrieved from the paging DB
+//
+//	RETURNED VALUE:
+//		0		If OK
+//		-1		If Error
+//
+//	NOTES:
+//	This is the internal entry point for sending a message to a pager. It should only be called on a PC that is
+//	running as a paging server. See MsgManualPager (PAGERS.CI) for details on how to call from client PCs.
+//
+
+INT FUNCTION
+_SendToService( INT hSQL = -1, STRING sPagerName = "", STRING sPagerMessage = "", STRING sPagerNo = "", STRING sServiceName = "")
+
+	INT	bCloseSQLHandle = FALSE;
+	INT	iError		= 0;
+	INT	iServiceNo	= -1;
+	INT	hQueDataFmt 	= -1;
+	STRING	sPhoneNo	= "";
+	STRING	sPassword	= "";
+	STRING	sPort		= "";
+	STRING	sQueData	= "";
+
+	// GATHER ALL NECESSARY INFORMATION
+	//----------------------------------
+	// Do we need to create a temporary handle to the paging DB, or was one passed in?
+	IF hSQL = -1 THEN
+		bCloseSQLHandle = TRUE;
+		hSQL = SQLConnect("DSN=PAGING");
+	END
+
+	// Do we need to gather the info about this pager from the paging database, or is this a 'dynamic pager', with
+	// all necessary pager details passed in with the function call?
+	IF sPagerName <> "" THEN
+
+		// Gather pager details from database
+		IF NOT _RecordExist( hSQL, "Pagers", "Name", "'"+sPagerName+"'") THEN
+			// Error is logged by '_RecordExist()' fn
+			iError = -1;
+		ELSE
+
+			// Check if currently in the after hours time period
+			sServiceName = SQLGetField( hSQL, "Service");
+			IF AfterHours() THEN				
+				sPagerNo = SQLGetField( hSQL, "PagerNoAH");
+			ELSE
+				sPagerNo  = SQLGetField( hSQL, "PagerNo");
+			END
+		END
+	END
+
+	// Gather service details
+	IF NOT iError THEN
+
+		// Get some info from database
+		iError = SQLExec( hSQL, " SELECT * FROM Services WHERE Name = '"+ sServiceName +"'");
+		iError = iError + SQLNext( hSQL);
+		IF NOT iError THEN
+			sPhoneNo  = SQLGetField( hSQL, "PhoneNo");
+			sPassword = SQLGetField( hSQL, "Password");
+			sPort     = SQLGetField( hSQL, "Port");
+
+			// Build the item to send to the service queue
+			hQueDataFmt = FmtOpen( "ServiceQueDataFmt", gsServiceQueDataFmt, 1);
+			FmtSetField( hQueDatafmt, "PagerNo", sPagerNo);
+			FmtSetField( hQueDatafmt, "Message", sPagerMessage);
+			sQueData = FmtToStr( hQueDatafmt);
+			FmtClose( hQueDataFmt);
+
+			// Determine the service number
+			iServiceNo = StrToInt(_GetServiceInfo(sServiceName, -1, "ServiceNumber"));
+		ELSE
+		UAG_SystemInfo("_SendToService","Paging System","@(Selecting Service Name) "+sServiceName,"-","-","-",TaskCluster(),_UAG_Fehler);
+		END
+
+	END
+
+	// SEND THE MESSAGE TO THE APPROPRIATE SERVICE
+	//---------------------------------------------
+	// Some of the older (legacy) services require special code to be executed
+	// here. No new services added should require this !
+	IF NOT iError THEN
+		SELECT CASE sServiceName
+		CASE "Telstra_Mobile_R"
+
+			// This service requires two services to be called:
+			// STEP 1: Send to Telstra Mobile service
+			QueWrite( ghServiceQue[ iServiceNo], 0, sQueData);
+			IF ghServiceTask[ iServiceNo] = -1 THEN
+				ghServiceTask[ iServiceNo] = TaskNew( 	sServiceName+"_Send", 
+									iServiceNo:##+
+									",^""+ sServiceName+"^""+
+									",^""+ sPort +"^""+
+									",^""+ sPassword+"^""+
+									",^""+ sPhoneNo+"^""	, 0);
+			ELSE
+				LogPagingInfo( "Fn._SendToService. @(Adding message to active) " + sServiceName + " Service [" + IntToStr( ghServiceTask[iServiceNo] ) + "] ------", _DEBUG);
+			END
+
+			// STEP 2: Prepare to send to the Ring Phone service (launched below)
+			Sleep(5);
+			sServiceName = "Ring_Phone";
+			iServiceNo = StrToInt(_GetServiceInfo(sServiceName, -1, "ServiceNumber"));
+			iError = SQLExec( hSQL, " SELECT * FROM Services WHERE Name = '" + sServiceName + "'");
+			iError = iError + SQLNext( hSQL);				
+			IF NOT iError THEN
+				sPhoneNo  = SQLGetField( hSQL, "PhoneNo");
+				sPort     = SQLGetField( hSQL, "Port");
+			ELSE
+				UAG_SystemInfo("_SendToService","Paging System","@(Selecting Service Name) "+sServiceName,"-","-","-",TaskCluster(),_UAG_Fehler);
+			END
+
+		CASE "Miva_IVR"
+			// TMM 28/06/01 - I don't have the Miva IVR cicode to update to use the new 
+			// service model ....
+			sPassword = StrWord( sPagerMessage );	! sPassword removes the Alarm Record Number part of sPagerMessage
+			TaskNew( "IVRQueAlarm", "^""+sPagerNo+"^",^""+
+							     sPassword+"^",^""+
+							     sPagerMessage+"^"", 0);
+
+			// If necessary close the temporary DB handle
+			IF bCloseSQLHandle THEN	SQLDisconnect(hSQL);END
+			RETURN(0); // Don't continue to send below
+
+		END SELECT
+	END
+
+	// Send the message to the correct service
+	IF NOT iError THEN
+
+		// Add the item to the service queue
+		QueWrite( ghServiceQue[ iServiceNo], 0, sQueData);
+		// If necessary spawn the service task
+		IF ghServiceTask[ iServiceNo] = -1 THEN
+			ghServiceTask[ iServiceNo] = TaskNew( 	sServiceName+"_Send", 
+								iServiceNo:##+
+								",^""+ sServiceName+"^""+
+								",^""+ sPort +"^""+
+								",^""+ sPassword+"^""+
+								",^""+ sPhoneNo+"^""	, 0);
+		ELSE
+			LogPagingInfo( "Fn._SendToService. @(Adding message to active) " + sServiceName + " Service [" + IntToStr( ghServiceTask[iServiceNo] ) + "] ------", _DEBUG);
+		END
+	END
+
+
+	// Close any temporary DB handle
+	IF bCloseSQLHandle THEN	SQLDisconnect(hSQL); END
+
+	IF NOT iError THEN
+		RETURN( 0);
+	ELSE
+		RETURN( -1);
+	END
+END
+
+//
+//	FUNCTION NAME:		_GetServiceInfo
+//
+//	FUNCTION DESCRIPTION:	Returns information on one of the configured services.
+//					
+//
+//	REV	DATE		WHO		DESCRIP
+//	1.0	26/06/01	T.Munro		Original
+//	1.1	24/09/01	T.Munro		Updated to reference service properties by DB field name
+//
+//	SOURCE:			<various>
+//
+//	ARGUMENTS:	sServiceName	= Name of the service about which info is saught
+//					 = "" if referenced by number
+//			iServiceNum	= Number of the service about which info is saught
+//					 = -1 if referenced by name
+//			sField		= Info saught
+//					 = "ServiceNumber" if saught
+//					 = MS Access field name if DB info saught
+//
+//	RETURNED VALUE:
+//			sReturn		= Requested info if successful
+//					= "" if fails
+//
+//	NOTES:
+//
+
+STRING
+FUNCTION
+_GetServiceInfo(STRING sServiceName = "", INT iServiceNum = -1, STRING sField= "")
+
+	INT	hSQL = -1;
+	INT	iCount = 0;
+	STRING	sReturn = "";
+
+
+	// If necessary get the service name
+	IF sServiceName = "" THEN
+		ErrSet(1);
+		sServiceName = gsServiceNames[ iServiceNum];
+		ErrSet(0);
+	END
+
+	SELECT CASE sField
+
+	CASE "ServiceNumber"
+		// Loop through the glabal array until service name is found
+		WHILE (iCount < _MAXSERV) AND (gsServiceNames[iCount] <>  sServiceName) DO
+			iCount = iCount + 1;
+		END
+		IF gsServiceNames[iCount] = sServiceName THEN
+			sReturn = IntToStr(iCount);
+		ELSE
+			sReturn = "-1";
+		END
+
+	CASE "Name"
+		sReturn = sServiceName;
+
+	CASE ELSE
+		// Data comes from DB
+		hSQL = 	_RecordSelect("*", "Services", "Name = '"+sServiceName+"'", "");
+		IF hSQL <> -1 THEN
+			IF SQLNext(hSQL) = 0 THEN
+				sReturn = SQLGetField(hSQL, sField);
+			END
+
+			SQLDisconnect(hSQL);
+		END
+
+	END SELECT
+
+	RETURN(sReturn);
+END

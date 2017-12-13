@@ -1,0 +1,118 @@
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//	
+// 	FILE:	UAG_Pager_zzPagecontrol.ci
+//
+//	Beschreibung:
+//
+//	This file contains the cicode for the Ring Phone service.
+//
+//		Funktionen mit Version 3.x sind freigegeben
+//
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	05.10.09	/	Schneider Electrik GmbH
+//	Version				74.33.81.02
+//
+//	NOTE:	Variable Prefixes;
+//			h	Local (function) var handle 	(INT data type)
+//			i	Local (function) var integer 	(INT data type)
+//			s	Local (function) var string 	(STRING data type)
+//			r	Local (function) var real 		(REAL data type)
+//
+//			mh	Module (file) var handle type 	(INT data type)
+//			mi	Module (file) var integer type 	(INT data type)
+//			ms	Module (file) var string type 	(STRING data type)
+//			mr	Module (file) var real type 	(REAL data type)
+//
+//			gh	Global (project) var handle type 	(INT data type)
+//			gi	Global (project) var integer type 	(INT data type)
+//			gs	Global (project) var string type 	(STRING data type)
+//			gr	Global (project) var real type 		(REAL data type)
+//
+//			_	Label defined in LABELS.DBF (remaining letters capitalised)
+//
+//			none	All capitalised represent VARIABLE Tags
+//
+//	PUBLIC FUNCTIONS:
+//
+//		Page_Control_Send
+//			
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)//
+//
+INT FUNCTION
+Page_Control_Send(INT iServiceNo, STRING sServiceName, STRING sPort, STRING sPassword, STRING sPhoneNumber)
+	INT	iMsgMax = 20;
+	INT	iMsgDelay = 5;
+	INT	iMsgLength = 80;
+RETURN (_Page_Control(iServiceNo, sServiceName, iMsgMax, iMsgDelay, iMsgLength, sPhoneNumber, sPassword, sPort));
+END
+
+PRIVATE INT FUNCTION
+_Page_Control( INT iServiceNo, STRING sServiceName, INT iMsgMax, INT iMsgDelay, INT iMsgLength, STRING sPhoneNo, STRING sPassword, STRING sPort)
+	INT	iError;
+	INT	iReturn = 0;
+	INT	iConnectRetry = 5;
+	INT	iInt;
+	INT	iMsgCount = 1;
+	INT	hComPort = -1;
+	INT	hServiceLog = -1;
+	INT	hQueDataFmt = -1;
+	STRING	sQueData;
+	STRING	sPagerNo;
+	STRING	sMessage;
+	LogPagingInfo("Fn._Page_Control. @(Initiating Service) >" + sServiceName + "<", _OPERATION);
+	LogPagingInfo("Fn._Page_Control. @(Phone No)           >" + sPhoneNo + "<", _OPERATION);
+	LogPagingInfo("Fn._Page_Control. @(Service Password)   >" + sPassword + "<", _OPERATION);
+	LogPagingInfo("Fn._Page_Control. @(Citect Port)        >" + sPort + "<", _OPERATION);
+
+	hQueDataFmt = FmtOpen( "ServiceQueDataFmt", gsServiceQueDataFmt, 1);
+
+
+	OBJECT PageCtrl;
+	PageCtrl = CreateObject("informel.PageControlX.1");
+	WHILE QueLength( ghServiceQue[ iServiceNo]) > 0 AND iMsgCount <= iMsgMax AND iError <> -2 DO
+		QueRead( ghServiceQue[ iServiceNo] , iInt, sQueData, 0);
+		StrToFmt( hQueDataFmt, sQueData);
+		sPagerNo = StrTrim( FmtGetField( hQueDataFmt, "PagerNo"));
+		sMessage = StrTrim( FmtGetField( hQueDataFmt, "Message"));
+		IF sPagerNo <> "" AND sMessage <> "" THEN
+           	!If the message is too long for the selected service then
+           	!truncate it and Log the action
+            IF StrLength(sMessage) > iMsgLength THEN
+			sMessage = StrLeft (sMessage, iMsgLength);
+            LogPagingInfo("ERROR.Fn._Page_Control. @(Invalid Msg Length For Selected Service, Msg Has Been Truncated)",_PET);
+            END
+			iError = _ObjectCallMethod(PageCtrl,"DoCommand", "[send(*|" + sPagerNo + "|" + sMessage + "|||||)]");
+			iMsgCount = iMsgCount + 1;
+		END
+	END
+
+	ghServiceTask[ iServiceNo] = -1;
+	FmtClose( hQueDataFmt);
+
+	RETURN(iReturn);
+	
+	
+	
+	
+END
+
+PUBLIC FUNCTION
+PageControlSendSpecial(STRING sTarget, STRING sType, STRING sNumber, STRING sSignCode, STRING sMessage)
+
+	OBJECT PageCtrl;
+	PageCtrl = CreateObject("informel.PageControlX.1");
+	_ObjectCallMethod(PageCtrl,"DoCommand", "[send(S|" + sTarget  + ":" + sType + ":" + sNumber + ":" + sSignCode + "|" + sMessage + "|||||)]");
+	
+END
+
+PUBLIC FUNCTION
+PageControlSetupTargets()
+
+	OBJECT PageCtrl;
+	PageCtrl = CreateObject("informel.PageControlX.1");
+	_ObjectCallMethod(PageCtrl,"DoCommand", "[setup(R)]");
+
+END
+

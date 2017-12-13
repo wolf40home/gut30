@@ -1,0 +1,575 @@
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//	
+// 	FILE:	UAG_Pager_Pagers.ci
+//
+//	Beschreibung:
+//
+//		Funktionen mit Version 3.x sind freigegeben
+//
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	10.10.08	/	Schneider Electrik GmbH
+//	Version				75.33.11.06
+//
+//	NOTE:	Variable Prefixes;
+//			h	Local (function) var handle 	(INT data type)
+//			i	Local (function) var integer 	(INT data type)
+//			s	Local (function) var string 	(STRING data type)
+//			r	Local (function) var real 		(REAL data type)
+//
+//			mh	Module (file) var handle type 	(INT data type)
+//			mi	Module (file) var integer type 	(INT data type)
+//			ms	Module (file) var string type 	(STRING data type)
+//			mr	Module (file) var real type 	(REAL data type)
+//
+//			gh	Global (project) var handle type 	(INT data type)
+//			gi	Global (project) var integer type 	(INT data type)
+//			gs	Global (project) var string type 	(STRING data type)
+//			gr	Global (project) var real type 		(REAL data type)
+//
+//			_	Label defined in LABELS.DBF (remaining letters capitalised)
+//			none	All capitalised represent VARIABLE Tags
+//
+//      Notes:
+//			
+//
+//	PUBLIC FUNCTIONS:
+//
+//		///	User functions ///
+//		PagerEdit( INT iMode = 0)
+//		DspManualPagingForm()
+//		MsgManualPager( STRING sPagerName, STRING sMessage)
+//		SendManualPager( STRING sPagerName, STRING sMessage)
+//
+//		///	System function ///
+//		_PagerEditForm( INT hSQL, STRING sPagerName, INT iMode = 0)
+//		_GetPagerInfo(STRING sPagerName, STRING sPhoneNum, STRING sField)
+//		_SetPagerInfo(STRING sPagerName, STRING sField, STRING sValue)
+//			
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)//
+//
+
+
+//	MODULE CONSTANTS	//
+
+
+//	MODULE VARS		//
+
+
+//
+//	FUNCTION NAME:		PagerEdit
+//
+//	FUNCTION DESCRIPTION:	This function is used to add, delete and edit pager entries in the
+//				'Pagers' table in the PAGINGV3.MDB MS-Access database.
+//				Mode 0.		Edits an existing entry 
+//				Mode 1.		Adds a new entry
+//				Mode 2.		Deletes an existing entry
+//
+//	REV	DATE		WHO		DESCRIP
+//	1.0	17/07/95	A.Winter	Original
+//	1.1	21/02/01	T.Munro		Updated to use label _SERVICE_NULL_E
+//
+//	SOURCE:			Called from the three buttons on the PagingPopup page associated with editting
+//					pagers. Can also be called from a user function.
+//	ARGUMENTS:
+//		iMode		As described above.
+//
+//	RETURNED VALUE:
+//		0		If OK
+//		-1		If Error
+//
+//	NOTES:
+//
+
+INT FUNCTION
+PagerEdit( INT iMode = 0)
+	INT	iError		= -1;
+	INT	hSQL		= -1;
+	STRING	sPagerName	= "";
+
+	hSQL = SQLConnect("DSN=PAGING");
+	IF hSQL < 0 THEN
+		UAG_SystemInfo("PagerEdit","Paging System","@(Error connecting to ^"PAGING^" ODBC data source).","-","-","-",TaskCluster(),_UAG_Fehler)
+		RETURN( -1);
+	END
+
+	sPagerName = _RecordSelectForm( hSQL, "@(Pager zum ändern auswählen)", "Pagers", "Name", "Service <> '"+ _SERVICE_NULL_E +"'", 3);
+	IF sPagerName <> "" THEN
+		_PagerEditForm( hSQL, "@(Edit Pager Details)", sPagerName, 0);
+	END
+	SQLDisconnect( hSQL);
+	RETURN( 0);
+END
+
+//
+//	FUNCTION NAME:		DspManualPagingForm
+//
+//	FUNCTION DESCRIPTION:	Opens a form to allow a manual pager message to be sent
+//
+//	REV	DATE		WHO		DESCRIP
+//	1.0	17/7/95		A.Winter	Original
+//	1.1	11/10/01	E.Black		Added IF block to load first record into combobox
+//								so a blank doesn't show up in the list.
+//
+//	SOURCE:			Called from a button on the Paging Popup page
+//
+//	ARGUMENTS:
+//
+//	RETURNED VALUE:
+//		0		If OK
+//		-1		If Error
+//
+//	NOTES:
+//		Can be called as a user function
+//
+
+INT FUNCTION
+DspManualPagingForm()
+	INT	iError;
+	INT	iFormWidth	= 55;
+	INT	iFormHeight	= 5;
+	INT	hSQL		= -1;
+	STRING	sMessage	= "";
+	STRING	sPagerName	= "";
+	
+	hSQL = SQLConnect("DSN=PAGING");
+	IF hSQL < 0 THEN
+		UAG_SystemInfo("DspManualPagingForm","Paging System","@(Error connecting to ^"PAGING^" ODBC data source).","-","-","-",TaskCluster(),_UAG_Fehler)
+		RETURN( -1);
+	END
+
+	FormNew( "Manual Pager Message senden", iFormWidth, iFormHeight, 1+8+16);
+
+	FormGroupBox( 0, 0, iFormWidth, 5);
+	FormPrompt( 3, 0, "@(MESSAGE DETAILS,17,c)");
+	FormPrompt( 2, 1, "@(Message to pager,17,l):  ");
+	FormInput( 0, 2, "", sMessage, iFormWidth - 4);
+
+	SQLExec( hSQL,	" SELECT Name" +
+			" FROM Pagers" +
+			" WHERE Name <> '" + _STEP_DELAY_E + 
+			"' AND Name <> '" + _STEP_GOTO_E + "'" +
+			" ORDER BY Name");
+	IF SQLNext(hSQL) = 0 THEN
+		sPagerName = SQLGetField(hSQL, "Name");
+	END
+	FormComboBox( 30, 1, 23, 6, sPagerName, 0);
+	WHILE SQLNext( hSQL) = 0 DO
+		FormAddList( SQLGetField( hSQL, "Name"));
+	END
+	FormButton( iFormWidth - 26, iFormHeight - 1, " @(OK) ", 0, 1);
+	FormButton( iFormWidth - 11, iFormHeight - 1, " @(Cancel) ", 0, 2);
+
+	IF FormRead(0) = 0 THEN
+		MsgManualPager( sPagerName, sMessage);
+	END
+	SQLDisconnect( hSQL);
+END
+
+//
+//	FUNCTION NAME:		MsgManualPager
+//
+//	FUNCTION DESCRIPTION:	Forwards a manual pager message to the alarm server for
+//				processing.
+//
+//	REV	DATE		WHO		DESCRIP
+//	1.0	17/7/95		A.Winter	Original
+//	1.1	27/09/01	T.Munro		Limit <message> length to support the MsgRPC functionality used.
+//
+//	SOURCE:			Called from a button on the Paging Popup page
+//
+//	ARGUMENTS:
+//		sPagerName	A valid pager name
+//		sMessage	A text message
+//
+//	RETURNED VALUE:
+//		0		If OK
+//		-1		If Error
+//
+//	NOTES:
+//		Can be called as a user function on any client PC.
+//		
+//
+
+INT
+FUNCTION
+MsgManualPager( STRING sPagerName, STRING sMessage)
+	INT	hMsg = -1;
+	
+	hMsg = MsgOpen( "Alarm", 0, 0);
+	IF hMsg <> -1 THEN
+		// Max message length = 255 - 16 (PagerName) - 5 (param passing) = 
+		MsgRPC( hMsg, "SendManualPager", "^"" +sPagerName+ "^",^"" + StrLeft(sMessage,234) + "^"", 1);
+		MsgClose( "Alarm", hMsg);
+	ELSE
+		UAG_SystemInfo("MsgManualPager", "System", "@(Unable to open message to alarm server)" ,"-","-","-",TaskCluster(),_UAG_Fehler)
+	END
+	RETURN( hMsg);
+END
+
+//
+//	FUNCTION NAME:		SendManualPager
+//
+//	FUNCTION DESCRIPTION:	Forwards a manual pager message to the services module
+//
+//	REV	DATE		WHO		DESCRIP
+//	1.0	17/7/95		A.Winter	Original
+//
+//	SOURCE:			MsgManualPager
+//
+//	ARGUMENTS:
+//		sPagerName	A valid pager name
+//		sMessage	A text message
+//
+//	RETURNED VALUE:
+//		0		If OK
+//		-1		If Error
+//
+//	NOTES:
+//		Can be called as a user function. Can only be called on alarm server.
+//		
+//
+
+INT FUNCTION
+SendManualPager( STRING sPagerName, STRING sMessage)
+	INT	iError = 0;
+	INT	hSQL = SQLConnect("DSN=PAGING");
+
+	IF hSQL < 0 THEN
+		UAG_SystemInfo("SendManualPager","Paging System","@(Error connecting to ^"PAGING^" ODBC data source).","-","-","-",TaskCluster(),_UAG_Fehler)
+		RETURN( -1);
+	END
+	IF _SendToService( hSQL, sPagerName, sMessage) <> 0 THEN
+		UAG_SystemInfo("SendManualPager","Paging System","@(Unable to send message to service). @(Check pager name exists).","-","-","-",TaskCluster(),_UAG_Fehler)
+		iError = -1;
+	END
+	SQLDisconnect( hSQL);
+
+	RETURN(iError);
+END
+
+//
+//	FUNCTION NAME:		_PagerEditForm
+//
+//	FUNCTION DESCRIPTION:	Opens a form to allow the selected pager details to be editted.
+//				Mode 0.		Edits an existing entry
+//				Mode 1.		Adds a new entry
+//
+//	REV	DATE		WHO		DESCRIP
+//	1.0	17/7/95		A.Winter	Original
+//	1.1	23/12/97	K.Mac		Extended FormInput field length of Pager No's from 11 to 19.
+//						NOTE: Changing this field length will require similar changes
+//						to be made to the Access pager MDB, AND, the padding of this field.
+//	1.2	25/02/98	K.Mac		Took out spaces in the SQL UPDATE to allow longer Pager Name & No.
+//	1.3	07/01/01	T.Munro		Added '[PAGINGV3]DefaultHeader' param to better support translation,
+//						Updated to use _SERVICE_NULL_E
+//						Added TxReplyInfo field
+//	1.4	7/30/01		E.Black		Added TxValue field
+//	1.5	27/09/01	T.Munro		Added RxInbound field (allows for security on received messages)
+//	1.6	16/10/01	E.Black		Changed combobox mode so services are sorted
+//	1.7	07/10/2004	Thilak Chandra	sSQL splitted INTo 2 STRINGs FOR SQLExec as it gives error when sSQL >= 255 characters
+//	1.8	29/05/2008	A.Winter	Merged V3.84R1 and 3.85
+//
+//	SOURCE:			Called from the PagerEdit function after a valid pager name is selected.
+//
+//	ARGUMENTS:
+//		hSQL		A handle to an SQL connection ( The PAGINGV3.MDB file )
+//		sTitle		A string to display in the popup title bar
+//		sPagerName	A valid pager name to be editted
+//		iMode		As described above
+//
+//	RETURNED VALUE:
+//		0		If OK
+//		-1		If Error
+//
+//	NOTES:
+//
+
+INT FUNCTION
+_PagerEditForm( INT hSQL, STRING sTitle, STRING sPagerName, INT iMode = 0)
+	INT		iError		= -1;
+	INT		iFormWidth	= 75;
+	INT		iFormHeight	= 14;
+	STRING	sServiceName	= "";
+	STRING	sPagerNo	= "";
+	STRING	sPagerNoAH	= "";
+	STRING	sHeader		= ParameterGet(gsUAG_LIB_NAME, "PagerDefaultHeader", "CiTAlm:");
+	STRING	sTxHeader	= "1";
+	STRING	sTxTag		= "1";
+	STRING	sTxName		= "0";
+	STRING	sTxDesc		= "0";
+	STRING	sTxOnTime	= "1";
+	STRING  sTxValue	= "0";
+	STRING	sTxUserMsg	= "1";
+	STRING	sTxType		= "0";
+	STRING	sTxReplyInfo	= "0";
+	STRING	sRxPriv		= "0";
+	STRING	sSQL1 		= "";
+	STRING  sSQL2 		= "";
+
+
+	IF iMode = 0 THEN
+		iError = SQLExec( hSQL,	" SELECT *"	+
+					" FROM Pagers" +
+					" WHERE Name = '"+sPagerName+"'");
+		iError = SQLNext( hSQL);
+		IF iError = 0 THEN
+			sPagerNo		= SQLGetField( hSQL, "PagerNo");
+			sPagerNoAH		= SQLGetField( hSQL, "PagerNoAH");
+			sServiceName	= SQLGetField( hSQL, "Service");
+			sHeader			= SQLGetField( hSQL, "Header");
+			sTxHeader		= SQLGetField( hSQL, "TxHeader");
+			sTxTag			= SQLGetField( hSQL, "TxTag");
+			sTxName			= SQLGetField( hSQL, "TxName");
+			sTxDesc			= SQLGetField( hSQL, "TxDesc");
+			sTxOnTime		= SQLGetField( hSQL, "TxOnTime");
+			sTxValue 		= SQLGetField( hSQL, "TxValue");
+			sTxUserMsg		= SQLGetField( hSQL, "TxUserMsg");
+			sTxReplyInfo 	= SQLGetField( hSQL, "TxReplyInfo");
+			sTxType			= SQLGetField( hSQL, "TxType");
+			sRxPriv			= SQLGetField( hSQL, "RxPriv");
+		ELSE
+			LogPagingInfo("ERROR.Fn._PagerEditForm. @(SQL Select Pagers error) "+SQLErrMsg(), _ERROR);
+			RETURN( -1);
+		END
+	END
+	iError = SQLExec( hSQL,	" SELECT Name" +
+				" FROM Services" +
+				" WHERE Name <> '" +
+				_SERVICE_NULL_E +
+				"' ORDER BY Name");
+	IF iError <> 0 THEN
+		LogPagingInfo("ERROR.Fn._PagerEditForm. @(SQL Select Services error) " + SQLErrMsg(), _ERROR);
+		RETURN( -1);
+	END
+
+	FormNew( sTitle, iFormWidth, iFormHeight, 1+8+16);
+
+	FormGroupBox( 0, 0, iFormWidth, 4, "@(PAGER DETAILS,15,c)");
+	IF iMode = 0 THEN
+		FormPrompt( 1, 1, "@(Pager Name,14,l)");
+		FormPrompt( 16, 1, sPagerName);
+	END
+	IF iMode = 1 THEN
+		FormInput( 1, 1, "@(Pager Name,13,l)", sPagerName, 18 );
+	END
+	FormInput( 30, 1, "Pager Nr./ Name)", sPagerNo, 19 );
+	FormInput( 37, 2, "Pager Nr. AH", sPagerNoAH, 19 );
+	FormPrompt( 1, 2, "Service");
+	FormComboBox( 16, 2, 19, 4,  sServiceName, 0);
+	WHILE SQLNext( hSQL) = 0 DO
+		FormAddList( SQLGetField( hSQL, "Name"));
+	END
+
+	FormGroupBox( 0, 4, iFormWidth, 7, "@(content of the message,23,c)");
+	FormPrompt( 2, 5, "Kopf Text:");
+	FormCheckBox( 17, 5, "", sTxHeader);
+	FormEdit( 20, 5, sHeader, 14);
+
+	FormPrompt( 2, 6, "@(Alarm Details,14,r):");
+
+	FormCheckBox( 17, 7, "@(Tag,13,l)", sTxTag);
+	FormCheckBox( 17, 8, "@(Name,13,l)", sTxName);
+	FormCheckBox( 36, 6, "@(Description,13,l)", sTxDesc);
+	FormCheckBox( 36, 7, "@(On Time,13,l)", sTxOnTime);
+	FormCheckBox( 36, 8, "@(Value,13,l)", sTxValue);
+	FormCheckBox( 55, 6, "@(User Message,13,l)", sTxUserMsg);
+	FormCheckBox( 55, 7, "@(Reply Info,13,l)", sTxReplyInfo);
+
+	FormGroupBox( 0, 10, iFormWidth, 3, "@(OTHER OPTIONS,15,c)");
+	FormInput( 1, 11, "@(Rx Privilege,13,r)", sRxPriv, 3);
+
+	FormButton( iFormWidth - 26, iFormHeight - 1, "@(OK,9,c)", 0, 1);
+	FormButton( iFormWidth - 11, iFormHeight - 1, "@(Cancel,9,c)", 0, 2);
+
+	IF FormRead(0) = 0 THEN
+		IF _RecordExist( hSQL, "Services", "Name", "'"+StrTrim( sServiceName)+"'") THEN
+			IF iMode = 0 THEN
+				sSQL1 = 	" UPDATE Pagers "+
+					" SET PagerNo='" + sPagerNo + "'," +
+					" PagerNoAH='" + sPagerNoAH + "'," +
+					" Service='" + sServiceName + "'," +
+					" Grouped=0," +
+					" Header='" + sHeader + "'," +
+					" TxHeader=" + sTxHeader + "," +
+					" TxTag=" + sTxTag + ",";
+				sSQL2 = " TxName=" + sTxName + "," +
+					" TxDesc=" + sTxDesc+"," +
+					" TxOnTime=" + sTxOnTime + "," +
+					" TxValue=" + sTxValue + "," +
+					" TxType=" + sTxType + "," +
+					" TxUserMsg=" + sTxUserMsg + "," +
+					" TxReplyInfo=" + sTxReplyInfo + "," +
+					" RxPriv=" + sRxPriv+
+					" WHERE Name='" + sPagerName + "'";
+				SQLSet(hSQL, sSQL1);
+				SQLAppend(hSQL, sSQL2);
+				iError = SQLExec( hSQL, "");
+				IF iError <> 0 THEN
+					LogPagingInfo("ERROR.Fn._PagerEditForm. @(SQL Update error) " + SQLErrMsg(), _ERROR);
+					RETURN( -1);
+				END
+			END
+			IF iMode = 1 THEN
+				IF sPagerName <> "" THEN
+					ErrSet(1);
+					sSQL1 = 	" INSERT INTO Pagers " +
+						" (Name,PagerNo,PagerNoAH,Service,Grouped,Header,TxHeader,TxTag,TxName" +
+						", TxDesc,TxOnTime,TxValue,TxType,TxUserMsg,TxReplyInfo,RxPriv)" +
+						" VALUES ('";
+					sSQL2 = sPagerName + "','" +
+							    sPagerNo+"','" +
+							    sPagerNoAH + "','" +
+							    sServiceName + "'," +
+							    "0,'" +
+							    sHeader + "'," +
+							    sTxHeader + "," +
+							    sTxTag + "," +
+							    sTxName + "," +
+							    sTxDesc + "," +
+							    sTxOnTime + "," +
+							    sTxValue + "," +
+							    sTxType + "," +
+							    sTxUserMsg + "," +
+							    sTxReplyInfo + "," + 
+							    sRxPriv + ")";
+					SQLSet(hSQL, sSQL1);
+					SQLAppend(hSQL, sSQL2);
+					ErrSet( 0);
+					iError = SQLExec(hSQL, "");
+					IF iError <> 0 THEN
+					UAG_SystemInfo("_PagerEditForm","Paging System","@(Unable to add new Pager name) ^"" + sPagerName+
+								"^". @(Check that it does not already exist).","-","-","-",TaskCluster(),_UAG_Fehler);
+						RETURN( -1);
+					END
+				END
+	        	END
+		ELSE
+			_MessageForm( "@(Paging System Error)", "@(Invalid Service Name).",0);
+		END
+	END
+	RETURN( 0);
+END
+
+//
+//	FUNCTION NAME:		_GetPagerInfo
+//
+//	FUNCTION DESCRIPTION:	Wrapper function to allow pager information to be retrieved.
+//				This function should be extended when further info is required.
+//
+//	REV	DATE		WHO		DESCRIP
+//	1.0	28/06/01	T.Munro		Original
+//	1.1	24/09/01	T. Munro	Updated to reference pager properties by DB field name
+//
+//	SOURCE:			<various>
+//	ARGUMENTS:
+//		sPagerName	= Name of the pager
+//				= "" if identifying pager by phone number
+//		sPagerNum	= Phone number of the pager
+//				= "" if identifying pager name
+//		sField		= DB field saught
+//
+//	RETURNED VALUE:
+//		sReturn		= Data requested
+//
+//	NOTES:
+//
+
+STRING
+FUNCTION
+_GetPagerInfo(STRING sPagerName, STRING sPhoneNum, STRING sField)
+
+	INT	hSQL		= -1;
+	STRING	sReturn		= "";	
+	
+	// Grab the database record for this pager
+	IF sPagerName <> "" THEN
+		hSQL = _RecordSelect("*", "Pagers", "Name = '"+sPagerName+"'", "");
+	ELSE
+		hSQL = _RecordSelect("*", "Pagers", "PagerNo = '"+sPhoneNum+"' OR PagerNoAH = '"+sPhoneNum+"'", "");
+	END
+
+	IF hSQL <> -1 THEN
+
+		IF SQLNext(hSQL) = 0 THEN
+			sReturn = SQLGetField(hSQL, sField);
+		ELSE
+			LogPagingInfo("Fn._GetPagerInfo. @(Failed to locate pager) >Name/Ph Num= '"+sPagerName+"' / " + "'" + sPhoneNum + "'<", _ERROR);
+		END
+		SQLDisconnect(hSQL);
+	ELSE
+		LogPagingInfo("Fn._GetPagerInfo. @(Failed to access ODBC Database)", _ERROR);
+	END
+	
+	RETURN(sReturn);
+END
+
+//
+//	FUNCTION NAME:		_SetPagerInfo
+//
+//	FUNCTION DESCRIPTION:	Wrapper function to allow pager information to be updated
+//				programatically.
+//
+//	REV	DATE		WHO		DESCRIP
+//	1.0	24/09/01	T.Munro		Original
+//
+//	SOURCE:			<various>
+//	ARGUMENTS:
+//		sPagerName	= Name of the pager to update
+//		sField		= Field to be updated, as defined in the DB
+//		sValue		= New value for the field
+//
+//	RETURNED VALUE:
+//		iError 		= 0 if successful
+//				= -1 if fails
+//
+//	NOTES:
+//
+
+INT
+FUNCTION
+_SetPagerInfo(STRING sPagerName, STRING sField, STRING sValue)
+
+	INT	iError 	= 0;	
+	INT	hSQL	= -1;
+	STRING	sSQL	= " UPDATE Pagers SET " + sField;
+
+	// Grab the database record for this pager to ensure it exists
+	hSQL = _RecordSelect("*", "Pagers", "Name = '"+sPagerName+"'", "");
+
+	IF hSQL <> -1 THEN
+		IF (SQLNext(hSQL) = 0) AND (SQLGetField(hSQL, "Name") = sPagerName) THEN
+
+			// Some fields must be marked as strings
+			SELECT CASE sField
+			CASE "Name","GroupName","PagerNo","PagerNoAH","Service","Header"
+				sSQL = sSQL + "='" + sValue + "'";
+			CASE ELSE
+				sSQL = sSQL + "=" + sValue;
+			END SELECT
+			sSQL = sSQL + " WHERE Name='" + sPagerName + "'";
+
+			iError = SQLExec( hSQL, sSQL);
+			IF iError = 0 THEN
+				LogPagingInfo("Fn._SetPagerInfo. Pager '" + sPagerName + "' Updated " + sField + "=" + sValue, _OPERATION);
+			ELSE
+				LogPagingInfo("Fn._SetPagerInfo. @(SQL Update error) " + SQLErrMsg(), _ERROR);
+			END
+		ELSE
+			LogPagingInfo("Fn._SetPagerInfo. @(Failed to locate pager) '" + sPagerName + "'", _ERROR);
+			iError = -1;
+		END
+
+		SQLDisconnect(hSQL);
+	ELSE
+		LogPagingInfo("Fn._SetPagerInfo. @(Failed to access ODBC Database)", _ERROR);
+		iError = -1;
+	END
+
+	IF NOT iError THEN
+		RETURN(0);
+	ELSE
+		RETURN(-1);
+	END
+END

@@ -1,0 +1,1176 @@
+///////////////////////////////////////////////////////////////////////////////////
+//	
+// 	FILE:	UAG_Tag.ci
+//
+//	Beschreibung:
+//
+//		Enhält Funktionen für das Tag Browsen.
+//		
+//	Autor:				Martin Roberts / Rupert Reeve
+//	Erstellungsdatum:	00.12.94	/	Schneider Electric GmbH
+//	Version				75.33.11.06
+//
+//	PUBLIC FUNCTIONS:
+//
+//		UAG_Tag_Debug()			abgekündigt
+//		UAG_Tag_Debug20()
+//		UAG_Tag_Ramp()
+//
+// 	NOTES:
+//		
+//
+//	Historie:
+//
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//
+//	06.11.09	Roberts		Neue Tag Debug Funktion
+//	15.12.09	Steiner		Angepasst an UAG
+//	31.08.16	Steiner		alte Funktionen Entfernt		
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+//MODULE VARIABLES
+
+STRING		msValue;         ! Value read or value to write
+INT			mhForm = -1;     ! Form handle
+
+
+/* variables for the TagDebug functions */
+
+STRING 		msReadIndicator = "0";
+STRING      msTagPrev = "";
+STRING		msTagExtraInfo = "";
+STRING		msArrayIndex = "0";
+STRING      msArrayIndexPrev = "";
+STRING 		msTagEx = "";
+STRING 		msQuery = "";
+STRING      msQueryPrev = "";
+STRING      msPeriodMS = "1000";	
+INT 		mhBrowse = -1;
+INT   		mhFieldReadPer = -1;
+INT 		mhFieldRead = -1;
+INT        	mhFieldWrite = -1;
+INT			mhFieldTagInfo = -1;
+INT			mhFieldTagInfo2 = -1;
+INT         mhFieldTagUnitStatus = -1;
+INT			mhFieldArray = -1;
+INT         mhFieldStop = -1;
+INT			mhFieldFilter = -1;
+INT			mhFieldLastTime = -1;
+INT         mhTaskHandle = -1;
+INT         mhCombo = -1;
+INT         miPeriodicRead = 0;
+INT         miElements = 0;
+INT         miArrayItem = 0;
+INT     	miMaxList = 512;
+INT			miLastError = 0;
+INT         mbTagUpdate = 0;
+
+
+//-----------------------------------------------------------------------------
+//
+//	Constants
+//
+//-----------------------------------------------------------------------------
+
+STRING	c_VALUE_NOT_SPECIFIED	= "-2147483648";
+
+
+/*	FUNCTION NAME: TagRamp
+**
+**	This function will increment a Tag by the amount defined by PerCentInc
+**
+**				-- PARAMETERS ---
+**	msTag   		= The Tag name as a String
+**	PercentInc 	= the amount to increment as a percentage of range
+**	Return Value: 0 if completed OK or an error code.
+*/	
+
+INT FUNCTION
+UAG_Tag_Ramp(STRING sTag, REAL PerCentInc)
+	REAL   rZero, rFull, rRange, rNewValue;
+
+	rZero = TagGetProperty(sTag, "EngUnitsLow", 0);
+	rFull = TagGetProperty(sTag, "EngUnitsHigh", 0); 
+	rRange = rFull - rZero;
+	
+	IF rRange = 0 THEN 
+		RETURN 274;
+	ELSE
+		rNewValue = StrToReal(TagRead(sTag, 0)) + (rRange * PerCentInc / 100) ;
+	
+		IF rZero <= rNewValue AND rNewValue <= rFull THEN
+			TagWrite(sTag, rNewValue, 0);
+		ELSE
+			RETURN 257;
+		END
+	END
+
+	RETURN 0;
+END
+
+
+
+/*
+**
+**      TagDebug()
+**
+**      Builds a form to provide simple user access to the all
+**      Variable Tags during runtime. Reading and writing are
+**      supported.
+**
+**      The Form is always ontop, and only one instance is allowed.
+**
+*/
+
+STRING FUNCTION
+UAG_Tag_Debug20()
+	
+	IF mhForm = -1 THEN
+		msTag = "";
+		msValue = "";
+		msTagPrev = "";
+		msTagEx = "";
+		miPeriodicRead = 0;
+		mbTagUpdate = 0;
+		mhTaskHandle = -1;
+		miElements = 0;
+		miArrayItem = 0;
+		msArrayIndex = "N/A";
+		msArrayIndexPrev = "";
+		msQueryPrev = ".start.";  ! Flag startup case
+		
+		mhForm = FormNew("Tag Debug 20", 71, 6, 9);
+		
+		// Form Layout 
+		// 0 |Tag                              | [F] |Filter|
+		// 1 |Value               |     |Read| |Write| 
+		// 2  Tag Type & Index                Time last read  
+		// 3  Scaling Info      
+		// 4 |Device Status|           |Auto read|[x]s |Stop| 
+		// 5 Tag unit status info
+		
+		mhFieldFilter = FormButton(55, 0, " * ", _UAG_tagDebugFilterDummy, 0);
+		FormButton(59, 0, " " + "@(Filter)" + " ", _UAG_tagDebugFilter, 0);
+		mhCombo = FormComboBox(0 ,0, 55, 6, msTag, 1);
+		// This has to be here because of the AddList content in the function
+		_UAG_tagDebugFillTagList("");
+		
+		FormEdit(0, 1, msValue, 40);
+		mhFieldRead = FormButton(42, 1,  " Lesen " , _UAG_tagDebugRead, 0);
+		mhFieldWrite = FormButton(53, 1,  " Schreiben " , _UAG_tagDebugWrite, 0);
+		// Start of new functionality
+		FormButton(67, 2, "  ?  ", _UAG_tagHelp, 0);
+		mhFieldArray = FormPrompt(0,2,"Tag Type:             ");
+		FormPrompt(24,2,"Index")				
+		FormEdit(29 ,2, msArrayIndex, 5);
+		mhFieldLastTime =  FormField( 42, 2, 20, 1, 3, msTagExtraInfo, "  ", 0);
+		FormButton(67, 1, " " + "Inf" + " ", UAG_TagExtensions_PagePopup, 0);
+		
+		mhFieldTagInfo =  FormField( 0, 3, 50, 1, 3, msTagExtraInfo, "  ", 0);
+		mhFieldTagInfo2 = FormField(52, 3, 16, 1, 3, msTagExtraInfo, "  ", 0);
+		
+		FormButton(0, 4, " " + "@(Tag's Device Status)" + " ", _UAG_tagDebugStatus, 0); 
+		mhFieldReadPer = FormButton(30, 4,  "Auto Lesen" , _UAG_tagStartDebugRead, 0);
+		FormEdit(46, 4, msPeriodMS, 7);
+		FormPrompt(53, 4, "MS");
+		mhFieldStop = FormButton(56, 4, "(" + "Stop Lesen" + ")", _UAG_tagStopDebugRead, 0);
+
+		mhFieldTagUnitStatus = FormField( 0, 5, 68, 1, 3, msTagExtraInfo, "  ", 0);
+		
+		IF FormActive(mhBrowse) THEN
+			// Filter on display from last time, so close
+			FormDestroy(mhBrowse);
+			mhBrowse = -1;
+		END
+		
+		FormSetData(mhForm);
+				
+		FormRead(0);
+		mhForm = -1;
+		RETURN(msTagEx);
+	END
+END
+
+/*  _tagDebugFilterDummy()
+**
+**  This is a dummy function to trap <returns> inside Edit Boxes
+**  Which default to the FIRST button. This then does nothing.
+*/
+
+PRIVATE INT FUNCTION
+_UAG_tagDebugFilterDummy()
+
+	FormGetData(mhForm);
+	RETURN 0;
+
+END
+/*  _UAG_tagHelp()
+**
+**  This is a dummy function to trap <returns> inside Edit Boxes
+**  Which default to the FIRST button. This then does nothing.
+*/
+
+PRIVATE INT FUNCTION
+_UAG_tagHelp()
+
+	UAG_HelpOverview(101);
+	RETURN 0;
+
+END
+/*  _tagDebugError()
+**
+**  Handle any returned errors
+*/
+
+PRIVATE FUNCTION
+_UAG_tagDebugError()
+	
+	 miLastError = IsError();
+	 IF miLastError <> 0 THEN
+     	msValue = "^<@(Error): " + IntToStr(miLastError) + "^>";
+     END
+END
+
+/*	_tagExtraInfo()
+**
+**  Check if tag has changed and bring up extra info
+**  If tag has changed but no read or write has been done, then flag this as well
+*/
+
+PRIVATE FUNCTION
+_UAG_tagExtraInfo()
+
+	STRING sInfo;
+	STRING sInfoUnits;
+	INT    nRawType;
+	STRING sType;
+
+	IF msTag <> msTagPrev THEN
+		miElements = 1;
+		sInfo = TagInfo(msTag, 0);
+		IF sInfo <> "" THEN
+			// Tag exists case
+		   	miElements = StrToInt(TagInfo(msTag, 14));
+		   	nRawType = StrToInt(TagInfo(msTag, 10));
+		   	sType = _UAG_tagRawTypeToString(nRawType);
+		   	IF miElements > 1 THEN
+		   		// Array handling
+		   		miArrayItem = 0;
+		   		msArrayIndex = "0";
+		   		sType = "Array [" + IntToStr(miElements) + "] Type: " + sType;
+				FormSetText(mhForm, mhFieldArray, sType);
+				msTagEx = msTag + "[" + IntToStr(miArrayItem) + "]";
+			ELSE
+		   		// Not an array
+		   		miArrayItem = 0;
+		   		msArrayIndex = "N/A";
+		   		sType = "Tag Type: " + sType;
+				FormSetText(mhForm, mhFieldArray, sType);
+				msTagEx = msTag;
+		   	END
+		   	
+		    IF TagInfo(msTag, 2) <> "" THEN
+				sInfo = "EngScale: RWA " + TagInfo(msTag, 2);
+				sInfo = sInfo + " RWE " + TagInfo(msTag, 3);
+				sInfo = sInfo + " SA " + TagInfo(msTag, 4);
+				sInfo = sInfo + " SE " + TagInfo(msTag, 5);
+			ELSE
+				sInfo = "EngScale: Keine";
+			END	
+				
+		    IF TagInfo(msTag, 1) <> "" THEN
+				sInfoUnits = "EngUnits: " + TagInfo(msTag, 1);
+			ELSE
+				sInfoUnits = "EngUnits: Keine";
+			END	
+		ELSE
+			// No Tag case
+		   	miArrayItem = 0;
+		   	msArrayIndex = "N/A";
+			FormSetText(mhForm, mhFieldArray, "Not found");
+			sInfo = "EngScale: N/A";
+			sInfoUnits = "EngUnits: N/A";
+			msTagEx = msTag;
+		END
+		   
+		FormSetText(mhForm, mhFieldTagInfo, sInfo);
+    	FormSetText(mhForm, mhFieldTagInfo2, sInfoUnits);
+    	FormSetText(mhForm, mhFieldTagUnitStatus, " ");
+   		msValue = "";
+   		FormSetData(mhForm);
+   		  		
+   		msTagPrev = msTag;
+	END
+	
+	IF msArrayIndex <> msArrayIndexPrev THEN
+	   	IF miElements > 1 THEN
+	   	    IF StrSearch(0, msTag, "[") < 0 THEN
+	   	    	// Base element name in use
+				msTagEx = msTag + "[" + msArrayIndex + "]";
+			ELSE
+				// User has added an offset [x]
+				msTagEx = msTag;
+				msArrayIndex = "0";	// Force zero as user has specified an offset
+			END
+		ELSE
+	   		// Not an array
+	   		miArrayItem = 0;
+	   		msArrayIndex = "N/A";
+	   		msTagEx = msTag;
+	   	END
+	    FormSetData(mhForm);
+	    
+	    msArrayIndexPrev = msArrayIndex;
+	END
+
+END
+
+/*	_tagRawTypeToString()
+**
+**  Return the Raw Type for a tag as a string
+*/
+
+PRIVATE STRING FUNCTION
+_UAG_tagRawTypeToString(INT  nRawType)
+
+    // These cases are for the old style RDT_XXX data types
+    
+	SELECT CASE  nRawType
+	CASE 0
+		RETURN "Digital";
+	CASE 1,3,10
+		RETURN "Int";
+	CASE 4,5,18
+		RETURN "Long";
+	CASE 2,6
+		RETURN "Real"; 
+	CASE 7
+		RETURN "String";
+	CASE 8
+		RETURN "Byte"; 
+	
+	END SELECT
+	
+	RETURN "Unbekannt";
+	
+END
+
+/*	_tagStartDebugRead()
+**
+**  Run task for regular reads at 1s
+*/
+
+PRIVATE INT FUNCTION
+_UAG_tagStartDebugRead()
+
+	FormGetData(mhForm);
+	mbTagUpdate = 1;
+	_UAG_tagExtraInfo();
+	miPeriodicRead = StrToInt(msPeriodMS);
+	FormSetText(mhForm, mhFieldStop, " " + "Stop Lesen" + " ");
+	mhTaskHandle = TaskNew("_UAG_tagReadTask", 0, 10);
+		
+	RETURN 0;
+END
+
+/*	_tagReadTask()
+**
+**  Do the read
+*/
+INT FUNCTION
+_UAG_tagReadTask()
+
+	STRING sLocalTag = msTagEx;
+	
+	WHILE (miPeriodicRead <> 0) DO
+
+   		FormSetText(mhForm, mhFieldReadPer, "Lesen<<<");
+   		FormSetData(mhForm);
+   		IF miPeriodicRead > 200 THEN
+   			SleepMS(200);
+   		END
+		_UAG_tagDebugSingleRead();
+		FormSetText(mhForm, mhFieldReadPer, "Lesen   ");
+		FormSetData(mhForm);
+   		IF miPeriodicRead > 200 THEN		
+			SleepMS(miPeriodicRead - 200);
+		ELSE
+			SleepMS(miPeriodicRead);			
+		END
+		
+		// This takes care of the case where the form is closed or tag changed
+
+		IF NOT FormActive(mhForm) OR (msTagEx <> sLocalTag) THEN
+			_UAG_tagStopDebugRead();
+		END 
+	END
+	mhTaskHandle = -1;
+	
+	RETURN 0;
+END
+
+/*	_tagStopDebugRead()
+**
+**  Stop the reading process
+*/
+INT FUNCTION
+_UAG_tagStopDebugRead()
+
+	msReadIndicator = "0";
+    FormSetText(mhForm, mhFieldReadPer, " " + "Auto Lesen" + " ");
+    FormSetText(mhForm, mhFieldStop, "(" + "Stop Lesen" + ")");
+    IF mhTaskHandle >= 0 AND miPeriodicRead > 0 THEN
+        // i.e. task must be active
+		TaskKill(mhTaskHandle);
+		mhTaskHandle = -1;
+	END
+	miPeriodicRead = 0;
+	
+	RETURN 0;
+END
+
+PRIVATE INT FUNCTION
+_UAG_tagDebugRead()
+
+	_UAG_tagStopDebugRead();
+	_UAG_tagDebugSingleRead();
+	
+	RETURN 0;
+END
+
+/*
+**      _tagDebugRead()
+**
+**      Callback for Read button. This function will read the tag
+**	from the I/O Device and display on the form.
+*/
+
+PRIVATE INT FUNCTION
+_UAG_tagDebugSingleRead()
+
+	mbTagUpdate = 1;
+    FormGetData(mhForm);
+    ErrSet(1);
+    _UAG_tagExtraInfo();
+   	_UAG_tagDebugUpdateTime();
+    	
+    msValue = TagRead(msTagEx, 0);
+    _UAG_tagDebugError();
+    
+    FormSetData(mhForm);
+    ErrSet(0);
+	RETURN	0;
+END
+
+
+/*
+**      _tagDebugWrite()
+**
+**      Callback for Write button. This function will write to the
+**	I/O Device from the value in the form.
+**  And record the write in the syslog.
+*/
+
+PRIVATE INT FUNCTION
+_UAG_tagDebugWrite()
+	STRING sTrace;
+
+	_UAG_tagStopDebugRead();
+	mbTagUpdate = 1;
+    FormGetData(mhForm);
+    ErrSet(1);
+   	_UAG_tagExtraInfo();
+ 	_UAG_tagDebugUpdateTime();
+   	
+   	// Vetting of this operation by having a logged in user, e.g. FullName() or UserInfo(x)
+   	// can be done here
+   	UAG_LogWrite("Anwender" ,"Leiten: Tag Debug",msTagEx, TagRead(msTagEx),msValue);
+    _UAG_tagDebugError();
+    
+   	FormSetData(mhForm);
+   	ErrSet(0);
+	RETURN 0;
+END
+
+/*
+**      _tagDebugUpdateTime()
+**
+**      Update time of last read
+*/
+
+PRIVATE FUNCTION _UAG_tagDebugUpdateTime()
+	STRING 	sTime;
+	
+	sTime = TimeToStr(TimeCurrent(), 1);
+	FormSetText(mhForm, mhFieldLastTime, "Letztes lesen: " + sTime);
+END
+
+/*
+**      _tagDebugFilter()
+**
+**      Setup query string for tag filtering
+*/
+
+PRIVATE INT FUNCTION
+_UAG_tagDebugFilter()
+	
+	IF NOT FormActive(mhBrowse) THEN
+	
+		mhBrowse = FormNew("@(Tag Debug 20- Tag Filter)", 60, 2, 9);
+		FormPrompt(0, 0," Einen Teil des Namens eingeben und click '" + "@(OK)" );
+		FormEdit(0, 1, msQuery, 42);
+		FormButton(45, 1, " " + "@(OK)" + " ", _UAG_tagDebugFilterDo, 1);
+		FormButton(53, 1, " " + "@(Clear)" + " ", _UAG_tagDebugFilterClear, 1);
+		FormSetData(mhBrowse);
+		FormRead(0);
+		mhBrowse = -1;
+		
+	END
+		
+	RETURN 0;
+END
+
+/*
+**      _tagDebugFilterDo()
+**
+**      Read tag list based on filter provided. Filter is any part of the tags name.
+*/
+
+PRIVATE INT FUNCTION
+_UAG_tagDebugFilterDo()
+	STRING sCopy;
+
+	FormGetData(mhBrowse);
+	_UAG_tagDebugFillTagList(msQuery);
+	mbTagUpdate = 0;
+	_UAG_tagExtraInfo();
+	RETURN 0;
+END
+
+/*
+**      _tagDebugFilterClear()
+**
+**      Reset tag list to startup
+*/
+
+PRIVATE INT FUNCTION
+_UAG_tagDebugFilterClear()
+
+	msQuery = "";
+	FormSetData(mhBrowse);
+	FormGetData(mhBrowse);
+	_UAG_tagDebugFillTagList(msQuery);
+	mbTagUpdate = 0;
+	_UAG_tagExtraInfo();
+	RETURN 0;
+END
+
+/*
+**      _tagDebugFillTagList()
+**
+**      Fill form list with the first 256 Variable Tags. We limit the
+**	maximum number of variables, otherwise the list box is too
+**	large and hard to use.
+*/
+
+PRIVATE FUNCTION
+_UAG_tagDebugFillTagList(STRING sQueryArg)
+    INT     nRec;
+    INT     hRDB;
+    INT     nStartupFlag = 0;
+    INT 	i=miMaxList;
+    STRING  sQueryUpper = StrUpper(sQueryArg);
+    STRING  sRdbTag = "";
+    STRING  sRdbUpper;
+    
+	IF msQueryPrev = ".start." THEN
+		nStartupFlag = 1;
+	ELSE
+		FormListDeleteText(mhForm, mhCombo, msTag);
+		msTag = "";
+	END
+	
+	IF sQueryUpper <> msQueryPrev THEN
+		
+        hRDB = RdbOpen("_VARIABL");
+        IF hRDB >= 0 THEN
+        
+      		IF NOT nStartupFlag THEN
+      		
+      		   	// Delete records currently on display based on last filter
+ 	            
+	            nRec = RdbFirstRec(hRDB);
+	            WHILE i > 0 AND nRec >=0  DO
+                    sRdbTag = RdbGet(hRDB, "Tag");
+                    sRdbUpper = StrUpper(sRdbTag);
+                    IF sQueryUpper = "" OR StrSearch(0, sRdbUpper, msQueryPrev) >= 0 THEN
+						FormListDeleteText(mhForm, mhCombo, sRdbTag);
+						i = i - 1;  
+					END
+                    nRec = RdbNextRec(hRDB);                                
+	            END
+	           	FormSetData(mhForm);
+          	END
+          	
+          	msQueryPrev = sQueryUpper;
+         	i=miMaxList;
+      		// Add new items based on filter
+      		
+            nRec = RdbFirstRec(hRDB);
+            WHILE i > 0 AND nRec >=0  DO
+                sRdbTag = RdbGet(hRDB, "TAG");
+                sRdbUpper = StrUpper(sRdbTag);
+                IF sQueryUpper = "" OR StrSearch(0, sRdbUpper, sQueryUpper) >= 0 THEN
+                
+                	IF nStartupFlag THEN
+                		FormAddList(sRdbTag);	// Needed for startup case
+                	ELSE
+                		FormListAddText(mhForm, mhCombo, sRdbTag);
+                	END
+                	msTag = sRdbTag;				// Last tag read
+                	i = i - 1; 
+
+                END
+                nRec = RdbNextRec(hRDB);
+            END
+          
+          	RdbClose(hRDB);
+  
+		END
+		
+		IF i = 0 OR sQueryArg <> "" THEN
+			// Implies a filter exists
+		   	FormSetText(mhForm, mhFieldFilter, "F"); 
+		ELSE
+			// No filter and TAG count < 256
+		   	FormSetText(mhForm, mhFieldFilter, "*"); 
+		END
+        FormSetData(mhForm);
+        	
+	END	
+END
+
+/*
+**	FUNCTION NAME: _tagDebugLogToNetwork
+**
+**	Get the device network number for the logical unit number.
+**  Return -1 on error
+*/
+
+PRIVATE INT FUNCTION
+_UAG_tagDebugLogToNetwork(INT nLog)
+    INT     nRec;
+    INT     hRDB;
+    INT     nReturn = -1;
+    STRING  sInfo;
+    STRING  sNumber;
+    STRING  sMode;
+
+    hRDB = RdbOpen("_UNITS");
+    IF hRDB >= 0 THEN
+       nRec = RdbPosRec(hRDB, nLog);
+       IF nRec >=0 THEN
+          sInfo = RdbGet(hRDB, "Number");
+          nReturn = StrToInt(sInfo);
+       END
+       RdbClose(hRDB);        
+    END
+      
+	RETURN nReturn;
+END
+
+/*
+**	FUNCTION NAME: _tagDebugStatus
+**
+**	This returns the status of the device the tag is on
+**
+*/
+
+PRIVATE INT FUNCTION
+_UAG_tagDebugStatus()
+	STRING  sInfo;
+	INT     nLogNumber = 0;
+	INT     nNumber = 0;
+	
+	sInfo = TagInfo(msTag, 0);
+	IF sInfo <> "" THEN
+		nLogNumber = StrToInt(TagInfo(msTag, 9));
+		nNumber = _UAG_tagDebugLogToNetwork(nLogNumber);
+		IF nNumber >= 0 THEN
+			sInfo = "Device " + _UAG_tagDebugDevStatus(nNumber) + ", number is " + IntToStr(nNumber);
+		ELSE
+			sInfo = "Internal logical number " + IntToStr(nNumber) + " not found";
+		END
+	ELSE
+		sInfo = "Unable to determine unit, tag does not exist?";
+	END
+
+	FormSetText(mhForm, mhFieldTagUnitStatus, sInfo); 			
+	RETURN 0;
+
+END
+
+PRIVATE STRING FUNCTION
+_UAG_tagDebugDevStatus(INT nLogUnit)
+
+	INT		nStatus = 0;
+	STRING 	sReturn = "";
+	
+	ErrSet(1);
+	sReturn = IODeviceInfo(nLogUnit, 0);			! Device name 
+	IF sReturn = "" THEN
+		sReturn = "^"<Memory>^" Status is ";		! Handle bug in returning memory items
+	ELSE
+		sReturn = "^"" + sReturn + "^" Status is ";
+	END
+	nStatus = StrToInt(IODeviceInfo(nLogUnit, 10));		! Server side status
+	
+	IF nStatus BITAND 4 THEN
+		sReturn = sReturn + "STARTING";
+	END
+	IF nStatus BITAND 8 THEN
+		sReturn = sReturn + "STOPPING";
+	END 
+	IF nStatus BITAND 16 THEN
+		sReturn = sReturn + "OFFLINE";
+	END
+	IF nStatus BITAND 32 THEN
+		sReturn = sReturn + "DISABLED";
+	END
+	 
+	IF nStatus BITAND 66 THEN
+		sReturn = sReturn + "STANDBY_WRITE";
+	ELSE
+	    IF (nStatus = 0) OR (nStatus BITAND 1) THEN 
+	        // Memory devices have a bug which returns 0
+			sReturn = sReturn + "ONLINE";
+		ELSE 
+			IF nStatus BITAND 2 THEN
+				sReturn = sReturn + "ONLINE-STANDBY";
+			END
+		END 
+	END
+	
+	IF nStatus BITAND 128 THEN
+		sReturn = sReturn + "REMOTE";
+	END
+	ErrSet(0);
+	RETURN sReturn;
+
+END
+
+/*
+** End of TagDebug Code 
+*/
+                
+
+
+
+/*
+**
+**      TagGetPropertyForeground()
+**
+**		Calls TagGetProperty and forces a cached read.  The hardware alarm is
+**		suppressed if the property is not ready or pending.
+**
+*/
+
+STRING
+FUNCTION
+UAG_TagGetPropertyForeground(STRING sName, STRING sProperty)
+
+	STRING	sResult;
+	INT		iError;
+
+	! Enable user error checking.
+	ErrSet(1);
+	
+	! Get the tag property from the cache.
+	sResult = TagGetProperty(sName, sProperty, 1);
+	
+	! Check for an error.
+	iError = IsError();
+	
+	! Disable user error checking.
+	ErrSet(0);
+	
+	! Set the hardware alarm unless the property value is not ready or pending.
+	IF iError <> 0 AND iError <> 423 AND iError <> 432 THEN
+		ErrTrap(iError, 0);
+	END
+	RETURN sResult;
+
+END
+
+/*
+**
+**      TagGetScaleForeground()
+**
+**		Calls TagGetScale and forces a cached read.  The hardware alarm is
+**		suppressed if the property is not ready or pending.
+**
+*/
+
+STRING
+FUNCTION
+UAG_TagGetScaleForeground(STRING sName, INT iPercent, INT iEngUnits)
+
+	STRING	sResult;
+	INT		iError;
+
+	! Enable user error checking.
+	ErrSet(1);
+	
+	! Get the tag scale from the cache.
+	sResult = TagGetScale(sName, iPercent, iEngUnits, 1);
+	
+	! Check for an error.
+	iError = IsError();
+	
+	! Disable user error checking.
+	ErrSet(0);
+	
+	! Set the hardware alarm unless the property value is not ready or pending.
+	IF iError <> 0 AND iError <> 423 AND iError <> 432 THEN
+		ErrTrap(iError, 0);
+	END
+	RETURN sResult;
+
+END
+
+/*
+**
+**      AssGetPropertyForeground()
+**
+**		Calls AssGetProperty and forces a cached read.  The hardware alarm is
+**		suppressed if the property is not ready or pending.
+**
+*/
+
+STRING
+FUNCTION
+UAG_AssGetPropertyForeground(INT iArg, STRING sProperty)
+
+	STRING	sResult;
+	INT		iError;
+
+	! Enable user error checking.
+	ErrSet(1);
+	
+	! Get the association property from the cache.
+	sResult = AssGetProperty(iArg, sProperty, 1);
+	
+	! Check for an error.
+	iError = IsError();
+	
+	! Disable user error checking.
+	ErrSet(0);
+	
+	! Set the hardware alarm unless the property value is not ready or pending.
+	IF iError <> 0 AND iError <> 423 AND iError <> 432 THEN
+		ErrTrap(iError, 0);
+	END
+	
+	RETURN sResult;
+
+END
+
+/*
+**
+**    Pulser()
+**
+**	  Spawns a task to run the GoPulse() until complete. This pulses a tag.
+**    This function will spawn a fresh task each time.
+**    Errors will cause a h/w alarm however PulseLastError() and PulseLastErrorTag()
+**    are available to get more information.
+*/
+
+FUNCTION 
+UAG_Pulser(STRING sTAGNAME, STRING sCLUSTER = "")
+    INT hTask;
+    INT lastErrorCode;
+    
+	ErrSet(1);
+	
+    hTask = TaskNew("UAG_GoPulse","^"" + sTAGNAME + "^",^"" + sCLUSTER + "^"",0,sCLUSTER);
+	IF (hTask < 0) THEN
+		// Unable to create task (at task limit ?)
+		lastErrorCode 	= IsError();
+		ErrSetHw(2, lastErrorCode, 0);
+		ErrLog("Error using system cicode Pulser() function: Tag '" + sTAGNAME + "' Cicode error " + IntToStr(lastErrorCode));	
+	END 
+	ErrSet(0);
+END
+
+/*
+**
+**    GoPulse()
+**
+**		This function will set the passed variable high then place it low 2 seconds later.
+**    Error handling 
+*/
+
+FUNCTION 
+UAG_GoPulse(STRING sTAGNAME, STRING sCLUSTER = "")
+	INT 	tagNameLength = StrLength(sTAGNAME);
+	INT 	tagHasDot 		= -1; 
+	STRING 	sAssString 		= "";
+	STRING 	sOriginalTag	= "";
+	INT 	nError          = 0;
+	
+	IF (tagNameLength > 0) THEN
+	    // Ensure we don't do work with an empty reference 
+		IF StrGetChar(sTAGNAME, 0) = StrToChar("?") THEN
+			// Strip the ? characters from the start and end of the super genie ass number
+			sAssString = StrLeft(sTAGNAME, tagNameLength - 1);
+			sAssString = StrRight(sAssString, tagNameLength - 2);
+			
+			sOriginalTag = sTAGNAME;
+			ErrSet(1);
+			sTAGNAME = AssGetProperty(StrToInt(sAssString), "FullName");
+			nError 	= IsError();
+			ErrSet(0);
+			
+			tagNameLength = StrLength(sTAGNAME);
+		END
+
+		IF (tagNameLength > 0) THEN	
+		    // Do this check again in case the AssGetProperty() did not work	
+			tagHasDot = StrSearch(0, sTAGNAME, ".");
+			IF (tagHasDot >= 1) THEN
+			  	// This tag has a Cluster reference so null any passed cluster reference
+			  	// Assume ".tag" is not part of this logic
+			  	sCLUSTER = "";
+			END
+
+		    nError = TagWrite(sTAGNAME,1,0,TRUE,sCLUSTER); // Synchronous write
+		    IF (nError = 0) THEN
+		   		Sleep(2);
+		    	TagWrite(sTAGNAME,0,0,TRUE,sCLUSTER);      // Synchronous write
+		    ELSE
+		    	// Problem in Tag write
+				ErrSetHw(2, nError, 0);	
+				ErrLog("Error using system cicode Pulser(*) function: Tag '" + sTAGNAME + "', Cicode error " + IntToStr(nError));
+		    END
+    	ELSE
+    	
+    	    // This code path means the AssGetProperty() has failed to establish the tag 
+    	    IF (nError = 0) THEN
+    	       // Tests showed that an invalid genie tag was returning no error so correct it to something
+    	       nError = 424;  		// Tag not found
+    	    END
+			ErrSetHw(2, nError, 0);	
+			ErrLog("Error using system cicode Pulser(*) function: Genie Item '" + sOriginalTag + "', Cicode error " + IntToStr(nError));
+
+    	END
+    	
+	ELSE
+	
+	    // Passed tag name is blank
+		ErrSetHw(2, 289, 0);	// Set Name does not exist error
+		ErrLog("Error using system cicode Pulser(*) function: Tagname blank, Cicode error " + IntToStr(289));
+
+	END
+END
+
+//	UAG_TagReadEx()
+//	Übergabeparameter:	Tagname
+//                         
+//	Rückgabewert:		 
+//	Beschreibung:		Tag mit Format lesen 
+//						
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	09.06.10	/	Schneider Electric GmbH
+//	Version				3.1.1.9
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+
+
+STRING FUNCTION
+UAG_TagReadEx(STRING sTag)
+	STRING svalue,sret,sUnits;
+	INT iFormatDecPlaces,iFormatWidth;
+	svalue= TagRead(sTag);
+	sUnits=TagGetProperty(sTag,"Units",0);
+	iFormatDecPlaces=StrToInt (TagGetProperty(sTag,"FormatDecPlaces",0));
+	iFormatWidth= strtoint(TagGetProperty(sTag,"FormatWidth",0));
+	sret = RealToStr(svalue,iFormatWidth,iFormatDecPlaces) +" "+sUnits;
+	RETURN sret
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		TagExtensions_SetValue
+//
+//	SUMMARY:
+//		Sets value to the the specified tag. If no value is specified, a Input
+//		dialog will pop up to prompt the user to enter the value. If value is
+//		specified, the value is set to the tag directly.
+//
+//	PARAMS:
+//		tag				- The name of a variable tag / local variable
+//		value			- The new value to be written to the tag
+//							If not specified or equals "-2147483648",
+//							a Input dialog will be pop up for the user to enter new value.
+//
+//	RETURNS: 
+//		0 if run successfully or error if failed.
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION TagExtensions_SetValue(STRING tag, STRING value = c_VALUE_NOT_SPECIFIED)
+	INT retValue = 274;
+	INT errLevelOld = ErrSetLevel(1);
+	
+	IF (c_VALUE_NOT_SPECIFIED = value) THEN
+		value = TagRead(tag);
+		IsError();
+		value = Input(tag, "@(Please enter value)" + ":", value);
+		IF (IsError() = 299) THEN
+			ErrSetLevel(errLevelOld);
+			RETURN 299;
+		END
+	END
+	retValue = TagWrite(tag, value);
+
+	// error feedback
+	IF (0 <> retValue) THEN
+		Prompt(ErrMsg(retValue));
+	END
+
+	ErrSetLevel(errLevelOld);
+	RETURN retValue;
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		TagExtensions_SelectOverrideMode
+//
+//	SUMMARY:
+//		Pops up a drop-down menu and lists the available override mode values
+//		for the user to select.
+//
+//	PARAMS:
+//		value			- The current value fo the override mode
+//							If not specified, defaults to -1
+//
+//	RETURNS: 
+//		The selected override mode or the task is halted if nothing is selected
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION TagExtensions_SelectOverrideMode(INT value = -1)
+	INT retValue;
+	INT AN, x = -1, y = -1, dummy;
+	STRING checked = "";
+	INT errLevelOld = ErrSetLevel(1);
+
+	AN = KeyGetCursor();
+	IF (AN > 0) THEN
+		DspGetAnExtent(AN, dummy, x, y, dummy);
+	END
+
+	IF (0 = value) THEN checked = "!~" ELSE checked = "" END;
+	DspPopupMenu(0, checked + StrToLocalText("0 - @(Override Mode is off)"));
+	IF (1 = value) THEN checked = "!~" ELSE checked = "" END;
+	DspPopupMenu(0, checked + StrToLocalText("1 - @(Static Mode) - @(Set value to Field value)"));
+	IF (2 = value) THEN checked = "!~" ELSE checked = "" END;
+	DspPopupMenu(0, checked + StrToLocalText("2 - @(Static Mode) - @(Set value to Valid value)"));
+	IF (3 = value) THEN checked = "!~" ELSE checked = "" END;
+	DspPopupMenu(0, checked + StrToLocalText("3 - @(Static Mode) - @(Set value to Override value)"));
+	IF (4 = value) THEN checked = "!~" ELSE checked = "" END;
+	DspPopupMenu(0, checked + StrToLocalText("4 - @(Dynamic Mode) - @(Track value to Valid value continuously)"));
+	retValue = DspPopupMenu(-1, "", x, y) - 1;		// convert selection from 1-based to 0-based
+
+	ErrSetLevel(errLevelOld);
+
+	IF (retValue < 0) THEN
+		Halt();
+	END
+
+	RETURN retValue;
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		TagExtensions_Toggle
+//
+//	SUMMARY:
+//		Toggles the value of the specified tag between 1 and 0. This function
+//		also works with write-only tag.
+//
+//	PARAMS:
+//		tag				- The name of a variable tag / local variable
+//
+//	RETURNS: 
+//		0 if run successfully or error if failed.
+//
+//	REMARKS:
+//		For tags that cannot be read. It uses page string variable
+//		_toggle_<tag> to save its last value in memory.
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION TagExtensions_Toggle(STRING tag)
+	INT retValue = 274;
+	INT errLevelOld = ErrSetLevel(1);
+	STRING value;
+
+	value = TagRead(tag);
+	IF ("" = value) THEN
+		// uses page variable to toggle from last saved value
+		IF ("" = PageGetStr("_toggle_" + tag)) THEN
+			value = 0;
+			PageSetStr("_toggle_" + tag, ">0");
+		ELSE
+			value = StrMid(PageGetStr("_toggle_" + tag), 1, 254);
+		END
+		
+		// write to tag
+		value = NOT StrToInt(Value);
+		retValue = TagWrite(tag, value);
+
+		// save value
+		PageSetStr("_toggle_" + tag, ">" + value);
+	ELSE
+		// write to tag
+		value = NOT StrToInt(Value);
+		retValue = TagWrite(tag, value);
+	END
+
+	// error feedback
+	IF (0 <> retValue) THEN
+		Prompt(ErrMsg(retValue));
+	END
+
+	ErrSetLevel(errLevelOld);
+	RETURN retValue;
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		TagExtensions_PagePopup
+//
+//	SUMMARY:
+//		Pops up a page in unique super genie mode.
+//
+//	PARAMS:
+//		page			- The name of the page to display
+//
+//	RETURNS: 
+//		Return value from WinNewAt()
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION 
+UAG_TagExtensions_PagePopup()
+	
+	Ass(-2, "Tag", msTag, 0 )
+	RETURN UAG_MM_PopUP("!P_TagExtensions")
+END

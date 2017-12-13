@@ -1,0 +1,2524 @@
+///////////////////////////////////////////////////////////////////////////////////
+//	
+// 	FILE:	UAG_Alarms.ci
+//
+//	Beschreibung:
+//
+//		Enhält Funktionen für die Auswertung und Anzeige von Alarmen.
+//		
+//	Autor:				Frank Däbritz
+//	Erstellungsdatum:	18.12.07	/	Schneider Electric GmbH
+//	Version				75.33.11.08
+//
+//	PUBLIC FUNCTIONS:
+//
+//			UAG_Alarms_AckHardware()			entfällt
+//			UAG_Alarms_AdvFilter()				entfällt
+//			UAG_Alarms_AdvFilterConfig()		entfällt
+//			UAG_Alarms_AdvFilterQuery()			entfällt
+//			UAG_Alarms_AdvFilterSetDateTime()	entfällt
+//			UAG_Alarms_AlarmStates()
+//			UAG_Alarms_AlarmTypes()
+//			UAG_ASB_20()
+//			UAG_ASB_PAGE(
+//			UAG_Alarms_ClearGroupFilter()		entfällt
+//			UAG_Alarms_DspGroupFilter()			
+//			UAG_Alarms_DspGroupList()
+//			UAG_Alarms_DspInfo()
+//			UAG_Alarms_Filter()					entfällt
+//			UAG_Alarms_Filter2()				entfällt
+//			UAG_Alarms_Filter_Cat()
+//			UAG_Alarms_Filter_Prio()
+//			UAG_Alarms_FilterZeigen()			entfällt
+//			UAG_Alarms_FilterEvt_TextChanged()
+//			UAG_Alarms_GetCategoryStatus()
+//			UAG_Alarms_GetCategoryStatusQ()		entfällt
+//			UAG_Alarms_GetGroupFilter()			entfällt
+//			UAG_Alarms_GetGroupFilterID()		entfällt
+//			UAG_Alarms_GetPrioStatus()
+//			UAG_Alarms_GetUniqueGroupName()
+//			UAG_Alarms_GroupAdd()
+//			UAG_Alarms_GroupConfig()
+//			UAG_Alarms_GroupEdit()
+//			UAG_Alarms_GroupFilter()			
+//			UAG_Alarms_GroupRemove()
+//			UAG_Alarms_GroupsInit()
+//			UAG_Alarms_Leiteingriff()
+//			UAG_Alarms_LeiteingriffS()
+//			UAG_Alarms_PopupMenu()				entfällt
+//			UAG_Alarms_SetCategoryInit()		entfällt
+//			UAG_Alarms_SetCatStatus()			entfällt
+//			UAG_Alarms_SetCatStatus_N()			entfällt
+//			UAG_Alarms_SetPrioStatus()			entfällt
+//			UAG_Alarms_SetPrioStatus_N()		entfällt		
+//			UAG_Alarms_SetCatStatusQ()			entfällt
+//			UAG_Alarms_SetCatStatusE()
+//			UAG_Alarms_Pager()
+//			UAG_Alarms_Set_PCSAlmDsp()
+//			UAG_Alarms_Set_PagingAlmDsp()		entfällt
+//			UAG_AlarmCount_Save()
+//			UAG_Alarms_CountReturn(
+//
+//	Private Functions:
+//
+//			_UAG_Alarms_FindCategory()
+//			_UAG_Alarms_AddCategory()
+//			UAG_Alarms_Pulse_A_FLG()
+//			_UAG_Alarms_GroupListAdd()
+//			_UAG_Alarms_GroupListRemove()
+//			_msAlarmAdvFilter_ArraySet()
+//			_msAlarmAdvFilter_ArrayGet()
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	16.04.14	Steiner		Alle Funktionen auf 7.40 Page Funktionen umgestellt
+///////////////////////////////////////////////////////////////////////////////////
+
+// MODULE VARIABLES
+STRING 	UAG_Alarms_ActiveCategories;		//Alle Aktiven Alarme
+STRING	UAG_Alarms_ActiveCategoriesQ;	//Alle Aktiven Alarme aber Quitierten
+INT 	miScanTime;
+STRING	msAlarmConfigPopup = 	"!p_AlarmConfig";
+STRING	msAdvAlarmFilterPopup = "!p_AlarmFilterAdv";
+
+STRING	msAlarmInfoPageDflt =	"!p_AlarmInfo";
+STRING	msAlarmInfoPage;
+
+INT		miAlarmsAckPrivilege = -1;
+INT		miAlarmsDisablePrivilege = -1;
+
+INT		mhAlarmGroupList = -1;
+INT		mbAlarmGroupsInitialised;
+STRING	msAlarmGroupSelected[6][10];
+STRING	msAlarmGroupSelectedID[6][10];
+STRING	msAllAlarms;
+STRING	msAdvFilter;
+
+STRING	msAlarmFieldSeparationChar = "`";
+STRING	msAlarmStates[10] = "ON","OFF","HIGH HIGH","HIGH","LOW","LOW LOW","RATE OF CHANGE","DEVIATION","INACTIVE","ACTIVE";
+STRING	msAlarmStatesDE[10] = "EIN","AUS","HOCH ABSOLUT","HOCH","TIEF","TIEF ABSOLUT","ÄNDERUNGSRATE","ABWEICHUNG","INAKTIV","AKTIV";
+INT		miMaxStates = 10;
+STRING	msAlarmTypes[5] = "ACKNOWLEDGED", "UNACKNOWLEDGED", "DISABLED", "CLEARED";
+STRING	msAlarmTypesDE[5] = "QUITTIERT", "UNQUITTIERT", "DEAKTIVIERT","GELÖSCHT";
+INT		miMaxTypes = 5;
+
+STRING 	msLE_Text;
+
+
+INT		mhAlarmListFmt_pcs	= -1;
+INT		mhAlarmListFmt	= -1;
+INT 	miFarbe=0;
+INT		miAlarmsPrioState[30];
+INT 	miAlarmsPrioState_t[30]
+INT		miAlarmsPrioState_q[30];
+INT 	miAlarmsPrioState_tq[30]
+// genutzte AktivX
+STRING	msTextBoxClass = "CiText.TextBox";
+STRING	msComboBoxClass = "CiText.ComboBox";
+
+
+///////////////////////////////////////////////////////////////////////////////////
+//	UAG_Alarms_Start_Servermon()
+// 	Die nachfolgende Funktion UAG_Alarms_Start_Servermon() muß
+// 	in der Client Start Routine aufgerufen werden
+//
+//	Übergabeparameter:	---
+//                       
+//	Rückgabewert:		-1 bei Fehler TaskNew()
+//						-2 bei NOT ProcessIsClient()
+//	Beschreibung:		
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	28.08.12	/	Schneider Electric GmbH
+//	Version				74.33.70.00
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	
+
+///////////////////////////////////////////////////////////////////////////////////
+INT FUNCTION UAG_Alarms_Start_Servermon()
+INT iStatus
+	// Initialisierung des Hintergrund-Prozesses UAG_Alarms_SetCategoryStatus().
+	// Muss beim Client in der Start-Routine aufgerufen werden.
+	miScanTime = StrToInt(ParameterGet("Alarm", "ScanTime", "500"))*4;
+	IF ProcessIsClient() THEN
+		iStatus =TaskNew("UAG_Alarms_Servermon", "", 8);
+		_ServerMonInit();
+
+	ELSE
+		iStatus =-2;
+	END	
+	RETURN iStatus;
+	
+END		
+
+///////////////////////////////////////////////////////////////////////////////////
+//	FUNCTION UAG_Alarms_Servermon()
+//  Hintergrund-Prozess, der einen Alarm Auslöst wenn ein Citect Task nicht läuft.
+//  
+//	Übergabeparameter:	---
+//                       
+//	Rückgabewert:		---
+//	Beschreibung:		
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	16.05.12	/	Schneider Electric GmbH
+//	Version				74.33.70.00
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	
+//
+///////////////////////////////////////////////////////////////////////////////////
+FUNCTION UAG_Alarms_Servermon()
+	Sleep(7);	// 7 Sekunden Verzögerung beim Hochfahren, bevor die Endlosschleife startet
+	
+	WHILE TRUE DO
+
+		IF ServerMonAllState() <> 2 THEN
+			Server1_ServerME=1
+		ELSE
+			Server1_ServerME=0
+		END	
+
+		SleepMS(miScanTime );	// Pause = Alarm-Scan-Zeit
+	END
+END
+
+///////////////////////////////////////////////////////////////////////////////////
+//	FUNCTION UAG_Alarms_GetPrioStatus()
+//  
+//
+//	Übergabeparameter:	---
+//                       
+//	Rückgabewert:		---
+//	Beschreibung:		
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	24.09.09	/	Schneider Electric GmbH
+//	Version				74.33.70.00
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	19.04.12	Steiner		änderung für View-Only Client
+//	04.09.13	Steiner		auf neue Funktion umgestellt
+//
+///////////////////////////////////////////////////////////////////////////////////
+
+INT FUNCTION 
+UAG_Alarms_GetPrioStatus(INT iPrio,INT IFarbe)
+	INT itemp;
+	ErrSet(1);
+	IF (AlarmCount(1,"PRIORITY="+IntToStr(iPrio)) <> 0) THEN
+		itemp =IFarbe
+	ELSE
+		IF (AlarmCount(2,"PRIORITY="+IntToStr(iPrio)) <> 0) THEN
+			itemp =20+IFarbe
+		ELSE
+			itemp =0
+		END
+	END
+	ErrSet(0);
+	RETURN 	itemp
+
+END	
+
+///////////////////////////////////////////////////////////////////////////////////
+//	FUNCTION UAG_Alarms_GetCategoryStatus()
+//  Durchsucht die Variable UAG_Alarms_ActiveCategories nach einer Alarm-Kategorie.
+//
+//	Übergabeparameter:	Kategorie
+//                       
+//	Rückgabewert:		TRUE oder FALSE
+//	Beschreibung:		
+//
+//	Autor:				Frank Däbritz
+//	Erstellungsdatum:	20.12.07	/	Schneider Electric GmbH
+//	Version				74.33.70.00
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	04.09.13	Steiner		auf neue Funktion umgestellt
+
+///////////////////////////////////////////////////////////////////////////////////
+INT FUNCTION 
+UAG_Alarms_GetCategoryStatus(INT intCategory,INT IFarbe)
+
+	INT itemp;
+	ErrSet(1);
+	IF (AlarmCount(1,"CATEGORY="+IntToStr(intCategory)) <> 0) THEN
+		itemp =IFarbe
+	ELSE
+		IF (AlarmCount(2,"CATEGORY="+IntToStr(intCategory)) <> 0) THEN
+			itemp =20+IFarbe
+		ELSE
+			itemp =0
+		END
+	END
+	ErrSet(0);
+	RETURN 	itemp
+
+END
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//		FUNCTION NAME	
+//						UAG_Sound_PLC()
+//
+//
+//     	GENERAL DESCRIPTION
+//			
+//			Steuerung der Soundtaste für SPS Hupe
+//
+// 		ARGUMENTS:
+//
+//     	RETURNED VALUE: 
+//
+//
+//		PSEUDO CODE:
+//
+//	Autor:				W, Steiner
+//	Erstellungsdatum:	21.11.12	/	Schneider Electric GmbH
+//	Version				7.2.3.13
+//
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//
+// 
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+FUNCTION
+UAG_Alarms_Sound_PLC()
+	giSound_On_Off = ParameterGet ( "Alarm", "SoundHupeOff",0)
+END
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//		FUNCTION NAME	
+//						UAG_Alarms_SoundOn_Enable
+//
+//
+//     	GENERAL DESCRIPTION
+//			
+//			Steuerung der Soundtaste für Alarmtöne
+//
+// 		ARGUMENTS:
+//
+//     	RETURNED VALUE: 
+//
+//
+//		PSEUDO CODE:
+//
+//	Autor:				W, Steiner
+//	Erstellungsdatum:	21.11.12	/	Schneider Electric GmbH
+//	Version				7.2.3.13
+//
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//
+// 
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+INT FUNCTION
+UAG_Alarms_SoundOn_Enable()
+	RETURN giSound_On_Off;
+END
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//		FUNCTION NAME	
+//						UAG_Alarms_SoundOn()
+//
+//
+//     	GENERAL DESCRIPTION
+//			
+//			Abfrage der Soundtaste für SPS Hupe
+//
+// 		ARGUMENTS:
+//
+//     	RETURNED VALUE: 
+//
+//
+//		PSEUDO CODE:
+//
+//	Autor:				W, Steiner
+//	Erstellungsdatum:	21.11.12	/	Schneider Electric GmbH
+//	Version				7.2.3.13
+//
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//
+// 
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+INT FUNCTION
+UAG_Alarms_SoundOn()
+	RETURN  (Server1_Hupe BITAND Pow(2,15)) = Pow(2,15);
+END
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//		FUNCTION NAME	
+//						UAG_Alarms_Sound_tgl()
+//
+//
+//     	GENERAL DESCRIPTION
+//			
+//			Umschalten der Soundtaste für SPS Hupe
+//
+// 		ARGUMENTS:
+//
+//     	RETURNED VALUE: 
+//
+//
+//		PSEUDO CODE:
+//
+//	Autor:				W, Steiner
+//	Erstellungsdatum:	21.11.12	/	Schneider Electric GmbH
+//	Version				7.2.3.13
+//
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//
+// 
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+FUNCTION
+UAG_Alarms_Sound_tgl()
+
+_IFDEF("Server1_Hupe","Client1")  =  (_IFDEF("Server1_Hupe","Client1")  BITXOR Pow(2,17))
+END
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//		FUNCTION NAME	
+//						UAG_Alarms_DspInfo()
+//
+//
+//     	GENERAL DESCRIPTION
+//			
+//			Display info popup for alarm at specified animation point in alarm list.
+//
+// 		ARGUMENTS:
+//
+//			iAN		-	Animation point number of alarm to display info for
+//
+//     	RETURNED VALUE: 
+//
+//			0 if successful, otherwise -1
+//
+//		PSEUDO CODE:
+//
+//	Autor:				J.Venz
+//	Erstellungsdatum:	11/03/03	/	Schneider Electric GmbH
+//	Version				74.33.70.00
+//
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	16/04/07	R.Watson	Made code in DspInfoRec 'inline' to this routine
+// 	13.11.07 	Steiner 	angepasst an UAG
+//	29.04.08	Steiner		Erweitert um Hilfeseite
+//	10.02.09	Steiner		Angepass an neue Vorlagen
+//	28.04.09	Steiner		Erweitert für 7.10
+//	16.07.12	Steiner		Anzeige bei Sumary falsch
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+INT FUNCTION 
+UAG_Alarms_DspInfo(INT iAN)
+	STRING	sTag;
+	STRING	sName;
+	STRING	sDesc,sComment;
+	STRING	sCategory;
+	STRING	sPriority;
+	STRING	sOnTime;
+	STRING	sOnDate;
+	STRING	sOffTime;
+	STRING	sOffDate;
+	STRING	sDuration;
+	STRING	sAckTime;
+	STRING	sAckDate;
+	STRING	sState;
+	STRING	sCluster;
+	STRING	sHelp;
+	INT		iX;
+	INT		iY;
+	INT		iWindow;
+	INT		nLines;	
+		
+	DspGetMouse(iX, iY);
+	IF AlarmGetInfo(iAN, 3) =10 THEN
+		sTag = AlarmGetDsp(iAN, "Tag");
+		sName = AlarmGetDsp(iAN, "Name");
+		sDesc = StrToLines(AlarmGetDsp(iAN, "SumDesc"),40,nLines);
+		sComment = StrToLines(AlarmGetDsp(iAN, "Comment"),40,nLines);
+		sCategory = AlarmGetDsp(iAN, "Category");
+		sPriority = AlarmGetDsp(iAN, "Priority");
+		sOnTime = AlarmGetDsp(iAN, "OnTime");
+		sOnDate = AlarmGetDsp(iAN, "OnDate");
+		sOffTime = AlarmGetDsp(iAN, "OffTime");
+		sOffDate = AlarmGetDsp(iAN, "OffDate");
+		sAckTime = AlarmGetDsp(iAN, "AckTime");
+		sAckDate = AlarmGetDsp(iAN, "AckDate");		
+		sDuration = AlarmGetDsp(iAN, "DeltaTime");	
+		sState = AlarmGetDsp(iAN, "State");
+		sCluster = 	AlarmGetDsp(iAN, "Cluster");
+		sHelp = AlarmGetDsp(iAN, "Help")
+	ELSE
+		sTag = AlarmGetDsp(iAN, "Tag");
+		sName = AlarmGetDsp(iAN, "Name");
+		sDesc = StrToLines(AlarmGetDsp(iAN, "Desc"),25,nLines);
+		sComment = AlarmGetDsp(iAN, "Comment");
+		sCategory = AlarmGetDsp(iAN, "Category");
+		sPriority = AlarmGetDsp(iAN, "Priority");
+		sOnTime = AlarmGetDsp(iAN, "OnTime");
+		sOnDate = AlarmGetDsp(iAN, "OnDate");
+		sOffTime =  "";
+		sOffDate =  "nur bei Alarmsumary";
+		sAckTime =  "";
+		sAckDate =  "nur bei Alarmsumary";		
+		sDuration =  "nur bei Alarmsumary";	
+		sState =  AlarmGetDsp(iAN, "State");
+		sCluster = 	AlarmGetDsp(iAN, "Cluster");
+		sHelp = AlarmGetDsp(iAN, "Help")
+	END		
+		
+	IF msAlarmInfoPage ="" THEN
+		msAlarmInfoPage= ParameterGet("Navigation" ,"AlarmInfoPageDflt" ,msAlarmInfoPageDflt);
+		
+	END	
+	IF giP2 THEN Ass(-2,1,"'" + sTag + "'",0) END
+	iWindow = UAG_MM_WinNewAt(msAlarmInfoPage, iX, iY, giMODE);
+	
+	IF iWindow = -1 THEN
+		RETURN -1;
+	END
+	SleepMS(100);
+	PageSetStr(1, sTag);
+	PageSetStr(2, sName);
+	PageSetStr(3, sDesc);
+	PageSetStr(4, sCategory);
+	PageSetStr(5, sPriority);
+	PageSetStr(6, sOnTime);
+	PageSetStr(7, sOnDate);
+	PageSetStr(8, sOffTime);
+	PageSetStr(9, sOffDate);
+	PageSetStr(10, sAckTime);
+	PageSetStr(11, sAckDate);
+	PageSetStr(12, sDuration);
+	PageSetStr(13, sState);
+	PageSetStr(14, sCluster);
+	PageSetStr(15, sComment);
+	PageSetStr(16, sHelp);
+	
+	RETURN 0;
+END
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//		FUNCTION NAME	
+//						UAG_Alarms_GroupConfig()
+//
+//
+//     	GENERAL DESCRIPTION
+//
+//			Displays a popup window allowing the user to browse/edit/add/delete records in the 
+//			AlarmGrp.dbf at runtime.
+//
+//			-> Modifications can be made to alarm groups at run-time, that will be reflected in the
+//			list box displaying available alarm groups for filtering.
+//				
+// 		ARGUMENTS:
+//
+//			
+//     	RETURNED VALUE: 
+//
+//
+//		PSEUDO CODE:
+//
+//			Display Popup
+//
+//			WHILE Popup displayed DO
+//
+//				SELECT User Action
+//					
+//				CASE Next button pressed
+//					Open device
+//						find current record
+//						goto next record
+//						update display
+//					Close device
+//					
+//				CASE Prev button pressed
+//					Open device
+//						find current record
+//						goto previous record
+//						update display
+//					Close device	
+//					
+//				CASE Browse for record
+//					Open device
+//						find selected record
+//						update display
+//					Close device
+//									
+//				CASE Add record 
+//					Open device
+//					Close device	
+//					
+//					call function to add record to dbf and item list
+//								
+//				CASE Replace record
+//					Open device
+//						find current record
+//					Close device
+//					
+//					call function to edit record in dbf and item list
+//									
+//				CASE Delete record
+//					Open device
+//						find current record
+//					Close device
+//					
+//					IF next record exists THEN
+//						Set current record = next record
+//					ELSE
+//						Set current record = previous record
+//					END
+//					
+//					call function to delete record from dbf and item list	
+//								
+//				END SELECT
+//				
+//			END
+//
+//	Autor:				J.Venz
+//	Erstellungsdatum:	29/04/03	/	Schneider Electric GmbH
+//	Version				74.33.81. 2
+//
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//  17.11.07 	Steiner 	angepasst an UAG
+//	10.06.11	Steiner		Pageint war falsch
+//	17.06.11	Steiner		Redundante Datenbank
+//	30.09.15	Steiner		Monitor Position
+//
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+INT FUNCTION 
+UAG_Alarms_GroupConfig()
+	INT		iTextBox;
+	INT		iTextBoxAN = 34;
+	INT		iWindow;
+	STRING	sAN;
+	STRING	sPage;
+	INT		iAction;
+	INT		hAlarmGrpDev;	
+	STRING	sName;	
+	STRING	sDesc;
+	STRING	sCategories;
+	STRING	sArea;	
+	OBJECT	objDescText;
+	OBJECT	objCategoriesText;
+	OBJECT	objAreaText;
+	STRING	sCurrentRec;
+	INT		iNext;
+	INT		iPrev;
+	INT		iDescAN = 24;
+	INT		iCategoriesAN = 25;
+	INT		iAreaAN = 26;
+	INT		iDescWidth, iDescHeight;
+	INT		iCategoriesWidth, iCategoriesHeight;
+	INT		iAreaWidth, iAreaHeight;
+	INT		iError;
+		
+	ErrSet(1);
+	
+	hAlarmGrpDev = UAG_DevOpen("UAG_AlaGrpsDevP","UAG_AlaGrpsDevS");
+	
+	IF hAlarmGrpDev = -1 THEN
+		UAG_SystemInfo("UAG_Alarms_GroupConfig", "System","@(Failed to open) AlarmGrp.dbf","-","-","-",TaskCluster(),_UAG_Fehler)
+		ErrSet(0);
+		RETURN -1;
+	END
+	UAG_GetMousePos_mitte(410,368)
+	PageTransformCoords(WinNumber(), giPosX, giPosY, giPosX, giPosY, 0)	
+	 
+	iWindow = UAG_MM_WinNewAt(msAlarmConfigPopup, giPosX,giPosY,giMODE);
+	
+	SleepMS(200);
+	
+	sPage = PageInfo(0);
+	
+	IF iWindow = -1 THEN
+		ErrSet(0);
+		RETURN -1;
+	END
+
+	
+	IsError();
+			
+	objDescText = ObjectByName("AN24");
+	objCategoriesText = ObjectByName("AN25");
+	objAreaText = ObjectByName("AN26");
+	
+	SleepMS(100);
+	
+	DevFirst(hAlarmGrpDev);
+	
+	IF NOT DevEOF(hAlarmGrpDev) THEN
+		sName = DevGetField(hAlarmGrpDev, "Name");
+		sDesc = DevGetField(hAlarmGrpDev, "Desc");
+		sCategories = DevGetField(hAlarmGrpDev, "Categories");
+		sArea = DevGetField(hAlarmGrpDev, "Area");
+		
+		PageSetInt(2, DevRecNo(hAlarmGrpDev));
+		PageSetInt(3, DevSize(hAlarmGrpDev));
+		
+		sCurrentRec = sName;
+	END
+	
+	DevClose(hAlarmGrpDev);
+
+	_ObjectSetProperty(objDescText, "Text", sDesc);
+	_ObjectSetProperty(objCategoriesText, "Text", sCategories);
+	_ObjectSetProperty(objAreaText, "Text", sArea);
+	
+	WinGoto(iWindow);
+	
+	
+	iError = IsError();
+
+	WHILE PageInfo(0) = sPage AND NOT iError DO
+	
+		IF PageGetInt(10) <> 0 THEN
+			iAction = PageGetInt(10);
+			PageSetInt(10, 0);
+			
+			hAlarmGrpDev = UAG_DevOpen("UAG_AlaGrpsDevP","UAG_AlaGrpsDevS");
+
+			IF hAlarmGrpDev = -1 THEN
+
+				UAG_SystemInfo("UAG_Alarms_GroupConfig", "System", "@(Failed to open) AlarmGrp.dbf" ,"-","-","_",TaskCluster(),_UAG_Fehler);
+
+				iAction = 0;
+			END
+				
+			SELECT CASE iAction
+			
+			CASE 1, 2, 6	! Navigate records: 1 = Next, 2 = Previous, 6 = Find
+			
+				IF sCurrentRec <> "" THEN
+				
+					IF iAction = 1 THEN		! Next
+						DevFind(hAlarmGrpDev, sCurrentRec, "Name");		! goto current record
+						IF NOT iNext THEN
+							DevNext(hAlarmGrpDev);					! goto next record
+						END
+					END
+					
+					IF iAction = 2 THEN 	! Previous
+						DevFind(hAlarmGrpDev, sCurrentRec, "Name");		! goto current record
+						IF NOT iPrev THEN
+							DevPrev(hAlarmGrpDev);				! goto previous record if current record									
+						END										! hasn't been deleted
+					END
+					
+					IF iAction = 6 THEN		! Find
+						sDesc = _ObjectGetProperty(objDescText, "Text");
+						DevFirst(hAlarmGrpDev);
+						DevFind(hAlarmGrpDev, sDesc, "Desc");
+					END			
+	
+					IF NOT DevEOF(hAlarmGrpDev) THEN
+					
+						sName = DevGetField(hAlarmGrpDev, "Name");
+						sDesc = DevGetField(hAlarmGrpDev, "Desc");
+						sCategories = DevGetField(hAlarmGrpDev, "Categories");
+						sArea = DevGetField(hAlarmGrpDev, "Area");
+						
+						_ObjectSetProperty(objDescText, "Text", sDesc);
+						_ObjectSetProperty(objCategoriesText, "Text", sCategories);
+						_ObjectSetProperty(objAreaText, "Text", sArea);
+	
+						sCurrentRec = sName;
+					END		
+					
+					PageSetInt(2, DevRecNo(hAlarmGrpDev));	! Update record number display
+					PageSetInt(3, DevSize(hAlarmGrpDev));	! Update record count display
+				
+				END
+						
+				DevClose(hAlarmGrpDev);
+				iNext = 0;
+				iPrev = 0;
+				
+			CASE 3	! Add record
+			
+				sDesc = _ObjectGetProperty(objDescText, "Text");
+				sCategories = _ObjectGetProperty(objCategoriesText, "Text");
+				sArea = _ObjectGetProperty(objAreaText, "Text");
+
+				sName = "A" + IntToStr(SysTime()) + "~"; ! create unique name			
+
+				PageSetInt(2, DevSize(hAlarmGrpDev) + 1);	! Update record number display
+				PageSetInt(3, DevSize(hAlarmGrpDev) + 1);	! Update record count display
+				
+				sCurrentRec = sName;
+					
+				DevClose(hAlarmGrpDev);
+				iNext = 0;
+				iPrev = 0;
+							
+				UAG_Alarms_GroupAdd(sName, sDesc, sCategories, sArea);	! Add group to dbf and list	
+				
+			CASE 4	! Replace record
+			
+				IF sCurrentRec <> "" THEN
+				
+					DevFind(hAlarmGrpDev, sCurrentRec, "Name");		! goto current record
+					sName = DevGetField(hAlarmGrpDev, "Name");
+					sDesc = _ObjectGetProperty(objDescText, "Text");
+					sCategories = _ObjectGetProperty(objCategoriesText, "Text");
+					sArea = _ObjectGetProperty(objAreaText, "Text");
+	
+					PageSetInt(2, DevRecNo(hAlarmGrpDev));
+				END
+				
+				DevClose(hAlarmGrpDev);
+				iNext = 0;
+				iPrev = 0;
+				
+				IF sCurrentRec <> "" THEN
+					UAG_Alarms_GroupEdit(sName, sDesc, sCategories, sArea);	! Edit group in dbf and list
+				END
+								
+			CASE 5	! Delete record
+			
+				IF sCurrentRec <> "" THEN
+				
+					DevFind(hAlarmGrpDev, sCurrentRec, "Name");		! goto current record
+					sName = DevGetField(hAlarmGrpDev, "Name"); 
+					_ObjectSetProperty(objDescText, "Text", "");
+					_ObjectSetProperty(objCategoriesText, "Text", "");
+					_ObjectSetProperty(objAreaText, "Text", "");
+
+					IF NOT DevNext(hAlarmGrpDev) THEN
+						iNext = 1;
+					ELSE
+						IF NOT DevPrev(hAlarmGrpDev) THEN
+							iPrev = 1;
+						END
+					END
+					
+					IF iNext OR iPrev THEN
+						sCurrentRec = DevGetField(hAlarmGrpDev, "Name");
+					ELSE
+						sCurrentRec = "";
+					END
+				
+				END
+				
+				DevClose(hAlarmGrpDev);
+				
+				IF sName <> "" THEN
+					UAG_Alarms_GroupRemove(sName);	! Remove group from dbf and list
+				END
+				
+			END SELECT
+				
+		END
+		
+		SleepMS(100);	
+	END
+	
+	SleepMS(200);
+	
+	ErrSet(0);
+	
+	RETURN 0;
+END
+
+///////////////////////////////////////////////////////////////////////////////////
+//	UAG_Alarms_Leiteingriff()
+//
+//	Übergabeparameter:	Text
+//                       
+//	Rückgabewert:		
+//						
+//	Beschreibung:		Schreiben von Bedienereingriffen in Summary	
+//
+//	Autor:				Frank Däbritz
+//	Erstellungsdatum:	20.12.07	/	Schneider Electric GmbH
+//	Version				3.1.1.8
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	22.04.08	Steiner		Angepasst an UAG
+//	02.09.08	Steiner		Stringbegrenzung eingeführt und neuer Task
+//	12.01.10	Steiner		Änderungen für Manager Client
+///////////////////////////////////////////////////////////////////////////////////
+
+
+FUNCTION 
+UAG_Alarms_Leiteingriff(STRING sLE_Text)
+	INT Hnd;
+    INT lastErrorCode;
+   	ErrSet(1);
+	msLE_Text=sLE_Text
+	Hnd = TaskNew("_UAG_Alarms_Leiteingriff","Hnd",0);
+	IF (Hnd < 0) THEN
+		// Unable to create task (at task limit ?)
+		lastErrorCode 	= IsError();
+		ErrSetHw(2, lastErrorCode, 0);
+		ErrLog("@(Error using system UAG_Alarms_Leiteingriff) @(Function): Tag '" +"' @(Cicode error) " + IntToStr(lastErrorCode));	
+	END 
+	ErrSet(0);
+END 
+
+FUNCTION 
+_UAG_Alarms_Leiteingriff(INT Hnd)
+	STRING sA_MSG_Leiteingriff;
+	STRING sC_MSG_Tag;
+	INT hMsg;
+	ErrSet(1);
+
+	IF gsUAGClientName = "" THEN
+		gsUAGClientName = StrToLocalText("@(na)");
+	END	
+	sA_MSG_Leiteingriff = gsUAGClientName + ": " + msLE_Text;
+	
+	sC_MSG_Tag = gsUAG_StationName +"_AMSG\" + IntToStr(gsUAGClientNr);
+	
+	IF TagWrite(sC_MSG_Tag,UAG_String_StrToReg( sA_MSG_Leiteingriff,100), 0, 1) =0 THEN
+		UAG_Alarms_Pulse_A_FLG(gsUAGClientNr);
+	END	
+	ErrSet(0);
+	TaskSetSignal(Hnd,1);
+END
+
+PRIVATE 
+FUNCTION UAG_Alarms_Pulse_A_FLG(INT iCNr)
+	STRING sC_FLG_Tag;
+	
+	sC_FLG_Tag = gsUAG_StationName +"_AFL\" + IntToStr(iCNr);
+	TagWrite(sC_FLG_Tag, 1, 0, 1);
+	SleepMS(miScanTime+100);
+	TagWrite(sC_FLG_Tag, 0, 0, 1);
+END
+
+///////////////////////////////////////////////////////////////////////////////////
+//	UAG_Alarms_LeiteingriffS()
+//
+//	Übergabeparameter:	Text
+//                       
+//	Rückgabewert:		
+//						
+//	Beschreibung:		
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	06.07.09	/	Schneider Electric GmbH
+//	Version				3.1.0.1
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	
+///////////////////////////////////////////////////////////////////////////////////
+
+
+FUNCTION 
+UAG_Alarms_LeiteingriffS(STRING sLE_Text)
+	INT Hnd;
+    INT lastErrorCode;
+	ErrSet(1);
+	msLE_Text=sLE_Text
+	Hnd = TaskNew("_UAG_Alarms_LeiteingriffS","Hnd",0);
+	IF (Hnd < 0) THEN
+		// Unable to create task (at task limit ?)
+		lastErrorCode 	= IsError();
+		ErrSetHw(2, lastErrorCode, 0);
+		ErrLog("@(Error using system UAG_Alarms_LeiteingriffS) @(Function): Tag '" +"' @(Cicode error) " + IntToStr(lastErrorCode));	
+	END 
+	ErrSet(0);
+END 
+
+FUNCTION 
+_UAG_Alarms_LeiteingriffS(INT Hnd)
+	STRING sA_MSG_Leiteingriff;
+	STRING sC_MSG_Tag;
+	INT hMsg;
+	ErrSet(1);
+	IF gsUAGClientName = "" THEN
+		gsUAGClientName = StrToLocalText("@(na)");
+	END	
+	sA_MSG_Leiteingriff = gsUAGClientName + ": " + msLE_Text;
+	
+	sC_MSG_Tag = gsUAG_StationName +"_SMSG\" + IntToStr(gsUAGClientNr);
+	
+	IF TagWrite(sC_MSG_Tag,UAG_String_StrToReg( sA_MSG_Leiteingriff,100), 0, 1) =0 THEN
+		UAG_Alarms_Pulse_S_FLG(gsUAGClientNr);
+	END	
+	TaskSetSignal(Hnd,1);
+	ErrSet(0);
+END
+
+PRIVATE 
+FUNCTION UAG_Alarms_Pulse_S_FLG(INT iCNr)
+	STRING sC_FLG_Tag;
+	
+	sC_FLG_Tag = gsUAG_StationName +"_SFL\" + IntToStr(iCNr);
+	TagWrite(sC_FLG_Tag, 1, 0, 1);
+	SleepMS(miScanTime+100);
+	TagWrite(sC_FLG_Tag, 0, 0, 1);
+END
+
+///////////////////////////////////////////////////////////////////////////////////
+//	UAG_Alarms_Filter_Prio()
+//
+// 	
+//
+//	Übergabeparameter:	Alarm Type
+//                       
+//	Rückgabewert:		-	
+//						
+//	Beschreibung:		Aktiviert den Filter nach Prio
+//						
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	07.12.09	/	Schneider Electric GmbH
+//	Version				74.33.81.02
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	
+//	04.09.13	Steiner		Tabstyle Filter
+//
+///////////////////////////////////////////////////////////////////////////////////
+
+FUNCTION 
+UAG_Alarms_Filter_Prio(INT iPrio ,STRING sText, INT iAlarmType=1,INT iListId=1)
+	INT listHnd = _UAG_TabAlarm_GetInstance(iListId);
+	INT listAN =_UAG_TabAlarm_IntMetadata(listHnd, "MasterAN");
+	STRING formFilterCurr = UAG_TabAlarmFilter_GetFilter(listAN);
+	AlarmFilterOpen(formFilterCurr, 2);
+	INT session = AlarmFilterEditOpen(formFilterCurr);
+
+	IF session >= 0 THEN
+		AlarmFilterEditSet(session, "Priority=" + IntToStr (iPrio ) );
+		AlarmFilterEditCommit(session);
+		AlarmFilterEditClose(session);
+		UAG_TabAlarmFilter_Apply(listAN);
+		PageSetStr(20,StrToLocalText("@(Filtered by priority): ") + sText + " (" +IntToStr(iPrio) + ")");
+	END
+END 
+
+///////////////////////////////////////////////////////////////////////////////////
+//	UAG_Alarms_Filter_Cat()
+//
+// 	
+//
+//	Übergabeparameter:	Alarm Type
+//                       
+//	Rückgabewert:		-	
+//						
+//	Beschreibung:		Aktiviert den Filter nach Cat
+//						
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	01.07.11	/	Schneider Electric GmbH
+//	Version				74.33.81.02
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	
+//	04.09.13	Steiner		Tabstyle Filter
+//
+///////////////////////////////////////////////////////////////////////////////////
+
+FUNCTION 
+UAG_Alarms_Filter_Cat(INT iCat ,STRING sText, INT iAlarmType=1,INT iListId=1)
+	INT listHnd = _UAG_TabAlarm_GetInstance(iListId);
+	INT listAN =_UAG_TabAlarm_IntMetadata(listHnd, "MasterAN");
+	STRING formFilterCurr = UAG_TabAlarmFilter_GetFilter(listAN);
+	AlarmFilterOpen(formFilterCurr, 2);
+	INT session = AlarmFilterEditOpen(formFilterCurr);
+
+	IF session >= 0 THEN
+		AlarmFilterEditSet(session, "Category=" + IntToStr (iCat) );
+		AlarmFilterEditCommit(session);
+		AlarmFilterEditClose(session);
+		UAG_TabAlarmFilter_Apply(listAN);
+		PageSetStr(20,StrToLocalText("@(Filtered by category): ") + sText + " (" +IntToStr(iCat) + ")");
+	END
+END 
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//		FUNCTION NAME	
+//						UAG_Alarms_GetUniqueGroupName()
+//
+//
+//     	GENERAL DESCRIPTION
+//			
+//			Checks if a group of a specified name exists.  If a group already exists with the specified name then
+//			a new name is found by appending a number to the original name.
+//
+//			Note:
+//				Call this function to ensure a new group can be created with a specified name, before
+//				attempting to create the group.
+//
+// 		ARGUMENTS:
+//
+//			sGroupName		- 	Name of a group to check
+//
+//     	RETURNED VALUE: 
+//
+//			Name of a group not yet assigned (= sGroupName, or modified version of sGroupName).
+//
+//		PSEUDO CODE:
+//
+//	Autor:				J.Venz
+//	Erstellungsdatum:	11/03/03	/	Schneider Electric GmbH
+//	Version				3.0.0.0
+//
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	30.04.08	Steiner		Muss in UAG Alarms sein
+//
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+STRING FUNCTION
+UAG_Alarms_GetUniqueGroupName(STRING sGroupName)
+	
+	STRING 	sAlarmGroupName;
+	STRING 	sAlarmGroupNameTmp;
+	INT 	hGroup = -1;
+	INT		iGroup;
+	
+	sAlarmGroupName = UAG_String_Replace(sGroupName, " ", "");
+	
+	sAlarmGroupName = StrLeft(sAlarmGroupName, 14);
+	
+	hGroup = GrpOpen(sAlarmGroupName, 0);
+	
+	WHILE hGroup <> -1 AND iGroup < 100 DO
+	
+		sAlarmGroupNameTmp = StrLeft(sAlarmGroupName, 12) + IntToStr(Rand(99));
+		hGroup = GrpOpen(sAlarmGroupNameTmp, 0);
+		IF hGroup <> -1 THEN
+			GrpClose(hGroup);
+		ELSE
+			sAlarmGroupName = sAlarmGroupNameTmp;
+		END
+				
+		iGroup = iGroup + 1;
+	
+	END
+
+	IF hGroup <> -1 THEN
+		sAlarmGroupName = "";
+	END
+	
+	RETURN sAlarmGroupName;
+	
+END
+
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//		FUNCTION NAME	
+//						UAG_Alarms_GroupsInit()
+//
+//     	GENERAL DESCRIPTION
+//			
+//			Initialises Alarm Group Listbox with groups specified in AlarmGrp.dbf.
+//			For each alarm group listed in AlarmGrp.dbf a group is created to store the alarm categories assigned
+//			to the alarm group.
+//			Groups are used to filter alarm list.  When a group is selected from the
+//			list only alarms having those categories are displayed on the alarm page.
+//
+// 		ARGUMENTS:
+//
+//
+//     	RETURNED VALUE: 
+//
+//			0 if successful, otherwise -1.
+//
+//		PSEUDO CODE:
+//
+//	Autor:				J.Venz
+//	Erstellungsdatum:	11/03/03	/	Schneider Electric GmbH
+//	Version				74.33.70.00
+//
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	29.04.08	Steiner		Angepasst an UAG
+//	17.06.11	Steiner		Redundante Datenbank
+//	16.05.14	Steiner		An V7.4 Angepasst
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+INT FUNCTION 
+UAG_Alarms_GroupsInit()
+
+	INT		hGroupDev = -1;
+	INT		iError = -1;
+	INT		hGroup = -1;
+	INT		iRecordNo;
+	STRING	sGroupName;
+	STRING	sDesc;
+	STRING	sCategories;
+	STRING	sArea;
+	
+	ErrSet(1);
+	
+	hGroupDev = UAG_DevOpen("UAG_AlaGrpsDevP","UAG_AlaGrpsDevS");
+	
+	IF hGroupDev = -1 THEN
+		ErrSet(0);
+		RETURN -1;
+	END
+	
+//	DevControl(hGroupDev, 1, "");
+	
+	mhAlarmGroupList = CSV_Listbox_Create();
+	
+	DevFirst(hGroupDev);
+	
+	WHILE NOT DevEOF(hGroupDev) DO
+	
+		sGroupName = DevGetField(hGroupDev, "Name");
+		iRecordNo = DevRecNo(hGroupDev);
+		
+		! If more than one record with same name only use last record.
+		iError = DevNext(hGroupDev);
+		IF NOT iError THEN
+			iError = DevFind(hGroupDev, sGroupName, "Name");
+		END
+		
+		DevSeek(hGroupDev,iRecordNo);
+		
+		IF iError THEN	
+
+			sDesc = DevGetField(hGroupDev, "Desc");			
+			sCategories = DevGetField(hGroupDev, "Categories");
+			sArea = DevGetField(hGroupDev, "Area");
+				
+			hGroup = GrpOpen(sGroupName, 2);
+			
+			IF hGroup <> -1 THEN
+			
+				! Create a group to store the categories associated with the alarm group
+				iError = StrToGrp(hGroup, sCategories);
+				
+				IF NOT iError THEN
+					! Add alarm group to Alarm Group list box
+					_UAG_Alarms_GroupListAdd(sGroupName, sDesc, sArea);
+				ELSE
+				
+					GrpClose(hGroup);
+				END
+				
+			END
+		END
+		
+		DevNext(hGroupDev);	
+	END
+	
+	DevClose(hGroupDev);
+
+//	msAllAlarms = "--  " + "Alle Alarme Anzeigen" + "  --";
+//	_UAG_Alarms_GroupListAdd("_AllAlarms_", msAllAlarms);
+//	
+//	msAdvFilter = "--  " + "Erweiterter Filter" + "  --";	
+//	_UAG_Alarms_GroupListAdd("_AdvFilter_", msAdvFilter);
+	
+	mbAlarmGroupsInitialised = 1;
+		
+	ErrSet(0);
+
+	RETURN 0;
+	
+END
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//		FUNCTION NAME	
+//						UAG_Alarms_GroupAdd()
+//
+//
+//     	GENERAL DESCRIPTION
+//			
+//			Adds an alarm group to the Alarm Group Listbox, and creates a group to store the 
+//			associated alarm categories.  The alarm group is also added to AlarmGrp.dbf.
+//			The name of the group is the stored in the second field of the listbox (non-visible field), 
+//			as well as in the "Name" field of the AlarmGrp.dbf.
+//
+//			Note:
+//				Alarm groups are used to filter alarms on an alarm page.
+//				When a group is selected from the list only alarms having the associated categories 
+//				are displayed on the alarm page.
+//
+// 		ARGUMENTS:
+//
+//			sGroupName		-	Name/ID of alarm group (must be unique)
+//			sDesc			-	Text describing alarm group that will appear in listbox
+//			sCategories		-	String listing categories represented by alarm group
+//								Must have same format as a standard Citect group
+//								eg. "1,5,7..9" = categories 1,5,7,8,9 
+//			sArea			- 	Area the group applies to
+//								Empty string = all areas
+//
+//     	RETURNED VALUE: 
+//
+//			Name of the group created, or "" if unsuccessful.
+//
+//		PSEUDO CODE:
+//
+//	Autor:				J.Venz
+//	Erstellungsdatum:	11/03/03	/	Schneider Electric GmbH
+//	Version				7.2.0.2
+//
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//
+//	30.04.08 	Steiner 	angepasst an UAG
+//	17.06.11	Steiner		Redundante Datenbank
+//
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+STRING FUNCTION
+UAG_Alarms_GroupAdd(STRING sGroupName, STRING sDesc, STRING sCategories, STRING sArea = "")
+
+	INT		hGroupDev = -1;
+	INT		iError = -1;
+	INT		hGroup = -1;
+	STRING	sAlarmGroupName;
+	
+	ErrSet(1);
+
+	IF NOT mbAlarmGroupsInitialised THEN
+		UAG_Alarms_GroupsInit();
+	END
+		
+	hGroupDev = UAG_DevOpen("UAG_AlaGrpsDevP","UAG_AlaGrpsDevS");
+	
+	IF hGroupDev = -1 THEN
+		ErrSet(0);
+		RETURN "";
+	END
+
+	! Ensure a unique name is used for the new group
+	sAlarmGroupName = UAG_Alarms_GetUniqueGroupName(sGroupName);	
+	
+	IF sAlarmGroupName = "" THEN
+		ErrSet(0);
+		RETURN "";
+	END
+	
+	DevFirst(hGroupDev);
+	IF NOT DevFind(hGroupDev, sAlarmGroupName, "Name") THEN
+		ErrSet(0);
+		RETURN ""; ! Name already exists
+	END
+	
+	hGroup = GrpOpen(sAlarmGroupName, 1);
+	
+	IF hGroup <> -1 THEN
+	
+		! create new alarm group containing specified categories
+		iError = StrToGrp(hGroup, sCategories);
+		
+		IF NOT iError THEN
+			
+			IsError();
+			DevAppend(hGroupDev);
+			DevSetField(hGroupDev, "Name", sAlarmGroupName);
+			DevSetField(hGroupDev, "Desc", sDesc);
+			DevSetField(hGroupDev, "Categories", sCategories);
+			DevSetField(hGroupDev, "Area", sArea);
+			iError = IsError();
+			
+			IF NOT iError THEN
+				! add alarm group to Alarm Group listbox
+				_UAG_Alarms_GroupListAdd(sAlarmGroupName, sDesc, sArea);
+			END
+			
+		END
+		
+		IF iError THEN
+
+			GrpClose(hGroup);
+		END
+		
+	END
+	DevControl(hGroupDev, 1, "");
+
+	DevClose(hGroupDev);
+	
+	IF iError THEN
+		sAlarmGroupName = "";
+	END
+	
+	ErrSet(0);
+	
+	RETURN sAlarmGroupName;
+	
+END
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//		FUNCTION NAME	
+//						UAG_Alarms_GroupRemove()
+//
+//
+//     	GENERAL DESCRIPTION
+//			
+//			Removes an alarm group from the Alarm Group Listbox, and deletes the Citect group of the 
+//			same name.  The alarm group is also removed from the AlarmGrp.dbf. 
+//
+//			Note:
+//				Alarm groups are used to filter alarms on an alarm page.
+//				When a group is selected from the list only alarms having the associated categories 
+//				are displayed on the alarm page.
+//
+// 		ARGUMENTS:
+//
+//			sGroupName		-	Unique Name/ID of alarm group
+//								(= second field (non-visible) of Alarm Group listbox, which can be retrieved by
+//								  calling CSV_Listbox_GetSelectedItemID().)
+//
+//     	RETURNED VALUE: 
+//
+//			0 if successful, otherwise -1.
+//
+//		PSEUDO CODE:
+//
+//	Autor:				J.Venz
+//	Erstellungsdatum:	11/03/03	/	Schneider Electric GmbH
+//	Version				7.2.0.2
+//
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//
+//	30.04.08 	Steiner 	angepasst an UAG
+//	17.06.11	Steiner		Redundante Datenbank
+//
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+INT FUNCTION
+UAG_Alarms_GroupRemove(STRING sGroupName)
+
+	INT		hGroupDev = -1;
+	INT		iError = -1;
+	INT		hGroup = -1;
+	
+	ErrSet(1);
+
+	IF NOT mbAlarmGroupsInitialised THEN
+		UAG_Alarms_GroupsInit();
+	END
+		
+	hGroupDev = UAG_DevOpen("UAG_AlaGrpsDevP","UAG_AlaGrpsDevS");
+	
+	IF hGroupDev = -1 THEN
+		ErrSet(0);
+		RETURN -1;
+	END
+
+	DevFirst(hGroupDev);
+	IF DevFind(hGroupDev, sGroupName, "Name") THEN
+		ErrSet(0);
+		RETURN -1; ! Name doesn't exist
+	END
+	
+	iError = DevDelete(hGroupDev);
+	
+	DevControl(hGroupDev, 1, "");
+	
+	DevClose(hGroupDev);
+	
+	IF NOT iError THEN
+		! remove group from Alarm Group listbox
+		iError = _UAG_Alarms_GroupListRemove(sGroupName);
+		
+		hGroup = GrpOpen(sGroupName, 0);
+		
+		IF hGroup <> -1 THEN
+			! delete group
+			GrpClose(hGroup);
+		END
+	ELSE
+	
+		iError = -1;
+	END
+	
+	ErrSet(0);
+	
+	RETURN iError;
+END
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//		FUNCTION NAME	
+//						UAG_Alarms_GroupEdit()
+//
+//
+//     	GENERAL DESCRIPTION
+//			
+//			Edits an existing alarm group in the Alarm Group Listbox, and updates the AlarmGrp.dbf.
+//
+//			Note:
+//				Alarm groups are used to filter alarms on an alarm page.
+//				When a group is selected from the list only alarms having the associated categories 
+//				are displayed on the alarm page.
+//
+// 		ARGUMENTS:
+//
+//			sGroupName		-	Name/ID of alarm group (must be unique)
+//			sDesc			-	Text describing alarm group that will appear in listbox
+//			sCategories		-	String listing categories represented by alarm group
+//								Must have same format as a standard Citect group
+//								eg. "1,5,7..9" = categories 1,5,7,8,9 
+//			sArea			- 	Area the group applies to
+//								Empty string = all areas
+//
+//     	RETURNED VALUE: 
+//
+//			0 if successful, otherwise -1.
+//
+//		PSEUDO CODE:
+//
+//	Autor:				J.Venz
+//	Erstellungsdatum:	11/03/03	/	Schneider Electric GmbH
+//	Version				3.0.0.0
+//
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	30.04.08	Steiner		Muss in UAG Alarms sein
+//
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+INT FUNCTION
+UAG_Alarms_GroupEdit(STRING sGroupName, STRING sDesc, STRING sCategories, STRING sArea = "")
+
+	INT		iError = -1;
+	
+	IF NOT mbAlarmGroupsInitialised THEN
+		UAG_Alarms_GroupsInit();
+	END	
+	
+	iError = UAG_Alarms_GroupRemove(sGroupName);
+	
+	IF NOT iError THEN
+	
+		iError = UAG_Alarms_GroupAdd(sGroupName, sDesc, sCategories, sArea);
+	END
+	
+	RETURN iError;
+	
+END
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//		FUNCTION NAME	
+//						UAG_Alarms_GroupFilter()
+//
+//
+//     	GENERAL DESCRIPTION
+//			
+//			Filters the alarm list starting at a specified animation point for a group of categories.
+//
+//			Note:
+//				If the group name = "_AllAlarms_" then the all alarms will be displayed
+//				i.e. the filter will be cleared.
+//
+//				If the group name = "_AdvFilter_" then the selected advanced filter will be applied to 
+//				the alarm list.
+//
+// 		ARGUMENTS:
+//
+//			iAN				-	animation point number of start of alarm list
+//			sGroupName		-	Name/ID of alarm group to filter for
+//			iAlarmType		-	Type of alarm list associated with filter
+//								0 = last alarms list
+//								1 = active alarms list
+//								2 = alarm summary list
+//								3 = hardware alarms list
+//								4 = disabled alarms list
+//			iMonitor		- 	number of monitor displaying alarm list (-1 = active monitor)
+//		
+//
+//     	RETURNED VALUE: 
+//
+//			Handle to group, otherwise -1.
+//
+//		PSEUDO CODE:
+//
+//
+//	Autor:				J.Venz
+//	Erstellungsdatum:	11/03/03	/	Schneider Electric GmbH
+//	Version				74.33.81.02
+//
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//
+// 	30.04.08 	Steiner 	angepasst an UAG
+//	30.06.11	MZ			Anzeige von Kat-Filter ausschalten
+//	01.07.11	Steiner		Fehler beim Löschen des Filters
+//	16.05.14	Steiner		Angepasst an 7.40
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+INT FUNCTION
+UAG_Alarms_GroupFilter(INT listID, STRING sGroupName, INT iAlarmType,INT iMonitor=WinNumber())
+
+	INT		hGroup = -1;
+	
+				
+	IF  sGroupName = "" THEN
+		! Display all alarms
+		UAG_TabAlarm_ResetFilter(listID)
+	ELSE
+		hGroup = GrpOpen(sGroupName, 0); 
+		IF hGroup <> -1 THEN
+			UAG_TabAlarm_ResetFilter(listID)
+			PageSetStr(20,StrToLocalText("@(Filtered by group): ") + sGroupName); 	// MZ-110630: Anzeige von Kat-Filter ausschalten
+			UAG_TabAlarm_SetInfo(listID, 2, hGroup);
+			UAG_TabAlarm_SetInfo(listID, 8, 0);
+		END
+	END
+	
+		WinGoto(iMonitor);
+	
+	RETURN hGroup;
+END
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//		FUNCTION NAME	
+//						UAG_Alarms_DspGroupFilter()
+//
+//
+//     	GENERAL DESCRIPTION
+//			
+//			Displays the Alarm Group listbox, and stores the selected filter for the specified alarm page and
+//			the specified monitor
+//
+// 		ARGUMENTS:
+//
+//			iAlarmType	-	Type of alarm list associated with filter
+//								0 = last alarms list
+//								1 = active alarms list
+//								2 = alarm summary list
+//								3 = hardware alarms list
+//								4 = disabled alarms list
+//			iMonitor	- 	The number of the monitor to associate the filter with
+//							(each monitor can display and store a different filter)
+//		
+//
+//     	RETURNED VALUE: 
+//
+//			Name of Alarm Group selected, or "" if selection cancelled.
+//
+//		PSEUDO CODE:
+//	Autor:				J.Venz
+//	Erstellungsdatum:	11/03/03	/	Schneider Electric GmbH
+//	Version				74.33.70.00
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	29.04.08	Steiner		Angepasst an UAG
+//	16.05.14	Steiner		Angepasst an 7.40
+//
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+STRING FUNCTION
+UAG_Alarms_DspGroupFilter(INT iAlarmType)
+
+	STRING	sSelection;
+	STRING	sSelectedItemID;
+	STRING	sAreas;
+	INT		hAreaGrp;
+	INT		iArea;
+	INT		iMonitor;
+	
+	IF NOT mbAlarmGroupsInitialised THEN
+		UAG_Alarms_GroupsInit();
+	END
+
+	IF mhAlarmGroupList <> -1 THEN
+	
+		iMonitor = WinNumber();
+		
+		hAreaGrp = GetArea();
+		IF hAreaGrp <> -1 THEN
+			! Get all current viewable areas
+			iArea = GrpFirst(hAreaGrp);
+			WHILE NOT iArea = -1 DO
+				sAreas = sAreas + IntToStr(iArea) + ",";
+				iArea = GrpNext(hAreaGrp, iArea);
+			END
+			
+			IF sAreas <> "" THEN
+				sAreas = StrLeft(sAreas, StrLength(sAreas) - 1);
+			END 
+		END
+		
+		sSelection = UAG_Alarms_DspGroupList(msAlarmGroupSelected[iMonitor][iAlarmType], sAreas);
+		
+		IF sSelection <> "" THEN
+			! get selected group name
+			sSelectedItemID = CSV_ListBox_GetSelectedItemID(mhAlarmGroupList);	
+			
+				! store selected group description and group name	
+				msAlarmGroupSelected[iMonitor][iAlarmType] = sSelection;	
+				msAlarmGroupSelectedID[iMonitor][iAlarmType] = sSelectedItemID;
+		END
+	END
+	
+	
+	RETURN sSelectedItemID;
+		
+END
+
+	
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//		FUNCTION NAME	
+//						UAG_Alarms_DspGroupList()
+//
+//
+//     	GENERAL DESCRIPTION
+//			
+//			Displays the Alarm Group listbox.
+//
+// 		ARGUMENTS:
+//
+//			sSelectedGroup		- Name of group to preselect in the list
+//			sAreas				- Areas to enable in the list 
+//									i.e. only alarm groups belonging to these areas are displayed
+//						
+//     	RETURNED VALUE: 
+//
+//			Alarm group (description) selected from the list, or "" if cancel is pressed.
+//
+//		PSEUDO CODE:
+//	Autor:				J.Venz
+//	Erstellungsdatum:	11/03/03	/	Schneider Electric GmbH
+//	Version				74.33.81.02
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	29.04.08	Steiner		Angepasst an UAG
+//
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+STRING FUNCTION
+UAG_Alarms_DspGroupList(STRING sGroupSelected = "", STRING sAreas = "")
+
+	STRING	sTitle;
+	STRING	sDesc;
+	STRING	sOK;
+	STRING	sCancel;
+	STRING	sSelection;
+	
+	IF NOT mbAlarmGroupsInitialised THEN
+		UAG_Alarms_GroupsInit();
+	END
+		
+	IF mhAlarmGroupList <> -1 THEN
+	
+		sTitle =StrToLocalText("@(Alarm filter group)");
+		sDesc = StrToLocalText("@(Group Select or Advanced filter)");
+		sOK = StrToLocalText(" @(OK) ");
+		sCancel = StrToLocalText(" @(Cancel) ");
+		
+		! display only alarm groups for specified areas
+		CSV_Listbox_SelectCategories(mhAlarmGroupList, sAreas);
+		! show alarm group list
+		sSelection = CSV_ListBox_Show(mhAlarmGroupList, sTitle, sDesc, sOK, 
+			sCancel, -9999, -9999, sGroupSelected);
+			
+//		IF sSelection = msAllAlarms THEN
+//		
+//			sSelection = "_AllAlarms_";
+//		ELSE
+//			IF sSelection = msAdvFilter THEN
+//			
+//				sSelection = "_AdvFilter_";	
+//			END
+//		END		
+		
+	END
+		
+	RETURN sSelection;
+		
+END
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//		FUNCTION NAME	
+//						_UAG_Alarms_GroupListAdd()
+//
+//
+//     	GENERAL DESCRIPTION
+//			
+//			Adds an alarm group to the Alarm Group Listbox.
+//
+// 		ARGUMENTS:
+//
+//			sGroupName		-	Name/ID of alarm group
+//			sDesc			-	Text describing alarm group that will appear in listbox
+//			sArea			- 	Area the group applies to
+//								Empty string = all areas	
+//
+//     	RETURNED VALUE: 
+//
+//			0 if successful, otherwise -1.
+//
+//		PSEUDO CODE:
+//
+//	Autor:				J.Venz
+//	Erstellungsdatum:	11/03/03	/	Schneider Electric GmbH
+//	Version				3.0.0.0
+//
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	30.04.08	Steiner		Muss in UAG Alarms sein
+//
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+PRIVATE INT FUNCTION
+_UAG_Alarms_GroupListAdd(STRING sGroupName, STRING sDesc, STRING sArea = "")
+	
+	INT 	iError;
+	IF mhAlarmGroupList = -1 THEN
+		RETURN -1;
+	END
+	
+	iError = CSV_Listbox_AddItem(mhAlarmGroupList, sDesc, sArea, sGroupName);
+
+	RETURN iError;
+	
+END
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//		FUNCTION NAME	
+//						_UAG_Alarms_GroupListRemove()
+//
+//
+//     	GENERAL DESCRIPTION
+//			
+//			Removes an alarm group from the Alarm Group Listbox.
+//
+// 		ARGUMENTS:
+//
+//			sGroupName		-	Name/ID of alarm group
+//
+//     	RETURNED VALUE: 
+//
+//			0 if successful, otherwise -1.
+//
+//		PSEUDO CODE:
+//
+//	Autor:				J.Venz
+//	Erstellungsdatum:	11/03/03	/	Schneider Electric GmbH
+//	Version				3.0.0.0
+//
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	30.04.08	Steiner		Muss in UAG Alarms sein
+//
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+PRIVATE INT FUNCTION
+_UAG_Alarms_GroupListRemove(STRING sGroupName)
+	
+	INT		iError;
+	
+	IF mhAlarmGroupList = -1 THEN
+		RETURN -1;
+	END
+	
+	iError = CSV_Listbox_RemoveItem(mhAlarmGroupList, "", "", sGroupName);
+
+	RETURN iError;
+	
+END
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//		FUNCTION NAME	
+//						Array Storage/Retrieval functions
+//
+//
+//     	GENERAL DESCRIPTION
+//			
+//			The following functions enable storing up to 254 characters in global strings (rather than 
+//			the standard 127) by storing the strings across two variables.
+//
+// 		ARGUMENTS:
+//
+//     	RETURNED VALUE: 
+//
+//		PSEUDO CODE:
+//
+//	Autor:				J.Venz
+//	Erstellungsdatum:	11/03/03	/	Schneider Electric GmbH
+//	Version				7.2.3.1
+//
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	30.04.08	Steiner		Muss in UAG Alarms sein
+//	14.06.11	Steiner		Debuglog entfernt.
+//	31.08.11	Steiner		Funktion ist jetzt Public
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+///////////////////////////////////////////////////////////////////////////////////
+//	FUNCTION UAG_Alarms_Pager()
+//  Ereignisse der Priorität 80 werden mit dieser Funktion behandelt.
+//
+//	Übergabeparameter:	Name und Kommentar des Alarms
+//                       
+//	Rückgabewert:		---
+//	Beschreibung:		
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	06.10.08	/	Schneider Electric GmbH
+//	Version				3.1.0.0
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//
+
+///////////////////////////////////////////////////////////////////////////////////
+
+FUNCTION UAG_Alarms_Pager(STRING sName,STRING sComment)
+
+ //Hier Befehle einfügen
+
+END
+
+///////////////////////////////////////////////////////////////////////////////////
+//	FUNCTION UAG_Alarms_Set_PCSAlmDsp()
+//  
+//
+//	Übergabeparameter:	Format setzen für Kopfzeile PCS
+//                       
+//	Rückgabewert:		---
+//	Beschreibung:		
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	24.11.08	/	Schneider Electric GmbH
+//	Version				3.1.0.0
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//
+
+///////////////////////////////////////////////////////////////////////////////////
+
+
+//FUNCTION 
+//UAG_Alarms_Set_PCSAlmDsp(INT hAN)
+//	IF mhAlarmListFmt_pcs = -1 THEN
+//		mhAlarmListFmt_pcs = FmtOpen( "PCS", "{DATE,11}{TIME,10}{TAG,30} {DESC,58} {STATE,10}", 1 );
+//	END
+//	AlarmSetInfo(hAN, 5, mhAlarmListFmt_pcs);							// Format the display
+//
+//END
+//
+//	FUNCTION NAME:		SetPagingAlmDsp
+//
+//	FUNCTION DESCRIPTION:	Sets the Alarm Display Attributes for the paging alarm list on page entry
+//
+//	REV	DATE		WHO		DESCRIP
+//	1.0	19/8/95		D.Sorkovsky	Original
+//	1.1	12/12/95	A.Winter	Modified format code to ensure memory not consumed.
+//	1.2	5/2/97		A.Winter	Changed to allow this function to be called as a one shot on entry
+//	1.3	1/3/2005	K.Maritz	Change Paging format to allow {Tag,32} {Name,32} {Desc,80}
+//	SOURCE:
+//		Called from Advanced animation on PagingPopup
+//
+//	ARGUMENTS:
+//		INT	hAN	The An number that the alarm list is displayed at.
+//		INT	iNo	The number of alarm lines of text.
+//
+//	RETURNED VALUE:
+//
+//	NOTES:
+//		Had to use a global handle to the format because of FmtOpen bug (see Citect Knowledgebase).
+//
+
+FUNCTION 
+UAG_Alarms_Set_PagingAlmDsp(INT hAN)
+	IF mhAlarmListFmt = -1 THEN
+		mhAlarmListFmt = FmtOpen( "Paging", "{Tag,32} {Name,32} {Desc,80} {Custom1,16}", 1 );
+	END
+	AlarmSetInfo(hAN, 2, 0);										// Set initial default category to 0
+	AlarmSetInfo(hAN, 5, mhAlarmListFmt);							// Format the display
+	AlarmSetInfo(hAN, 6, DspFont("Fixedsys", -12, Black,White));	// Set the display Font
+END
+
+STRING FUNCTION
+UAG_Alarms_AlarmStates(INT iNr)
+
+	IF giCitSprache THEN 
+		RETURN msAlarmStatesDE[iNr]
+	ELSE
+		RETURN msAlarmStates[iNr]
+	END	
+
+END
+
+STRING FUNCTION
+UAG_Alarms_AlarmTypes(INT iNr)
+
+	IF giCitSprache THEN 
+		RETURN msAlarmTypesDE[iNr]
+	ELSE
+		RETURN msAlarmTypes[iNr]
+	END	
+
+END
+
+//	FUNCTION UAG_AlarmCount_Save()
+//	Übergabeparameter:	Tag Name 
+//                                             
+//	Rückgabewert:		---
+//	Beschreibung:		Zählt bei einem neuen Alarm den Wert hoch
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	23.06.2009	/	Schneider Electrik GmbH
+//	Version				3.2.0.0
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	
+
+FUNCTION UAG_AlarmCount_Save(STRING sTag,STRING sComment)
+
+	INT		iError,hDev,iFound;
+	STRING sWert;
+	ErrSet(1);
+	iFound = 0;
+	hDev = UAG_DevOpen("AlarmCountP","AlarmCountS",8);
+	IF hDev <> -1 THEN
+		iError = DevSeek(hDev, 1);
+		IF DevFind(hDev,sTag,"Tag") = 0 THEN
+			IF  (DevGetField(hDev, "Tag") = sTag) THEN
+				sWert=DevGetField(hDev, "Anzahl");
+				sWert= IntToStr (StrToInt(sWert) +1);
+				DevSetField(hDev, "Anzahl", StrTrim (sWert));
+				DevSetField(hDev, "ZEIT2", Date(2)+ " "+ Time(1));
+				iFound = 1;
+			END	
+		END	
+	END
+	IF IFound = 0 THEN
+		DevAppend(hDev);
+		DevSetField(hDev, "ZEIT1", Date(2)+ " " +Time(1));
+		DevSetField(hDev, "Tag", sTag);
+		DevSetField(hDev, "Comment", sComment);
+		DevSetField(hDev, "Anzahl",1);
+	END
+//	DevClose(hDev);
+	ErrSet(0);
+END 
+
+//	FUNCTION UAG_GetErrorCount()
+//	Übergabeparameter:	Tag Name 
+//                                             
+//	Rückgabewert:		Count of Errors.
+//	Beschreibung:		Count the errors in the displayed Cat and Type.
+//
+//	Autor:				M.Reyzl
+//	Erstellungsdatum:	06.06.2007	/	Schneider Electrik GmbH
+//	Version				3.2.0.1
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	
+
+INT FUNCTION 
+UAG_GetErrorCount(INT iAn)
+
+INT iCount = 0;
+INT iCat, iType;
+INT iCurrent = 0;
+
+	iCat = AlarmGetInfo(iAn,2);
+	iType = AlarmGetInfo(iAn,3);
+
+	iCurrent = AlarmFirstCatRec(iCat,iType);
+
+	WHILE iCurrent>=0 DO
+
+		iCurrent = AlarmNextCatRec(iCurrent,iCat,iType,-1);
+		iCount = iCount + 1;
+		SleepMS(10);
+		IF iCount > 100000 THEN
+			RETURN -1;
+		END
+
+	END;
+
+	RETURN iCount;
+
+END
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//	FUNCTION UAG_CheckLastPage()
+//	Übergabeparameter:	Tag Name 
+//                                             
+//	Rückgabewert:		
+//	Beschreibung:		Checks if the last page is displayed.
+//
+//	Autor:				M.Reyzl
+//	Erstellungsdatum:	09.06.2007	/	Schneider Electrik GmbH
+//	Version				3.2.0.1
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	
+
+INT
+FUNCTION UAG_CheckLastPage(INT iAn,INT iZeilen)
+INT iErrorCount = 0;
+
+	iErrorCount = UAG_GetErrorCount(iAn);
+
+	IF (iErrorCount - AlarmGetInfo(iAn,1)) > iZeilen THEN
+		RETURN 0; //Nicht die letzte Seite
+	ELSE
+		RETURN 1; //Letzte Seite	
+	END
+
+END
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//	FUNCTION UAG_SetNewSliderPos()
+//	Übergabeparameter:	Tag Name 
+//                                             
+//	Rückgabewert:		
+//	Beschreibung:		Set the new Slider Position based on ButtonTouch.
+//
+//	Autor:				M.Reyzl
+//	Erstellungsdatum:	09.06.2007	/	Schneider Electrik GmbH
+//	Version				3.2.0.1
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	
+
+FUNCTION UAG_SetNewSliderPos(INT iAn,INT iZeilen)
+INT iErrorCount = 0;
+INT iSlider;
+
+	iErrorCount = UAG_GetErrorCount(iAn);
+
+	iSlider = (AlarmGetInfo(iAn,0) - 1) * (32000 / ((iErrorCount / 6.0 ) + 0.5));
+
+	IF (UAG_CheckLastPage(iAn,iZeilen) = 1) AND (AlarmGetInfo(iAn,0) > 1) THEN
+		iSlider = 32000;
+	END
+	
+	IF (AlarmGetInfo(iAn,0) = 1) THEN
+		iSlider = 0;
+	END
+
+	IF iSlider > 32000 THEN
+		iSlider = 32000;
+	END 
+
+	IF iSlider < 0 THEN
+		iSlider = 0;
+	END 
+
+	UAGSlider = iSlider;
+	UAGSliderOld = UAGSlider;
+
+END
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//	FUNCTION UAG_ReleaseSlider()
+//	Übergabeparameter:	Tag Name 
+//                                             
+//	Rückgabewert:		
+//	Beschreibung:		Set the new Slider Position based on Count of Error.
+//
+//	Autor:				M.Reyzl
+//	Erstellungsdatum:	09.06.2007	/	Schneider Electrik GmbH
+//	Version				3.2.0.1
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	
+
+
+FUNCTION UAG_ReleaseSlider(INT iAn,INT IZeilen)
+INT iErrorCount = 0;
+INT iDeltaSlider;
+INT iPagesToChange = 0;
+INT iLoop;
+INT iDir = 0;  //vorwärts
+
+	iErrorCount =  UAG_GetErrorCount(iAn);
+
+	iDeltaSlider = Abs(UAGSliderOld - UAGSlider);
+	
+	iPagesToChange = iDeltaSlider / (32000 / ((iErrorCount / 6.0 ) + 0.5));
+	
+	iDir = (UAGSliderOld > UAGSlider);  //0=vorwärts / 1=rückwärts
+	
+	IF iPagesToChange > 0 THEN
+		PageSetInt(1,0);
+	END
+	
+	FOR iLoop = 1 TO iPagesToChange DO
+
+		IF (iDir = 1) THEN
+			//Rückwärts
+			IF (AlarmGetInfo(iAn,0) > 1) THEN
+				AlarmDspPrev(iAn);
+			END
+		
+		ELSE
+			//Vorwärts		
+			IF UAG_CheckLastPage(iAn,iZeilen) = 0 THEN
+				AlarmDspNext(iAn);
+			END
+
+		END
+	
+	END
+
+	IF (UAG_CheckLastPage(iAn,iZeilen) = 1) AND (AlarmGetInfo(iAn,0) > 1) THEN
+		UAGSlider= 32000;
+	END
+	
+	IF (AlarmGetInfo(iAn,0) = 1) THEN
+		UAGSlider= 0;
+	END
+
+	UAGSliderOld = UAGSlider;
+
+END
+
+//	FUNCTION UAG_Alarm_22()
+//	Übergabeparameter:	Tag als String für Trendpopup  
+//                       
+//	Rückgabewert:		
+//	Beschreibung:	Analystpannel für Alarm aufschalten	
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	14.12.09	/	Schneider Electrik GmbH
+//	Version				7.2.3.12
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	21,11,11	Steiner		Fensterabfrage ab 0
+//	06.08.12	Steiner		Änderung ab 2. Stift
+
+
+FUNCTION UAG_Alarm_22(STRING sX)
+
+	Ass(-2,1,"'" +"Alarm Trend: "  + sX + "'",0);
+	GUT_GetMousePos_unten2()
+
+
+	UAG_MM_WinNewAt("!p_reg_trend_21",giPosX,giPosY,giMODE,2 )
+	miFarbe=0;
+	SleepMS(200);
+	UAG_PA_Anzeige_Stifte_A(sX,1,miFarbe)
+	
+END
+FUNCTION UAG_Alarm_22_Z(STRING sX)
+	INT i,iFound=-1;
+	STRING sWinFileName;
+	FOR i=0 TO giUAG_Anzahl_Fenster DO
+		WinGoto(i);
+		sWinFileName = PageInfo(3);
+		IF sWinFileName = "!p_reg_trend_21" THEN
+			iFound =i;
+		END	
+	END
+	IF iFound = -1 THEN
+		Ass(-2,1,"'" +"Alarm Trend: " + "'",0);
+		GUT_GetMousePos_unten2()
+		UAG_MM_WinNewAt("!p_reg_trend_21",giPosX,giPosY,giMODE,2 )
+		miFarbe=0;
+		SleepMS(200);
+	ELSE
+		miFarbe=miFarbe +1;	
+	END
+	WinGoto(iFound);
+	UAG_PA_Anzeige_Stifte_A(sX,1,miFarbe)
+
+END	
+
+//        FUNCTION UAG_Alarms_CountReturn()
+//        Übergabeparameter:        AN Nummer der Alarmliste
+//                                  Anzahl der Elemente
+//                                            
+//        Rückgabewert:             Anzahl der Alarme in der Liste
+//        Beschreibung:             This Function is Counting total number of Alarms.   
+//
+//        Autor:                                Wolfgang Steiner
+//        Erstellungsdatum:        06.07.2011        /        Schneider Electrik GmbH
+//        Version                                3.2.0.2
+//
+//        Historie:
+//        geändert am        Autor                Kurzbeschreibung der Änderung                Referenz (optional)
+//
+ 
+INT
+FUNCTION UAG_Alarms_CountReturn(INT iAN=250, INT iAnz=40) 
+	STRING Res0;
+	INT i;
+	INT iRet;
+	FOR i=0 TO  iAnz DO
+		Res0 = AlarmGetDsp(iAN +i,"Tag");
+		IF Res0 <>""THEN
+			iRet =iRet +1
+		END
+	END
+	RETURN iRet;
+END
+
+//        FUNCTION UAG_Alarm_Str()
+//        Übergabeparameter:        Eingabe String
+//                                  
+//                                            
+//        Rückgabewert:             für Erweiterten Filter bereinigter String
+//        Beschreibung:                
+//
+//        Autor:                   Wolfgang Steiner
+//        Erstellungsdatum:        16.07.2012        /        Schneider Electrik GmbH
+//        Version                  16.2.3.11
+//
+//        Historie:
+//        geändert am        Autor                Kurzbeschreibung der Änderung                Referenz (optional)
+//
+
+STRING FUNCTION UAG_Alarm_Str(STRING sTag)
+INT iStrLength;
+	IF sTag <> "" THEN
+		sTag =StrTrim(sTag)
+		iStrLength = StrLength(sTag);
+		
+		IF (StrLeft(sTag, 1) = "*") AND (iStrLength > 1) THEN
+			
+			sTag = StrRight(sTag, iStrLength - 1);
+			iStrLength = iStrLength - 1;	
+		END
+
+		IF (StrRight(sTag, 1) = "*") AND (iStrLength > 1) THEN
+			
+			sTag = StrLeft(sTag, iStrLength - 1);	
+		END
+		RETURN 	StrUpper(sTag)	
+	END
+END
+
+///////////////////////////////////////////////////////////////////////////////////
+//	FUNCTION UAG_Alarms_BitMask()
+//  
+//
+//	Übergabeparameter:	Variablen Name und Bitnummer
+//                       
+//	Rückgabewert:		---
+//	Beschreibung:		Wird für Taggen Template benötigt.
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	02.08.12	/	Schneider Electric GmbH
+//	Version				7.2.3.12
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//
+
+///////////////////////////////////////////////////////////////////////////////////
+
+INT FUNCTION UAG_Alarms_BitMask(INT iTag,INT iBit)
+
+RETURN TRUE = ((iTag BITAND Pow(2,iBit)) = Pow(2,iBit))
+
+END
+
+//	UAG_ASB_PAGE()
+//	Übergabeparameter:	Animationsnummer der Liste
+//						Anzahl der Listenelemente
+//                         
+//	Rückgabewert:		 
+//	Beschreibung:		Alarmsperren Status Anzeige wie Alarmliste. 
+//						
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	12.07.13	/	Schneider Electric GmbH
+//	Version				73.33.70.00
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+
+FUNCTION
+UAG_ASB_PAGE(INT iAN,INT iAnzahl)
+TaskNew( "_UAG_ASB_PAGE", "^"" + IntToStr(iAN) +"^",^"" + IntToStr(iAnzahl) +"^"", 1) 
+END
+
+
+FUNCTION
+_UAG_ASB_PAGE(INT iAN,INT iAnzahl)
+	INT		hQue,i,iTyp,iError,itemp,iSeite;
+	STRING	sTemp,sTemp2;
+
+	ErrSet(1);
+	hQue=QueOpen("ASB", 0);
+	WHILE true DO
+		i=0;
+		iSeite =PageGetInt("ISeite") 
+		IF PageGetInt("ISeitev") = 1 THEN
+			iSeite = iSeite +1
+			PageSetInt("ISeitev",0);
+			PageSetInt("ISeite",iSeite)
+		END
+		IF (PageGetInt("ISeiter") = 1 )AND (iSeite > 0 ) THEN
+			iSeite = iSeite -1
+			PageSetInt("ISeiter",0);
+			PageSetInt("ISeite",iSeite)
+		END
+		
+		FOR i = iAn TO (iAn + iAnzahl-1) DO
+			iTyp=(i -iAN)+iSeite*iAnzahl;
+			iError=QuePeek(hQue,iTyp,sTemp,16);
+			IF (iError = 0) AND (iTyp <> 0) THEN
+				
+				DspStr(i, "UAG_Txt", StrPad (sTemp," ",40) + " " + StrPad (UAG_GET_LT(StrLeft (sTemp,StrLength(sTemp)-2))," ",64));
+				NE107_LIST[i -iAN] =iTyp;
+				PageSetStr(i,StrLeft (sTemp,StrLength(sTemp)-2));
+			ELSE
+				DspStr(i, "UAG_Txt", "");
+				NE107_LIST[i -iAN] =0;
+				PageSetStr(i,"");
+			END
+			
+		END	
+		SleepMS(2000)	
+		
+	END
+
+ErrSet(0);	
+END
+
+
+
+
+//	FUNCTION UAG_ASB_20
+//	Übergabeparameter:	Statusnummer as INT, TAG, x, y, modus      
+//                       
+//	Rückgabewert:		---
+//	Beschreibung:		Setzt Parameter und ruft ein Statuspannel auf für Rechts und links
+//						Modus 0 = 16 Bit 1 =32 Bit
+//						Die Texte werden nicht mehr in einem Array Verwaltet sondern in der UIMessag2.dbf im Unterverzeichniss 	
+//						UAGBasis703140P2
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	12.07.13	/	Schneider Electrik GmbH
+//	Version				75.33.11.08
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	
+
+//		Beispiel für Aufruf
+//		TaskNew("UAG_Ne107_20", "^"%TAGNE%^",1", 8)
+//		TaskNew("UAG_Ne107_20", "^"%TAGNE%^",2", 8) 
+
+FUNCTION 
+UAG_ASB_20(STRING sTag, INT iMode=1)
+
+
+	Ass(-2,1,"'" + sTag + "'",0);
+	_Ass(-2,2,sTag + "_M");
+	Ass(-2,3,"'-'",0);
+	_Ass(-2,4,sTag + "_LW")
+	_Ass(-2,5,sTag + "_LT");
+	UAG_LoadUIBIT(21, 34,8)
+	UAG_LoadUI( sTag + "_KT", 60);
+
+	GUT_PopupNewAt("!p_ASB_20",gimode,imode)
+	_WinTitle(sTag);
+END
+
+//	UAG_ASB_PAGE()
+//	Übergabeparameter:	Animationsnummer der Liste
+//						Anzahl der Listenelemente
+//                         
+//	Rückgabewert:		 
+//	Beschreibung:		Alarmsperren Status Anzeige wie Alarmliste. 
+//						
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	12.07.13	/	Schneider Electric GmbH
+//	Version				73.33.70.00
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+
+INT FUNCTION
+UAG_ASB_PAGE2(STRING sTable)
+	INT		hQue
+	STRING sCount
+	LibTable_AddColumn(sTable, "Column1", 150);
+	hQue=QueOpen("ASB", 0);
+	sCount = IntToStr(QueLength(hQue))
+	LibTable_SetPropertyInt(sTable, sCount , 9);
+	LibTable_SetDataTask(sTable, "Value", "MyTable_GetCellValue", "^"#Name^",#Row,#Col");
+	
+//	TaskNew( "_UAG_ASB_PAGE2", "^"" + sTable +"^"", 1)
+
+RETURN 1 
+END
+
+STRING FUNCTION MyTable_GetCellValue(STRING sTable, INT nRow, INT nCol)
+	INT iError,hQue
+	STRING	sTemp,sTemp2;
+
+	IF (nRow > LibTable_GetPropertyInt(sTable, "RowCount")) THEN
+		RETURN "";
+	END
+	hQue=QueOpen("ASB", 0);
+	iError=QuePeek(hQue,nRow,sTemp,16);
+	sTemp2=	StrPad (sTemp," ",40) + " " + StrPad (UAG_GET_LT(StrLeft (sTemp,StrLength(sTemp)-2))," ",64)
+	RETURN sTemp2
+END
+
+
+FUNCTION
+_UAG_ASB_PAGE2(INT iAN,INT iAnzahl)
+	INT		hQue,i,iTyp,iError,itemp,iSeite;
+	STRING	sTemp,sTemp2;
+
+	ErrSet(1);
+	hQue=QueOpen("ASB", 0);
+	WHILE true DO
+		i=0;
+		iSeite =PageGetInt("ISeite") 
+		IF PageGetInt("ISeitev") = 1 THEN
+			iSeite = iSeite +1
+			PageSetInt("ISeitev",0);
+			PageSetInt("ISeite",iSeite)
+		END
+		IF (PageGetInt("ISeiter") = 1 )AND (iSeite > 0 ) THEN
+			iSeite = iSeite -1
+			PageSetInt("ISeiter",0);
+			PageSetInt("ISeite",iSeite)
+		END
+		
+		FOR i = iAn TO (iAn + iAnzahl-1) DO
+			iTyp=(i -iAN)+iSeite*iAnzahl;
+			iError=QuePeek(hQue,iTyp,sTemp,16);
+			IF (iError = 0) AND (iTyp <> 0) THEN
+				
+				DspStr(i, "UAG_Txt", StrPad (sTemp," ",40) + " " + StrPad (UAG_GET_LT(StrLeft (sTemp,StrLength(sTemp)-2))," ",64));
+				NE107_LIST[i -iAN] =iTyp;
+				PageSetStr(i,StrLeft (sTemp,StrLength(sTemp)-2));
+			ELSE
+				DspStr(i, "UAG_Txt", "");
+				NE107_LIST[i -iAN] =0;
+				PageSetStr(i,"");
+			END
+			
+		END	
+		SleepMS(2000)	
+		
+	END
+
+ErrSet(0);	
+END

@@ -1,0 +1,347 @@
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//	
+// 	FILE:	UAG_Pager_SMSprot.ci
+//
+//	Beschreibung:
+//
+//      This file contains code for access to the SMS  Protocol ohne GSM Modem.
+//		The conection to a modem and the dialling of the paging service are also included in this file
+//
+//		Funktionen mit Version 3.x sind freigegeben
+//
+//
+//      Author:                 Original PET design Tony O'Donoghue
+//								Modifications, modularisation and documenting by Andrew Winter
+//	Erstellungsdatum:	18.11.08	/	Steiner / Schneider Electrik GmbH
+//	Version				3.1.0.1
+//
+//
+//	NOTE:	Variable Prefixes;
+//			h	Local (function) var handle 	(INT data type)
+//			i	Local (function) var integer 	(INT data type)
+//			s	Local (function) var string 	(STRING data type)
+//			r	Local (function) var real 		(REAL data type)
+//
+//			mh	Module (file) var handle type 	(INT data type)
+//			mi	Module (file) var integer type 	(INT data type)
+//			ms	Module (file) var string type 	(STRING data type)
+//			mr	Module (file) var real type 	(REAL data type)
+//
+//			gh	Global (project) var handle type 	(INT data type)
+//			gi	Global (project) var integer type 	(INT data type)
+//			gs	Global (project) var string type 	(STRING data type)
+//			gr	Global (project) var real type 		(REAL data type)
+//
+//			_	Label defined in LABELS.DBF (remaining letters capitalised)
+//			none	All capitalised represent VARIABLE Tags
+//
+//      Notes:
+//			Functions within this file call upon general functions in GENERAL.CI.
+//
+//			The valid handle to a comport and to an ASCII text file must be supplied to most functions
+//			within this file	These are hComPort and hPETLog
+//
+//	PUBLIC FUNCTIONS:
+//
+//			// Generic service connection functions //
+//
+//			// SMS specific  functions //
+//			_SMSSendDataBlock
+//			_SMSPackageData
+//			_SMSCheckSum
+////			
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)//
+//
+
+
+
+//	GLOBAL CONSTANTS	//
+STRING sTelefon ="12345"  //hier die Nummer des Senders Eintragen
+//	GLOBAL VARS		//
+
+
+
+//
+//	Function Name:  _SMSSendDataBlock
+//
+//	Author:		A.Winter
+//
+//	Revision	By		Date		Description
+//	1.0		A.Winter	10/2/95		Original
+//	2.0		A.Winter	29/7/95		Removed protocol dependancy
+//
+//	Function Description:	This function is the middle section of the SMS protocol that sends
+//				the pager number and message.
+//				SMS responses dictate whether the data block has been accepted and
+//				whether to retry or not.
+//
+//	SOURCE:			Called from the individual service funtions in SERVICES.CI
+//
+//      Arguments:	hComPort	Handle to COM port
+//			sPagerNo	The pager number
+//			sMessage	The ASCII message
+//			hPETLog	        Handle to log file
+//                      iMsgDelay       The Delay between Writing the message to the service and checking for a reply
+//
+//      Returned Value:	1	Forced Logout. Usually means successfull but message limit reached.
+//			0	Successfull
+//			-1	Unsuccessfull due to checksum or other
+//			-2	Unsuccessfull due to abandon command from service (pager invalid or message invalid)
+//
+//      Psuedo Code:
+//
+//
+
+INT
+FUNCTION
+_SMSSendDataBlock( INT hComPort, STRING sPagerNo, STRING sMessage, INT hPETLog, INT iMsgDelay)
+	INT	bPageSent = FALSE;		// Indicates whether page has been sent  //
+	INT	iPageTryNo = 1;    		// Try count //
+	INT	iPageTryMax = 3;    	// Number of times to try before give up //
+	INT	iTxBlockLen = 0;		// Length of sTransBlock		 //
+	INT	iResponseLen = 128;
+	INT	iError = -1;
+	STRING	sTransBlock = "";	// Block to send - formatted for SMS	 //
+	STRING 	sResponse = "";		// Receive buffer                        //
+
+	IF ParameterGet( gsUAG_LIB_NAME, "PagerTestMode", "0") = "1" THEN
+		LogPagingInfo("Fn._SMSSendDataBlock. Paging System Test Mode. Simulating sending data blocks", _OPERATION);
+		Sleep(1);
+		LogPagingInfo("Fn._SMSSendDataBlock. Sending PagerNo >"+sPagerNo+"<", _OPERATION);
+		LogPagingInfo("Fn._SMSSendDataBlock. Message >"+sMessage+"<", _OPERATION);
+		LogPagingInfo("Fn._SMSSendDataBlock. SMS >"+_SMSPackageData(sPagerNo,sMessage)+"<", _OPERATION);
+		RETURN(0);
+	END
+
+	LogPagingInfo("Fn._SMSSendDataBlock. Sending PagerNo >"+sPagerNo+"<", _PET);
+	LogPagingInfo("Fn._SMSSendDataBlock. Message >"+sMessage+"<", _PET);
+
+	WHILE (NOT bPageSent) AND (iPageTryNo <= iPageTryMax) DO		// While page not sent and ierr = 0 //
+		sTransBlock = _SMSPackageData(sPagerNo,sMessage);			// Assemble block to send to SMS  //
+		iTxBlockLen = StrLength(sTransBlock);						// This involves putting the data in  //
+																	// correct format and adding checksum //
+		_ClearCommsPort(hComPort);
+		iError = ComWrite(hComPort,sTransBlock,iTxBlockLen,0);		// Write the page //
+		LogPagingInfo("Fn._SMSSendDataBlock. Data block sent >"+sTransBlock+"< Attempt "+IntToStr(iPageTryNo), _PET);
+		Sleep(iMsgDelay);
+		iResponseLen = 128;
+		iError = ComRead(hComPort,sResponse,iResponseLen,60);		// Wait 60 seconds for reply then timeout //
+		LogPagingInfo("Fn._SMSSendDataBlock. Response received >"+sResponse+"<", _PET);
+		// Wait for reply..............                           							//
+		// Possible responses are:                                							//
+		// <CR><ACK><CR>		Page successful send next message							//
+		// <CR><RS><CR>			Abandon block Pager Id XXXXXXX is not valid 				//
+		//								or unacceptable message content						//
+		// <CR><NAK><CR>		Checksum error                    							//
+		// <CR><ACK><CR><ESC><EOT><CR>	Page successful limit reached. Forced logout		//
+
+		IF (_CharSearch(0,sResponse,_ACK) >= 0) THEN
+			bPageSent = TRUE;	   			// Success //
+			LogPagingInfo("Fn._SMSSendDataBlock. Page successful.", _PET);
+			
+			IF (_CharSearch(0,sResponse,_EOT) >= 0) THEN
+				LogPagingInfo("Fn._SMSSendDataBlock. Forced Logout.", _PET);
+				RETURN( 1);	
+			ELSE
+				RETURN( 0);
+			END
+		END
+		IF (_CharSearch(0,sResponse,_RS) >= 0) THEN
+			LogPagingInfo("ERROR.Fn._SMSSendDataBlock. Abandon block received.", _ERROR + _PET);
+			RETURN(-2);
+		ELSE						// Non-fatal transmission error //
+			IF (_CharSearch(0,sResponse,_NAK) >= 0) THEN
+				LogPagingInfo("ERROR.Fn._SMSSendDataBlock. Page unsuccessful bad checksum.", _ERROR + _PET);
+			ELSE
+				LogPagingInfo("ERROR.Fn._SMSSendDataBlock. Page unsuccessful unknown characters received.", _ERROR + _PET);
+				RETURN( -2);
+			END
+		END
+		iPageTryNo = iPageTryNo + 1;
+	END
+
+	IF (iPageTryNo > iPageTryMax) THEN
+		LogPagingInfo("ERROR.Fn._SMSSendDataBlock. Problem with PET service. Transaction aborted.", _ERROR + _PET);
+		RETURN (-1);
+   	END
+END
+
+
+//
+//	Function Name:  _SMSPackageData
+//
+//	Author:		A.Winter
+//
+//	Revision	By		Date		Description
+//	1.0		A.Winter	10/2/95		Original
+//
+//	Function Description:	Builds the SMS data block and calls the checksum routine
+//
+//	SOURCE:			Called from the individual service funtions in SERVICES.CI
+//
+//      Arguments:	sPagerNo	The pager number
+//			sMessage	The ASCII message
+//
+//      Returned Value:	The formatted datablock including the checksum
+//
+//      Psuedo Code:
+//
+//
+
+STRING
+FUNCTION
+_SMSPackageData(STRING sPagerNo, STRING sMessage)
+	STRING	sPETBlock = "";
+	STRING sLen;
+	sLen = StrPad (IntToStr (StrLength( sPagerNo) + StrLength (sMessage)+ StrLength (sTelefon) +47),"0",-5);
+	sPETBlock = CharToStr(_STX) +"01/"+ sLen+"/O/51/"+ sPagerNo +"/" +sTelefon +"/////////////////3//"+  sMessage +"/////////////";
+	sPETBlock = sPETBlock + _SMSCheckSum(sPETBlock) + CharToStr(_ETX);
+
+	RETURN sPETBlock;
+END
+
+
+//
+//	Function Name:  _SMSCheckSum
+//
+//	Author:		T.O'Donoghue
+//
+//	Revision	By		Date		Description
+//	1.0		T.O'Donoghue	22/11/94	Original
+//
+//	Function Description:	This function calculates the checksum of a SMS protocol block.
+//				The addition of 30H to each nibble (as outlined in the SMS specification)
+//				is fudged using ASCII, rather than Hex.
+//
+//      Arguments:	sPETCheckBlock	The block to calculate the checksum on
+//
+//      Returned Value:	The checksum characters
+//
+//      Psuedo Code:
+//
+//
+
+STRING
+FUNCTION
+_SMSCheckSum(STRING sPETCheckBlock)
+	INT	CheckBlockLen;	 	// Length of input string (block) //
+	INT	BCCSum = 0;		// Sum of all characters	  //
+	INT	i;
+	STRING	sBCCSum;		// Sum of all characters (STRING) //
+
+
+	CheckBlockLen = StrLength( sPETCheckBlock);
+	FOR i = 0 TO CheckBlockLen DO			// Calculate sum of all characters //
+		BCCSum = BCCSum + StrGetChar( sPETCheckBlock, i);
+		INT1=BCCSum;
+	END
+	sBCCSum = StrUpper (StrRight ( HexToStr( BCCSum, 4),2));			// Sum as 4 digit hex number //
+											// Only 3 least sig. digits  //
+	str3=sBCCSum;
+
+
+
+	RETURN(sBCCSum);
+END
+
+
+INT
+FUNCTION
+_SMSService( INT iServiceNo, STRING sServiceName, INT iMsgMax, INT iMsgDelay, INT iMsgLength, STRING sPhoneNo, STRING sPassword, STRING sPort)
+	INT	iError;
+	INT	iReturn = 0;
+	INT	iConnectRetry = 5;
+	INT	iInt;
+	INT	iMsgCount = 1;
+	INT	hComPort = -1;
+	INT	hServiceLog = -1;
+	INT	hQueDataFmt = -1;
+	STRING	sQueData;
+	STRING	sPagerNo;
+	STRING	sMessage;
+
+	LogPagingInfo("Fn._SMSService. Initiating Service >" + sServiceName + "<", _OPERATION);
+	LogPagingInfo("Fn._SMSService. Phone No           >" + sPhoneNo + "<", _OPERATION);
+	LogPagingInfo("Fn._SMSService. Service Password   >" + sPassword + "<", _OPERATION);
+	LogPagingInfo("Fn._SMSService. Citect Port        >" + sPort + "<", _OPERATION);
+
+	hQueDataFmt = FmtOpen( "ServiceQueDataFmt", gsServiceQueDataFmt, 1);
+
+	WHILE hComPort = -1 AND iConnectRetry > 0 DO
+		hComPort = _ConnectToPort( sPort, hServiceLog);
+		IF hComPort = -1 THEN
+			iConnectRetry = iConnectRetry - 1;
+			LogPagingInfo("Fn._SMSService. Port " + sPort + " busy for service "+sServiceName+
+				" delaying for 60 seconds.... Retry No "+iConnectRetry:#, _OPERATION);
+			Sleep( 60);
+		END
+	END
+
+	IF hComPort >= 0 THEN
+		iConnectRetry = 5;
+		WHILE QueLength( ghServiceQue[ iServiceNo]) > 0 AND iConnectRetry >0 DO
+			
+	        iError = _DialService( hComPort, sPhoneNo, hServiceLog);
+
+			IF iError >= 0  THEN
+				Sleep(1);
+				iError=_PETLogin( hComPort, sPassword, hServiceLog);
+				IF iError >= 0 THEN
+					WHILE QueLength( ghServiceQue[ iServiceNo]) > 0 AND iMsgCount <= iMsgMax AND iError <> -2 DO
+						QueRead( ghServiceQue[ iServiceNo] , iInt, sQueData, 0);
+						StrToFmt( hQueDataFmt, sQueData);
+						sPagerNo = StrTrim( FmtGetField( hQueDataFmt, "PagerNo"));
+						sMessage = StrTrim( FmtGetField( hQueDataFmt, "Message"));
+						IF sPagerNo <> "" AND sMessage <> "" THEN
+                                                        !If the message is too long for the selected service then
+                                                        !truncate it and Log the action
+                                                        IF StrLength(sMessage) > iMsgLength THEN
+                                                                sMessage = StrLeft (sMessage, iMsgLength);
+                                                                LogPagingInfo("ERROR.Fn._SMSService. Invalid Msg Length For Selected Service, Msg Has Been Truncated",_PET);
+
+                                                        END
+							iError = _SMSSendDataBlock( hComPort, sPagerNo, sMessage, hServiceLog, iMsgDelay);
+							iMsgCount = iMsgCount + 1;
+						END
+					END
+					iMsgCount = 1;
+					IF iError <> 1 THEN  
+						_PETLogout( hComPort, hServiceLog);
+					END
+
+					_HangupService( hComPort);
+					
+				ELSE
+					iReturn = -1;
+				END
+			ELSE
+				iReturn = -1;
+				iConnectRetry = iConnectRetry -1;
+				_HangupService( hComPort);
+				Sleep( 15);
+			END
+			Sleep(2);
+		END
+		_DisconnectPort( hComPort, hServiceLog);
+	ELSE
+		iReturn = -1;
+		LogPagingInfo("Fn._SMSService. Unable to connect to Port "+sPort+
+					    " may be busy. Error = "+IntToStr(hComPort), _OPERATION);
+	END
+
+	ghServiceTask[ iServiceNo] = -1;
+	FmtClose( hQueDataFmt);
+
+	RETURN(iReturn);
+END
+
+INT FUNCTION
+Vodafone_SMS_Send(INT iServiceNo, STRING sServiceName, STRING sPort, STRING sPassword, STRING sPhoneNumber)
+
+	INT	iMsgMax = 20;
+	INT	iMsgDelay = 5;
+	INT	iMsgLength = 160;
+	
+	RETURN(_SMSService(iServiceNo, sServiceName, iMsgMax, iMsgDelay, iMsgLength, sPhoneNumber, sPassword, sPort));
+END

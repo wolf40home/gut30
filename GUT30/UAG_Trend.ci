@@ -1,0 +1,3632 @@
+///////////////////////////////////////////////////////////////////////////////////
+//	
+// 	FILE:	UAG_Trend.ci
+//
+//	Beschreibung:
+//
+//		Enhält Funktionen für die Auswertung und Anzeige von Trends.
+//		
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	06.06.08	/	Schneider Electric GmbH
+//	Version				75.33.11.08
+//
+//	PUBLIC FUNCTIONS:
+//			UAG_Trend_GroupConfig()
+//			UAG_Trend_SelectGroup()
+//			UAG_Trend_GetGroup()
+//			UAG_Trend_DspGroupList()
+//			UAG_Trend_DspGroup()
+//			UAG_Trend_SelectPen()
+//			UAG_Trend_SetPens()
+//			UAG_Trend_SetDateTime()
+//			UAG_Trend_SetSpan()
+//			UAG_Trend_GetCursorValueStr()
+//			UAG_Trend_GetCursorTypeStr()
+//			UAG_Trend_SetScale()
+//			UAG_Trend_DspPopupMenu()
+//			UAG_Trend_UpdatePens()
+//			UAG_Trend_PageGruppe()
+//			UAG_Trend_DspScaleRange()
+//			UAG_Trend_GetPen()
+//			UAG_Trend_Plot_XY
+
+//	16.04.14	Steiner		Alle Funktionen auf 7.40 Page Funktionen umgestellt
+
+// MODULE VARIABLES
+
+INT 	RubX1, RubX2, RubY1, RubY2;
+INT		AreaSelected 		= 0;
+
+INT		TRN_PAGE_NORMAL		= 0; 
+INT		TRN_PAGE_COMPARE 	= 1;
+
+INT		MAX_COMPARE_PENS	= 4;
+INT		TREND_TYPE_PERIODIC	= 1;
+INT		TREND_TYPE_EVENT	= 2;
+INT		TREND_TYPE_PERIODIC_EVENT	= 3;
+
+STRING	sTagArray[9];
+INT		hTagArray[8];
+
+INT		PRINT_MODE_UNKNOWN	= -1;
+INT		PRINT_MODE_B_AND_W	= 0;
+INT		PRINT_MODE_COLOUR	= 1;
+
+INT		DISPLAY_FORM_DEFAULT	= -1;	/* show form depending on .ini setting 	*/
+INT		DISPLAY_FORM_NO		= 0;	/* don't show form 			*/
+INT		DISPLAY_FORM_YES	= 1;	/* always show form			*/
+
+STRING	sPrintSetup;
+
+INT		iScaleIndex[8];
+
+
+//	Change trend scale form variables
+INT     mhTrendScaleForm = -1;
+INT     mhTrendScaleFormAN;
+INT     miTrendScaleFormPercentage;
+STRING  msTrendScaleFormValue;
+
+
+//	Trend group list variables
+INT		mbTrendListInitialised;
+INT		mhTrendList = -1;
+INT		mhTrendList_mem = -1;
+STRING	msTrendSelectedDesc[6][4];
+STRING	msTrendSelectedName[6][4];
+STRING	msTrendSelectedPens[6][4];
+STRING	msTrendSelectedPens_[6][4];	! Used when msTrendSelectedPens > 127 characters
+INT		miMaxTrendDataSets = 4;
+
+
+STRING	msTrendConfig = "!p_TrendConfig_20";
+
+
+// genutzte AktivX
+
+STRING	msTextBoxClass = "CiText.TextBox";
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//		FUNCTION NAME	
+//						UAG_Trend_Get_xxx()
+//
+//
+//     	GENERAL DESCRIPTION
+//			Liefert Inforationen aus dem Trend zurück
+//			
+//				
+// 		ARGUMENTS: -
+//
+//			
+//     	RETURNED VALUE: den jeweiligen Wert
+//
+//
+//		PSEUDO CODE:
+//
+//	Autor:				Michael Ziemann
+//	Erstellungsdatum:	06.04.11	/	ATEG GmbH
+//	Version				7.2.3.1
+//
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//
+//
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+STRING FUNCTION UAG_Trend_Get_msTrendSelectedDesc(INT iMonitor, INT iTrendDataSet)
+	// AT/MZ 110406, um anderswo auf letzte Auswahl zugreifen zu können
+	RETURN msTrendSelectedDesc[iMonitor][iTrendDataSet];
+END
+
+
+INT FUNCTION UAG_Trend_Get_mhTrendList()
+	// AT/MZ 110406, um anderswo auf letzte Auswahl zugreifen zu können
+	RETURN mhTrendList
+END
+
+
+INT FUNCTION UAG_Trend_Get_mhTrendList_Mem()
+	// AT/MZ 110406, um anderswo auf letzte Auswahl zugreifen zu können
+	RETURN mhTrendList_mem
+END
+
+
+INT FUNCTION UAG_Trend_Get_mbTrendListInitialised()
+	// AT/MZ 110406, um anderswo auf letzte Auswahl zugreifen zu können
+	RETURN mbTrendListInitialised
+END
+
+
+INT FUNCTION UAG_Trend_ListInit()
+	// AT/MZ 110825 copied from UAGBasis713250-Version
+	RETURN _UAG_Trend_ListInit()
+END
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//		FUNCTION NAME	
+//						UAG_Trend_DspGroup()
+//
+//
+//     	GENERAL DESCRIPTION
+//
+//			Displays a specified group of trend pens on a specified trend page.
+//			The group of trend pens must have been defined in the TrendGrp.dbf file in the [RUN] directory.
+//			The group may be specified by either the group name or the group description.
+//				
+// 		ARGUMENTS:
+//
+//			sTitle			- Title to appear on trend page
+//			sTrendPage		- Name of trend page to display
+//			hTrendAN		- Animation point number of trend
+//			sTrendID		- Name or Desc of trend group (found in TrendGrp.dbf)
+//			iTrendIDType	- 0 -> sTrendID specifies the Name of the trend group
+//							  1	-> sTrendID specifies the description of the trend group
+//			iTrendDataSet	- identifies the data set to be used for the group.
+//								Normal trend page uses data set 0, double trend page uses data sets 1 and 2.
+//			
+//			
+//     	RETURNED VALUE: 
+//
+//
+//		PSEUDO CODE:
+//	Autor:				J.Venz
+//	Erstellungsdatum:			/	Schneider Electric GmbH
+//	Version				75.33.11.00
+//
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//
+//  13.11.07 	Steiner 	angepasst an UAG
+//	16.08.16	Steiner		Aufruffehler behoben
+//
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+FUNCTION
+UAG_Trend_DspGroup(STRING sTitle, STRING sTrendPage, INT hTrendAN, 
+					STRING sTrendID, INT iTrendIDType = 0 , INT iTrendDataSet = 0) 
+
+	IF iTrendDataSet < 0 OR iTrendDataSet > miMaxTrendDataSets - 1 THEN
+		iTrendDataSet = 0;
+	END
+	
+	IF PageInfo(0) <> sTrendPage THEN
+		PageTask(WinNumber(), "_UAG_Trend_DspGroup",sTitle + "," + sTrendPage + "," +
+							IntToStr(hTrendAN) + "," + sTrendID + "," + IntToStr(iTrendIDType) + "," + 
+							IntToStr(iTrendDataSet));
+	END
+	
+END
+
+FUNCTION
+_UAG_Trend_DspGroup(STRING sTitle, STRING sTrendPage, INT hTrendAN, 
+					STRING sTrendID, INT iTrendIDType = 0 , INT iTrendDataSet = 0) 
+	PageDisplay(sTrendPage)
+	SleepMS(100)
+	
+	IF sTitle <> "" THEN
+		_WinTitle(sTitle);
+	END
+	
+	IF sTrendID <> "" THEN
+		_UAG_Trend_SelectGroup(sTrendID, iTrendIDType, iTrendDataSet);  
+	END
+	
+	UAG_Trend_SetPens(hTrendAN, -1, iTrendDataSet);
+	
+END
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//		FUNCTION NAME	
+//						UAG_Trend_GroupConfig()
+//
+//
+//     	GENERAL DESCRIPTION
+//
+//			Displays a popup window allowing the user to browse/edit/add/delete records in the 
+//			TrendGrp.dbf at runtime.
+//
+//			-> Modifications can be made to trend groups at run-time.
+//				
+// 		ARGUMENTS:
+//
+//			
+//     	RETURNED VALUE: 
+//
+//
+//		PSEUDO CODE:
+//
+//	Autor:				J.Venz
+//	Erstellungsdatum:			/	Schneider Electric GmbH
+//	Version				74.33.81.02
+//
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//
+//  13.11.07 	Steiner 	angepasst an UAG
+//	02.03.09	Steiner		Erweitert für P2
+//	07.12.09	Steiner		Erweitert für 2 Stufiges Menue	
+//	17.04.12	Steiner		Beschreibung darf nicht leer sein
+//	12.08.13	Steiner		AktivX Namen geändert
+//	30.09.15	Steiner		Monitor Position
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+INT FUNCTION UAG_Trend_GroupConfig()
+
+	INT		iTextBox;
+	INT		iTextBoxAN = 34;
+	INT		iWindow;
+	STRING	sAN;
+	STRING	sPage;
+	INT		iAction;
+	INT		hDev;	
+	STRING	sName;
+	STRING	sSort;	
+	STRING	sDesc;
+	STRING	sPen1;
+	STRING	sPen2;
+	STRING	sPen3;
+	STRING	sPen4;
+	STRING	sPen5;
+	STRING	sPen6;
+	STRING	sPen7;
+	STRING	sPen8;
+	STRING	sArea;	
+	STRING	sPens;
+	STRING	sTemp;
+	OBJECT	objSortText;
+	OBJECT	objDescText;
+	OBJECT	objPen1Text;
+	OBJECT	objPen2Text;
+	OBJECT	objPen3Text;
+	OBJECT	objPen4Text;
+	OBJECT	objPen5Text;
+	OBJECT	objPen6Text;
+	OBJECT	objPen7Text;
+	OBJECT	objPen8Text;
+	OBJECT	objAreaText;
+	INT		iNext;
+	INT		iPrev;
+	STRING	sCurrentRec;
+	INT		iSortAN = 105;
+	INT		iDescAN = 33;
+	INT		iPen1AN = 34;
+	INT		iPen2AN = 35;
+	INT		iPen3AN = 36;
+	INT		iPen4AN = 37;
+	INT		iPen5AN = 38;
+	INT		iPen6AN = 39;
+	INT		iPen7AN = 40;
+	INT		iPen8AN = 41;
+	INT		iAreaAN = 42;	
+	INT		iSortWidth, iSortHeight;
+	INT		iDescWidth, iDescHeight;
+	INT		iPen1Width, iPen1Height;
+	INT		iPen2Width, iPen2Height;
+	INT		iPen3Width, iPen3Height;
+	INT		iPen4Width, iPen4Height;
+	INT		iPen5Width, iPen5Height;
+	INT		iPen6Width, iPen6Height;
+	INT		iPen7Width, iPen7Height;
+	INT		iPen8Width, iPen8Height;
+	INT		iAreaWidth, iAreaHeight;
+	INT		iError;
+	INT		iptemp;	
+	INT		iListItem;			
+	ErrSet(1);
+	
+//	IF NOT mbTrendListInitialised THEN
+	
+		_UAG_Trend_ListInit();
+//	END
+	
+	hDev = UAG_DevOpen("UAG_TrendP","UAG_TrendS",2);
+	IF hDev = -1 THEN
+		UAG_SystemInfo("UAG_Trend_GroupConfig", "System","Fehler beim öffnen von TrendGrp.dbf","-","-","-",TaskCluster(),_UAG_Fehler)
+		ErrSet(0);
+		RETURN -1;
+	END
+	 
+	UAG_GetMousePos_mitte(396,497)
+	PageTransformCoords(WinNumber(), giPosX, giPosY, giPosX, giPosY, 0)	
+	iWindow = UAG_MM_WinNewAt(msTrendConfig , giPosX, giPosY, giMODE);
+	sPage = PageInfo(0);
+	
+	SleepMS(200);
+	
+	IF iWindow = -1 THEN
+	
+		ErrSet(0);
+		RETURN -1;
+	END
+	IF NOT giP2 THEN
+	iDescWidth = DspGetAnWidth(iDescAN);
+	iDescHeight = DspGetAnHeight(iDescAN);
+	
+	iPen1Width = DspGetAnWidth(iPen1AN);
+	iPen1Height = DspGetAnHeight(iPen1AN);
+	
+	iPen2Width = DspGetAnWidth(iPen2AN);
+	iPen2Height = DspGetAnHeight(iPen2AN);
+	
+	iPen3Width = DspGetAnWidth(iPen3AN);
+	iPen3Height = DspGetAnHeight(iPen3AN);
+	
+	iPen4Width = DspGetAnWidth(iPen4AN);
+	iPen4Height = DspGetAnHeight(iPen4AN);
+	
+	iPen5Width = DspGetAnWidth(iPen5AN);
+	iPen5Height = DspGetAnHeight(iPen5AN);
+
+	iPen6Width = DspGetAnWidth(iPen6AN);
+	iPen6Height = DspGetAnHeight(iPen6AN);
+	
+	iPen7Width = DspGetAnWidth(iPen7AN);
+	iPen7Height = DspGetAnHeight(iPen7AN);
+
+	iPen8Width = DspGetAnWidth(iPen8AN);
+	iPen8Height = DspGetAnHeight(iPen8AN);
+	
+	iAreaWidth = DspGetAnWidth(iAreaAN);
+	iAreaHeight = DspGetAnHeight(iAreaAN);		
+	
+	IsError();
+		
+	objDescText = DspAnCreateControlObject(iDescAN, msTextBoxClass, iDescWidth, - iDescHeight);
+	objPen1Text = DspAnCreateControlObject(iPen1AN, msTextBoxClass, iPen1Width, - iPen1Height);
+	objPen2Text = DspAnCreateControlObject(iPen2AN, msTextBoxClass, iPen2Width, - iPen2Height);
+	objPen3Text = DspAnCreateControlObject(iPen3AN, msTextBoxClass, iPen3Width, - iPen3Height);
+	objPen4Text = DspAnCreateControlObject(iPen4AN, msTextBoxClass, iPen4Width, - iPen4Height);			
+	objPen5Text = DspAnCreateControlObject(iPen5AN, msTextBoxClass, iPen5Width, - iPen5Height);
+	objPen6Text = DspAnCreateControlObject(iPen6AN, msTextBoxClass, iPen6Width, - iPen6Height);
+	objPen7Text = DspAnCreateControlObject(iPen7AN, msTextBoxClass, iPen7Width, - iPen7Height);
+	objPen8Text = DspAnCreateControlObject(iPen8AN, msTextBoxClass, iPen8Width, - iPen8Height);
+	objAreaText = DspAnCreateControlObject(iAreaAN, msTextBoxClass, iAreaWidth, - iAreaHeight);
+	ELSE
+		objSortText = ObjectByName("SortText");
+		objDescText = ObjectByName("DescText");
+		objPen1Text = ObjectByName("Pen1Text");
+		objPen2Text = ObjectByName("Pen2Text");
+		objPen3Text = ObjectByName("Pen3Text");
+		objPen4Text = ObjectByName("Pen4Text");			
+		objPen5Text = ObjectByName("Pen5Text");
+		objPen6Text = ObjectByName("Pen6Text");
+		objPen7Text = ObjectByName("Pen7Text");
+		objPen8Text = ObjectByName("Pen8Text");
+		objAreaText = ObjectByName("AreaText");
+
+	END
+	SleepMS(100);
+	
+	DevFirst(hDev);
+	
+	IF NOT DevEOF(hDev) THEN
+		sSort = DevGetField(hDev, "Sort");
+		sName = DevGetField(hDev, "Name");
+		sDesc = DevGetField(hDev, "Desc");
+		sPen1 = DevGetField(hDev, "Pen1");
+		sPen2 = DevGetField(hDev, "Pen2");
+		sPen3 = DevGetField(hDev, "Pen3");
+		sPen4 = DevGetField(hDev, "Pen4");
+		sPen5 = DevGetField(hDev, "Pen5");
+		sPen6 = DevGetField(hDev, "Pen6");
+		sPen7 = DevGetField(hDev, "Pen7");
+		sPen8 = DevGetField(hDev, "Pen8");
+		sArea = DevGetField(hDev, "Area");
+		
+		sCurrentRec = sName;
+		
+		PageSetInt(2, DevRecNo(hDev));
+		PageSetInt(3, DevSize(hDev));
+	END
+	
+	DevClose(hDev);
+	// Bereichliste
+//	iListItem = 0;
+//	hDev=UAG_DevOpen_UI("UCUSTOM1.DBF", "{NAME,32}");
+//
+//	IF hDev <> -1 THEN
+//		iError = DevSeek(hDev, 1);
+//		WHILE NOT DevEOF(hDev) DO
+//			sTemp =DevGetField(hDev, "NAME");
+//			_ObjectCallMethod(objAreaText, "AddItem", sTemp, iListItem);
+//			iListItem = iListItem + 1;
+//			DevNext(hDev);
+//		END	
+//	END
+//	DevClose(hDev);
+
+	_ObjectSetProperty(objSortText, "Text", sSort);
+	_ObjectSetProperty(objDescText, "Text", sDesc);
+	_ObjectSetProperty(objPen1Text, "Text", sPen1);
+	_ObjectSetProperty(objPen2Text, "Text", sPen2);
+	_ObjectSetProperty(objPen3Text, "Text", sPen3);
+	_ObjectSetProperty(objPen4Text, "Text", sPen4);
+	_ObjectSetProperty(objPen5Text, "Text", sPen5);
+	_ObjectSetProperty(objPen6Text, "Text", sPen6);
+	_ObjectSetProperty(objPen7Text, "Text", sPen7);
+	_ObjectSetProperty(objPen8Text, "Text", sPen8);
+	_ObjectSetProperty(objAreaText, "Text", sArea);
+		
+	WinGoto(iWindow);
+	
+	iError = IsError();
+	
+	WHILE PageInfo(0) = sPage AND NOT iError DO
+		IF giP2 THEN 
+			iptemp =10
+		ELSE
+			iptemp =1
+		END
+		IF PageGetInt(iptemp) <> 0 THEN
+		
+			iAction = PageGetInt(iptemp);
+			PageSetInt(iptemp, 0);
+
+			hDev =  UAG_DevOpen("UAG_TrendP","UAG_TrendS",2);
+			IF hDev = -1 THEN
+				UAG_SystemInfo("UAG_Trend_GroupConfig", "System","Fehler beim öffnen von TrendGrp.dbf","-","-","-",TaskCluster(),_UAG_Fehler)
+				iAction = 0;
+			END
+						
+			SELECT CASE iAction
+			
+			CASE 1, 2, 6	! Navigate records: 1 = Next, 2 = Previous, 6 = Find
+				
+				IF sCurrentRec <> "" THEN
+				
+					IF iAction = 1 THEN	
+						DevFind(hDev, sCurrentRec, "Name");		! goto current record
+						IF NOT iNext THEN
+							DevNext(hDev);
+						END
+					END
+					IF iAction = 2 THEN 
+						DevFind(hDev, sCurrentRec, "Name");		! goto current record				
+						IF NOT iPrev THEN
+							DevPrev(hDev);
+						END
+					END
+					IF iAction = 6 THEN
+						sDesc = _ObjectGetProperty(objDescText, "Text");
+						DevFirst(hDev);
+						DevFind(hDev, sDesc, "Desc");
+					END
+				
+					IF NOT DevEOF(hDev) THEN
+					
+						sName = DevGetField(hDev, "Name");
+						sSort = DevGetField(hDev, "Sort");
+						sDesc = DevGetField(hDev, "Desc");
+						sPen1 = DevGetField(hDev, "Pen1");
+						sPen2 = DevGetField(hDev, "Pen2");
+						sPen3 = DevGetField(hDev, "Pen3");
+						sPen4 = DevGetField(hDev, "Pen4");
+						sPen5 = DevGetField(hDev, "Pen5");
+						sPen6 = DevGetField(hDev, "Pen6");
+						sPen7 = DevGetField(hDev, "Pen7");
+						sPen8 = DevGetField(hDev, "Pen8");
+						sArea = DevGetField(hDev, "Area");
+						
+						_ObjectSetProperty(objSortText, "Text", sSort);
+						_ObjectSetProperty(objDescText, "Text", sDesc);
+						_ObjectSetProperty(objPen1Text, "Text", sPen1);
+						_ObjectSetProperty(objPen2Text, "Text", sPen2);
+						_ObjectSetProperty(objPen3Text, "Text", sPen3);
+						_ObjectSetProperty(objPen4Text, "Text", sPen4);
+						_ObjectSetProperty(objPen5Text, "Text", sPen5);
+						_ObjectSetProperty(objPen6Text, "Text", sPen6);
+						_ObjectSetProperty(objPen7Text, "Text", sPen7);
+						_ObjectSetProperty(objPen8Text, "Text", sPen8);
+						_ObjectSetProperty(objAreaText, "Text", sArea);
+						
+						sCurrentRec = sName;
+					END	
+					PageSetInt(2, DevRecNo(hDev));	! Update record number display
+					PageSetInt(3, DevSize(hDev));	! Update record count display	
+				END
+										
+				DevClose(hDev);
+				iNext = 0;
+				iPrev = 0;
+			CASE 3	! Add record
+				sSort = _ObjectGetProperty(objSortText, "Text");
+				sDesc = _ObjectGetProperty(objDescText, "Text");
+				sPen1 = _ObjectGetProperty(objPen1Text, "Text");
+				sPen2 = _ObjectGetProperty(objPen2Text, "Text");
+				sPen3 = _ObjectGetProperty(objPen3Text, "Text");
+				sPen4 = _ObjectGetProperty(objPen4Text, "Text");
+				sPen5 = _ObjectGetProperty(objPen5Text, "Text");
+				sPen6 = _ObjectGetProperty(objPen6Text, "Text");
+				sPen7 = _ObjectGetProperty(objPen7Text, "Text");
+				sPen8 = _ObjectGetProperty(objPen8Text, "Text");
+				sArea = _ObjectGetProperty(objAreaText, "Text");				
+				DevAppend(hDev);
+				IF sDesc="" THEN sDesc=sPen1 END;
+				sName = "T" + IntToStr(SysTime()) + "~"; ! create unique name
+				DevSetField(hDev, "Name", sName);
+				DevSetField(hDev, "Sort", sSort);
+				DevSetField(hDev, "Desc", sDesc);
+				DevSetField(hDev, "Pen1", sPen1);
+				DevSetField(hDev, "Pen2", sPen2);
+				DevSetField(hDev, "Pen3", sPen3);
+				DevSetField(hDev, "Pen4", sPen4);
+				DevSetField(hDev, "Pen5", sPen5);
+				DevSetField(hDev, "Pen6", sPen6);
+				DevSetField(hDev, "Pen7", sPen7);
+				DevSetField(hDev, "Pen8", sPen8);
+				DevSetField(hDev, "Area", sArea);		
+				
+				sPens = sPen1 + "," + sPen2 + "," + sPen3 + ","	+ sPen4 + "," +
+						sPen5 + "," + sPen6 + "," + sPen7 + ","	+ sPen8;
+			
+				_UAG_Trend_ListAdd(sName, sDesc, sPens, sArea);	
+
+				PageSetInt(2, DevSize(hDev));	! Update record number display
+				PageSetInt(3, DevSize(hDev));	! Update record count display
+				
+				sCurrentRec = sName;
+							
+				DevClose(hDev);				
+				iNext = 0;
+				iPrev = 0;				
+			CASE 4	! Replace record
+			
+				IF sCurrentRec <> "" THEN
+				
+					DevFind(hDev, sCurrentRec, "Name");		! goto current record
+					sName = DevGetField(hDev, "Name");
+					sSort = _ObjectGetProperty(objSortText, "Text");
+					sDesc = _ObjectGetProperty(objDescText, "Text");
+					sPen1 = _ObjectGetProperty(objPen1Text, "Text");
+					sPen2 = _ObjectGetProperty(objPen2Text, "Text");
+					sPen3 = _ObjectGetProperty(objPen3Text, "Text");
+					sPen4 = _ObjectGetProperty(objPen4Text, "Text");
+					sPen5 = _ObjectGetProperty(objPen5Text, "Text");
+					sPen6 = _ObjectGetProperty(objPen6Text, "Text");
+					sPen7 = _ObjectGetProperty(objPen7Text, "Text");
+					sPen8 = _ObjectGetProperty(objPen8Text, "Text");
+					sArea = _ObjectGetProperty(objAreaText, "Text");
+					IF sDesc="" THEN sDesc=sPen1 END;
+					DevSetField(hDev, "Sort", sSort);
+					DevSetField(hDev, "Desc", sDesc);
+					DevSetField(hDev, "Pen1", sPen1);
+					DevSetField(hDev, "Pen2", sPen2);
+					DevSetField(hDev, "Pen3", sPen3);
+					DevSetField(hDev, "Pen4", sPen4);
+					DevSetField(hDev, "Pen5", sPen5);
+					DevSetField(hDev, "Pen6", sPen6);
+					DevSetField(hDev, "Pen7", sPen7);
+					DevSetField(hDev, "Pen8", sPen8);
+					DevSetField(hDev, "Area", sArea);	
+	
+					sPens = sPen1 + "," + sPen2 + "," + sPen3 + ","	+ sPen4 + "," +
+							sPen5 + "," + sPen6 + "," + sPen7 + ","	+ sPen8;
+											
+					_UAG_Trend_ListRemove(sName);
+					_UAG_Trend_ListAdd(sName, sDesc, sPens, sArea);
+					
+					PageSetInt(2, DevRecNo(hDev));
+				END
+				
+				DevClose(hDev);
+				iNext = 0;
+				iPrev = 0;								
+			CASE 5	! Delete record
+			
+				IF sCurrentRec <> "" THEN
+				
+					DevFind(hDev, sCurrentRec, "Name");		! goto current record
+					sName = DevGetField(hDev, "Name");
+					_ObjectSetProperty(objSortText, "Text", "");
+					_ObjectSetProperty(objDescText, "Text", "");
+					_ObjectSetProperty(objPen1Text, "Text", "");
+					_ObjectSetProperty(objPen2Text, "Text", "");
+					_ObjectSetProperty(objPen3Text, "Text", "");
+					_ObjectSetProperty(objPen4Text, "Text", "");
+					_ObjectSetProperty(objPen5Text, "Text", "");
+					_ObjectSetProperty(objPen6Text, "Text", "");
+					_ObjectSetProperty(objPen7Text, "Text", "");
+					_ObjectSetProperty(objPen8Text, "Text", "");
+					_ObjectSetProperty(objAreaText, "Text", "");
+					DevDelete(hDev);
+					
+					sCurrentRec = "";
+					IF NOT DevNext(hDev) THEN
+						iNext = 1;
+						sCurrentRec = DevGetField(hDev, "Name");
+					ELSE
+						IF NOT DevPrev(hDev) THEN
+							iPrev = 1;
+							sCurrentRec = DevGetField(hDev, "Name");
+						END
+					END
+		
+					DevControl(hDev, 1, "");
+					
+					IF sCurrentRec <> "" THEN
+						DevFind(hDev, sCurrentRec, "Name");
+					END
+					
+					_UAG_Trend_ListRemove(sName);
+				END
+				
+				DevClose(hDev);
+				
+			END SELECT
+		END
+		
+		SleepMS(100);
+		
+	END
+	
+	DevClose(hDev);
+	ErrSet(0);
+	RETURN 0;
+	
+END
+
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//		FUNCTION NAME	
+//						UAG_Trend_SelectGroup()
+//
+//
+//     	GENERAL DESCRIPTION
+//
+//			Allows the user to select a group of trend tags from a listbox.  Each group has an associated
+//			name, description and list of up to 8 tags.  This function stores the selected group data 
+//			and returns the name of the group selected from the list.
+//
+//			Groups are configured in the TrendGrp.dbf file found in the [RUN] directory. 
+//				
+// 		ARGUMENTS:
+//
+//			iMonitor		- number of monitor the trend is/was displayed on
+//			iTrendDataSet	- identifies the data set to be used for the group of trend tags.
+//								Normal trend page uses data set 0, double trend page uses data sets 1 and 2.			
+//						
+//     	RETURNED VALUE: 
+//
+//			Trend group (description) selected from the list, or "" if cancel is pressed.
+//
+//		PSEUDO CODE:
+//
+//	Autor:				J.Venz
+//	Erstellungsdatum:			/	Schneider Electric GmbH
+//	Version				7.2.0.0
+//
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//
+//  06.06.08 Steiner 		angepasst an UAG
+//
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+STRING FUNCTION
+UAG_Trend_SelectGroup(INT iMonitor = -1, INT iTrendDataSet = 0)
+
+	STRING	sTrendSelectedDesc;
+	STRING	sTrendSelectedName;
+	STRING	sTrendSelectedPens
+	STRING	sAreas;
+	INT		hAreaGrp;
+	INT		iArea;
+	
+	IF iTrendDataSet < 0 OR iTrendDataSet > miMaxTrendDataSets - 1 THEN
+		iTrendDataSet = 0;
+	END
+		
+	IF NOT mbTrendListInitialised THEN
+		_UAG_Trend_ListInit();
+	END
+		
+	IF mhTrendList <> -1 AND mhTrendList_Mem <> -1 THEN
+		
+		IF iMonitor = -1 THEN
+			iMonitor = WinNumber();
+		END
+		
+		hAreaGrp = GetArea();
+		IF hAreaGrp <> -1 THEN
+			iArea = GrpFirst(hAreaGrp);
+			WHILE NOT iArea = -1 DO
+				sAreas = sAreas + IntToStr(iArea) + ",";
+				iArea = GrpNext(hAreaGrp, iArea);
+			END
+			
+			IF sAreas <> "" THEN
+				sAreas = StrLeft(sAreas, StrLength(sAreas) - 1);
+			END 
+		END
+
+		sTrendSelectedDesc = UAG_Trend_DspGroupList(msTrendSelectedDesc[iMonitor][iTrendDataSet], sAreas);
+	
+		IF sTrendSelectedDesc <> "" THEN
+		
+			sTrendSelectedName = CSV_Listbox_GetSelectedItemID(mhTrendList);		
+			sTrendSelectedPens = CSV_Listbox_GetItem(mhTrendList_Mem, sTrendSelectedName);
+			msTrendSelectedDesc[iMonitor][iTrendDataSet] = sTrendSelectedDesc;	
+			msTrendSelectedName[iMonitor][iTrendDataSet] = sTrendSelectedName;
+			_msTrendSelectedPens_ArraySet(iMonitor,iTrendDataSet, sTrendSelectedPens);
+			
+		END
+	END
+		
+	RETURN sTrendSelectedDesc;
+		
+END
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//		FUNCTION NAME	
+//						UAG_Trend_GetGroup()
+//
+//     	GENERAL DESCRIPTION
+//
+//			Gets the description of the group of trends (as defined in TrendGrp.dbf) currently displayed 
+//			(or last displayed) on a specified monitor.
+//				
+// 		ARGUMENTS:
+//
+//			iMonitor		- number of monitor the trend is/was displayed on
+//			iTrendDataSet	- identifies the data set to be used for the group of trend tags.
+//								Normal trend page uses data set 0, double trend page uses data sets 1 and 2.
+//						
+//     	RETURNED VALUE: 
+//
+//		Description of trend group.
+//
+//		PSEUDO CODE:
+//	Autor:				J.Venz
+//	Erstellungsdatum:			/	Schneider Electric GmbH
+//	Version				7.2.0.0
+//
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//
+//  06.06.08 Steiner 		angepasst an UAG
+//
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+STRING FUNCTION
+UAG_Trend_GetGroup(INT iMonitor, INT iTrendDataSet = 0)
+
+	STRING	sTrend;
+
+	IF iTrendDataSet < 0 OR iTrendDataSet > miMaxTrendDataSets - 1 THEN
+		iTrendDataSet = 0;
+	END
+	
+	IF iMonitor = -1 THEN
+	
+		iMonitor = WinNumber();
+	END
+	
+	sTrend = msTrendSelectedDesc[iMonitor][iTrendDataSet];
+	
+	RETURN sTrend;
+	
+END
+
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//		FUNCTION NAME	
+//						UAG_Trend_DspGroupList()
+//
+//     	GENERAL DESCRIPTION
+//
+//			Displays available groups of trend tags in a listbox.  
+//			Returns the description of the item selected from the list.	
+//
+//			Groups are configured in the TrendGrp.dbf file found in the [RUN] directory. 
+//				
+// 		ARGUMENTS:
+//
+//			sSelectedGroup		- Name of group to preselect in the list
+//			sAreas				- Areas to enable in the list 
+//									i.e. only trend groups belonging to these areas are displayed
+//						
+//     	RETURNED VALUE: 
+//
+//			Trend group (description) selected from the list, or "" if cancel is pressed.
+//
+//	Autor:				J.Venz
+//	Erstellungsdatum:			/	Schneider Electric GmbH
+//	Version				75.33.11.08
+//
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//
+//  13.11.07 Steiner 		angepasst an UAG
+//
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+STRING FUNCTION
+UAG_Trend_DspGroupList(STRING sSelectedGroup = "", STRING sAreas = "")
+
+	STRING	sTitle;
+	STRING	sDesc;
+	STRING	sOK;
+	STRING	sCancel;
+	STRING	sTrendSelectedDesc;
+	
+//	IF NOT mbTrendListInitialised THEN
+		_UAG_Trend_ListInit();
+//	END
+	GUT_GetMousePos_unten(300);	
+	IF mhTrendList <> -1 AND mhTrendList_Mem <> -1 THEN
+	
+		sTitle = StrToLocalText("@(Trends)");
+		sDesc = StrToLocalText("@(Select Trend)");
+		sOK = StrToLocalText(" @(OK) ");
+		sCancel = StrToLocalText(" @(Cancel) ");
+		
+		CSV_Listbox_SelectCategories(mhTrendList, sAreas);
+		sTrendSelectedDesc = CSV_Listbox_Show(mhTrendList, sTitle, sDesc, sOK, 
+			sCancel, giPosX,giPosY, sSelectedGroup);
+			
+	END
+		
+	RETURN sTrendSelectedDesc;
+		
+END
+
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//		FUNCTION NAME	
+//						_UAG_Trend_ListInit()
+//
+//
+//     	GENERAL DESCRIPTION
+//
+//			Creates a listbox listing available trend groups from which a user may select a group of tags 
+//			to be trended.  Groups are configured in the TrendGrp.dbf file found in the [RUN] directory.
+//			This file is accessed sequentially to populate the list.  
+//			Each group has an associated name, description and list of up to 8 tags. 
+//
+//			NOTE:
+//				Two listbox objects are created, one to store the description of the group (this is
+//				the listbox that will be displayed), the other to store the trend pens assigned to the group.			 
+//				
+// 		ARGUMENTS:
+//			
+//						
+//     	RETURNED VALUE: 
+//
+//			0 if successful, otherwise -1
+//
+//		PSEUDO CODE:
+//
+//	Autor:				J.Venz
+//	Erstellungsdatum:			/	Schneider Electric GmbH
+//	Version				3.2.0.0
+//
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//
+//  13.11.07 Steiner 		angepasst an UAG
+//
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+PRIVATE INT FUNCTION
+_UAG_Trend_ListInit()
+
+	INT		hDev = -1;
+	INT		iError = -1;
+	INT		hList = -1;
+	INT		iRecordNo;
+	STRING	sTrendName;
+	STRING	sDesc;
+	STRING	sPen1;
+	STRING	sPen2;
+	STRING	sPen3;
+	STRING	sPen4;
+	STRING	sPen5;
+	STRING	sPen6;
+	STRING	sPen7;
+	STRING	sPen8;
+	STRING	sPens;
+	STRING	sArea;
+		
+	ErrSet(1);
+	
+	hDev = UAG_DevOpen("UAG_TrendP","UAG_TrendS",2);
+	
+	IF hDev = -1 THEN
+		ErrSet(0);
+		RETURN -1;
+	END
+	
+	DevControl(hDev, 1, "");
+	DevControl(hDev, 0, "");
+	mhTrendList = CSV_Listbox_Create();
+	mhTrendList_mem = CSV_Listbox_Create();
+		
+	DevFirst(hDev);
+	
+	WHILE NOT DevEOF(hDev) DO
+	
+		sTrendName = DevGetField(hDev, "Name");
+		iRecordNo = DevRecNo(hDev);
+		
+		! If more than one record with same name only use last record.
+		iError = DevNext(hDev);
+		IF NOT iError THEN
+			iError = DevFind(hDev, sTrendName, "Name");
+		END
+		
+		DevSeek(hDev,iRecordNo);
+		
+		IF iError THEN	
+
+			sDesc = DevGetField(hDev, "Desc");
+			sArea = DevGetField(hDev, "Area");			
+			sPen1 = DevGetField(hDev, "Pen1");
+			sPen2 = DevGetField(hDev, "Pen2");
+			sPen3 = DevGetField(hDev, "Pen3");
+			sPen4 = DevGetField(hDev, "Pen4");
+			sPen5 = DevGetField(hDev, "Pen5");
+			sPen6 = DevGetField(hDev, "Pen6");
+			sPen7 = DevGetField(hDev, "Pen7");
+			sPen8 = DevGetField(hDev, "Pen8");
+	
+			sPens = sPen1 + "," 
+					+ sPen2 + ","
+					+ sPen3 + ","
+					+ sPen4 + ","
+					+ sPen5 + ","
+					+ sPen6 + ","
+					+ sPen7 + ","
+					+ sPen8;
+			
+			_UAG_Trend_ListAdd(sTrendName, sDesc, sPens, sArea);
+		END
+		
+		DevNext(hDev);	
+	END
+	
+	DevClose(hDev);
+
+	
+	mbTrendListInitialised = 1;
+		
+	ErrSet(0);
+
+	RETURN 0;
+	
+END
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//		FUNCTION NAME	
+//						_UAG_Trend_ListAdd()
+//
+//     	GENERAL DESCRIPTION
+//
+//			Adds a trend group to the listbox.
+//			
+//			(Groups are configured in the TrendGrp.dbf file found in the [RUN] directory).  
+//			
+//			NOTE:
+//				Two listbox objects are required to be added to, one stores the description of the group,
+//				the other stores the trend pens assigned to the group.
+//				
+// 		ARGUMENTS:
+//
+//			sName		- name of group
+//			sDesc		- description of group
+//			sPens		- comma separated list of up to 8 trend tags to associate with group
+//			sArea		- area assigned to group -> only groups allocated to current viewable areas will
+//							be shown in the list.		
+//						
+//     	RETURNED VALUE: 
+//
+//			0 if successful, otherwise -1
+//
+//		PSEUDO CODE:
+//
+//	Autor:				J.Venz
+//	Erstellungsdatum:			/	Schneider Electric GmbH
+//	Version				3.0.0.0
+//
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//
+//  13.11.07 Steiner 		angepasst an UAG
+//
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+PRIVATE INT FUNCTION
+_UAG_Trend_ListAdd(STRING sName, STRING sDesc, STRING sPens, STRING sArea = "")
+	
+	INT 	iError;
+	
+	IF mhTrendList = -1 OR mhTrendList_Mem = -1 THEN
+		RETURN -1;
+	END
+	
+	iError = CSV_Listbox_AddItem(mhTrendList, sDesc, sArea, sName);
+	
+	IF NOT iError THEN
+		iError = CSV_Listbox_AddItem(mhTrendList_Mem, sPens, "", sName);
+	END
+	
+	RETURN iError;
+	
+END
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//		FUNCTION NAME	
+//						_UAG_Trend_ListRemove()
+//
+//     	GENERAL DESCRIPTION
+//
+//			Removes a trend group from the listbox.
+//			
+//			(Groups are configured in the TrendGrp.dbf file found in the [RUN] directory).  
+//
+//			NOTE:
+//				The group must be removed from two listbox objects.  One stores the description of the group,
+//				the other stores the trend pens assigned to the group.
+//				
+// 		ARGUMENTS:
+//
+//			sName		- name of group to be removed.
+//						
+//     	RETURNED VALUE: 
+//
+//			0 if successful, otherwise -1
+//
+//		PSEUDO CODE:
+//
+//	Autor:				J.Venz
+//	Erstellungsdatum:			/	Schneider Electric GmbH
+//	Version				3.0.0.0
+//
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//
+//  13.11.07 Steiner 		angepasst an UAG
+//
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+PRIVATE INT FUNCTION
+_UAG_Trend_ListRemove(STRING sName)
+	
+	INT		iError;
+	
+	IF mhTrendList = -1 OR mhTrendList_Mem = -1 THEN
+		RETURN -1;
+	END
+	
+	iError = CSV_Listbox_RemoveItem(mhTrendList, "", "", sName);
+	
+	IF NOT iError THEN
+
+		iError = CSV_Listbox_RemoveItem(mhTrendList_Mem, "", "", sName);
+	END
+	
+	RETURN iError;
+	
+END
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//		FUNCTION NAME	
+//						_UAG_Trend_SelectGroup()
+//
+//     	GENERAL DESCRIPTION
+//
+//			Selects the name/desc of a group of tags to be trended.  Each group has an associated
+//			name, description and list of up to 8 tags.  This function stores the selected group data
+//			and assigns it to the specified monitor. 
+//			
+//			Groups are configured in the TrendGrp.dbf file found in the [RUN] directory.  
+//				
+// 		ARGUMENTS:
+//
+//			sTrendID		- Name or Desc of trend group (found in TrendGrp.dbf)
+//			iTrendIDType	- 0 -> sTrendID specifies the Name of the trend group
+//							  1	-> sTrendID specifies the description of the trend group
+//			iTrendDataSet	- identifies the data set to be used for the group of trend tags.
+//								Normal trend page uses data set 0, double trend page uses data sets 1 and 2.		
+//						
+//     	RETURNED VALUE: 
+//
+//			0 if successful, otherwise -1
+//
+//		PSEUDO CODE:
+//
+//	Autor:				J.Venz
+//	Erstellungsdatum:			/	Schneider Electric GmbH
+//	Version				7.2.0.0
+//
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//
+//  13.11.07 Steiner 		angepasst an UAG
+//
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+PRIVATE INT FUNCTION
+_UAG_Trend_SelectGroup(STRING sTrendID, INT iTrendIDType = 0, INT iTrendDataSet = 0)
+
+	STRING	sTrendSelectedPens;
+	STRING	sTrendSelectedDesc;
+	STRING	sTrendSelectedName;
+	INT		iMonitor;
+
+	IF iTrendDataSet < 0 OR iTrendDataSet > miMaxTrendDataSets - 1 THEN
+		iTrendDataSet = 0;
+	END
+		
+//	IF NOT mbTrendListInitialised THEN
+		_UAG_Trend_ListInit();
+//	END
+		
+	IF mhTrendList <> -1 AND mhTrendList_Mem <> -1 THEN	
+	
+		iMonitor = WinNumber();
+		
+		IF iTrendIDType = 0 THEN
+		
+			sTrendSelectedName = sTrendID;
+			sTrendSelectedDesc = CSV_Listbox_GetItem(mhTrendList, sTrendSelectedName);
+			sTrendSelectedPens = CSV_Listbox_GetItem(mhTrendList_Mem, sTrendSelectedName);
+		ELSE
+			sTrendSelectedName = CSV_Listbox_GetItemID(mhTrendList, sTrendID);
+			sTrendSelectedDesc = sTrendID;
+			sTrendSelectedPens = CSV_Listbox_GetItem(mhTrendList_Mem, sTrendSelectedName);
+		END
+												
+		IF sTrendSelectedDesc <> "" AND sTrendSelectedName <> "" THEN
+			msTrendSelectedDesc[iMonitor][iTrendDataSet] = sTrendSelectedDesc;	
+			msTrendSelectedName[iMonitor][iTrendDataSet] = sTrendSelectedName;
+			_msTrendSelectedPens_ArraySet(iMonitor,iTrendDataSet, sTrendSelectedPens);
+		END
+	END
+
+	RETURN 0;		
+END
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//		FUNCTION NAME	
+//						UAG_Trend_SelectPen()
+//
+//     	GENERAL DESCRIPTION
+//
+//			Displays a listbox to allow the user to select a tag to trend with the selected pen. 
+//				
+// 		ARGUMENTS:
+//
+//			sSelectedPen	- Name of trend tag to pre-select
+//			sClusters		- comma delimited clusters names to browse for the trends
+//						
+//     	RETURNED VALUE: 
+//
+//			Name of trend tag selected from list, or "" if action is cancelled.
+//
+//		PSEUDO CODE:
+//
+//	Autor:				J.Venz
+//	Erstellungsdatum:			/	Schneider Electric GmbH
+//	Version				75.33.11.08
+//
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//
+//  13.11.07 	Steiner 	angepasst an UAG
+//	13.08.13	Steiner		X/Y Pos Angepasst
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+STRING FUNCTION 
+UAG_Trend_SelectPen(STRING sSelectedPen = "", STRING sCluster = "")
+
+//	INT		iX, iY;
+	INT		iOffset;
+	INT		hTrendList;
+	STRING	sListTitle;
+	STRING	sListDesc;
+	STRING	sListOKBtn;
+	STRING	sListCancelBtn;
+	INT 	hCursor = -1;
+	INT		hWnd;
+
+	sListTitle = StrToLocalText("@(Select Trend)");
+	sListDesc = StrToLocalText("@(Select trend variable)") + ":";
+	sListOKBtn = StrToLocalText("@(Add)");
+	sListCancelBtn = StrToLocalText("@(Cancel)");
+	GUT_GetMousePos_unten(300);
+
+	iOffset = WndMonitorInfo(WinNumber(), 0);	! Offset to add so form appears on correct monitor.
+	
+//	iY = (WndInfo(1)-153)/2;
+//	iX = iOffset + (WndInfo(0) - 462)/2;
+
+	IF sSelectedPen <> "" THEN 
+
+		sListOKBtn = StrToLocalText("@(Replace)");				
+		sSelectedPen = "";
+	END
+	
+	hWnd		= WinGetWndHnd();
+	hCursor		= CSV_WinUtl_WaitCursor(hWnd);
+	hTrendList	= CSV_Listbox_SelectTrends(sCluster);
+	
+	CSV_WinUtl_NormalCursor(hWnd);
+	
+	IF hTrendList <> -1 THEN
+	
+		CSV_Listbox_SelectCategories(hTrendList, "TREND");
+		sSelectedPen = CSV_Listbox_Show(hTrendList, sListTitle, sListDesc, 
+				sListOKBtn, sListCancelBtn,giPosX,giPosY, sSelectedPen);
+		CSV_Listbox_Destroy(hTrendList);
+	
+		IF sSelectedPen <> "" THEN
+
+			sSelectedPen = CSV_Listbox_GetTagName (sSelectedPen);			
+		END
+	END
+	
+	RETURN sSelectedPen;
+
+END
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//		FUNCTION NAME	
+//						UAG_Trend_SetPens()
+//
+//     	GENERAL DESCRIPTION
+//
+//			Allocates trend tags to trend pens.  The names of the trend tags are extracted from a string
+//			that stores the last group of trend tags displayed on a particular monitor.
+//				
+// 		ARGUMENTS:
+//
+//			hTrendAN		- Animation point number of the trend
+//			iMonitor		- number of monitor the trend is displayed on (-1 for active monitor)
+//			iTrendDataSet	- identifies the data set to be used for the group of trend tags.
+//								Normal trend page uses data set 0, double trend page uses data sets 1 and 2.
+//			
+//			
+//     	RETURNED VALUE: 
+//
+//
+//		PSEUDO CODE:
+//
+//	Autor:				J.Venz
+//	Erstellungsdatum:			/	Schneider Electric GmbH
+//	Version				7.2.0.0
+//
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//
+//  13.11.07 Steiner 		angepasst an UAG
+//
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+INT FUNCTION
+UAG_Trend_SetPens(INT hTrendAN, INT iMonitor = -1, INT iTrendDataSet = 0)
+
+	STRING	sTrendName;
+	STRING	sTrendPens;
+	STRING	sPen;
+	INT		iCommaPos;
+	INT		iOffset;
+	INT		iLength;
+	INT		iPen;
+	INT		iPenSelected;
+	
+	IF iTrendDataSet < 0 OR iTrendDataSet > miMaxTrendDataSets - 1 THEN
+		iTrendDataSet = 0;
+	END
+		
+	IF iMonitor = -1 THEN
+	
+		iMonitor = WinNumber();
+	END
+		
+	sTrendPens = _msTrendSelectedPens_ArrayGet(iMonitor,iTrendDataSet);
+
+	IF sTrendPens = "" THEN
+		! Clear all trend pens
+		FOR iPen = 1 TO 8 DO
+			TrnSetPen(hTrendAN, iPen, "!");
+		END
+		
+	ELSE
+		WHILE iCommaPos > -1 DO
+			iCommaPos = StrSearch(iOffset, sTrendPens, ",");
+			
+			IF iCommaPos > -1 THEN
+				iLength = iCommaPos - iOffset;
+				
+			ELSE
+				iLength = StrLength(sTrendPens) - iOffset;			
+			END
+			
+			IF iLength > 0 THEN
+				sPen = StrMid(sTrendPens, iOffset, iLength);
+			ELSE
+				sPen = "";
+			END
+			
+			iOffset = iCommaPos + 1;
+			iPen = iPen + 1;
+				
+			IF sPen <> "" THEN
+				TrnSetPen(hTrendAN, iPen, sPen);
+				IF NOT iPenSelected OR TrnGetPenFocus(hTrendAN) = iPen THEN
+					iPenSelected = iPen;
+				END
+			ELSE
+				TrnSetPen(hTrendAN, iPen, "!");
+			END		
+			
+		END
+	END
+	
+	TrnSetPenFocus(hTrendAN, iPenSelected);
+	TrendSetNow(hTrendAN);
+		
+	RETURN 0;
+END
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//		FUNCTION NAME	
+//						UAG_Trend_SetDateTime()
+//
+//     	GENERAL DESCRIPTION
+//
+//			Sets the 0% date and time of the trend via a keypad form. This allows the user to view trend
+//			information up to the time and date entered.
+//				
+// 		ARGUMENTS:
+//
+//			hTrendAN		- Animation point number of the trend.
+//						
+//     	RETURNED VALUE: 
+//
+//			New time and date, separated by a space.
+//
+//		PSEUDO CODE:
+//
+//	Autor:				J.Venz
+//	Erstellungsdatum:			/	Schneider Electric GmbH
+//	Version				75.33.11.08
+//
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//
+//  13.11.07 Steiner 		angepasst an UAG
+//
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+STRING FUNCTION 
+UAG_Trend_SetDateTime(INT hTrendAN)
+
+	INT		iError;
+	INT		iCurrent;
+	INT		iNewTime;
+	INT 	iCursorAn;
+	INT		iX;
+	INT		iY;
+	STRING	sTime;
+	STRING	sDate;
+	
+	iCurrent = TrnGetTime(hTrendAn, 0, 0);	
+	sTime = TimeToStr(iCurrent, 1);
+	sDate = TimeToStr(iCurrent, 2);
+
+	iCursorAN = KeyGetCursor();
+
+	GUT_GetMousePos_unten(226);
+
+	sDate =  Keypad(sDate, 4,StrToLocalText("@(Set end date.)"),giPosX,giPosY);
+
+	IF IsError = 299 THEN
+
+		RETURN "";
+	END
+	
+	sTime = Keypad(sTime,12,StrToLocalText("@(Set end time.)"),giPosX,giPosY);	
+
+	IF IsError = 299 THEN
+
+		RETURN "";
+	END
+
+	iNewTime = StrToDate(sDate) + StrToTime(sTime);
+
+	IF (TrnSetTime(hTrendAn, -1, iNewTime) = 274) THEN	
+			Prompt(StrToLocalText("@(Invalid date / time)"));
+	END	
+	
+	RETURN sTime + " " + sDate;
+
+END
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//		FUNCTION NAME	
+//						UAG_Trend_SetSpan()
+//
+//     	GENERAL DESCRIPTION
+//
+//			Sets the span (total amount of time visible) on the trend.
+//				
+// 		ARGUMENTS:
+//
+//			hTrendAN		- Animation point number of trend.
+//			sSpan			- Value to set the span to.  If sSpan = "" then a form will be displayed
+//								allowing the user to select the trend span.
+//			
+//     	RETURNED VALUE: 
+//
+//			New span as string.
+//
+//		PSEUDO CODE:
+//
+//	Autor:				J.Venz
+//	Erstellungsdatum:			/	Schneider Electric GmbH
+//	Version				75.33.11.08
+//
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//
+//  13.11.07 Steiner 		angepasst an UAG
+//
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+STRING FUNCTION 
+UAG_Trend_SetSpan(INT hTrendAN, STRING sSpan = "")
+
+	STRING	sNewValue;
+	INT		iStartTime;
+	INT		iEndTime;
+	INT		iSpan;
+
+	sSpan = StrTrim(sSpan);
+	GUT_GetMousePos_unten(226);
+
+	IF sSpan = "" THEN
+
+		iSpan = TrnGetSpan(hTrendAN);
+
+		IF iSpan = 0 THEN
+
+			iStartTime = TrnGetTime(hTrendAN, 0, 0);
+			iEndTime = TrnGetTime(hTrendAN, 0, 100);
+
+			IF iStartTime = 0 OR iEndTime = 0 THEN
+
+				sSpan = "kein"
+
+			ELSE
+
+				sSpan = TimeToStr((iStartTime-iEndTime), 5);
+				sSpan = Keypad(sSpan,12,StrToLocalText("@(Enter the time)"),giPosX,giPosY);
+
+			END
+
+		ELSE
+
+			sSpan = TimeToStr(iSpan, 5);
+			sSpan = Keypad(sSpan,12,StrToLocalText("@(Enter the time)"),giPosX,giPosY);
+
+		END
+
+	END
+
+	IF IsError() <> 299 THEN
+
+		IF sSpan <> "" THEN
+
+			TrnSetSpan(hTrendAN, StrToPeriod(sSpan));
+
+		END
+	ELSE
+		sSpan = ""
+	END
+	
+	RETURN sSpan;
+
+END
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//		FUNCTION NAME	
+//						UAG_Trend_GetCursorValueStr()
+//
+//     	GENERAL DESCRIPTION
+//
+//			Gets the value of a trend pen at the cursor position, or the current value of the trend pen if the 
+//			cursor is disabled.  The value is returned as a string, optionally followed by the engineering units
+//			of the tag.
+//				
+// 		ARGUMENTS:
+//
+//			hTrendAN	-	Animation point number of the trend.
+//			iPen		- 	number of the trend pen
+//			iEngUnits	- 	Append the engineering units to the cursor value returned
+//			
+//     	RETURNED VALUE: 
+//
+//			Value of the trend pen at the cursor position, or its current value if the cursor is not displayed.
+//
+//		PSEUDO CODE:
+//
+//	Autor:				J.Venz
+//	Erstellungsdatum:			/	Schneider Electric GmbH
+//	Version				3.0.0.0
+//
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//
+//  13.11.07 Steiner 		angepasst an UAG
+//
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+STRING
+FUNCTION
+UAG_Trend_GetCursorValueStr(INT hTrendAN, INT iPen, INT iEngUnits)
+
+	REAL	rBufValue;
+	INT		iWidth;
+	INT		iDecPlaces;
+	STRING	sUnits;
+	STRING	sCursorVal;
+	
+	ErrSet(1);
+	
+	IF TrnGetPen(hTrendAN, iPen) = "" THEN
+		ErrSet(0);
+		RETURN "";
+	END
+	
+	IF TrnGetCursorPos(hTrendAN) < 0 THEN
+		TrnGetFormat(hTrendAN, iPen, iWidth, iDecPlaces);
+		
+		IF iEngUnits THEN
+			sUnits = TrnGetUnits(hTrendAN, iPen);
+		END
+		
+		rBufValue = TrnGetBufValue(hTrendAN, iPen, -1);
+		
+		SELECT CASE TrnIsValidValue(rBufValue)
+		
+		CASE 0
+			sCursorVal = StrFormat(rBufValue, iWidth, iDecPlaces, sUnits);
+			
+		CASE 1
+			sCursorVal = "<gated>";
+			
+		CASE 2
+			sCursorVal = "<kein>"
+		END	SELECT
+	ELSE
+	
+		sCursorVal = TrnGetCursorValueStr(hTrendAN, iPen, iEngUnits);
+	END
+	
+	ErrSet(0);
+	
+	RETURN StrTrim(sCursorVal);	
+END
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//		FUNCTION NAME	
+//						UAG_Trend_GetCursorTypeStr()
+//
+//     	GENERAL DESCRIPTION
+//
+//			Returns text indicating whether the cusor is displayed.
+//			Used in conjunction with UAG_Trend_GetCursorValueStr() to notify the user whether the displayed trend tag
+//			value corresponds to the value at the cursor, or the current value.
+//				
+// 		ARGUMENTS:
+//
+//			hTrendAN	-	Animation point number of the trend.
+//			
+//     	RETURNED VALUE: 
+//
+//			Returns "Current Value" if the cusor is not displayed, or "Cursor Value" if the cursor is displayed.
+//
+//		PSEUDO CODE:
+//
+//	Autor:				J.Venz
+//	Erstellungsdatum:			/	Schneider Electric GmbH
+//	Version				3.0.0.0
+//
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//
+//  13.11.07 Steiner 		angepasst an UAG
+//
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+STRING FUNCTION
+UAG_Trend_GetCursorTypeStr(INT hTrendAN)
+
+	STRING	sCursorType;
+	
+	ErrSet(1);
+	
+	IF TrnGetCursorPos(hTrendAN) < 0 THEN
+		
+		sCursorType = StrToLocalText("@(Current value)");
+		
+	ELSE
+	
+		sCursorType = StrToLocalText("@(Cursor Wert)");
+	END
+	
+	ErrSet(0);
+	
+	RETURN sCursorType;	
+END
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//		FUNCTION NAME	
+//						UAG_Trend_SetScale()
+//
+//     	GENERAL DESCRIPTION
+//
+//			Allows the user to set the zero and full scale values of the trend.
+//			The scale may be changed for all trends or only the current trend.
+//				
+// 		ARGUMENTS:
+//
+//			hTrendAN		- Animation point number of trend for which the timebase is to be set.
+//			iPercentage		- scale percentage to set (0 or 100)
+//			sValue			- Value to set scale percentage to.  If sValue = "" then a form will be displayed
+//								allowing the user to select a new scale.
+//			
+//     	RETURNED VALUE: 
+//
+//			New scale value as string.
+//
+//		PSEUDO CODE:
+//
+//	Autor:				J.Venz
+//	Erstellungsdatum:			/	Schneider Electric GmbH
+//	Version				75.33.11.08
+//
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//
+//  13.11.07 Steiner 		angepasst an UAG
+//
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+STRING FUNCTION 
+UAG_Trend_SetScale(INT hTrendAN, INT iPercentage, STRING sValue = "")
+
+	STRING	sTitle;
+	STRING	sBox1 = "1";
+	STRING	sBox2 = "0";
+	STRING	sBuf;
+
+	sValue = StrTrim(sValue);
+	GUT_GetMousePos_unten(226);
+	IF sValue = "" THEN
+
+		sTitle = "Neue" + " " + IntToStr(iPercentage) + "% " + "Skalierung";
+		sValue = TrnGetScale(hTrendAN, 0, iPercentage);
+		sValue = Keypad(sValue,2,sTitle,giPosX,giPosY);
+
+		
+		IF IsError() <> 299 THEN
+
+			IF sValue <> "" THEN
+
+                miTrendScaleFormPercentage = iPercentage;
+                msTrendScaleFormValue = sValue;
+                mhTrendScaleFormAN= hTrendAN;
+
+                IF mhTrendScaleForm = -1 THEN
+
+					mhTrendScaleForm = FormNew(sTitle, 26, 4, 8+16+128);
+					_UAG_Trend_FormPosition();
+    				FormField(2, 1, 24, 1, 4, sBuf, "&" + StrToLocalText("@(All Trend Pens)"), _UAG_Trend_ChangeScaleAllPens);
+        			FormField(2, 2, 24, 1, 4, sBuf, "&" + StrToLocalText("@(Current pen)"), _UAG_Trend_ChangeScaleCurrentPen);
+	        		FormField(2, 3, 24, 1, 6, sBuf, "&" + StrToLocalText("@(Cancel)"), _UAG_Trend_ChangeScaleCancel);
+
+		        	FormRead(1);
+
+                END
+
+			END
+		ELSE
+			sValue = "";
+		END
+
+	ELSE
+
+		TrnSetScale(hTrendAN, 0, iPercentage, StrToValue(sValue));
+
+	END
+
+	RETURN sValue;
+
+END
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//		FUNCTION NAME	
+//						UAG_Trend_DspPopupMenu()
+//
+//     	GENERAL DESCRIPTION
+//
+//			Displays a popup menu to allow the user to add or clear the selected pen. 
+//				
+// 		ARGUMENTS:
+//
+//			hTrendAN	-	Animation point number of the trend.
+//			iPen		-	Number of selected pen.
+//						
+//     	RETURNED VALUE: 
+//
+//			Description of trend group.
+//
+//		PSEUDO CODE:
+//
+//	Autor:				J.Venz
+//	Erstellungsdatum:			/	Schneider Electric GmbH
+//	Version				3.0.0.0
+//
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//
+//  13.11.07 Steiner 		angepasst an UAG
+//
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+FUNCTION 
+UAG_Trend_DspPopupMenu(INT hTrendAN, INT iPen)
+
+	STRING	sDspMenu;
+	INT		iMenuLeft;
+	INT		iMenuTop;
+	INT		iSelMenu;
+	STRING	sSelectedPen;
+	STRING	sTrnInfo;
+	INT		iPenIndex;
+	INT		iPenFound;
+	STRING	sCluster;
+	INT		iError;
+
+	DspGetMouse (iMenuLeft, iMenuTop);
+	DspPopupMenu (0, "[CtAddTrnPen]@(Select pen.) " + IntToStr (iPen));
+	sDspMenu = "[Cross]Stift löschen " + IntToStr (iPen);
+
+	IF TrnGetPen (hTrendAN, iPen) = "" THEN 
+	
+		sDspMenu = "!" + sDspMenu; 	
+	END
+	
+	DspPopupMenu (0, sDspMenu);
+	
+	! Display popup menu at mouse position
+	iSelMenu = DspPopupMenu (-1, "", iMenuLeft, iMenuTop);
+	
+	SELECT CASE iSelMenu
+	
+	CASE 001	! Select pen
+	
+		IF iPen > 0 THEN 
+		
+			TrnSetPenFocus (hTrendAN, iPen);
+			
+			! Ensure that only one cluster is active
+			sCluster = TrnGetCluster(hTrendAN);
+			
+			sSelectedPen = UAG_Trend_SelectPen("", sCluster);
+			
+			IF sSelectedPen <> "" THEN
+			
+				sTrnInfo = TrnInfo (sSelectedPen, 1, sCluster);
+	
+				IF IsError () OR sTrnInfo = "" THEN 
+							
+					sSelectedPen = ""; 				
+				END
+	
+				TrnSetPen (hTrendAN, iPen, sSelectedPen);
+	
+				TrnSetPenFocus (hTrendAN, iPen);
+				
+				_UAG_Trend_ScaleDigital(hTrendAN, iPen);
+				
+				UAG_Trend_SetRange(hTrendAN);	
+			END	
+		END
+
+	CASE 002	! Clear Pen
+
+		IF iPen <> -1 THEN 
+			
+			TrnSetPen (hTrendAN, iPen, "!") 
+			
+			iPenIndex = 1;
+			WHILE iPenIndex <= 8 AND NOT iPenFound DO
+			
+				IF UAG_Trend_GetPen(hTrendAN, iPenIndex) <> "" THEN
+				
+					TrnSetPenFocus(hTrendAN, iPenIndex);
+					iPenFound = 1;
+				ELSE
+					iPenIndex = iPenIndex + 1;
+				END
+			END	
+		END
+
+	END SELECT
+
+END
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//		FUNCTION NAME	
+//						UAG_Trend_UpdatePens()
+//
+//     	GENERAL DESCRIPTION
+//
+//			Stores the names of tags currently trended at a specified AN to a string as a comma separated list.
+//			A separate string is assigned to each monitor. 
+//			The string is used to restore the last tags trended when the trend page is redisplayed. 
+//				
+// 		ARGUMENTS:
+//
+//			hTrendAN		- Animation point number of the trend
+//			iMonitor		- number of monitor the trend is displayed on (-1 for active monitor)
+//			iTrendDataSet	- identifies the data set to be used for the group of trend tags.
+//								Normal trend page uses data set 0, double trend page uses data sets 1 and 2.
+//						
+//     	RETURNED VALUE: 
+//
+//
+//		PSEUDO CODE:
+//
+//	Autor:				J.Venz
+//	Erstellungsdatum:			/	Schneider Electric GmbH
+//	Version				7.2.0.0
+//
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//
+//  13.11.07 Steiner 		angepasst an UAG
+//
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+INT FUNCTION
+UAG_Trend_UpdatePens(INT hTrendAN, INT iMonitor = -1, INT iTrendDataSet = 0);
+	
+	INT		iPen;
+	STRING	sPens;
+	
+	IF iTrendDataSet < 0 OR iTrendDataSet > miMaxTrendDataSets - 1 THEN
+		iTrendDataSet = 0;
+	END
+	
+	IF iMonitor = -1 THEN
+	
+		iMonitor = WinNumber();
+	END
+	
+	FOR iPen = 1 TO 8 DO
+
+		sPens = sPens + TrnGetPen(hTrendAN, iPen) + ",";
+	END
+	
+	sPens = StrLeft(sPens, StrLength(sPens) - 1);
+	
+	_msTrendSelectedPens_ArraySet(iMonitor,iTrendDataSet, sPens);
+	
+	RETURN 0;
+END
+
+
+//	UAG_Trend_PageGruppe()
+//	Übergabeparameter:	 ---     
+//                       
+//	Rückgabewert:		 
+//	Beschreibung:		Öffnet das Trendfenster	
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	06.06.08	/	Schneider Electrik GmbH
+//	Version				74.33.70.00
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	07.12.09	Steiner		Erweitert für Doppeltrend
+
+FUNCTION
+UAG_Trend_PageGruppe(STRING sPage, STRING sMenu, STRING sPens, INT iMonitor ,INT iAN, INT iTrendDataSet = 0)
+	PageDisplay(sPage);
+	_msTrendSelectedPens_ArraySet(iMonitor,0, sPens);
+	msTrendSelectedDesc[iMonitor][iTrendDataSet] =sMenu;
+	SleepMS(200);
+
+	UAG_Trend_SetPens(iAN,iMonitor);
+END
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//		FUNCTION NAME	
+//						Array Storage/Retrieval functions
+//
+//     	GENERAL DESCRIPTION
+//			
+//			The following functions enable storing up to 254 characters in global strings (rather than 
+//			the standard 127) by storing the strings across two variables.
+//
+// 		ARGUMENTS:
+//
+//     	RETURNED VALUE: 
+//
+//		PSEUDO CODE:
+//
+//	Autor:				J.Venz
+//	Erstellungsdatum:			/	Schneider Electric GmbH
+//	Version				3.0.0.0
+//
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//
+//  13.11.07 Steiner 		angepasst an UAG
+//
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+PRIVATE INT FUNCTION
+_msTrendSelectedPens_ArraySet(INT iIndex1, INT iIndex2, STRING sValue)
+
+	ErrSet(1);
+	
+	msTrendSelectedPens[iIndex1][iIndex2] = sValue;
+	msTrendSelectedPens_[iIndex1][iIndex2] = StrMid(sValue, 127, 127);
+	
+	ErrSet(0);
+	RETURN 0;
+END
+
+PRIVATE STRING FUNCTION
+_msTrendSelectedPens_ArrayGet(INT iIndex1, INT iIndex2)
+
+	STRING	sValue;
+	
+	sValue = msTrendSelectedPens[iIndex1][iIndex2] 
+			+ msTrendSelectedPens_[iIndex1][iIndex2];
+
+	RETURN sValue;
+END
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//		FUNCTION NAME	
+//						_UAG_Trend_ChangeScaleAllPens()
+//
+//     	GENERAL DESCRIPTION
+//
+//			Callback function of the change scale form, called when button to change scale for all pens is selected.
+//				
+// 		ARGUMENTS:
+//			
+//     	RETURNED VALUE: 
+//
+//		PSEUDO CODE:
+//
+//	Autor:				J.Venz
+//	Erstellungsdatum:			/	Schneider Electric GmbH
+//	Version				3.0.0.0
+//
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//
+//  13.11.07 Steiner 		angepasst an UAG
+//
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+PRIVATE INT FUNCTION
+_UAG_Trend_ChangeScaleAllPens()
+
+	TrnSetScale(mhTrendScaleFormAN, -1, miTrendScaleFormPercentage, StrToValue(msTrendScaleFormValue));
+
+    FormDestroy(mhTrendScaleForm);
+
+    mhTrendScaleForm = -1;
+
+    RETURN 0;
+
+END
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//		FUNCTION NAME	
+//						_UAG_Trend_ChangeScaleCurrentPen()
+//
+//     	GENERAL DESCRIPTION
+//
+//			Callback function of the change scale form, called when button to change scale for current pen is selected.
+//				
+// 		ARGUMENTS:
+//			
+//     	RETURNED VALUE: 
+//
+//		PSEUDO CODE:
+//
+//	Autor:				J.Venz
+//	Erstellungsdatum:			/	Schneider Electric GmbH
+//	Version				3.0.0.0
+//
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//
+//  13.11.07 Steiner 		angepasst an UAG
+//
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+PRIVATE INT FUNCTION
+_UAG_Trend_ChangeScaleCurrentPen()
+
+	TrnSetScale(mhTrendScaleFormAN, 0, miTrendScaleFormPercentage, StrToValue(msTrendScaleFormValue));
+
+    FormDestroy(mhTrendScaleForm);
+
+    mhTrendScaleForm = -1;
+
+    RETURN 0;
+
+END
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//		FUNCTION NAME	
+//						_UAG_Trend_ChangeScaleCancel()
+//
+//     	GENERAL DESCRIPTION
+//
+//			Callback function of the change scale form, called when button to cancel change of scale is selected.
+//				
+// 		ARGUMENTS:
+//			
+//     	RETURNED VALUE: 
+//
+//		PSEUDO CODE:
+//
+//	Autor:				J.Venz
+//	Erstellungsdatum:			/	Schneider Electric GmbH
+//	Version				3.0.0.0
+//
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//
+//  13.11.07 Steiner 		angepasst an UAG
+//
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+PRIVATE INT FUNCTION
+_UAG_Trend_ChangeScaleCancel()
+
+    FormDestroy(mhTrendScaleForm);
+
+    mhTrendScaleForm = -1;
+
+    RETURN 0;
+
+END
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//		FUNCTION NAME	
+//						_UAG_Trend_FormPosition()
+//
+//     	GENERAL DESCRIPTION
+//
+//			Positions a form at the current mouse position, ensuring that the form is entirely displayed within
+//			the borders of the screen associated with the current monitor.
+//				
+// 		ARGUMENTS:
+//
+//			
+//     	RETURNED VALUE: 
+//
+//		PSEUDO CODE:
+//
+//	Autor:				J.Venz
+//	Erstellungsdatum:			/	Schneider Electric GmbH
+//	Version				3.0.0.0
+//
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//
+//  13.11.07 Steiner 		angepasst an UAG
+//
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+PRIVATE FUNCTION
+_UAG_Trend_FormPosition()
+
+	INT	iX;
+	INT	iY;
+	INT	iFormX = 189;
+	INT	iFormY = 363;
+	
+	DspAnGetPos(KeyGetCursor(), iX, iY);
+	
+	UAG_Form_Position(iX, iY, iFormX, iFormY);
+	
+END
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//		FUNCTION NAME	
+//						UAG_Trend_ScaleDigital()
+//
+//     	GENERAL DESCRIPTION
+//
+//			Wrapper function for '_UAG_Trend_ScaleDigital'.
+//
+//			Note:
+//				TagGetProperty must be called in blocking mode and therefore cannot
+//				be called from a foreground task.  This method creates a task to
+//				run in the background.
+//				
+// 		ARGUMENTS:
+//
+//			hTrendAN	-	Animation point number of the trend.
+//			iPen		- 	No of pen to scale, or -1 for all pens.
+//						
+//     	RETURNED VALUE: 
+//
+//		PSEUDO CODE:
+//
+//	Autor:				J.Venz
+//	Erstellungsdatum:			/	Schneider Electric GmbH
+//	Version				3.0.0.0
+//
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//
+//  13.11.07 Steiner 		angepasst an UAG
+//
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+FUNCTION
+UAG_Trend_ScaleDigital(INT hTrendAN, INT iPen)
+
+	TaskNew("_UAG_Trend_ScaleDigital", IntToStr(hTrendAN) + "," + IntToStr(iPen), 0);
+
+END
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//		FUNCTION NAME	
+//						UAG_Trend_AutoScale()
+//
+//     	GENERAL DESCRIPTION
+//
+//			Auto scales all trend pens, such that the 100% scale is 10% of the full tag range above the 
+//			maximum tag value in the viewable trend window, and the 0% scale is 10% of the tag range below 
+//			the minimum tag value in the viewable trend window.
+//			
+//				
+// 		ARGUMENTS:
+//
+//			hTrendAN		- Animation point number of the trend.
+//			
+//     	RETURNED VALUE: 
+//
+//		PSEUDO CODE:
+//
+//	Autor:				J.Venz
+//	Erstellungsdatum:			/	Schneider Electric GmbH
+//	Version				3.0.0.0
+//
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//
+//  13.11.07 Steiner 		angepasst an UAG
+//
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+REAL	rTable[1000];
+
+INT FUNCTION
+UAG_Trend_AutoScale(INT hTrendAN)
+
+	INT 	iPen;
+	INT		iSamples;
+	INT		iPeriod;
+	INT		iTime;
+	STRING	sTag;
+	INT		iNumRead;
+	REAL	rMin;
+	REAL	rMax;
+	REAL	rEngMax;
+	REAL	rEngMin;
+	REAL	rEngDiff;
+	
+	
+	iSamples = TrnSamplesConfigured(hTrendAN);
+	iPeriod = TrnGetPeriod(hTrendAN);
+	iTime = TrnGetTime(hTrendAN, 0, 0);
+	
+	TrnSetScale(hTrendAN, -1, -2, 0);
+	
+	FOR iPen = 1 TO 8 DO
+	
+		sTag = TrnGetPen(hTrendAN, iPen);
+		
+		IF sTag <> "" THEN
+		
+			
+			iNumRead = TrnGetTable(sTag,iTime,iPeriod,iSamples,rTable,1);
+			
+			rMin = TableMath(rTable, iNumRead, 0, 1);
+			rMax = TableMath(rTable, iNumRead, 1, 1);
+
+			rEngMin = TrnGetScale(hTrendAN, iPen, 0);
+			rEngMax = TrnGetScale(hTrendAN, iPen, 100);
+			
+			rEngDiff = rEngMax - rEngMin;
+			
+			rMax = rMax + (rEngDiff*10/100);
+			rMin = rMin - (rEngDiff*10/100);
+			
+			IF rMax > rEngMax THEN
+				rMax = rEngMax;
+			END
+
+			IF rMin < rEngMin THEN
+				rMin = rEngMin;
+			END
+						
+			TrnSetScale(hTrendAN, iPen, 0, rMin);
+			TrnSetScale(hTrendAN, iPen, 100, rMax);
+		END
+	END
+	
+	RETURN 0;
+END
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//		FUNCTION NAME	
+//						_UAG_Trend_ScaleDigital()
+//
+//     	GENERAL DESCRIPTION
+//
+//			Rescales digital pens between -2 and 2. 
+//
+//			Note:
+//				To be rescaled trend tags must have same name as digital variable tag
+//				
+// 		ARGUMENTS:
+//
+//			hTrendAN	-	Animation point number of the trend.
+//			iPen		- 	No of pen to scale, or -1 for all pens.
+//						
+//     	RETURNED VALUE: 
+//
+//
+//		PSEUDO CODE:
+//
+//	Autor:				J.Venz
+//	Erstellungsdatum:			/	Schneider Electric GmbH
+//	Version				3.0.0.0
+//
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//
+//  13.11.07 Steiner 		angepasst an UAG
+//
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+INT FUNCTION
+_UAG_Trend_ScaleDigital(INT hTrendAN, INT iPen)
+	
+	STRING	sPen;
+	
+	ErrSet(1);
+	
+	IF iPen <> -1 THEN
+	
+		sPen = UAG_Trend_GetPen(hTrendAN, iPen);
+		
+		IF sPen <> "" THEN
+	
+			IF TagGetProperty(sPen, "Type", 0) = "0" THEN 
+			! matching variable tag is digital
+			! Assumes trend tag = variable tag
+				TrnSetScale(hTrendAN, iPen, 0, -2);
+				TrnSetScale(hTrendAN, iPen, 100, 2);
+			END
+		END
+	ELSE
+	
+		FOR iPen = 1 TO 8 DO
+	
+			sPen = UAG_Trend_GetPen(hTrendAN, iPen);
+			
+			IF sPen <> "" THEN
+		
+				IF TagGetProperty(sPen, "Type", 0) = "0" THEN
+				! Assumes trend tag = variable tag
+					
+					TrnSetScale(hTrendAN, iPen, 0, -2);
+					TrnSetScale(hTrendAN, iPen, 100, 2);
+				END
+			END
+		END
+	END
+	
+	ErrSet(0);
+	
+	RETURN 0;
+END
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//		FUNCTION NAME	
+//						UAG_Trend_GetTime()
+//
+//     	GENERAL DESCRIPTION
+//
+//			Gets the time of the trend at a percentage along the trend, using the time of the right-most 
+//			sample displayed. The time associated with the right-most sample displayed is known as the end time. 
+//			The start time is the time of the left-most sample displayed. 
+//			Percent 0 (zero) will correspond to the end time, and Percent 100 will correspond to the start time.
+//				
+// 		ARGUMENTS:
+//
+//			hTrendAN	-	Animation point number of the trend.
+//			iPercent	- 	The percentage of the trend from the time of the right-most sample displayed.
+//			
+//     	RETURNED VALUE: 
+//
+//			The time of the trend in the format hh:mm:ss.
+//
+//		PSEUDO CODE:
+//
+//	Autor:				J.Venz
+//	Erstellungsdatum:			/	Schneider Electric GmbH
+//	Version				3.0.0.0
+//
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//
+//  13.11.07 Steiner 		angepasst an UAG
+//
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+STRING FUNCTION
+UAG_Trend_GetTime(INT hTrendAN, INT iPercent)
+
+	STRING	sTime;
+	INT		iTime;
+
+	IF _UAG_Trend_Exists(hTrendAN) THEN
+		
+		iTime = TrnGetTime(hTrendAN, 0, iPercent);
+		
+		IF iTime > 0 THEN	
+		
+			sTime = TimeToStr(iTime, 1);
+		END
+	END
+	
+	RETURN sTime;
+END
+
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//		FUNCTION NAME	
+//						UAG_Trend_GetDate()
+//
+//     	GENERAL DESCRIPTION
+//
+//			Gets the date of the trend at a percentage along the trend, using the date of the right-most 
+//			sample displayed. The date associated with the right-most sample displayed is known as the end date. 
+//			The start date is the date of the left-most sample displayed. 
+//			Percent 0 (zero) will correspond to the end date, and Percent 100 will correspond to the start date.
+//				
+// 		ARGUMENTS:
+//
+//			hTrendAN	-	Animation point number of the trend.
+//			iPercent	- 	The percentage of the trend from the date of the right-most sample displayed.
+//			
+//     	RETURNED VALUE: 
+//
+//			The date of the trend in the format month day year.
+//
+//		PSEUDO CODE:
+//
+//	Autor:				J.Venz
+//	Erstellungsdatum:			/	Schneider Electric GmbH
+//	Version				3.1.1.5
+//
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//
+//  13.11.07 	Steiner 	angepasst an UAG
+//	09.10.09	Steiner		Datumsformat angepasst
+//
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+STRING FUNCTION
+UAG_Trend_GetDate(INT hTrendAN, INT iPercent)
+
+	STRING	sDate;
+	INT		iTime;
+
+	IF _UAG_Trend_Exists(hTrendAN) THEN
+		
+		iTime = TrnGetTime(hTrendAN, 0, iPercent);
+		
+		IF iTime > 0 THEN
+		
+			sDate = TimeToStr(iTime, 2);
+		END
+	END
+	
+	RETURN sDate;
+END
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//		FUNCTION NAME	
+//						UAG_Trend_GetCursorPos()
+//
+//     	GENERAL DESCRIPTION
+//
+//			Gets the offset of a trend cursor from its origin, in samples.
+//				
+// 		ARGUMENTS:
+//
+//			hTrendAN	-	Animation point number of the trend.
+//			
+//     	RETURNED VALUE: 
+//
+//			The offset of a trend cursor from its origin, in samples, or -1 if the trend cursor is disabled.
+//
+//		PSEUDO CODE:
+//
+//	Autor:				J.Venz
+//	Erstellungsdatum:			/	Schneider Electric GmbH
+//	Version				3.0.0.0
+//
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//
+//  13.11.07 Steiner 		angepasst an UAG
+//
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+INT FUNCTION
+UAG_Trend_GetCursorPos(INT hTrendAN)
+
+	INT		iCursorPos = -1;
+	INT		iError = -1;
+	
+	IF _UAG_Trend_Exists(hTrendAN) THEN	
+		
+		IF TrnGetCursorValueStr(hTrendAN, 0, 0) <> "" THEN
+		
+			iCursorPos = TrnGetCursorPos(hTrendAN);
+		END
+	END
+	
+	RETURN iCursorPos;
+	
+END
+
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//		FUNCTION NAME	
+//						UAG_Trend_SetRange()
+//
+//     	GENERAL DESCRIPTION
+//
+//			Gets the default range for all trend pens and sets page strings 10 - 17 to the
+//			values of the ranges.
+//				
+// 		ARGUMENTS:
+//
+//			hTrendAN		- Animation point number of trend.
+//			
+//     	RETURNED VALUE: 
+//
+//		PSEUDO CODE:
+//
+//	Autor:				J.Venz
+//	Erstellungsdatum:			/	Schneider Electric GmbH
+//	Version				3.0.0.0
+//
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//
+//  13.11.07 Steiner 		angepasst an UAG
+//
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+REAL	iEngLowScale;
+REAL	iEngHighScale;
+
+INT FUNCTION
+UAG_Trend_SetRange(INT hTrendAN)
+
+	INT		iCount = 0;
+	INT		iPageStrOffSet = 10
+	
+	STRING	sTrendTag = "";
+	STRING	sEngUnits = "";
+	
+	Sleep(1);
+
+	ErrSet(1);
+	
+	FOR iCount = 1 TO 8 DO
+
+		sTrendTag = TrnGetPen(hTrendAN, iCount);
+		
+		IF sTrendTag <> "" THEN
+		
+			TrnGetDefScale(sTrendTag, iEngLowScale, iEngHighScale);
+		
+			sEngUnits = TrnInfo(sTrendTag, 7);
+		
+			PageSetStr(iPageStrOffSet + iCount - 1, RealToStr(iEngLowScale, 5, 1) + " - " + RealToStr(iEnghighScale, 5, 1) + " "  + sEngUnits);
+			
+		ELSE
+		
+			PageSetStr(iPageStrOffSet + iCount - 1, "");
+
+		END
+	
+	END	
+	
+	ErrSet(0);
+	
+	RETURN 0;
+
+END
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//		FUNCTION NAME	
+//						UAG_Trend_GetPen()
+//
+//     	GENERAL DESCRIPTION
+//
+//			Gets the trend tag being plotted by a specified pen.
+//				
+// 		ARGUMENTS:
+//
+//			hTrendAN	-	Animation point number of the trend.
+//			iPen		-	Number of pen.
+//			
+//     	RETURNED VALUE:
+//
+//			Trend tag of specified pen 
+//
+//		PSEUDO CODE:
+//
+//	Autor:				J.Venz
+//	Erstellungsdatum:			/	Schneider Electric GmbH
+//	Version				3.0.0.0
+//
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//
+//  13.11.07 Steiner 		angepasst an UAG
+//
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+STRING FUNCTION
+UAG_Trend_GetPen(INT hTrendAN, INT iPen)
+
+	STRING	sPen;
+	
+	IF _UAG_Trend_Exists(hTrendAN) THEN	
+	
+		sPen = TrnGetPen(hTrendAN, iPen);
+	END
+	
+	RETURN sPen;
+END
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//		FUNCTION NAME	
+//						_UAG_Trend_Exists()
+//
+//     	GENERAL DESCRIPTION
+//
+//			Checks if a trend exists and is ready to access.  
+//			Calling this function before calling TrnGetCursor for example can prevent hardware alarms.
+//				
+// 		ARGUMENTS:
+//
+//			hTrendAN	-	Animation point number of the trend.
+//			
+//     	RETURNED VALUE: 
+//
+//			1 if the trend exists, otherwise 0.
+//
+//		PSEUDO CODE:
+//
+//	Autor:				J.Venz
+//	Erstellungsdatum:			/	Schneider Electric GmbH
+//	Version				3.0.0.0
+//
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//
+//  13.11.07 Steiner 		angepasst an UAG
+//
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+PRIVATE INT FUNCTION
+_UAG_Trend_Exists(INT hTrendAN)
+
+	INT	iExists;
+	INT	iError;
+	
+	ErrSet(1);
+	
+	IsError();
+	
+	TrnGetPen(hTrendAN, 0);
+			
+	iError = IsError();
+	
+	ErrSet(0);
+	
+	IF NOT iError THEN
+	
+		iExists = 1;
+	END
+	
+	RETURN iExists;
+
+END
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//		FUNCTION NAME	
+//						UAG_Trend_GetPenFocus()
+//
+//     	GENERAL DESCRIPTION
+//
+//			Gets the trend pen currently in focus.
+//				
+// 		ARGUMENTS:
+//
+//			hTrendAN	-	Animation point number of the trend.
+//			
+//     	RETURNED VALUE: 
+//
+//			number of pen in focus.
+//
+//		PSEUDO CODE:
+//
+//	Autor:				J.Venz
+//	Erstellungsdatum:			/	Schneider Electric GmbH
+//	Version				3.0.0.0
+//
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//
+//  13.11.07 Steiner 		angepasst an UAG
+//
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+INT FUNCTION
+UAG_Trend_GetPenFocus(INT hTrendAN)
+
+	INT	iPenFocus = -1;
+
+	IF _UAG_Trend_Exists(hTrendAN) THEN	
+		
+		iPenFocus = TrnGetPenFocus(hTrendAN);
+		
+		IF iPenFocus <> -1 THEN
+	
+			IF TrnGetPen(hTrendAN, iPenFocus) = "" THEN
+			
+				iPenFocus = -1;
+			END
+		END
+	END
+	
+	RETURN iPenFocus;
+
+END
+
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//		FUNCTION NAME	
+//						UAG_Trend_GetMode()
+//
+//     	GENERAL DESCRIPTION
+//
+//			Gets the mode (real-time or historical trending) of the trend pen.
+//				
+// 		ARGUMENTS:
+//
+//			hTrendAN	-	Animation point number of the trend.
+//			
+//     	RETURNED VALUE: 
+//
+//			The current mode, 0 for real-time or 1 for historical.
+//
+//		PSEUDO CODE:
+//
+//	Autor:				J.Venz
+//	Erstellungsdatum:			/	Schneider Electric GmbH
+//	Version				3.0.0.0
+//
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//
+//  13.11.07 Steiner 		angepasst an UAG
+//
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+INT FUNCTION
+UAG_Trend_GetMode(INT hTrendAN)
+
+	INT		iMode;
+	
+	IF _UAG_Trend_Exists(hTrendAN) THEN
+	
+		iMode = TrnGetMode(hTrendAN, 0);
+	END
+	
+	RETURN iMode;
+END
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//		FUNCTION NAME	
+//						UAG_Trend_DspTrendText()
+//
+//     	GENERAL DESCRIPTION
+//
+//			Returns the comment for the trend tag plotted by the specified pen if a comment exists,
+//			otherwise returns the name of the trend tag.
+//				
+// 		ARGUMENTS:
+//
+//			hTrendAN	-	Animation point number of the trend.
+//			iPen		-	Number of the trend pen.
+//			
+//     	RETURNED VALUE: 
+//
+//			Trend tag comment if it exists, otherwise the trend tag name (all capitalised).
+//
+//		PSEUDO CODE:
+//
+//	Autor:				J.Venz
+//	Erstellungsdatum:			/	Schneider Electric GmbH
+//	Version				3.0.0.0
+//
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//
+//  13.11.07 Steiner 		angepasst an UAG
+//
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+STRING FUNCTION
+UAG_Trend_DspTrendText(INT hTrendAN, INT iPen, INT iCaps = 0)
+
+	STRING sTrendText;
+	STRING sTrendComment;
+	
+	sTrendText = _TrendPenNameGet(hTrendAN, iPen);
+	
+	IF sTrendText <> "" THEN
+
+		sTrendComment = TrnGetPenComment(hTrendAN, iPen);
+
+		IF sTrendComment <> "" THEN
+
+			sTrendText = sTrendComment;
+
+		END
+	END
+	
+	IF iCaps THEN
+		sTrendText = StrUpper(sTrendText);
+	END
+	
+	RETURN sTrendText;
+	
+END
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//		FUNCTION NAME	
+//						UAG_Trend_DspScaleRange()
+//
+//     	GENERAL DESCRIPTION
+//
+//			Returns the current displayed scale range for a specified trend pen, in the format:
+//				"Lo - HiEU" where Lo = RangeMin, Hi = RangeMax, and EU = engineering units
+//
+//			Note:
+//				This method cannot block so the call to TagGetProperty retrieves the cached value.
+//				Errors are handled here as one will be raised if the property is not ready.
+//				
+// 		ARGUMENTS:
+//
+//			hTrendAN	-	Animation point number of the trend.
+//			iPen		-	Number of the trend pen.
+//			
+//     	RETURNED VALUE: 
+//
+//			Formatted range value as a string.
+//
+//		PSEUDO CODE:
+//
+//	Autor:				J.Venz
+//	Erstellungsdatum:			/	Schneider Electric GmbH
+//	Version				3.0.0.0
+//
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//
+//  13.11.07 Steiner 		angepasst an UAG
+//
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+STRING FUNCTION
+UAG_Trend_DspScaleRange(INT hTrendAN, INT iPen)
+
+	STRING	sRange;
+	STRING	sPen;
+	STRING	sType;
+	INT		iError;
+	
+	sPen =  UAG_Trend_GetPen(hTrendAN, iPen);
+		
+	IF sPen <> "" THEN
+	
+		ErrSet(1);
+		IsError();	! Reset error.
+		
+		! Do not block when calling TagGetProperty.
+		! An error will be raised if the property is not ready.
+		sType = TagGetProperty(sPen, "Type", 1);
+		iError = IsError();
+		
+		ErrSet(0);
+
+		IF iError = 0 THEN
+
+			IF sType = "0" THEN 	
+			
+				sRange = StrToLocalText("@(Digital)");
+			ELSE
+	
+				sRange = StrTrim(TrnGetScaleStr(hTrendAN,iPen,0, 0) + " - " + TrnGetScaleStr(hTrendAN,iPen,100, 1));
+			END
+		END
+	END
+	
+	RETURN sRange;
+	
+END
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//		FUNCTION NAME	
+//						CSV_Trend_GetGroupPenList
+//
+//     	GENERAL DESCRIPTION
+//			
+//			Displays the Trend Group selection list and returns the list of tags in the group.
+//
+// 		ARGUMENTS:
+//
+//     	RETURNED VALUE: String contain comma seperated list of tags in the group.
+//
+//		PSEUDO CODE:
+//	Autor:				D.Wood
+//	Erstellungsdatum:	24.08.04	/	Schneider Electric GmbH
+//	Version				7.2.0.0
+//
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+STRING
+FUNCTION
+UAG_Trend_GetGroupPenList()
+
+	STRING	sTrendSelectedDesc;
+	STRING	sTrendSelectedName;
+	STRING	sTrendSelectedPens;
+	INT 	iMonitor = -1;
+	
+
+//	IF NOT mbTrendListInitialised THEN
+		_UAG_Trend_ListInit();
+//	END
+		
+	IF mhTrendList <> -1 AND mhTrendList_Mem <> -1 THEN
+		
+		IF iMonitor = -1 THEN
+			iMonitor = WinNumber();
+		END
+		
+		sTrendSelectedDesc = UAG_Trend_DspGroupList();
+		gsTrendSelectedDesc =	sTrendSelectedDesc;
+		IF sTrendSelectedDesc <> "" THEN
+		
+			sTrendSelectedName = CSV_ListBox_GetSelectedItemID(mhTrendList);		
+			sTrendSelectedPens = CSV_ListBox_GetItem(mhTrendList_Mem, sTrendSelectedName);
+
+		END
+	END
+		
+	RETURN sTrendSelectedPens;
+END
+	
+
+/*
+**	FUNCTION NAME:	TrnPrint
+**
+**	This function will print out a Trend screen. The An of the  trend
+**	must be specified. If sPrinter parameter is an empty string then
+**	the parameter [GENERAL]TrnPrinter will be used. If sTitle is an
+**	empty string then the page Title will be used. For no title 
+**	pass " " for the sTitle argument.
+**
+*/
+
+
+INT FUNCTION
+UAG_TrnPrint(STRING sPrinter, STRING sTitle, INT hAn, INT ModeColour = PRINT_MODE_UNKNOWN, 
+	INT DisplayForm = DISPLAY_FORM_DEFAULT,STRING sComment="")
+
+	INT	iPen;
+	INT	nStart;
+	INT	nEnd1;
+	INT	nEnd2;
+	INT	i;
+	REAL	fPeriod1;
+	REAL	fPeriod2;
+	INT	nSamples;
+	INT 	status 			= 0;
+	STRING	sColour			= "0";
+	STRING	sBAndW			= "0";
+    STRING  sBuf            = "";
+    STRING  sDisableForm	= "";
+
+	IF UAG_TrendAssignTagArray(hAn) = 0 THEN
+		RETURN 301;		
+	END
+
+	IF ModeColour = PRINT_MODE_UNKNOWN THEN
+		ModeColour = StrToInt(ParameterGet("GENERAL","PrinterColourMode",IntToStr(PRINT_MODE_B_AND_W)));
+	END
+
+	IF sPrinter = "" THEN
+		sPrintSetup = ParameterGet("GENERAL","TrnPrinter", "");
+	ELSE
+		sPrintSetup = sPrinter;
+	END
+
+	IF sTitle = "" THEN
+		sTitle = PageInfo(2);
+	END
+	IF sTitle = "" THEN
+		sTitle = "Trend Plot";
+	END
+
+	IF ModeColour = PRINT_MODE_COLOUR THEN
+		sColour = "1";
+	ELSE
+		sBAndW  = "1";
+	END
+
+	sDisableForm = ParameterGet("GENERAL","DisablePlotSetupForm", "0");
+
+	IF DisplayForm = DISPLAY_FORM_YES OR
+	  (DisplayForm = DISPLAY_FORM_DEFAULT AND	
+		(sDisableForm = "0" OR ModeColour = PRINT_MODE_UNKNOWN)) THEN
+
+		FormNew(StrToLocalText("@(Plot Setup)"),61,6,1);
+
+		FormPrompt(0, 0, StrToLocalText("@(Titel)"));
+		FormPrompt(0, 1, StrToLocalText("@(Comment)"));
+		FormEdit(9, 0, sTitle, 30);
+		FormEdit(9, 1, sComment, 30);
+
+		FormGroupBox(0, 2, 39, 4);
+		FormRadioButton(4,3,"&" + StrToLocalText("@(Black and white)"),sBAndW);
+		FormRadioButton(4,4,"&" + StrToLocalText("@(Colour)"),sColour);
+		FormPrompt(1, 2, " " + StrToLocalText("@(Select colour)"));
+
+		FormButton(41, 0, " &" + StrToLocalText("@(Printer Setup)") + "... ", UAG_PrinterSetup, 0);
+
+		FormField(41,3,20,1,5,sBuf,"&" + StrToLocalText(" @(OK) "),0);
+		FormField(41,4,20,1,6,sBuf,"&" + StrToLocalText(" @(Cancel) "),0);
+
+		FormCheckBox(4,5,"&" + StrToLocalText("@(Do not display this form next time)"),sDisableForm);
+
+		IF FormRead(0) = 0 THEN
+			sPrinter = sPrintSetup;
+		
+	                IF sColour = "1" THEN
+				ModeColour = PRINT_MODE_COLOUR;
+			ELSE
+				ModeColour = PRINT_MODE_B_AND_W;
+			END
+        	        ParameterPut("GENERAL","PrinterColourMode",StrToInt(ModeColour));
+	                ParameterPut("GENERAL","DisablePlotSetupForm",sDisableForm);
+		ELSE
+			RETURN 1;
+		END
+	END
+
+	IF sPrintSetup = "" THEN 
+		sPrintSetup = FormSelectPrinter();
+	END
+	ParameterPut("GENERAL","TrnPrinter", sPrintSetup);
+
+      	IF sPrintSetup <> "" THEN
+
+
+		DspRubEnd(RubX1, RubY1, RubX2, RubY2);
+
+		nStart = UAG_TrendZoomGetStart(hAn);
+		nEnd1 = UAG_TrendZoomGetEnd(hAn);
+		IF nEnd1 = 0 OR nStart = 0 OR nStart = nEnd1 THEN
+			AreaSelected = 0;
+			nStart = UAG_TrendZoomGetStart(hAn);
+			nEnd1 = UAG_TrendZoomGetEnd(hAn);
+		END
+		fPeriod1 = TrnGetPeriod(hAn);
+		AreaSelected = 0;	
+		nSamples = UAG_TrendZoomGetSamples(hAn, nEnd1, nStart, fPeriod1, -1, 1);
+
+		TrnPageAnSet(hAn);
+		IF TrnPageTypeSPCGet() THEN
+			status = SPCPlot(sPrintSetup, hAn, sTitle, sComment, ModeColour);
+		ELSE 
+			IF TrnPageTypeGet() = TRN_PAGE_COMPARE THEN
+
+				nEnd2 = UAG_TrendZoomGetEnd(hAn+1);
+				fPeriod2 = TrnGetPeriod(hAn+1);
+
+				ErrSet(1);
+				FOR iPen = 0 TO MAX_COMPARE_PENS-1 DO
+					sTagArray[iPen] = UAG_TrendPenNameGet(hAn, iPen+1);
+					sTagArray[iPen+MAX_COMPARE_PENS] = UAG_TrendPenNameGet(hAn+1, iPen+1);
+				END
+				ErrSet(0);
+
+				status = TrnComparePlot(sPrintSetup,sTitle,hAn,sComment,ModeColour,nSamples,nEnd1,fPeriod1,nEnd2,fPeriod2,
+						sTagArray[0],sTagArray[1],sTagArray[2],sTagArray[3],
+						sTagArray[4],sTagArray[5],sTagArray[6],sTagArray[7],
+						TrnGetScale(hAn, 1, 0), TrnGetScale(hAn, 1, 100),
+						TrnGetScale(hAn, 2, 0), TrnGetScale(hAn, 2, 100),
+						TrnGetScale(hAn, 3, 0), TrnGetScale(hAn, 3, 100),
+						TrnGetScale(hAn, 4, 0),	TrnGetScale(hAn, 4, 100),
+						TrnGetScale(hAn+1, 1, 0), TrnGetScale(hAn+1, 1, 100),
+						TrnGetScale(hAn+1, 2, 0), TrnGetScale(hAn+1, 2, 100),
+						TrnGetScale(hAn+1, 3, 0), TrnGetScale(hAn+1, 3, 100),
+						TrnGetScale(hAn+1, 4, 0), TrnGetScale(hAn+1, 4, 100)
+						);
+			ELSE
+			FOR i = 0 TO 7 DO
+				iScaleIndex[i] = hTagArray[i] + 1;
+				IF (iScaleIndex[i] > 8) THEN
+					iScaleIndex[i] = 8;	// this should actually be no trend pen...
+				END
+			END
+				status = TrnPlot(sPrintSetup,nSamples,nEnd1,fPeriod1,sTitle,hAn,
+						sTagArray[hTagArray[0]],sTagArray[hTagArray[1]],sTagArray[hTagArray[2]],sTagArray[hTagArray[3]],
+						sTagArray[hTagArray[4]],sTagArray[hTagArray[5]],sTagArray[hTagArray[6]],sTagArray[hTagArray[7]],
+						ModeColour, sComment,
+						TrnGetScale(hAn, iScaleIndex[0], 0), TrnGetScale(hAn, iScaleIndex[0], 100),
+						TrnGetScale(hAn, iScaleIndex[1], 0), TrnGetScale(hAn, iScaleIndex[1], 100),
+						TrnGetScale(hAn, iScaleIndex[2], 0), TrnGetScale(hAn, iScaleIndex[2], 100),
+						TrnGetScale(hAn, iScaleIndex[3], 0), TrnGetScale(hAn, iScaleIndex[3], 100),
+						TrnGetScale(hAn, iScaleIndex[4], 0), TrnGetScale(hAn, iScaleIndex[4], 100),
+						TrnGetScale(hAn, iScaleIndex[5], 0), TrnGetScale(hAn, iScaleIndex[5], 100),
+						TrnGetScale(hAn, iScaleIndex[6], 0), TrnGetScale(hAn, iScaleIndex[6], 100),
+						TrnGetScale(hAn, iScaleIndex[7], 0), TrnGetScale(hAn, iScaleIndex[7], 100)
+						);
+			END 
+		END
+	END
+	
+	RETURN 0;
+END
+
+/*
+**	FUNCTION NAME: _TrendAssignTagArray
+**
+**	Finds which tags variables are being used and loads them into sTagArray[].
+**	Also builds the hTagArray which holds handles to all the valid tags. This
+**	is necessary for where pens 1,4 and 5 may be used rather than 1,2 and 3.
+**	Returns the number of tags found.
+**
+*/
+
+PRIVATE INT FUNCTION
+UAG_TrendAssignTagArray(INT hAn)
+
+	INT	nTags = 0
+	INT	i;
+	
+	ErrSet(1);
+	FOR i = 0 TO 7 DO
+		sTagArray[i] = UAG_TrendPenNameGet(hAn, i + 1);
+	END
+	ErrSet(0);
+
+	sTagArray[8] = "";
+	
+	FOR i = 0 TO 7 DO
+		hTagArray[i] = 8;		
+		IF StrLength(sTagArray[i]) <> 0 THEN
+			hTagArray[nTags] = i;
+			nTags = nTags + 1;
+		END
+	END
+
+	RETURN nTags;
+END
+
+/*
+**	FUNCTION NAME: _PrinterSetup
+**
+**	Form callback function.
+*/
+
+PRIVATE INT FUNCTION
+UAG_PrinterSetup() 
+
+	sPrintSetup = FormSelectPrinter(); 
+
+	RETURN 0; 
+END
+
+PRIVATE INT FUNCTION
+UAG_TrendZoomGetStart(INT hAn,INT nTrendType = -1)
+
+	INT	nStart;
+
+	IF nTrendType = -1 THEN
+		nTrendType = UAG_TrendGraphTypeGet(hAn);
+	END
+
+	IF nTrendType = TREND_TYPE_PERIODIC OR nTrendType = TREND_TYPE_PERIODIC_EVENT THEN
+		IF AreaSelected = 1 THEN
+			nStart = TrnGetTime(hAn, 0, UAG_TrendCalcPercent(RubX1, DspGetAnLeft(hAn), DspGetAnWidth(hAn)));
+		ELSE
+			nStart = TrnGetTime(hAn, 0, 100);
+		END
+	ELSE IF nTrendType = TREND_TYPE_EVENT THEN
+		IF AreaSelected = 1 THEN
+			nStart = TrnGetEvent(hAn, 0, UAG_TrendCalcPercent(RubX1, DspGetAnLeft(hAn), DspGetAnWidth(hAn)));
+		ELSE
+			nStart = TrnGetEvent(hAn, 0, 100);
+			IF nStart = 0 THEN
+				nStart = 1;
+			END
+		END
+	ELSE 
+		nStart = 0;
+	END END
+	
+	RETURN nStart;
+END
+
+
+PRIVATE INT FUNCTION
+UAG_TrendZoomGetEnd(INT hAn,INT nTrendType = -1)
+
+	INT	nEnd;
+
+	IF nTrendType = -1 THEN
+		nTrendType = UAG_TrendGraphTypeGet(hAn);
+	END
+
+
+	IF nTrendType = TREND_TYPE_PERIODIC OR nTrendType = TREND_TYPE_PERIODIC_EVENT THEN
+		IF AreaSelected = 1 THEN
+			nEnd = TrnGetTime(hAn, 0, UAG_TrendCalcPercent(RubX2, DspGetAnLeft(hAn), DspGetAnWidth(hAn)));
+		ELSE
+			nEnd = TrnGetTime(hAn, 0, 0);
+		END
+
+	ELSE IF nTrendType = TREND_TYPE_EVENT THEN
+		IF AreaSelected = 1 THEN
+			nEnd = TrnGetEvent(hAn, 0, UAG_TrendCalcPercent(RubX2, DspGetAnLeft(hAn), DspGetAnWidth(hAn)));
+		ELSE
+			nEnd = TrnGetEvent(hAn, 0, 0);
+			IF nEnd = 0 THEN
+				nEnd = 1;
+			END
+		END
+
+	ELSE 
+		nend = 0; 
+	
+	END END
+	
+	RETURN nEnd;
+END
+
+
+PRIVATE INT FUNCTION
+UAG_TrendZoomGetSamples(INT hAn, INT nEnd, INT nStart, REAL fPeriod, INT nTrendType = -1, INT TrnPrinting = 0)
+
+	INT 	nSamples;
+	STRING	sPen;
+
+	sPen = UAG_TrendPenNameGet(hAn, 0);
+	IF nTrendType = -1 THEN
+		nTrendType = UAG_TrendGraphTypeGet(hAn);
+	END
+
+	IF nTrendType = TREND_TYPE_EVENT THEN
+		nSamples = (nEnd - nStart) + 1;
+	ELSE IF nTrendType = TREND_TYPE_PERIODIC OR nTrendType = TREND_TYPE_PERIODIC_EVENT THEN
+		nSamples = (nEnd - nStart) / fPeriod + 1;
+	
+	ELSE
+		nSamples = 0;
+	END END
+	
+	RETURN nSamples;
+END
+
+PRIVATE STRING FUNCTION
+UAG_TrendPenNameGet(INT hAn, INT hPen)
+
+	STRING	sPen;
+	
+	ErrSet(1);
+	sPen = TrnGetPen(hAn,hPen,1);
+	ErrSet(0);
+
+	RETURN sPen;
+END
+
+/*
+**	FUNCTION:	_TraceCalcPercent()
+**
+**	Calculates the percent of a value minus any offset
+**	compared to a third value. 
+**	eg _TraceCalcPercent(Value, XOffset, XWidth)
+**
+*/
+
+PRIVATE REAL FUNCTION
+UAG_TrendCalcPercent(INT RawVal, INT MinVal, INT DeltaVal)
+
+	REAL	fTempVal = 0.0;
+	
+	IF DeltaVal > 0 THEN
+		fTempVal = (RawVal - MinVal) * 100 / DeltaVal;
+		fTempVal = 100 - fTempVal;
+	END
+		
+	IF fTempVal < 100 AND fTempVal > 0 THEN	
+	      	RETURN fTempVal;
+	ELSE
+      		RETURN 0;
+      END
+END  
+
+PRIVATE INT FUNCTION
+UAG_TrendGraphTypeGet(INT hAn)
+
+	STRING	sType;
+	INT 	nType = -1;
+	INT		nError;
+	
+	ErrSet(1);
+	sType = TrnClientInfo(hAn, 0, 2, 0, nError);
+	ErrSet(0);
+
+	IF sType <> "" THEN
+		nType = StrToInt(sType);
+	END
+
+	RETURN nType;
+END
+
+
+
+
+//	UAG_Trend_Plot_XY()
+//	Übergabeparameter: freie Animationsnummer,Breite, Höhe,x Trendvariable,y Trendvariable, Anzahl der Werte (max 1000)
+//						Startzeit 	
+//                         
+//	Rückgabewert:		- 
+//	Beschreibung:		Schreibt einen XY Plot an die Koordinate der An (3.x) 
+//						
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	23.08.10	/	Schneider Electric GmbH
+//	Version				3.2.0.1
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+
+REAL TrendTable1[5000];
+REAL TrendTable2[5000];
+REAL imin1,imin2,imax1,imax2;
+
+FUNCTION UAG_Trend_Plot_XY(INT iAn,INT ibreite,INT ihöhe, STRING sT1,STRING sT2, INT ISample,INT iTime=TimeCurrent(),INT idp=1)
+
+	INT hPlot,hFont,hFont2;
+	REAL temp
+	hFont = DspFont("Arial",-12,black,grey);
+	hFont2 = DspFont("Arial",-12,black,white);
+	ErrSet(1);
+	TrnGetTable(sT1,iTime,idp,ISample,TrendTable1[0],0);
+	TrnGetTable(sT2,iTime,idp,ISample,TrendTable2[0],0);
+	TrnGetDefScale(sT1, imin1 ,imax1 );
+	TrnGetDefScale(sT2, imin2 ,imax2 );
+	PageSetStr(11,TagRead(sT1));
+	PageSetStr(12,imin1);
+	PageSetStr(13,imax1);
+	PageSetStr(15,TagRead(sT2));
+	PageSetStr(16,imin2);
+	PageSetStr(17,imax2);
+	PageSetInt (11,TrnInfo(sT1,2))
+
+
+	hPlot=PlotOpen(iAn,"Display",1);
+	IF hPlot <> -1 THEN
+		PlotGrid(hPlot,ISample,0,0,ibreite,ihöhe,5,red,10,blue,0,black,white,0);
+		PlotText(hPlot,hFont,0,(ibreite/2)-StrLength(sT1),ihöhe+20,sT1);
+		PlotText(hPlot,hFont2,0,0,ihöhe+20,IntToStr(imin1));
+		PlotText(hPlot,hFont2,0,ibreite,ihöhe+20,IntToStr(imax1));
+		PlotText(hPlot,hFont,1,-20,ihöhe/2,sT2);
+		PlotText(hPlot,hFont2,1,-10,ihöhe,IntToStr(imin2));
+		PlotText(hPlot,hFont2,1,-10,0,IntToStr(imax2));
+		PlotXYLine(hPlot, 0,yellow, 4, 3, black, 2, ISample, TrendTable1, imin1, imax1, TrendTable2, imin2,imax2,1)
+	END	
+	PlotClose(hPlot);
+	ErrSet(0);
+END
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//		FUNCTION NAME	
+//						UAG_TrendXY_SetPens()
+//
+//     	GENERAL DESCRIPTION
+//
+//			Allocates trend tags to trend pens.  The names of the trend tags are extracted from a string
+//			that stores the last group of trend tags displayed on a particular monitor.
+//				
+// 		ARGUMENTS:
+//
+//			iMonitor		- number of monitor the trend is displayed on (-1 for active monitor)
+//			iTrendDataSet	- identifies the data set to be used for the group of trend tags.
+//								Normal trend page uses data set 0, double trend page uses data sets 1 and 2.
+//			
+//			
+//     	RETURNED VALUE: 
+//
+//
+//		PSEUDO CODE:
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	25.08.10	/	Schneider Electric GmbH
+//	Version				7.2.0.1
+//
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//
+//
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+ FUNCTION
+UAG_TrendXY_SetPens(INT iMonitor = -1, INT iTrendDataSet = 3)
+
+	STRING	sTrendName;
+	STRING	sTrendPens;
+	STRING	sPen;
+	INT		iCommaPos;
+	INT		iOffset;
+	INT		iLength;
+	INT		iPen;
+	INT		iPenSelected,i;
+	
+	IF iTrendDataSet < 0 OR iTrendDataSet > miMaxTrendDataSets - 1 THEN
+		iTrendDataSet = 0;
+	END
+		
+	IF iMonitor = -1 THEN
+	
+		iMonitor = WinNumber();
+	END
+	sTrendPens = _msTrendSelectedPens_ArrayGet(iMonitor,iTrendDataSet);
+
+	IF sTrendPens = "" THEN
+		! Clear all trend pens
+		
+		PageSetStr (10,"");
+		PageSetStr (14,"");
+	ELSE
+		FOR i=1 TO 2 DO
+			iCommaPos = StrSearch(iOffset, sTrendPens, ",");
+			
+			IF iCommaPos > -1 THEN
+				iLength = iCommaPos - iOffset;
+				
+			ELSE
+				iLength = StrLength(sTrendPens) - iOffset;			
+			END
+			
+			IF iLength > 0 THEN
+				sPen = StrMid(sTrendPens, iOffset, iLength);
+			ELSE
+				sPen = "";
+			END
+			
+			iOffset = iCommaPos + 1;
+			iPen = iPen + 1;
+			IF i=1 THEN	
+				IF sPen <> "" THEN
+					PageSetStr ( 10, sPen);
+
+				ELSE
+					PageSetStr ( 10, "");
+				END		
+			ELSE
+				IF sPen <> "" THEN
+					PageSetStr ( 14, sPen);
+
+				ELSE
+					PageSetStr ( 14, "");
+				END		
+			END
+		END
+	END
+	
+END
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//		FUNCTION NAME	
+//						UAG_Trendxy_UpdatePens()
+//
+//     	GENERAL DESCRIPTION
+//
+//			Stores the names of tags currently trended at a specified AN to a string as a comma separated list.
+//			A separate string is assigned to each monitor. 
+//			The string is used to restore the last tags trended when the trend page is redisplayed. 
+//				
+// 		ARGUMENTS:
+//
+//			iMonitor		- number of monitor the trend is displayed on (-1 for active monitor)
+//			iTrendDataSet	- identifies the data set to be used for the group of trend tags.
+//								Normal trend page uses data set 0, double trend page uses data sets 1 and 2.
+//						
+//     	RETURNED VALUE: 
+//
+//
+//		PSEUDO CODE:
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	25.08.10	/	Schneider Electric GmbH
+//	Version				7.2.0.1
+//
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//
+//
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+INT FUNCTION
+UAG_Trendxy_UpdatePens( INT iMonitor = -1, INT iTrendDataSet = 3);
+	
+	INT		iPen;
+	STRING	sPens;
+	
+	IF iTrendDataSet < 0 OR iTrendDataSet > miMaxTrendDataSets - 1 THEN
+		iTrendDataSet = 0;
+	END
+	
+	IF iMonitor = -1 THEN
+	
+		iMonitor = WinNumber();
+	END
+	
+	sPens = sPens + PageGetStr( 10) + ",";
+	sPens = sPens + PageGetStr( 14) ;
+	
+	_msTrendSelectedPens_ArraySet(iMonitor,iTrendDataSet, sPens);
+	
+	RETURN 0;
+END
+
+//	UAG_Trend_SelectPen_XY()
+//	Übergabeparameter: nummer,Breite
+//                         
+//	Rückgabewert:		- 
+//	Beschreibung:		Schreibt einen XY Plot an die Koordinate der An (3.x) 
+//						
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	25.08.10	/	Schneider Electric GmbH
+//	Version				3.2.0.1
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+
+FUNCTION
+UAG_Trend_SelectPen_XY(INT iNr)
+	STRING sTemp;
+	sTemp=UAG_Trend_SelectPen(PageGetStr(iNr))
+	IF sTemp <> "" THEN
+		PageSetStr(iNr,sTemp);
+		UAG_Trendxy_UpdatePens( PageGetInt(0),3)
+		TrnGetDefScale(PageGetStr(iNr), imin2 ,imax2 );
+		PageSetStr(iNr+1,TagRead(PageGetStr(iNr)));
+		PageSetStr(iNr+2,imin2);
+		PageSetStr(iNr+3,imax2);
+	END
+
+END
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//		FUNCTION NAME	
+//						UAG_Trend_SetDateTimexy()
+//
+//     	GENERAL DESCRIPTION
+//
+//			Sets the End date and time of the trend via a keypad form. This allows the user to view trend
+//			information up to the time and date entered.
+//				
+// 		ARGUMENTS:
+//
+//					
+//						
+//     	RETURNED VALUE: 
+//
+//			New time and date, separated by a space.
+//
+//		PSEUDO CODE:
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	28.08.10	/	Schneider Electric GmbH
+//	Version				75.33.11.08
+//
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//
+//
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+STRING FUNCTION 
+UAG_Trend_SetDateTimexy()
+
+	INT		iError;
+	INT		iCurrent;
+	INT		iNewTime;
+	INT 	iCursorAn;
+	INT		iX;
+	INT		iY;
+	STRING	sTime;
+	STRING	sDate;
+	
+	iCurrent = PageGetInt(10);	
+	sTime = TimeToStr(iCurrent, 1);
+	sDate = TimeToStr(iCurrent, 2);
+
+	GUT_GetMousePos_unten(226);
+	sDate =  Keypad(sDate, 4,StrToLocalText("@(New End Date)"),giPosX,giPosY);
+	IF IsError = 299 THEN
+
+		RETURN "";
+	END
+	
+	sTime = Keypad(sTime,12,StrToLocalText("@(New End Time)"),giPosX,giPosY);	
+
+	IF IsError = 299 THEN
+
+		RETURN "";
+	END
+
+	PageSetInt(10, StrToDate(sDate) + StrToTime(sTime));
+	
+	RETURN sTime + " " + sDate;
+
+END
+

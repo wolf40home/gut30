@@ -1,0 +1,1818 @@
+//-----------------------------------------------------------------------------
+//	Copyright © 2012 Schneider Electric (Australia) Pty Ltd.
+//	All rights reserved.
+//
+// 	FILE:		UAG_TabAlarm_Utility.ci
+//
+//	CREATED:	13/02/2012
+//
+//	SUMMARY:
+//
+//		Contains utility functions that are used by the tab style alarm templates.
+//		These functions are independent of the templates. They provide the specific
+//		"Tab style" behaviors, such as INI parameters, security, context menus, etc.,
+//		but they are not bound to a particular set of graphical templates / genies.
+//
+//	PUBLIC FUNCTIONS:
+//
+//		UAG_TabAlarm_GetAckPriv
+//		UAG_TabAlarm_GetDisablePriv
+//		UAG_TabAlarm_GetCommentPriv
+//		UAG_TabAlarm_GetFullPriv
+//		UAG_TabAlarm_GetBgColorMode
+//		UAG_TabAlarm_SetBgColorMode
+//		UAG_TabAlarm_GetCount
+//
+//		UAG_TabAlarm_GetFormatNameDefault
+//		UAG_TabAlarm_GetFormatStringINI
+//		UAG_TabAlarm_SetFormatStringINI
+//		UAG_TabAlarm_GetColNameINI
+//		UAG_TabAlarm_SetFormatStringDefault
+//		UAG_TabAlarm_GetFormatString
+//
+//		UAG_TabAlarm_DspCatHeading
+//		UAG_TabAlarm_GetCatHeadingFont
+//		UAG_TabAlarm_Row_HardwareHasFocus
+//		UAG_TabAlarm_Row_ShowHardwareContextmenu
+//
+//		UAG_TabAlarm_ShowSummaryContextMenu
+//
+//		UAG_TabAlarm_ReloadDataByAN
+//
+//	INTERNAL FUNCTIONS:
+//		(The following functions are used internally by Cicode files within
+//		the Tab_Style_Include project. They are subjected to changes without
+//		notice. Do not call them directly in other projects.)
+//
+//		_UAG_TabAlarm_DspLast_LoadParams
+//		_UAG_TabAlarm_DspLast_GetParam
+//		_UAG_TabAlarm_DspLast_ApplayParms
+//
+//		_UAG_TabAlarm_Custom_Load
+//		_UAG_TabAlarm_Custom_Get
+//
+//		_UAG_TabAlarm_Col_AddFieldsToMenu
+//		_UAG_TabAlarm_Col_GetFieldsFromMenu
+//		_UAG_TabAlarm_IsSortable
+//		_UAG_TabAlarm_IsSorted
+//		_UAG_TabAlarm_StrCapitalize
+//		_UAG_TabAlarm_TaskCall
+//		_UAG_TabAlarm_GetSortField
+//
+//		_ProgressMessageShow
+//		_ProgressMessage_CancelClick
+//		_ProgressMessageIsCancelled
+//		_ProgressMessageUpdate
+//		_ProgressMessageClose
+//		_FormCenter
+//
+//-----------------------------------------------------------------------------
+
+
+//-----------------------------------------------------------------------------
+//
+//	Constants
+//
+//-----------------------------------------------------------------------------
+
+INT		c_UAG_TabAlarm_COL_INSERT_ALM_FIELDS_MAX = 29;	// Maximum number of alarm fields listed in the column insert menu for active alarms
+STRING 	c_UAG_TabAlarm_COL_INSERT_ALM_FIELDS[29] = "Tag","Equipment","Name","Desc","AlmComment","Comment","Cluster","State","Type","LogState","Category","Priority","Area","Priv","Help"
+											  ,"Date","Time","Millisec","TSQuality","Quality","SumState"
+											  ,"Custom1","Custom2","Custom3","Custom4","Custom5","Custom6","Custom7","Custom8";
+INT		c_UAG_TabAlarm_COL_INSERT_SUM_FIELDS_MAX = 36;	// Maximum number of alarm fields listed in the column insert menu for summary alarms
+STRING 	c_UAG_TabAlarm_COL_INSERT_SUM_FIELDS[36] = "Tag","Equipment","Name","SumDesc","AlmComment","Comment","Cluster","SumState","SumType","Category","Priority","Area","Priv","Help"
+											  ,"OnDate","OnTime","OnMilli","OffDate","OffTime","OffMilli","DeltaTime","AckDate","AckTime","AckMilli","DeltaMilli"
+											  ,"UserName","UserLocation","UserDesc","Custom1","Custom2","Custom3","Custom4","Custom5","Custom6","Custom7","Custom8";
+INT		c_UAG_TabAlarm_COL_INSERT_SOE_FIELDS_MAX = 30;	// Maximum number of alarm fields listed in the column insert menu for summary alarms
+STRING 	c_UAG_TabAlarm_COL_INSERT_SOE_FIELDS[30] = "Tag","Equipment","Name","Desc","Message","AlmComment","Cluster","State","Type","Category","Priority","Area","Priv","Help"
+											  ,"Date","Time","Millisec","TSQuality","Quality"
+											  ,"UserName","UserLocation","Custom1","Custom2","Custom3","Custom4","Custom5","Custom6","Custom7","Custom8"
+											  ,"Classification";
+INT		c_UAG_TABALARM_COL_INSERT_HWALM_FIELDS_MAX = 16;// Maximum number of hardware alarm fields listed in the column insert menu for active alarms
+INT		c_UAG_TABALARM_COL_INSERT_HWALM_FIELDS_CNT = -1;// Actual number of hardware alarm fields available
+STRING 	c_UAG_TABALARM_COL_INSERT_HWALM_FIELDS[16];		// This is to be built dynamically
+
+STRING	c_UAG_TabAlarm_INI_FORMAT_SECTION	= "Format";			// The ini parameter section for loading and saving alarm display format
+STRING	c_UAG_TabAlarm_INI_FORMAT_ALM_DEF	= "Alarm";			// The default alarm format name for normal alarms
+STRING	c_UAG_TabAlarm_INI_FORMAT_SUM_DEF	= "Summary";		// The default alarm format name for summary alarms
+STRING	c_UAG_TabAlarm_INI_FORMAT_SOE_DEF	= "SOE";			// The default alarm format name for SOE (Sequence Of Event) alarms
+STRING	c_UAG_TABALARM_INI_FORMAT_HWALM_DEF	= "Hardware";		// The default alarm format name for hardware alarms
+STRING	c_UAG_TABALARM_INI_HEADING_SECTION	= "AlarmHeading";	// The ini parameter section for defining column headings for alarm fields
+
+STRING	c_UAG_TABALARM_INI_ALARM_DEFDSPFMT	= "{Time,12} {Tag,10} {Name,15} {Desc,32}";
+STRING	c_UAG_TABALARM_INI_ALARM_DEFSUMFMT	= "{Name,20} {OnTime,8} {OffTime,8} {DeltaTime,8} {Comment,22}";
+STRING	c_UAG_TABALARM_INI_ALARM_DEFSOEFMT	= "{Date,16} {Time,16} {Tag,10} {Name,15} {Message,64} {State,16} {Classification,13} {UserName,16} {UserLocation,16}";
+
+INT		c_UAG_TabAlarm_CHAR_TO_PIXEL_RATIO	= 10;				// estimated number of pixel per characters
+
+MODULE STRING	c_UAG_TabAlarm_CUSTOM_INI_SECTION	= "TabAlarm.Custom";					// The ini parameter section for specifying custom settings for certain functionality
+GLOBAL STRING	c_UAG_TabAlarm_CUSTOM_ALMGETDSP		= "Function.AlarmGetDsp";				// The override function for getting alarm field value from alarm list
+GLOBAL STRING	c_UAG_TabAlarm_CUSTOM_ALMCONTEXT	= "Function.Row.ShowContextMenu";		// The override function for showing configured alarm context menu
+GLOBAL STRING	c_UAG_TabAlarm_CUSTOM_HWCONTEXT		= "Function.Row.ShowHWContextMenu";		// The override function for showing hw alarm context menu
+
+
+//-----------------------------------------------------------------------------
+//
+//	Module Variables
+//
+//-----------------------------------------------------------------------------
+
+INT		m_UAG_TabAlarm_Priv_AckAlarms		= -1;		// The privilege required for acknowledging alarms
+INT		m_UAG_TabAlarm_Priv_DisableAlarms	= -1;		// The privilege required for disabling alarms
+
+INT		m_ProgressMessage_FrmHnd		= -1;		// Form handle for the progress message form
+INT		m_ProgressMessage_TextHnd		= -1;		// Field handle for the text shown in the progress message form
+INT		m_ProgressMessage_Cancelled		= 0;		// Indicate if the progress message form has been cancelled by ther user
+
+INT		m_UAG_TabAlarm_BackgroundColorMode	= 0;		// Buffered value for INI Parameter [Alarm] BackgroundColorMode
+
+INT		m_UAG_TabAlarm_DspLast_LastAlarmDisplayMode	= -1;	// Buffered value for INI Parameter [Alarm] LastAlarmDisplayMode
+STRING	m_UAG_TabAlarm_DspLast_LastAlarmFmt			= "";	// Buffered value for INI Parameter [Alarm] LastAlarmFmt
+INT		m_UAG_TabAlarm_DspLast_LastAlarmType		= -1;	// Buffered value for INI Parameter [Alarm] LastAlarmType
+INT		m_UAG_TabAlarm_DspLast_LastAlarmCategories	= -1;	// Group handle determined by INI Parameter [Alarm] LastAlarmCategories
+INT		m_UAG_TabAlarm_DspLast_LastAlarmPriorities	= -1;	// Group handled determined by INI Parameter [Alarm] LastAlarmPriorities
+
+INT		m_UAG_TabAlarm_Custom_Loaded					= 0;	// Flag to indicate whether customization has been loaded
+STRING	m_UAG_TabAlarm_Custom_Fn_AlarmGetDsp			= "";	// Custom function for getting alarm field value, configurable via param [UAG_TabAlarm.Custom]Function.AlarmGetDsp
+STRING	m_UAG_TabAlarm_Custom_Fn_Row_ShowContextMenu	= "";	// Custom function for showing row context menu, configurable via param [UAG_TabAlarm.Custom]Function.Row.ShowContextMenu
+STRING	m_UAG_TabAlarm_Custom_Fn_Row_ShowHWContextMenu	= "";	// Custom function for showing row context menu for hardware alarms, configurable via param [UAG_TabAlarm.Custom]Function.Row.ShowHWContextMenu
+
+
+//-----------------------------------------------------------------------------
+//
+//	UAG_TabAlarm Public Functions
+//
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		UAG_TabAlarm_GetAckPriv
+//
+//	SUMMARY:
+//		Returns whether current user has the required privilege for acknowledging alarms.
+//			
+//	PARAMS:
+//		reload			- whether reload the privilege from INI parameter, default = 0
+//		ignoreLogin		- whether to ignore login status (default = FALSE)
+//			
+//	RETURNS: 
+//		1 if currently loggon user has privilege to acknowledge alarms or 0 if not
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION UAG_TabAlarm_GetAckPriv(INT reload = 0, INT ignoreLogin = FALSE)
+	IF (reload OR (m_UAG_TabAlarm_Priv_AckAlarms < 0)) THEN
+		m_UAG_TabAlarm_Priv_AckAlarms = ParameterGet("Privilege", "AckAlarms", 1);
+	END
+	IF (NOT ignoreLogin) THEN
+		IF ("0" = UserInfo(0)) THEN
+			RETURN 0;
+		END
+	END
+	RETURN GetPriv(m_UAG_TabAlarm_Priv_AckAlarms, 0);
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		UAG_TabAlarm_GetDisablePriv
+//
+//	SUMMARY:
+//		Returns whether current user has the required privilege for disabling alarms.
+//			
+//	PARAMS:
+//		reload			- whether reload the privilege from INI parameter, default = 0
+//		ignoreLogin		- whether to ignore login status (default = FALSE)
+//			
+//	RETURNS: 
+//		1 if currently loggon user has privilege to disable / enable alarms or 0 if not
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION UAG_TabAlarm_GetDisablePriv(INT reload = 0, INT ignoreLogin = FALSE)
+	IF (reload OR (m_UAG_TabAlarm_Priv_DisableAlarms < 0)) THEN
+		m_UAG_TabAlarm_Priv_DisableAlarms = ParameterGet("Privilege", "DisableAlarms", 8);
+	END
+	IF (NOT ignoreLogin) THEN
+		IF ("0" = UserInfo(0)) THEN
+			RETURN 0;
+		END
+	END
+	RETURN GetPriv(m_UAG_TabAlarm_Priv_DisableAlarms, 0);
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		UAG_TabAlarm_GetCommentPriv
+//
+//	SUMMARY:
+//		Returns whether current user has the required privilege for commenting
+//		currently displayed event.
+//			
+//	PARAMS:
+//		recAN			- The animation number of the alarm record displayed
+//			
+//	RETURNS: 
+//		1 if currently logon user has privilege to comment event or 0 if not
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION UAG_TabAlarm_GetCommentPriv(INT recAN)
+	INT privilege;
+	STRING userName;
+
+	// reject comment on comment
+	IF (StrToLocalText("@(Comment)") = AlarmGetDsp(recAN, "Classification")) THEN
+		RETURN 0;
+	END
+
+	// reject if is not logged on
+	IF ("0" = UserInfo(0)) THEN
+		RETURN 0;
+	END
+
+	// check privilege of events associated to alarms
+	IF ("" <> AlarmGetDsp(recAN, "Tag")) THEN
+		privilege = AlarmGetDsp(recAN, "Priv");
+		RETURN GetPriv(privilege, 0);
+	END
+
+	// check if non-system event is generated by current user
+	userName = AlarmGetDsp(recAN, "UserName");
+	IF ("System" <> userName)THEN
+		IF (UserInfo(1) = userName) THEN
+			RETURN 1;
+		END
+		RETURN 0;
+	END
+
+	// check if current user has full privilege for system events
+	RETURN UAG_TabAlarm_GetFullPriv();
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		UAG_TabAlarm_GetFullPriv
+//
+//	SUMMARY:
+//		Returns whether current user has the full privilege.
+//			
+//	PARAMS:
+//		None
+//			
+//	RETURNS: 
+//		1 if currently logon user has full privilege or 0 if not
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION UAG_TabAlarm_GetFullPriv()
+	int privilege;
+
+	// check if current user has full privilege
+	FOR privilege = 1 TO 8 DO
+		IF (NOT GetPriv(privilege, 0)) THEN
+			RETURN 0;
+		END
+	END
+	RETURN 1;
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		UAG_TabAlarm_GetBgColorMode
+//
+//	SUMMARY:
+//		Returns the background color mode for all alarm list
+//			
+//	PARAMS:
+//		None
+//			
+//	RETURNS: 
+//		the background color mode set up in parameter [Alarm]BackgroundColorMode
+//
+//		0 - Dark Blue (Default)
+//		1 - White
+//		2 - Transparent
+//
+//	REMARKS:
+//		The code that reads the INI parameter is called in _UAG_TabAlarm_DspInit()
+//		for perf.
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION UAG_TabAlarm_GetBgColorMode()
+	RETURN m_UAG_TabAlarm_BackgroundColorMode;
+END
+
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		UAG_TabAlarm_SetBgColorMode
+//
+//	SUMMARY:
+//		Sets the background color mode for all alarm lists according to INI
+//		parameter [Alarm]BackgroundColorMode
+//			
+//	PARAMS:
+//		None
+//			
+//	RETURNS:
+//		None
+//
+//	REMARKS:
+//		Call this function only once when entering a page for perf.
+//
+//-----------------------------------------------------------------------------
+
+FUNCTION UAG_TabAlarm_SetBgColorMode()
+	INT bgColor = ParameterGet("Alarm", "BackgroundColorMode", "0");
+
+	bgColor = Max(0, Min(bgColor, 2));
+	m_UAG_TabAlarm_BackgroundColorMode = bgColor;
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		UAG_TabAlarm_GetCount
+//
+//	SUMMARY:
+//		Get the total number of alarms of the specified type
+//			
+//	PARAMS:
+//		type		- Alarm dispaly type as supported by AlarmCount()
+//			
+//	RETURNS: 
+//		The number of alarms of the specified type
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION UAG_TabAlarm_GetCount(INT type)
+INT nOldErrorLevel, nCount;
+	nOldErrorLevel=ErrSetLevel(1);
+	nCount = AlarmCount(type);
+	ErrSetLevel(nOldErrorLevel);
+	RETURN nCount;
+END
+
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		UAG_TabAlarm_GetFormatNameDefault
+//
+//	SUMMARY:
+//		Gets default alarm format name under INI param. [FORMAT]
+//			
+//	PARAMS:
+//		listAN			- The Animation Number of the alarm list
+//			
+//	RETURNS: 
+//		The name of the alarm format to be loaded form.
+//
+//-----------------------------------------------------------------------------
+
+STRING FUNCTION UAG_TabAlarm_GetFormatNameDefault(INT listAN)
+	SELECT CASE AlarmGetInfo(listAN, 3)
+	CASE 10
+		RETURN c_UAG_TabAlarm_INI_FORMAT_SUM_DEF;
+	CASE 15, 16
+		RETURN c_UAG_TABALARM_INI_FORMAT_SOE_DEF;
+	CASE 5 TO 9
+		RETURN c_UAG_TABALARM_INI_FORMAT_HWALM_DEF;
+		
+									   
+	CASE ELSE
+		RETURN c_UAG_TabAlarm_INI_FORMAT_ALM_DEF;
+	END SELECT
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		UAG_TabAlarm_GetFormatStringINI
+//
+//	SUMMARY:
+//		Gets alarm format string as specified in INI param. [FORMAT]formatName
+//			
+//	PARAMS:
+//		formatName			- The name of the alarm format
+//			
+//	RETURNS: 
+//		The format string of the format name or empty string if not defined
+//
+//-----------------------------------------------------------------------------
+
+STRING FUNCTION UAG_TabAlarm_GetFormatStringINI(STRING formatName)
+	RETURN ParameterGet(c_UAG_TabAlarm_INI_FORMAT_SECTION, formatName, "");
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		UAG_TabAlarm_SetFormatStringINI
+//
+//	SUMMARY:
+//		Sets alarm format string to INI param. [FORMAT]formatName
+//			
+//	PARAMS:
+//		formatName			- The name of the alarm format
+//		fmtString			- The format string
+//			
+//	RETURNS: 
+//		0 if successful or error code if not
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION UAG_TabAlarm_SetFormatStringINI(STRING formatName, STRING fmtString)
+	RETURN ParameterPut(c_UAG_TabAlarm_INI_FORMAT_SECTION, formatName, fmtString);
+END
+
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		UAG_TabAlarm_GetColNameINI
+//
+//	SUMMARY:
+//		Gets the localized column name of a field name defiend in INI param.
+//		[AlarmHeading]fieldName
+//			
+//	PARAMS:
+//		formatName			- The name of the alarm format
+//		fmtString			- The format string
+//			
+//	RETURNS: 
+//		0 if successful or error code if not
+//
+//-----------------------------------------------------------------------------
+
+STRING FUNCTION UAG_TabAlarm_GetColNameINI(STRING fieldName)
+	RETURN StrToLocalText("@"+"(" + ParameterGet(c_UAG_TabAlarm_INI_HEADING_SECTION, fieldName, fieldName) + ")");
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		UAG_TabAlarm_SetFormatString
+//
+//	SUMMARY:
+//		Sets default alarm field format string to use for the alarm list
+//			
+//	PARAMS:
+//		listAN			- The Animation Number of the alarm list
+//		formatString	- The alarm field format string in format of:
+//							{<field>,<chars>}{<field>,<chars>}...
+//			
+//	RETURNS: 
+//		0 if successful or error code if not
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION UAG_TabAlarm_SetFormatStringDefault(INT listAN, STRING formatString)
+	RETURN PageSetStr("_tabalm_fmtstr_" + IntToStr(listAN), formatString);
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		UAG_TabAlarm_GetFormatString
+//
+//	SUMMARY:
+//		Gets alarm field format string based on the supplied format name
+//			
+//	PARAMS:
+//		listAN			- The Animation Number of the alarm list
+//		formatName		- The name of the alarm format to be loaded form.
+//		listWidth		- The width of the alarm list in pixels
+//							This is optional, if not give, the width is
+//							estimated based on the total character width
+//			
+//	RETURNS:
+//		alarm format string or emtpy string if failed
+//
+//-----------------------------------------------------------------------------
+
+STRING FUNCTION UAG_TabAlarm_GetFormatString(INT listAN, STRING formatName, INT listWidth = -1)
+	INT listType;
+	STRING fmtString;
+	INT fmtHnd;
+	INT closeFmtHnd = 1;
+	INT columns;
+	INT colID;
+	INT chars;
+	INT charsTotal = 0;
+	INT charsWidth = 0;
+
+	// get string from special parameters
+	fmtString = UAG_TabAlarm_GetFormatStringINI(formatName);
+
+	IF ("" = fmtString) THEN
+		fmtString = PageGetStr("_tabalm_fmtstr_" + IntToStr(listAN));
+		IF ("" <> fmtString) THEN
+			fmtHnd = FmtOpen("_tabalarm_fmt_" + IntToStr(WinNumber()) + "_" + IntToStr(listAN), fmtString, 5);
+		ELSE
+			// use alarm category 0 as the format string, all field defatuls to auto-fit
+			listType = AlarmGetInfo(listAN, 3);
+	
+			SELECT CASE listType
+			CASE 10
+				fmtHnd = FmtOpen("0", "", 3);
+			CASE 15,16
+				fmtHnd = FmtOpen("0", "", 4);
+			CASE 5 TO 9
+				fmtHnd = FmtOpen("Cat255", "", 0);
+			CASE ELSE
+				fmtHnd = FmtOpen("0", "", 2);
+			END SELECT
+			IF (fmtHnd > -1) THEN
+				// do not close alarm category format
+				closeFmtHnd = 0;
+			ELSE
+				// use default format parameters [Alarm]DefDspFmt, [Alarm]DefSumFmt and [Alarm]DefSOEFmt
+				SELECT CASE listType
+				CASE 10
+					fmtString = ParameterGet("Alarm", "DefSumFmt", c_UAG_TabAlarm_INI_ALARM_DEFSUMFMT);
+				CASE 15, 16
+					fmtString = ParameterGet("Alarm", "DefSOEFmt", c_UAG_TabAlarm_INI_ALARM_DEFSOEFMT);
+				CASE ELSE
+					fmtString = ParameterGet("Alarm", "DefDspFmt", c_UAG_TabAlarm_INI_ALARM_DEFDSPFMT);
+				END SELECT
+				fmtHnd = FmtOpen("_TabAlarm_fmt", fmtString, 1);
+			END
+		END
+
+		// Reconstruct format string and convert no. of characters of each field to pixel width
+		IF (fmtHnd > -1) THEN
+			fmtString = "";
+			columns = FmtGetFieldCount(fmtHnd);
+			// get total number of characters
+			FOR colID = 0 TO columns - 1 DO
+				charsTotal = charsTotal + FmtGetFieldWidth(fmtHnd, colID);
+			END
+			charsWidth = charsTotal * c_UAG_TabAlarm_CHAR_TO_PIXEL_RATIO;
+			IF (listWidth < 1) THEN
+				listWidth = charsWidth;
+			END
+
+			// build format string field by field
+			colID = 0;
+			WHILE (colID < columns) DO
+				fmtString = fmtString + "{" + FmtGetFieldName(fmtHnd, colID);
+				// estimate the pixel width by getting no. of characters from format field
+				chars = FmtGetFieldWidth(fmtHnd, colID);
+				IF (charsWidth <= listWidth) THEN 
+					fmtString = fmtString + "," + IntToStr(c_UAG_TabAlarm_CHAR_TO_PIXEL_RATIO * chars) + "}";
+				ELSE
+					fmtString = fmtString + "," + IntToStr(listWidth * chars / charsTotal) + "}";
+				END
+				colID = colID + 1;
+			END
+
+			IF (closeFmtHnd) THEN
+				FmtClose(fmtHnd);
+			END
+		END
+	END
+
+	RETURN fmtString;
+END
+
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		UAG_TabAlarm_DspCatHeading
+//
+//	SUMMARY:
+//		Display the column heading of an alarm category at the specified AN
+//			
+//	PARAMS:
+//		category		- Alarm category number.
+//		AN				- The animation number to display the heading.
+//							If not specified, use current AN
+//		AlarmAN			- The AN of the alarm list, default to 21 if not specified
+//			
+//	RETURNS: 
+//		0 if the heading is displayed successfully or error code if failed
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION UAG_TabAlarm_DspCatHeading(INT category, INT AN = -1, INT AlarmAN = 250)
+	INT hFmt, fieldCount, fieldIdx;
+	STRING sFmt, fieldName;
+	INT hFont;
+	STRING value;
+	INT hFontForAlign;
+	INT fieldStart, fieldEnd;
+	STRING fieldFmt, fieldValue;
+	INT initPosX, initPosY, posX;
+	INT textAn, textWidth;
+	STRING pageVar;
+	INT status = 0;
+
+	// get AN
+	IF (AN < 1) THEN
+		AN = DspGetAnCur();
+	END
+	IF (AN < 1) THEN
+		RETURN 274;		// invalid argument error
+	END
+
+	pageVar = "_AlmCat" + IntToStr(category) + "_" + IntToStr(AN);
+
+	// get font
+	hFont = UAG_TabAlarm_GetCatHeadingFont(category);
+	hFontForAlign = DspAnInfo(AlarmAN, 1);
+	IF (hFontForAlign <= 0) THEN
+		hFontForAlign = hFont;
+	END
+
+	// get format and display heading field by field if font has changed
+	IF (hFontForAlign <> PageGetInt(pageVar + "_Font")) THEN
+		sFmt = AlarmCatGetFormat(category);
+		IF ("" <> sFmt) THEN
+			DspAnGetPos(AN, initPosX, initPosY);
+			posX = initPosX;
+			fieldStart = 0;
+			fieldEnd = _UAG_StrWordFmt(fieldStart, sFmt);
+			fieldIdx = 0;
+			WHILE (fieldStart < fieldEnd) DO
+				fieldFmt = StrMid(sFmt, fieldStart, fieldEnd - fieldStart);
+				hFmt = FmtOpen("_AlmCatFmt", fieldFmt, 1);
+				IF (hFmt > -1) THEN
+					// compose overall heading string so far for pixel position calculation
+					fieldCount = FmtGetFieldCount(hFmt);
+					IF (0 < fieldCount) THEN
+						fieldName = _UAG_TabAlarm_StrCapitalize(FmtGetFieldName(hFmt, 0));
+						fieldValue = UAG_TabAlarm_GetColNameINI(fieldName);
+						FmtSetField(hFmt, fieldName, fieldValue);
+						value = value + FmtToStr(hFmt);
+
+						// calculate the pixel width for current field
+						DspText(AN, hFontForAlign, value + "1");
+						textWidth = DspGetAnWidth(AN) - StrCalcWidth("1", hFontForAlign) - posX + initPosX;
+						DspText(AN, hFontForAlign, "");
+
+						// display text of the first field of the latest partial format
+						textAN = PageGetInt(pageVar + "_textAN" + IntToStr(fieldIdx));
+						IF (textAN < 1) THEN
+							textAN = DspAnNew(posX, initPosY);
+							PageSetInt(pageVar + "_textAN" + IntToStr(fieldIdx), textAN);
+						ELSE
+							DspAnMove(textAN, posX, initPosY);
+						END
+						UAG_DspFixedWidthText(textAN, fieldValue, textWidth, hFont);	// truncate text if necessary
+
+						// calculate pixel position for next field
+						posX = posX + textWidth;
+						fieldIdx = fieldIdx + fieldCount;
+					END
+
+					FmtClose(hFmt);
+				ELSE
+					status = 256;	// software error
+				END
+				// move on to next field
+				fieldStart = fieldEnd;
+				fieldEnd = _UAG_StrWordFmt(fieldStart, sFmt);
+			END
+			PageSetInt(pageVar + "_Font", hFontForAlign);
+		END
+	END
+
+	RETURN status;
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		UAG_TabAlarm_GetCatHeadingFont
+//
+//	SUMMARY:
+//		Get the font handle for the column heading of an alarm category
+//			
+//	PARAMS:
+//		category		- Alarm category number.
+//			
+//	RETURNS: 
+//		The font handle of specified alarm category or -1 if failed
+//
+//	REMARKS:
+//		This function will cache the column headings and font in page variables
+//		"_AlmCat#_Headings"	and "_AlmCat#_HeadingFont" once they are retrieved.
+//
+//		The font name of the headings are determined by Citect.INI / Project
+//		parameters:
+//
+//		[Alarm]
+//		HeadingFont#		(heading font for specific alarm categories)
+//		HeadingFont			(default font if no font is specified for a category)
+//
+//		Please note that the latter parameter is the same as that of the CSV_Include
+//		project. If no font name is specified, the default 10 pixel Arial font will
+//		be used.
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION UAG_TabAlarm_GetCatHeadingFont(INT category)
+	INT hFont = -1;
+	STRING fontName;
+
+	fontName = PageGetStr("_AlmCat" + IntToStr(category) + "_HeadingFont");
+	IF ("" = fontName) THEN
+		// ParameterGet() will return the default value if parameter is not specified, empty or white space only
+		fontName = ParameterGet("Alarm", "HeadingFont" + IntToStr(category), ParameterGet("Alarm", "HeadingFont", "<n/a>"));
+		PageSetStr("_AlmCat" + IntToStr(category) + "_HeadingFont", fontName);
+	END
+	IF ("<n/a>" <> fontName) THEN
+		hFont = DspFontHnd(fontName);
+	END
+	IF (hFont < 0) THEN
+		hFont = DspFont("Arial", 13, MakeCitectColour(0,0,0), TRANSPARENT);
+	END
+
+	RETURN hFont;
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		UAG_TabAlarm_Row_HardwareHasFocus
+//
+//	SUMMARY:
+//		Returns whether a hardware alarm has been right-clicked (by AN).
+//			
+//	PARAMS:
+//		rowAN			- The animation number that display the hardware alarm
+//			
+//	RETURNS: 
+//		1 if row is selected or 0 if not
+//
+//	REMARKS:
+//		Hardware alarm selection uses page variable _tabalm_HW_FocusRowAN
+//		to remember the alarm AN that has been right-clicked.
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION UAG_TabAlarm_Row_HardwareHasFocus(INT rowAN)
+	INT retValue = 0;
+	INT focusAN;
+	
+	IF (rowAN <= 0) THEN
+		RETURN retValue;
+	END
+
+	focusAN = PageGetInt("_tabalm_HW_FocusRowAN");
+	retValue = (rowAN = focusAN);
+
+	// Clear row selection if selected alarm is cleared
+	IF (retValue) THEN
+		IF (DspAnInfo(rowAN, 2) = " ") THEN
+			PageSetInt("_tabalm_HW_FocusRowAN", 0);
+			retValue = 0;
+		END
+	END
+	
+	RETURN retValue;
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		UAG_TabAlarm_Row_ShowHardwareContextMenu
+//
+//	SUMMARY:
+//		Pops up the context menu for the selected alarm rows on hardware alarm list.
+//		This function is called in the right mouse button down event of the dynamic
+//		objects that display the background box of the alarm row. If the user invokes
+//		the context menu outside of the selected row range, the existing selected rows
+//		will be deselected and the current row will be automatically selected
+//		prior to popping up the context menu.
+//			
+//	PARAMS:
+//		rowAN			- The animation number that display the hardware alarm
+//			
+//	RETURNS: 
+//		0 if executed successfully or -1 if failed
+//
+//	REMARKS:
+//		1. Support single selection only
+//		2. It uses page variable _tabalm_HW_FocusRowAN to remember the alarm AN that has been right-clicked.
+//		3. Only acknowledge alarm if the AN that displays it is not empty, i.e. it can be set cursor focus
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION UAG_TabAlarm_Row_ShowHardwareContextMenu(INT rowAN)
+	INT retValue = 274;
+	INT selection;
+	INT focusAN;
+	STRING customFn;
+
+	IF (rowAN <= 0) THEN
+		RETURN retValue;
+	END
+
+	focusAN = KeyGetCursor();
+
+	// hardware alarm does not support AlarmGetDsp(), given the limited information
+	// provided, selection by record is not possible
+	IF (PageGetInt("_tabalm_HW_FocusRowAN") <> rowAN) THEN
+		PageSetInt("_tabalm_HW_FocusRowAN", rowAN);
+	END
+
+	// Show custom context menu and check for circular ref.
+	customFn = _UAG_TabAlarm_Custom_Get(c_UAG_TabAlarm_CUSTOM_HWCONTEXT);
+	IF ((customFn <> "") AND (customFn <> "UAG_TabAlarm_Row_ShowHardwareContextMenu")) THEN
+		retValue = TaskCall(customFn, IntToStr(rowAN));
+
+		// Clear the row AN that has been right-clicked
+		PageSetInt("_tabalm_HW_FocusRowAN", 0);
+
+		RETURN retValue;
+	END
+
+	// Show default context menu
+	IF (NOT UAG_TabAlarm_GetAckPriv(1, 1)) THEN
+		DspPopupMenu(0, "!" + StrToLocalText("@(Acknowledge)"));
+	ELSE
+		DspPopupMenu(0, StrToLocalText("@(Acknowledge)"));
+	END
+
+	// execute command in context menu
+	selection = DspPopupMenu(-1, "");
+
+	// Clear focus selection
+	PageSetInt("_tabalm_HW_FocusRowAN", 0);
+
+	SELECT CASE selection
+	CASE 1
+		Sleep(0);
+		IF (KeySetCursor(rowAN) = 0) THEN	// remark 3
+			retValue = AlarmAck(0, 0);
+		END
+	END SELECT
+
+	// restore cursor focus after valid menu selection
+	IF (selection > 0 AND focusAN > 0) THEN
+		Sleep(0);
+		KeySetCursor(focusAN);
+	END
+
+	RETURN retValue;
+END
+
+
+//-----------------------------------------------------------------------------
+//
+//		FUNCTION NAME	
+//			UAG_TabAlarm_ShowSummaryContextMenu
+//
+//     	SUMMARY:
+//			Pops up Alarm Summary context menu to allow the user to select
+//			either the traditional alarm summary or Sequence of Events page.
+//
+// 		ARGUMENTS:
+//			None.
+//			
+//     	RETURNED VALUE: 
+//			0 (zero) if successful, otherwise an error is returned.
+//
+//		REMARKS:
+//			The user can override the default alarm summary context menu by
+//			defining their own menu in the Menu Configuration system database. The
+//			user specified menu must be defined under the page name of "Template"
+//			and the "Level 1" field being set to the keyword "Alarm Summary".
+//
+//			In the Menu Command field of their menu items should call Cicode function
+//			PageSummary([Category]) or PageSOE([Category]) to display different
+//			historical page. Please see online help of these functions for details.
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION UAG_TabAlarm_ShowSummaryContextMenu()
+	INT retValue = 0;
+	INT AN;
+	INT xPos = -1;
+	INT yPos = -1;
+	INT selection;
+
+	// Get menu position from calling AN
+	AN = KeyGetCursor();
+	IF (AN > 0) THEN
+		xPos = DspGetAnLeft(AN);
+		yPos = DspGetAnTop(AN);
+	END
+
+	retValue = UAG_PageDspConfigMenu("Template", "Alarm Summary", xPos, yPos);
+	IF (0 <> retValue) THEN
+		// Only display default menu if no items are defined in specific menu config node
+		IF (UAG_PageGetConfigMenuHnd("Template", "Alarm Summary", 1) < 0) THEN
+			DspPopupMenu(0, StrToLocalText("@(Sequence of Events)"));
+			DspPopupMenu(0, StrToLocalText("@(Alarm Summary)"));
+			selection = DspPopupMenu(-1, "", xPos, yPos);
+			SELECT CASE selection
+			CASE 1
+				PageSOE();
+			CASE 2
+				PageSummary();
+			END SELECT
+
+			retValue = 0;
+		END
+	END
+	
+	RETURN retValue;
+END
+
+
+//-----------------------------------------------------------------------------
+//
+//		FUNCTION NAME	
+//			UAG_TabAlarm_ReloadDataByAN
+//
+//     	SUMMARY:
+//			Requests the alarm system to refresh the data currently displayed
+//			on the alarm list.
+//
+// 		ARGUMENTS:
+//		listAN			- The Animation Number (AN) of alarm list
+//			
+//     	RETURNED VALUE: 
+//			0 (zero) if successful, otherwise an error is returned.
+//
+//		REMARKS:
+//			Reloading data is achieved by reapplying the same filter to
+//			the alarm list. This is only relevant for version 7.30 and upwards.
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION UAG_TabAlarm_ReloadDataByAN(INT listAN)
+	INT retValue = 274;
+	INT filterEdit;
+
+	IF (listAN <= 0) THEN
+		RETURN retValue;
+	END
+
+	filterEdit = AlarmFilterEditOpen(listAN);
+	IF (filterEdit < 0) THEN
+		RETURN IsError();
+	END
+	retValue = AlarmFilterEditCommit(filterEdit);
+	AlarmFilterEditClose(filterEdit);
+
+	RETURN retValue;
+END
+
+
+//-----------------------------------------------------------------------------
+//
+//	UAG_TabAlarm Internal Functions (used by other supplied Cicode files)
+//
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		_UAG_TabAlarm_DspLast_LoadParams
+//
+//	SUMMARY:
+//		Loads the values of INI parameters for the Last Alarms (Alarm banner).
+//			
+//	PARAMS:
+//		None
+//
+//	RETURNS: 
+//		None
+//
+//-----------------------------------------------------------------------------
+
+FUNCTION _UAG_TabAlarm_DspLast_LoadParams()
+	STRING group;
+
+	IF (m_UAG_TabAlarm_DspLast_LastAlarmType < 0) THEN
+		m_UAG_TabAlarm_DspLast_LastAlarmType = ParameterGet("Alarm", "LastAlarmType", 0);
+	END
+	IF ("" = m_UAG_TabAlarm_DspLast_LastAlarmFmt) THEN
+		m_UAG_TabAlarm_DspLast_LastAlarmFmt = ParameterGet("Alarm", "LastAlarmFmt", "{Time,12} {Date,12} {Name,15} {Desc,35} {State,9}")
+	END
+	IF (m_UAG_TabAlarm_DspLast_LastAlarmDisplayMode < 0) THEN
+		m_UAG_TabAlarm_DspLast_LastAlarmDisplayMode = ParameterGet("Alarm", "LastAlarmDisplayMode", 0);
+	END
+	IF (m_UAG_TabAlarm_DspLast_LastAlarmCategories < 0) THEN
+		group = ParameterGet("Alarm", "LastAlarmCategories", "0");
+		m_UAG_TabAlarm_DspLast_LastAlarmCategories = GrpOpen("_tabalm_LastAlarmCat", 1);
+		IF (m_UAG_TabAlarm_DspLast_LastAlarmCategories > -1) THEN
+			StrToGrp(m_UAG_TabAlarm_DspLast_LastAlarmCategories, group);
+		END
+	END
+	IF (m_UAG_TabAlarm_DspLast_LastAlarmPriorities < 0) THEN
+		group = ParameterGet("Alarm", "LastAlarmPriorities", "0");
+		m_UAG_TabAlarm_DspLast_LastAlarmPriorities = GrpOpen("_tabalm_LastAlarmPri", 1);
+		IF (m_UAG_TabAlarm_DspLast_LastAlarmPriorities > -1) THEN
+			StrToGrp(m_UAG_TabAlarm_DspLast_LastAlarmPriorities, group);
+		END
+	END
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		_UAG_TabAlarm_DspLast_GetParam
+//
+//	SUMMARY:
+//		Gets the buffered values of INI parameters for the Last Alarms (Alarm banner).
+//			
+//	PARAMS:
+//		param		- The last alarm display parameters, including:
+//						LastAlarmType			- alarm display type
+//						LastAlarmFmt			- alarm field format string
+//						LastAlarmDisplayMode	- 0 filter by cat., 1 filter by pri.
+//						LastAlarmCategories		- CSV string of categories
+//						LastAlarmPriorities		- CSV string of priorities
+//
+//	RETURNS: 
+//		None
+//
+//-----------------------------------------------------------------------------
+
+STRING FUNCTION _UAG_TabAlarm_DspLast_GetParam(STRING param)
+	_UAG_TabAlarm_DspLast_LoadParams();
+
+	SELECT CASE param
+	CASE "LastAlarmType"
+		RETURN m_UAG_TabAlarm_DspLast_LastAlarmType;
+	CASE "LastAlarmFmt"
+		RETURN m_UAG_TabAlarm_DspLast_LastAlarmFmt;
+	CASE "LastDisplayMode"
+		RETURN m_UAG_TabAlarm_DspLast_LastAlarmDisplayMode;
+	CASE "LastAlarmCategories"
+		RETURN m_UAG_TabAlarm_DspLast_LastAlarmCategories;
+	CASE "LastAalrmPriorities"
+		RETURN m_UAG_TabAlarm_DspLast_LastAlarmPriorities;
+	CASE ELSE
+		RETURN ParameterGet("Alarm", param, "");
+	END SELECT
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		_UAG_TabAlarm_DspLast_ApplyParams
+//
+//	SUMMARY:
+//		Applies the buffered values of INI parameters to the Last Alarms
+//		(Alarm banner).
+//			
+//	PARAMS:
+//		listAN	- the Animation Number of the alarm list
+//		type	- the display type of alarm list
+//					if it is not specified or set to -1, the type of the alarm
+//					list will be set according to param. [Alarm]LastAlarmType.
+//
+//	RETURNS: 
+//		None
+//
+//-----------------------------------------------------------------------------
+
+FUNCTION _UAG_TabAlarm_DspLast_ApplyParams(INT listAN, INT type = -1)
+	_UAG_TabAlarm_DspLast_LoadParams();	
+
+	IF (type < 0) THEN
+		type = m_UAG_TabAlarm_DspLast_LastAlarmType;
+	END
+	IF (type > -1) THEN
+		AlarmSetInfo(listAN, 3, type);
+	END
+	IF (m_UAG_TabAlarm_DspLast_LastAlarmCategories > -1) THEN
+		AlarmSetInfo(listAN, 2, m_UAG_TabAlarm_DspLast_LastAlarmCategories);
+	END
+	IF (m_UAG_TabAlarm_DspLast_LastAlarmPriorities > -1) THEN
+		AlarmSetInfo(listAN, 7, m_UAG_TabAlarm_DspLast_LastAlarmPriorities);
+	END	
+	IF (m_UAG_TabAlarm_DspLast_LastAlarmDisplayMode > -1) THEN
+		AlarmSetInfo(listAN, 8, m_UAG_TabAlarm_DspLast_LastAlarmDisplayMode);
+	END
+	// set font to default to following individual alarm category
+	AlarmSetInfo(listAN, 6, -1);
+	// no need to set alarm format, as tab style tempplates handle it by its own Cicode
+END
+
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		_UAG_TabAlarm_Custom_Load
+//
+//	SUMMARY:
+//		Loads the customization for tab alarm list.
+//		The supported customization are:
+//			- c_UAG_TabAlarm_CUSTOM_HWCONTEXT	(override fn. for showing hardware alarm context menu)
+//			- c_UAG_TabAlarm_CUSTOM_ALMCONTEXT	(override fn. for showing configured alarm context menu)
+//			- c_UAG_TabAlarm_CUSTOM_ALMGETDSP	(override fn. for getting alarm field display value)
+//
+//	PARAMS:
+//		None
+//			
+//	RETURNS:
+//		None
+//
+//-----------------------------------------------------------------------------
+
+FUNCTION _UAG_TabAlarm_Custom_Load()
+	// ensure loading is only done once
+	IF (m_UAG_TabAlarm_Custom_Loaded) THEN
+		RETURN;
+	END
+
+	m_UAG_TabAlarm_Custom_Fn_Row_ShowContextMenu = ParameterGet(c_UAG_TabAlarm_CUSTOM_INI_SECTION, c_UAG_TabAlarm_CUSTOM_ALMCONTEXT, "");
+	m_UAG_TabAlarm_Custom_Fn_Row_ShowHWContextMenu = ParameterGet(c_UAG_TabAlarm_CUSTOM_INI_SECTION, c_UAG_TabAlarm_CUSTOM_HWCONTEXT, "");
+	m_UAG_TabAlarm_Custom_Fn_AlarmGetDsp = ParameterGet(c_UAG_TabAlarm_CUSTOM_INI_SECTION, c_UAG_TabAlarm_CUSTOM_ALMGETDSP, "");
+
+	// mark the completion of loading
+	m_UAG_TabAlarm_Custom_Loaded = TRUE;
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		_UAG_TabAlarm_Custom_Get
+//
+//	SUMMARY:
+//		Gets the specified customization setting for tab alarm list.
+//		The supported customization are:
+//			- c_UAG_TabAlarm_CUSTOM_ALMGETDSP	(override fn. for getting alarm field display value)
+//			- c_UAG_TabAlarm_CUSTOM_ALMCONTEXT	(override fn. for showing configured alarm context menu)
+//			- c_UAG_TabAlarm_CUSTOM_HWCONTEXT	(override fn. for showing hardware alarm context menu)
+//
+//	PARAMS:
+//		None
+//			
+//	RETURNS:
+//		None
+//
+//	REMARKS:
+//		Please also see UAG_TabAlarm_Custom_Load() for loading the setting
+//
+//-----------------------------------------------------------------------------
+
+STRING FUNCTION _UAG_TabAlarm_Custom_Get(STRING setting)
+	_UAG_TabAlarm_Custom_Load();
+
+	SELECT CASE setting
+	CASE c_UAG_TabAlarm_CUSTOM_ALMGETDSP
+		RETURN m_UAG_TabAlarm_Custom_Fn_AlarmGetDsp;
+	CASE c_UAG_TabAlarm_CUSTOM_ALMCONTEXT
+		RETURN m_UAG_TabAlarm_Custom_Fn_Row_ShowContextMenu;
+	CASE c_UAG_TabAlarm_CUSTOM_HWCONTEXT
+		RETURN m_UAG_TabAlarm_Custom_Fn_Row_ShowHWContextMenu;
+	CASE ELSE
+		RETURN "";
+	END SELECT
+END
+
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		_UAG_TabAlarm_Col_AddFieldsToMenu
+//
+//	SUMMARY:
+//		Adds alarm fields to the context menu under a specific root / sub menu.
+//			
+//	PARAMS:
+//		listType		- The display type of the alarm list
+//		listID			- The alarm list ID pasesd to the function
+//		fnIsFieldShown	- The callback function to determine if a particular alarm field
+//							is currently shown in the alarm list, the fn prototpye is:
+//							function(STRING listID, STRING fieldName)
+//		menuNo			- The submenu number of the context menu
+//							This is optional. If not specified, it defaults to root menu (0)
+//			
+//	RETURNS: 
+//		0 if alarm fields are added to the context menu successfully or error if failed.
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION _UAG_TabAlarm_Col_AddFieldsToMenu(INT listType, STRING listID, STRING fnIsFieldShown, INT menuNo = 0)
+	INT colID;
+	STRING fieldName;
+
+	SELECT CASE listType
+	CASE 10
+		// alarm summary list
+		colID = 0;
+		WHILE (colID < c_UAG_TabAlarm_COL_INSERT_SUM_FIELDS_MAX) DO
+			fieldName = c_UAG_TabAlarm_COL_INSERT_SUM_FIELDS[colID];
+			IF (TaskCall(fnIsFieldShown, "^"" + listID + "^",^"" + fieldName + "^"") = "1") THEN
+				// disable and check item
+				DspPopupMenu(menuNo, "!~" + UAG_TabAlarm_GetColNameINI(fieldName));
+			ELSE
+				DspPopupMenu(menuNo, UAG_TabAlarm_GetColNameINI(fieldName));
+			END
+			colID = colID + 1;
+		END
+	CASE 15
+		// SOE alarm list
+		colID = 0;
+		WHILE (colID < c_UAG_TabAlarm_COL_INSERT_SOE_FIELDS_MAX) DO
+			fieldName = c_UAG_TabAlarm_COL_INSERT_SOE_FIELDS[colID];
+			IF (TaskCall(fnIsFieldShown, "^"" + listID + "^",^"" + fieldName + "^"") = "1") THEN
+				// disable and check item
+				DspPopupMenu(menuNo, "!~" + UAG_TabAlarm_GetColNameINI(fieldName));
+			ELSE
+				DspPopupMenu(menuNo, UAG_TabAlarm_GetColNameINI(fieldName));
+			END
+			colID = colID + 1;
+		END
+	CASE 5 TO 9
+		// hardware alarm list
+		_UAG_TabAlarm_BuildHardwareAlarmFields();
+		colID = 0;
+		WHILE (colID < c_UAG_TABALARM_COL_INSERT_HWALM_FIELDS_CNT) DO
+			fieldName = c_UAG_TABALARM_COL_INSERT_HWALM_FIELDS[colID];
+			IF (TaskCall(fnIsFieldShown, "^"" + listID + "^",^"" + fieldName + "^"") = "1") THEN
+				// disable and check item
+				DspPopupMenu(menuNo, "!~" + UAG_TabAlarm_GetColNameINI(fieldName));
+			ELSE
+															
+				DspPopupMenu(menuNo, UAG_TabAlarm_GetColNameINI(fieldName));
+			END
+			colID = colID + 1;
+		END
+	CASE ELSE
+		// active alarm list
+		colID = 0;
+		WHILE (colID < c_UAG_TabAlarm_COL_INSERT_ALM_FIELDS_MAX) DO
+			fieldName = c_UAG_TabAlarm_COL_INSERT_ALM_FIELDS[colID];
+			IF (TaskCall(fnIsFieldShown, "^"" + listID + "^",^"" + fieldName + "^"") = "1") THEN
+				// disable and checke item
+				DspPopupMenu(menuNo, "!~" + UAG_TabAlarm_GetColNameINI(fieldName));
+			ELSE
+				DspPopupMenu(menuNo, UAG_TabAlarm_GetColNameINI(fieldName));
+			END
+			colID = colID + 1;
+		END
+	END SELECT
+
+	RETURN 0;
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		_UAG_TabAlarm_Col_GetFieldFromMenu
+//
+//	SUMMARY:
+//		Gets the selected alarm field from the context menu under a specific root / sub menu.
+//			
+//	PARAMS:
+//		listType		- The display type of the alarm list
+//		selection		- The item selection number returned by DspPopupMenu(-1)
+//							Please refer to that Cicode function for details
+//		menuNo			- The submenu number of the context menu
+//							This is optional. If not specified, it defaults to root menu (0)
+//		itemOffset		- The item offset within a sub-menu.
+//							This is optional. If not specified, it treats the alarm fields
+//							are listed from the 1st item of the submenu. i.e. offset = 0.
+//			
+//	RETURNS: 
+//		The selected alarm fields or emtpy string if failed.
+//
+//-----------------------------------------------------------------------------
+
+STRING FUNCTION _UAG_TabAlarm_Col_GetFieldFromMenu(INT listType, INT selection, INT menuNo = 0, INT itemOffset = 0)
+	INT colID = selection - menuNo * 100 - itemOffset - 1;
+
+	SELECT CASE listType
+	CASE 10		// summary fields
+		IF ((colID >= 0) AND (colID < c_UAG_TabAlarm_COL_INSERT_SUM_FIELDS_MAX)) THEN
+			RETURN c_UAG_TabAlarm_COL_INSERT_SUM_FIELDS[colID];
+		END
+	CASE 15, 16		// soe fields
+		IF ((colID >= 0) AND (colID < c_UAG_TabAlarm_COL_INSERT_SOE_FIELDS_MAX)) THEN
+			RETURN c_UAG_TabAlarm_COL_INSERT_SOE_FIELDS[colID];
+		END
+	CASE 5 TO 9	// hardware alarm fields
+		_UAG_TabAlarm_BuildHardwareAlarmFields();
+		IF ((colID >= 0) AND (colID < c_UAG_TABALARM_COL_INSERT_HWALM_FIELDS_CNT)) THEN
+			RETURN c_UAG_TABALARM_COL_INSERT_HWALM_FIELDS[colID];
+		END
+	CASE ELSE		// alarm fields
+		IF ((colID >= 0) AND (colID < c_UAG_TabAlarm_COL_INSERT_ALM_FIELDS_MAX)) THEN
+			RETURN c_UAG_TabAlarm_COL_INSERT_ALM_FIELDS[colID];
+		END
+	END SELECT
+
+	RETURN "";
+END
+
+PRIVATE FUNCTION _UAG_TabAlarm_BuildHardwareAlarmFields()
+	IF (-1 <> c_UAG_TABALARM_COL_INSERT_HWALM_FIELDS_CNT) THEN
+		RETURN;
+	END
+	INT fmtHnd = FmtOpen("Cat255", "", 0);
+	INT i;
+
+	IF (-1 <> fmtHnd) THEN
+		c_UAG_TABALARM_COL_INSERT_HWALM_FIELDS_CNT = Min(FmtGetFieldCount(fmtHnd), c_UAG_TABALARM_COL_INSERT_HWALM_FIELDS_MAX);
+		i = 0;
+		WHILE (i < c_UAG_TABALARM_COL_INSERT_HWALM_FIELDS_CNT)  DO
+			c_UAG_TABALARM_COL_INSERT_HWALM_FIELDS[i] = FmtGetFieldName(fmtHnd, i);
+			i = i + 1;
+		END
+	ELSE
+		c_UAG_TABALARM_COL_INSERT_HWALM_FIELDS_CNT = 0;
+	END
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		_UAG_TabAlarm_IsSortable
+//
+//	SUMMARY:
+//		Returns whether a particular field of an alarm list is sortable.
+//			
+//	PARAMS:
+//		AN				- The animation number of the alarm list
+//		fieldName		- The field anme
+//			
+//	RETURNS: 
+//		1 if alarm field is sortable, else returns 0
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION _UAG_TabAlarm_IsSortable(INT AN, STRING fieldName)
+	INT type;
+
+	type = AlarmGetInfo(AN, 3);
+	IF ((type > 4) AND (type < 10)) THEN
+		// cannot dynamically sort hardware alarms
+		RETURN 0;
+	END
+									 
+	IF ((type = 15) OR (type = 16)) THEN
+		IF ((fieldName <> "Date") AND (fieldName <> "Time") AND (fieldName <> "Millisec")) THEN
+			// cannot sort fields rather than 
+			RETURN 0;
+		END
+	ELSE
+		IF (type = 10) THEN
+			IF ((fieldName <> "OnDate") AND (fieldName <> "OnTime") AND (fieldName <> "OnMilli")) THEN
+				RETURN 0;
+			END
+		END
+	END
+
+	RETURN 1;
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		_UAG_TabAlarm_IsSorted
+//
+//	SUMMARY:
+//		Returns if the specified field name is currently sorted in alarm list
+//		and its sorting direction.
+//			
+//	PARAMS:
+//		AN				- The animation number of the alarm list
+//		fieldName		- The field anme
+//			
+//	RETURNS: 
+//		Sorting direction of the field
+//			0 if field is not sorted
+//			1 if field is sorted in descending order
+//			2 if field is sorted in ascending order
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION _UAG_TabAlarm_IsSorted(INT AN, STRING fieldName)
+	INT retValue = 0;
+	STRING orderByKey;
+	INT fmtHnd;
+	INT fieldIdx;
+	INT fieldCount;
+	STRING equivFieldName;
+	INT searchIdx;
+	INT type;
+
+
+	IF (AN <= 0) THEN
+		RETURN retValue;
+	END
+
+	// check if alarm is user alarm
+	type = AlarmGetInfo(AN, 3);
+	IF (type >= 5 AND type <= 9) THEN
+		RETURN retValue;
+	END
+
+	// check if alarm is sorted by orderkey
+	IF (AlarmGetInfo(AN, 9) = 0) THEN
+		RETURN retValue;
+	END
+
+	// get order by key in format of {<field name>[,<direction>]}...
+	// where direction of 1 implies ascending sort, 0 or not specified implies descending sort
+	orderByKey = AlarmGetOrderbyKey(AN);
+	IF ("" = orderByKey) THEN
+		RETURN retValue;
+	END
+
+	// open up order key via a format
+	fmtHnd = FmtOpen("_tabalm_orderkey_" + IntToStr(WinNumber()) + "_" + IntToStr(AN), orderByKey, 5);
+	IF (fmtHnd < 0) THEN
+		RETURN retValue;
+	END
+
+	// search matching field name in the format
+	equivFieldName = _UAG_TabAlarm_GetSortField(fieldName);				  
+	fieldIdx = 0;
+	fieldCount = FmtGetFieldCount(fmtHnd);
+	WHILE (fieldIdx < fieldCount) DO
+		fieldName = FmtGetFieldName(fmtHnd, fieldIdx);
+		IF (_UAG_TabAlarm_GetSortField(fieldName) = equivFieldName) THEN
+			searchIdx = StrSearch(0, orderByKey, "{" + fieldName + ",");
+			IF (searchIdx = -1) THEN
+				retValue = 1;	// default sorting order, descending
+			ELSE
+				// check for "...{<fieldName>,1}..."
+				IF (StrToChar(StrMid(orderByKey, searchIdx + StrLength(fieldName) + 2, 1)) = 49) THEN
+					retValue = 2;	// ascending
+				ELSE
+					retValue = 1;	// default sorting order, descending
+				END
+			END
+			fieldIdx = fieldCount;
+		ELSE
+			fieldIdx = fieldIdx + 1;
+		END
+	END
+
+	// close format
+	FmtClose(fmtHnd);
+
+	RETURN retValue;
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		_UAG_TabAlarm_StrCapitalize
+//
+//	SUMMARY:
+//		Returns the capitalized string of the specified value
+//			
+//	PARAMS:
+//		value		- A string value
+//			
+//	RETURNS: 
+//		It returns the capitalized string if all alphabetic characters are upper
+//		case, otherwise the original value is returned.
+//
+//-----------------------------------------------------------------------------
+
+STRING FUNCTION _UAG_TabAlarm_StrCapitalize(STRING value)
+	INT len = StrLength(value);
+	INT allUpper = 1;
+	INT idx = 0;
+	INT char;
+
+	IF (len < 1) THEN
+		RETURN value;
+	END
+
+	// check if all alphabetic characters are upper case
+	WHILE (allUpper) AND (idx < len) DO
+		char = StrGetChar(value, idx);
+		IF (char >= 97) AND (char <= 122) THEN
+			allUpper = 0;
+		ELSE
+			idx = idx + 1;
+		END
+	END
+	IF (allUpper) THEN
+		value = StrUpper(StrLeft(value, 1)) + StrLower(StrRight(value, len - 1));
+	END
+
+	RETURN value;
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		_UAG_TabAlarm_TaskCall
+//
+//	SUMMARY:
+//		Invokes TaskCall without raising hw alarm if function does not exist.
+//			
+//	PARAMS:
+//		None
+//			
+//	RETURNS: 
+//		None
+//
+//-----------------------------------------------------------------------------
+
+STRING FUNCTION _UAG_TabAlarm_TaskCall(STRING fnName, STRING arg)
+	INT errLevelOld = ErrSetLevel(1);
+	STRING retValue = TaskCall(fnName, arg);
+	IsError();
+	ErrSetLevel(errLevelOld);
+	RETURN retValue;
+END
+
+
+//-----------------------------------------------------------------------------
+//
+//	Dialog / Form Internal Functions 
+//
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		_ProgressMessageShow
+//
+//	SUMMARY:
+//		Shows a message form for user feedback.
+//			
+//	PARAMS:
+//		title			- The title of the message form
+//		text			- The text appears on the message form
+//		width			- The width (in characters) of the form
+//							This is optional, if not specified, the form is modal
+//		modal			- Whether message form is modal that blocks user input to page
+//							This is optional, if not specified, the form is modal
+//			
+//	RETURNS: 
+//		0 if message form is displayed successfully or error if failed
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION _UAG_ProgressMessageShow(STRING title, STRING text, INT width = -1, INT modal = 1)
+	INT retValue = -1;
+	INT frmMode = 1+4+8+16+128;
+
+	// only one progress message allowed, close the existing one
+	IF (m_ProgressMessage_FrmHnd > -1) THEN
+		retValue = m_ProgressMessage_FrmHnd;
+		IF (FormActive(retValue)) THEN
+			FormDestroy(retValue);
+			m_ProgressMessage_FrmHnd = -1;
+		END
+	END
+
+	// calculate width if not specified
+	IF (width < 8) THEN
+		width = Max(StrLength(title), StrLength(text));
+		width = Max(width, 8);
+	END
+
+	// show modal dialog
+	IF (NOT modal) THEN frmMode = frmMode - 128; END
+	retValue = FormNew(title, width, 3, frmMode);
+	IF (retValue < -1) THEN
+		RETURN retValue;
+	END
+
+	m_ProgressMessage_FrmHnd = retValue;
+	m_ProgressMessage_TextHnd = FormPrompt(0, 0, StrPad(text, " ", width + width / 3));
+
+	FormButton((width / 2) - 3, 2, "@(Cancel)", _UAG_ProgressMessage_CancelClick, 2);
+
+	_UAG_FormCenter(width, 3);
+	retValue = FormRead(1);
+	m_ProgressMessage_Cancelled = 0;
+
+	RETURN retValue;
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		_ProgressMessage_CancelClick
+//
+//	SUMMARY:
+//		Callback function to response to the click event of the cancel button
+//		on the message form.
+//			
+//	PARAMS:
+//		None
+//			
+//	RETURNS: 
+//		0 if message form is displayed successfully or error if failed
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION _UAG_ProgressMessage_CancelClick()
+	m_ProgressMessage_Cancelled = 1;
+	RETURN 0;
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		_ProgressMessageIsCancelled
+//
+//	SUMMARY:
+//		Returns whether the message form has been cancelled by the user.
+//			
+//	PARAMS:
+//		None
+//			
+//	RETURNS: 
+//		0 if text is updated successfully or error if failed
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION _UAG_ProgressMessageIsCancelled()
+	RETURN m_ProgressMessage_Cancelled;
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		_ProgressMessageUpdate
+//
+//	SUMMARY:
+//		Updates the text on the message form.
+//			
+//	PARAMS:
+//		text			- The text appears on the message form
+//			
+//	RETURNS: 
+//		0 if text is updated successfully or error if failed
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION _UAG_ProgressMessageUpdate(STRING text)
+	INT frmHnd = m_ProgressMessage_FrmHnd;
+
+	IF (FormActive(frmHnd) = 0) THEN
+		RETURN 274;
+	END
+	RETURN FormSetText(frmHnd, m_ProgressMessage_TextHnd, text);
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		_ProgressMessageClose
+//
+//	SUMMARY:
+//		Closes the message form.
+//			
+//	PARAMS:
+//		None
+//			
+//	RETURNS: 
+//		0 if message form is closed successfully or error if failed
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION _UAG_ProgressMessageClose()
+	INT retValue = 274;
+	INT frmHnd = m_ProgressMessage_FrmHnd;
+
+	IF (FormActive(frmHnd)) THEN
+		retValue = FormDestroy(frmHnd);
+	END
+	m_ProgressMessage_FrmHnd = -1;
+	RETURN retValue;
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		_FormCenter
+//
+//	SUMMARY:
+//		Centers a message form roughly to the centre of the calling window.
+//			
+//	PARAMS:
+//		width			- The width of the form as in number of characters.
+//		height			- The height of the form as in number of characters.
+//			
+//	RETURNS: 
+//		0 if message form is closed successfully or error if failed
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION _UAG_FormCenter(INT width = -1, INT height = -1)
+	INT xFontSize = 6;
+	INT yFontSize = 10;
+	INT x, y;
+
+	// get centre of calling window
+	x = StrToInt(PageInfo(14)) + (StrToInt(PageInfo(12)) / 2);
+	y = StrToInt(PageInfo(15)) + (StrToInt(PageInfo(13)) / 2);
+
+	// get default form dimension if not specified
+	IF (width < 1) THEN width = 50; END
+	IF (height < 1) THEN height = 3; END
+
+	// offset position by dimension of the form
+	x = x - width * xFontSize / 2;
+	y = y - height * yFontSize / 2;
+
+	// centre a form to the centre of the calling window
+	RETURN FormPosition(x, y, 0);
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		_TabAlarm_GetSortField
+//
+//	SUMMARY:
+//		Get the field to sort on, given the raw field name.
+//			
+//	PARAMS:
+//		fieldName		- The raw field name.
+//			
+//	RETURNS: 
+//		The field name to sort on.
+//
+//-----------------------------------------------------------------------------
+
+STRING FUNCTION _UAG_TabAlarm_GetSortField(STRING fieldName)
+	INT timeSuffixIndex = -1;
+	STRING copy = StrUpper(fieldName);
+
+	IF (copy <> "DELTATIME") THEN
+		timeSuffixIndex = StrSearch(0, copy, "LOCALTIMEDATE");
+		IF (timeSuffixIndex = -1) THEN
+			timeSuffixIndex = StrSearch(0, copy, "TIME");
+			IF (timeSuffixIndex = -1) THEN
+				timeSuffixIndex = StrSearch(0, copy, "DATEEXT")
+				IF (timeSuffixIndex = -1) THEN
+					timeSuffixIndex = StrSearch(0, copy, "DATE");
+					IF (timeSuffixIndex = -1) THEN
+						timeSuffixIndex = StrSearch(0, copy, "MILLI");
+					END
+				END
+			END
+		END
+	END
+	
+	IF (timeSuffixIndex >= 0) THEN
+		fieldName = StrLeft(fieldName, timeSuffixIndex) + "Time";
+	END
+	
+	RETURN fieldName;
+END
+
+
+
+//-----------------------------------------------------------------------------
+//
+//	Private Helper Functions
+//
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		_StrWordFmt
+//
+//	SUMMARY:
+//		Get the position in a format string for the start of next field.
+//			
+//	PARAMS:
+//		start			- The start offset for the search.
+//		fmtString		- The format string.
+//			
+//	RETURNS: 
+//		The position for the start of next field in a format string
+//
+//-----------------------------------------------------------------------------
+
+PRIVATE
+INT FUNCTION _UAG_StrWordFmt(INT start, STRING fmtString)
+	INT finish;
+
+	// search for } character (finish of current field)
+	finish = StrSearch(start, fmtString, "}");
+	IF (finish < 0) THEN
+		finish = StrLength(fmtString);
+	ELSE
+		// search for next { character (start of next field)
+		finish = StrSearch(finish, fmtString, "{");
+		IF (finish < 0) THEN
+			finish = StrLength(fmtString);
+		END
+	END
+	RETURN finish;
+END
+
+	

@@ -1,0 +1,99 @@
+///////////////////////////////////////////////////////////////////////////////////
+//	
+// 	FILE:	GUT30_ICM_Ping.ci
+//
+//	Beschreibung:
+//
+//		Enhält Ereignisse für die Einzelen Server.
+//		
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	19.04.16	/	Schneider Electric GmbH
+//	Version				75.33.11.06
+//
+//	PUBLIC FUNCTIONS:
+//
+//			GUT_ICMP_Ping()
+//			GUT_CitPing()
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	
+///////////////////////////////////////////////////////////////////////////////////
+
+
+
+
+INT FUNCTION GUT_ICMP_Ping(STRING sIP, INT TimeOut)
+	STRING sPath = "C:\Windows\Microsoft.NET\Framework\v4.0.30319\System.dll";
+	OBJECT hICMP_PING;
+	OBJECT hPing_Result;
+	INT result;
+	
+	hICMP_PING = DllClassCreate(sPath, "Ping");
+	!hPing_Result = DllClassCreate(sPath, "PingReply");
+	result = DllClassIsValid(hICMP_PING);
+	IF result =1 THEN
+		hPing_Result = DllClassCallMethod(hICMP_PING,"Send",sIP)
+		!result = DllClassGetProperty(hPing_Result,"Buffer")
+		result = DllClassGetProperty(hPing_Result,"Status")
+
+	END
+	DllClassDispose(hICMP_PING);
+	DllClassDispose(hPing_Result);
+	RETURN result
+END
+
+//**********************************************************
+//  PING funciton for Citect
+//
+//  
+//
+//  FUNCTION GUT_CitPing(String sIP, INT TimeOut) // ping
+//  
+//		retour:	1	ok
+//			2	Error
+//			3	waiting
+//
+///	Autor:				andreas.verhamme
+//	Erstellungsdatum:	19.04.16	/	Schneider Electric GmbH
+//	Version				75.33.11.00
+//
+//	PUBLIC FUNCTIONS:
+//
+//			GUT_ICMP_Ping()
+//			GUT_CitPing()
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	20.04.16	Steiner		auf DOT Net umgestellt
+///////////////////////////////////////////////////////////////////////////////////
+
+
+
+
+
+FUNCTION GUT_CitPing(STRING sIP, INT TimeOut,INT iNr)
+INT result;
+	ErrSet(1);
+
+	TagWrite (gsUAG_StationName + "_Str1",UAG_String_StrToReg(StrToLocalText("@(Ping is running)...")+ sIP,32),0, TRUE);
+	
+ 	result = GUT_ICMP_Ping(sIP,TimeOut)
+ 	Sleep(1)
+	SELECT CASE result
+	CASE	0
+		TagWrite (gsUAG_StationName + "_Str1",UAG_String_StrToReg("@(Ok) "+GetEnv("COMPUTERNAME")+sIP,32) ,0, TRUE);
+	CASE	11003
+		TagWrite (gsUAG_StationName + "_Str1",UAG_String_StrToReg("@(Host Unreachable) "+GetEnv("COMPUTERNAME")+sIP,32),0, TRUE);
+	CASE	11002
+		TagWrite (gsUAG_StationName + "_Str1",UAG_String_StrToReg("@(Network Unreachable) "+GetEnv("COMPUTERNAME")+sIP,32),0, TRUE);
+	CASE	11040
+		TagWrite (gsUAG_StationName + "_Str1",UAG_String_StrToReg("@(Destination Unreachable) "+GetEnv("COMPUTERNAME")+sIP,32),0, TRUE);
+	CASE	11010
+		TagWrite (gsUAG_StationName + "_Str1",UAG_String_StrToReg("@(Timed Out) "+GetEnv("COMPUTERNAME")+sIP,32),0, TRUE);
+	CASE	ELSE
+		TagWrite (gsUAG_StationName + "_Str1",UAG_String_StrToReg(StrToLocalText("@(Ping is running)...")+sIP,32),0, TRUE);
+	END SELECT;
+
+	TagWrite (gsUAG_StationName + "_Ping\"+ IntToStr (iNr),result,0, TRUE);
+	ErrSet(0);
+END
+

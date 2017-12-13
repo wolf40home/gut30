@@ -1,0 +1,9 @@
+
+D:\Schneider Application\Vijeo Citect\User\UAGBasis703140\
+D:\Schneider Application\Vijeo Citect\User\UAGBasis703140\UAG_Alar.ci(233) : error C0000 :  iprio,0,1) {Server1_AlarmAnzahl}[i] =iprio;
+D:\Schneider Application\Vijeo Citect\User\UAGBasis703140\UAG_Alar.ci(235) : error C0000 :  AlarmFirstPriRec(i, 2 ); {Server1_AlarmAnzahl_quit}[i] =iprioq;
+D:\Schneider Application\Vijeo Citect\User\UAGBasis703140\UAG_Alar.ci(1371) : error C0000 :  END IF {giP2} THEN Ass(-2,1,"'"
+D:\Schneider Application\Vijeo Citect\User\UAGBasis703140\UAG_Alar.ci(3054) : error C0000 :  IF NOT {giP2} THEN iWidth
+D:\Schneider Application\Vijeo Citect\User\UAGBasis703140\UAG_Alar.ci(3190) : error C0000 :  msAlarmFieldSeparationChar)); IF ({giP2} AND sPriority
+D:\Schneider Application\Vijeo Citect\User\UAGBasis703140\
+D:\Schneider Application\Vijeo Citect\User\UAGBasis703140\UAG_Face.ci(577) : error C0000 :  ?STRING 2? {UAG_LoadUI}( sTag+ "KT",

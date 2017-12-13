@@ -1,0 +1,338 @@
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//	
+// 	FILE:	UAG_Pager_zzEmail.ci
+//
+//	Beschreibung:
+//
+//	This file contains all functions used by the 'Email' service.
+//
+//		Funktionen mit Version 3.x sind freigegeben
+//
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	10.10.08	/	Schneider Electrik GmbH
+//	Version				3.1.0.0
+//
+//	NOTE:	Variable Information;
+//
+//		Data type BINARY is a special Citect LABEL for cicode data type (INT)
+//
+//		Variable Prefixes;
+//			h	Local (function) var handle 	(INT data type)
+//			i	Local (function) var integer 	(INT data type)
+//			s	Local (function) var string 	(STRING data type)
+//			r	Local (function) var real 	(REAL data type)
+//
+//			mh	Module (file) var handle type 	(INT data type)
+//			mi	Module (file) var integer type 	(INT data type)
+//			ms	Module (file) var string type 	(STRING data type)
+//			mr	Module (file) var real type 	(REAL data type)
+//
+//			gh	Global (project) var handle type 	(INT data type)
+//			gi	Global (project) var integer type 	(INT data type)
+//			gs	Global (project) var string type 	(STRING data type)
+//			gr	Global (project) var real type 		(REAL data type)
+//
+//			_	Label defined in LABELS.DBF (remaining letters capitalised)
+//			none	All capitalised represent VARIABLE Tags
+//			
+//	PUBLIC FUNCTIONS:
+//
+//		Email_Initialise
+//		Email_Send
+//		Email_Poll
+//	FUNCTIONS:
+//		_EmailProcess
+//
+//			
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)//
+//
+//
+
+MODULE	STRING	msEmailAccountName 	= "";
+MODULE	STRING	msEmailPassword 	= "";	
+MODULE	INT		miEmailPollTime 	= 20; 			// Incoming poll period
+
+//
+//	FUNCTION NAME:			Email_Initialise
+//
+//	FUNCTION DESCRIPTION:	Initialises all required module variable strings and spawns the
+//							incoming message poll task.
+//				
+//	REV	DATE		WHO		DESCRIP
+//	1.0	01/10/01	T.Munro		Original
+//
+//	SOURCE:			Spawned from the  function '_InitialiseServices()' during the
+//					server startup.
+//
+//	ARGUMENTS:
+//		sPort			= (not used)
+//		sPassword		= Email account password
+//		sPhoneNumber	= Email account name
+//
+//	RETURNED VALUE:
+//		<none>
+//
+//	NOTES:
+//
+
+FUNCTION
+Email_Initialise(STRING sPort, STRING sPassword, STRING sPhoneNumber)
+
+	// Update MODULE strings - allows Login to be 
+	msEmailAccountName = sPhoneNumber;
+	msEmailPassword = sPassword;
+
+	// Frequency of polling for new messages (seconds)
+	miEmailPollTime = StrToInt(ParameterGet(gsUAG_LIB_NAME, "PagerEmailPollTime", IntToStr(miEmailPollTime)));
+
+	// Start polling FOR new messages
+	IF msEmailAccountName <> "" THEN
+		TaskNew("Email_Poll", "", 8);
+	END
+END
+
+//
+//	FUNCTION NAME:		Email_Send
+//
+//	FUNCTION DESCRIPTION:	This service was added to allow an email to be sent to an 
+//				email enabled mail server.
+//
+//	REV	DATE		WHO		DESCRIP
+//	1.0	01/10/01	T. Munro	Original
+//
+//	SOURCE:			Spawned from the _SendToService function in Service.ci
+//
+//	ARGUMENTS:
+//		iServiceNo		= Number of the sevice (allows handle to service queue)
+//		sServiceName	= Name of the service
+//		sPort			= Citect port name on which service is to run
+//		sPassword		= Service password (not currently used)
+//		sPhoneNumber	= Service phone number (not currently used)
+//
+//	RETURNED VALUE:
+//		0		If OK
+//		-1		If Error
+//
+//	NOTES:
+//
+
+INT
+FUNCTION
+Email_Send( INT iServiceNo, STRING sServiceName, STRING sPort, STRING sPassword, STRING sPhoneNumber)
+
+	STRING	sQueData;
+	STRING	sEmailAddress;
+	STRING	sMessage;
+
+	INT	hQueDataFmt;
+	INT	iInt = 0;
+	INT	iReturn = 0;
+
+	// Log TO paging Log file
+	LogPagingInfo("Fn.Email_Send. @(Initiating service) >Name:"+sServiceName+", Port:"+sPort+"<", _OPERATION);
+
+	// Get a handle TO the queue format
+	hQueDataFmt = FmtOpen( "ServiceQueDataFmt", gsServiceQueDataFmt, 1);
+
+	// Logon TO the mail server
+	IF MailLogon(sPhoneNumber, sPassword, 2) = 0 THEN
+
+		// Read and process the service queue
+		WHILE QueLength( ghServiceQue[ iServiceNo]) > 0 DO
+
+			// Get the next queue item
+			QueRead( ghServiceQue[ iServiceNo], iInt, sQueData, 0);
+			StrToFmt( hQueDataFmt, sQueData);
+			sEmailAddress = StrTrim( FmtGetField( hQueDataFmt, "PagerNo"));
+			sMessage = StrTrim( FmtGetField( hQueDataFmt, "Message"));
+
+			// Send the email
+			IF MailSend(sEmailAddress, sMessage, "", "", 0) = 0 THEN
+				LogPagingInfo("Fn.Email_Send. @(Message successful) >"+sEmailAddress+"<", _OPERATION);
+			ELSE
+				LogPagingInfo("Fn.Email_Send. @(Message failed) >Address:"+sEmailAddress+",@(Error):" + MailError():#+"<", _ERROR);
+				iReturn = -1;
+			END
+			
+			Sleep(0);
+		END
+
+		// Logoff mail client
+		MailLogoff();
+
+	ELSE
+		// Failed TO access Email server ...
+		iReturn = -1;
+		LogPagingInfo("Fn.Email_Send. @(Email login failed) >Name:"+sPort+",Password:"+sPassword+"<", _ERROR);
+	END
+
+	// Free handles etc ...
+	ghServiceTask[ iServiceNo] = -1;
+	FmtClose( hQueDataFmt);
+
+	// RETURN success/failure status
+	RETURN(iReturn);
+END
+
+//
+//	FUNCTION NAME:		Email_Poll
+//
+//	FUNCTION DESCRIPTION:	This service was added to allow an SMS device to send a message
+//				to a Citect server. The message can instruct the Citect server to:
+//				- Acknowledge an alarm;
+//				- Write to a varaible tag.
+//
+//	REV	DATE		WHO		DESCRIP
+//	1.0	01/10/01	T.Munro		Original
+//
+//	SOURCE:			Called from the  function 'SMS_Modem_Initialise'.
+//
+//	ARGUMENTS:
+//		sPort		The Citect Port Name to be polled for inbound messages.
+//
+//	RETURNED VALUE:
+//		<none>
+//
+//	NOTES:
+//
+
+FUNCTION
+Email_Poll()
+
+	STRING	sName;
+	STRING	sNote;
+	STRING	sSubject;
+	STRING	sFileName;
+
+	INT	iCount;
+
+	LogPagingInfo("Fn.Email_Poll. @(Initiating poll service) >Polltime:"+miEmailPollTime:#+"<", _OPERATION);
+
+	// Periodically poll the port/modem FOR new messages
+	WHILE TRUE DO
+
+		// Logon TO mail server
+		WHILE MailLogon(msEmailAccountName, msEmailPassword, 2) <> 0 DO
+			LogPagingInfo("Fn.Email_Poll. @(Email login failed) >Name:"+msEmailAccountName+",Password:"+msEmailPassword+"<", _ERROR)
+			Sleep(60);
+		END
+
+		// Get any messages
+		WHILE MailRead(sName, sSubject, sNote, sFileName, 1) = 0 DO
+
+			LogPagingInfo("Fn.Email_Poll. @(New message received) >"+sSubject+"<", _OPERATION);
+			_Email_Process(sName, sSubject);
+		END
+
+		MailLogoff();
+		Sleep(miEmailPollTime);
+	END
+END
+
+//
+//	FUNCTION NAME:		_Email_Process
+//
+//	FUNCTION DESCRIPTION:	Sends any retrieved message to the appropriate queue
+//				for processing.
+//
+//	REV	DATE		WHO		DESCRIP
+//	1.0	27/09/01	T.Munro		Original
+//
+//	SOURCE:			Called from the  function 'Email_Poll"
+//
+//	ARGUMENTS:
+//		sName		= Email address from which message was received
+//		sSubject	= Subject field of message
+//
+//	RETURNED VALUE:
+//		0 	if passes to queue
+//		-1 	if fails
+//
+//	NOTES:
+//		The expected format of the incoming message is:
+//		Some Text Blah Blah Blah <a b c>
+//		Where:
+//		  a = Command 
+//			"A" = ack alarm
+//			"W" = write to tag
+//			"R" = read tag
+//			"C" = launch cicode
+//			"P" = update phone number
+//			"PAH" = update a/h phone number
+//			"E" = Enable an alarm
+//			"D" = Disable an alarm
+//		  b = Citect tag (of alarm or variable or cicode function)
+//		  c = Data (any data associated with the command e.g. new tag value for tag write)
+//
+
+PRIVATE INT
+FUNCTION
+_Email_Process(STRING sName, STRING sSubject)
+
+	STRING	sQueData = "";
+	STRING	sInbound = "";
+	STRING	sCommand = "";
+	STRING	sTag = "";
+	STRING	sData = "";
+
+	INT	iError = 0;
+	INT	iPosCurr = StrSearch(0, sSubject, "<");
+	INT	iPosNext = StrSearch(iPosCurr+1, sSubject, "<");
+	INT	hQueDataFmt = FmtOpen("ReceivedQue", gsReceivedQueDataFmt, 1);
+
+	// Command STRING IS framed with "<" AND ">" - find AND extract
+	WHILE iPosNext <> -1 DO
+		iPosCurr = iPosNext;
+		iPosNext = StrSearch(iPosCurr+1, sSubject, "<");
+	END
+	IF iPosCurr <> -1 AND StrRight(sSubject,1) = ">" THEN
+		sInbound = StrMid(sSubject, iPosCurr+1, StrLength(sSubject) - iPosCurr - 2);
+		sCommand = StrWord(sInbound);
+		sTag = StrWord(sInbound);
+		sData = StrTrim(sInbound); // All the rest IS data ....
+	ELSE
+		iError = -1;
+	END
+
+	SELECT CASE sCommand
+	CASE "A"
+		FmtSetField(hQueDataFmt, "Type", "AlarmAck");
+	CASE "W"
+		FmtSetField(hQueDataFmt, "Type", "TagWrite");	
+	CASE "R"
+		FmtSetField(hQueDataFmt, "Type", "TagRead");
+	CASE "C"
+		FmtSetField(hQueDataFmt, "Type", "Cicode");
+	CASE "P"
+		FmtSetField(hQueDataFmt, "Type", "SetPagerNo");
+		sData = sTag;
+		sTag = "ThisPhone";
+	CASE "PAH"
+		FmtSetField(hQueDataFmt, "Type", "SetPagerNoAH");
+		sData = sTag;
+		sTag = "ThisPhone";
+	CASE "E"
+		FmtSetField(hQueDataFmt, "Type", "AlarmEnable");
+	CASE "D"
+		FmtSetField(hQueDataFmt, "Type", "AlarmDisable");
+	CASE ELSE
+		FmtSetField(hQueDataFmt, "Type", "Error");
+		iError = -1;
+	END SELECT
+
+	FmtSetField(hQueDataFmt, "SourcePh", sName);
+	FmtSetField(hQueDataFmt, "Tag", sTag);
+	FmtSetField(hQueDataFmt, "Data", sData);
+	sQueData = FmtToStr(hQueDataFmt);
+	FmtClose(hQueDataFmt);
+
+	// Add the item TO the service queue
+	QueWrite( ghReceivedQue, 0, sQueData);
+	// IF NOT already running spawn the processing task
+	TaskNew("_ProcessReceivedMessages", "", 8);
+
+	RETURN(iError);
+
+END

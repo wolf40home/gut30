@@ -1,0 +1,357 @@
+//
+//	FILE:	VERSION.CI
+//
+//	This file contains functions for version updates
+//
+//
+//	FUNCTIONS:
+//		///	User functions ///
+//
+//		///	System function ///
+//
+//
+//	NOTE:	Variable Prefixes;
+//			h	Local (function) var handle 	(INT data type)
+//			i	Local (function) var integer 	(INT data type)
+//			s	Local (function) var string 	(STRING data type)
+//			r	Local (function) var real 		(REAL data type)
+//
+//			mh	Module (file) var handle type 	(INT data type)
+//			mi	Module (file) var integer type 	(INT data type)
+//			ms	Module (file) var string type 	(STRING data type)
+//			mr	Module (file) var real type 	(REAL data type)
+//
+//			gh	Global (project) var handle type 	(INT data type)
+//			gi	Global (project) var integer type 	(INT data type)
+//			gs	Global (project) var string type 	(STRING data type)
+//			gr	Global (project) var real type 		(REAL data type)
+//
+//			_	Label defined in LABELS.DBF (remaining letters capitalised)
+//
+//			none	All capitalised represent VARIABLE Tags
+//
+//      Notes:
+//			
+//
+
+//	GLOBAL CONSTANTS	//
+
+
+//	GLOBAL VARS		//
+
+//
+//	FUNCTION NAME:		PagingVer
+//
+//	FUNCTION DESCRIPTION:	Returns a string with the paging system version number and date
+//
+//	REV		DATE		WHO			DESCRIP
+//	1.0		14/4/97		A.Winter	Original
+//	3.4		07/01/98	K. Mac		See release notes
+//	3.41	18/3/98		A.Winter	Modified _24hrTimeOK function to check for hrs > 23
+//	3.51	07/05/98	A.Winter	Fixed Startup cross check problem that David S. found
+//	3.60	25/06/98	A.Winter	Added Telsta_Mobile_R and Ring_Phone services
+//	3.62	25/02/99	K Johnson	Y2K Audit
+//	3.63	25/03/1999	A.Winter	Fix 4 digit year pager transmission bug
+//	3.64	28/04/1999	A.Winter	Modified interpretation of after hours to handle across
+//									midnight and not to default to the normal hours pager number if 
+//									AH pager number not configured
+//	3.70	02/01/2001	E.Black		Added PageMart service. Updated graphics to 5.21. Replaced
+//									PagingV7.MDB with Paging.MDB (Office2000 ver). Tested OK with
+//									Citect 5.30.
+//	3.80	02/07/01	T.Munro		Added SMS modem protocol. Made code more modular.
+//	3.81	27/07/01	E.Black		Added TxValue field to pager msg. Added MetroCall service
+//									(CiTSI Adl - downgraded to Ct 5.21SpkG, MS Access 97) 
+//	3.82	26/09/01	T.Munro		Extended SMS modem service and inbound security options.
+//	3.83	11/10/01	E.Black		Added TAP services, fixed MDB and DBF field widths.
+//	3.84	04/01/02	T.Munro		Updated SMS_Modem service and _SendToService() fn.
+//	3.85	01/03/05	K.Maritz	Extend Alarm Tag length to {Tag,32} in format - SetPagingAlmDsp
+//	3.86	29/05/08	A.Winter	Merged system versions 3.84R1 and 3.85
+//	4.00	18/06/08	A.Winter	Major changes to Engine and Configurtation to allow restricted support 
+//									under Citect Version 7. Refer to documentation for details
+//	4.01	18/06/08	A.Winter	No changes other than removal of EventQue param from Citect project
+//
+//	SOURCE:			
+//
+//	ARGUMENTS:
+//
+//	RETURNED VALUE:
+//
+//	NOTES:
+//
+
+STRING
+FUNCTION
+PagingVer(INT iFilter = 0)
+	STRING	sVersion 	= "4.01";
+	STRING	sDate		= "18/06/2008";
+	
+	IF iFilter = 1 THEN
+		RETURN(sVersion);
+	ELSE
+		RETURN("@(Citect Alarm Paging System Version) " + sVersion + " " + sDate);
+	END
+END
+
+//
+//	FUNCTION NAME:		RunVersionUpdates
+//
+//	FUNCTION DESCRIPTION:	Selectively executes individual upgrades scripts on the PAGING.MDB file
+//
+//	REV		DATE		WHO			DESCRIP
+//	1.0		11/06/08	A.Winter	Original
+//
+//	SOURCE:			
+//
+//	ARGUMENTS:
+//
+//	RETURNED VALUE:
+//
+//	NOTES:	This function extracted from the PagingSystemStart function to allow individual upgrade function to
+//	be made private.
+//
+
+INT
+FUNCTION
+RunVersionUpdates()
+	INT hSQL	= -1;
+	INT iError	= 0;
+	INT hForm	= -1;
+
+	ErrSet(1);
+
+	hSQL = SQLConnect("DSN=PAGING");
+	IF hSQL < 0 THEN
+//		_MessageForm("@(Paging System Error)", "@(Error connecting to ^"PAGING^" ODBC data source).", 0);
+		LogPagingInfo("Paging System Error. @(Error connecting to ^"PAGING^" ODBC data source.)", _ERROR);
+		ErrSet(0);
+		RETURN -1;
+	END
+
+	iError = SQLExec(hSQL, "SELECT * FROM SystemControl");
+	SQLEnd(hSQL);				// This line required to allow lock based changes to be made to the SystemControl Table in individual updates
+
+		iError = _Update386();
+		IF iError > 0 THEN
+			hForm = _MessageForm("@(INFO)", " @(Paging System data updated successfully to version) " + PagingVer(1), 2);
+			Sleep(2);
+			FormDestroy(hForm);
+		END
+
+		iError = _Update400();
+		IF iError > 0 THEN
+			hForm = _MessageForm("@(INFO)", " @(Paging System data updated successfully to version) " + PagingVer(1), 2);
+			Sleep(2);
+			FormDestroy(hForm);
+		END
+
+		iError = _Update401();
+		IF iError > 0 THEN
+			hForm = _MessageForm("@(INFO)", " @(Paging System data updated successfully to version) " + PagingVer(1), 2);
+			Sleep(2);
+			FormDestroy(hForm);
+		END
+	
+	ErrSet(0);
+
+	SQLDisconnect( hSQL);
+
+	RETURN iError;
+END
+
+
+//
+//	FUNCTION NAME:		_Update386
+//
+//	FUNCTION DESCRIPTION:	A one off update function to update the database schema and version number.
+//
+//	REV	DATE		WHO			DESCRIP
+//	1.0	29/05/08	A.Winter 	See version descriptions below
+//
+//	SOURCE:			To be called from the auto update code
+//
+//	ARGUMENTS:
+//
+//	RETURNED VALUE:		1	If Successfully updated
+//						0	If already updated
+//						-1	If there was an error
+//
+//	NOTES:
+//
+
+PRIVATE
+INT
+FUNCTION
+_Update386()
+
+	INT		hSQL 	= -1;
+	INT		iError 	= -1;
+	REAL	rCurrVer= 0;
+	REAL	rNewVer	= 3.86;
+
+	hSQL = SQLConnect("DSN=PAGING");
+	IF hSQL <> -1 THEN
+		ErrSet(1);
+		iError = SQLExec(hSQL, "SELECT Version FROM SystemControl");
+		ErrSet(0);
+		IF SQLNext(hSQL) = 0 THEN
+			rCurrVer = StrToReal(SQLGetTrimField(hSQL, "Version"));
+			IF rCurrVer < rNewVer THEN
+				iError = SQLExec( hSQL, "UPDATE SystemControl SET Version='" + rNewVer:#.## + "'");
+				
+				iError = iError + SQLExec( hSQL, "ALTER TABLE Services ALTER COLUMN Password Char(50)" );
+				iError = iError + SQLExec( hSQL, "ALTER TABLE Services ALTER COLUMN PhoneNo Char(50)" );
+				iError = iError + SQLExec( hSQL, "ALTER TABLE Pagers ALTER COLUMN PagerNo Char(50)" );
+				iError = iError + SQLExec( hSQL, "ALTER TABLE Pagers ALTER COLUMN PagerNoAH Char(50)" );
+				iError = iError + SQLExec( hSQL, "ALTER TABLE PagingAlarms ALTER COLUMN TAG Char(255)" );
+				iError = iError + SQLExec( hSQL, "ALTER TABLE PagingAlarms ALTER COLUMN NAME Char(255)" );
+				iError = iError + SQLExec( hSQL, "ALTER TABLE PagingAlarms ALTER COLUMN DESCRIPTION Char(255)" );
+
+				iError = iError + SQLExec( hSQL, "SELECT * FROM Services WHERE Name='Email'");
+				IF SQLNext(hSQL) <> 0 THEN
+					iError = iError + SQLExec( hSQL , "Insert into Services (Name,Password,PhoneNo) Values ('Email','password','serviceaccount@mailserver.com')");
+				END
+
+				IF iError = 0 THEN
+					SQLDisconnect(hSQL);
+					LogPagingInfo("Fn.Update386. @(Successfully updated Paging.MDB to Version) " + rNewVer:#.##, _OPERATION );
+					ErrSet(0);
+					RETURN 1;
+				ELSE
+					LogPagingInfo("ERROR.Fn.Update386. SQL Error Msg:" + SQLErrMsg(), _ERROR);
+					LogPagingInfo("ERROR.Fn.Update386. @(Error updating version number)", _ERROR );
+					_MessageForm("@(Paging System Update)", "@(Error updating to version) " + rNewVer:#.## + " @(Check ODBC setup or MS-Access Ver no.)");
+					SQLDisconnect(hSQL);
+					ErrSet(0);
+					RETURN -1;
+				END
+			ELSE
+				SQLDisconnect(hSQL);
+				ErrSet(0);
+				RETURN 0;
+			END
+		END
+	END
+END
+
+//
+//	FUNCTION NAME:		_Update400
+//
+//	FUNCTION DESCRIPTION:	A one off update function to update the database schema and version number.
+//
+//	REV	DATE		WHO			DESCRIP
+//	1.0	06/06/08	A.Winter 	See version descriptions below
+//
+//	SOURCE:			To be called from the auto update code
+//
+//	ARGUMENTS:
+//
+//	RETURNED VALUE:		1	If Successfully updated
+//						0	If already updated
+//						-1	If there was an error
+//
+//	NOTES:
+//
+
+PRIVATE
+INT
+FUNCTION
+_Update400()
+	INT		hSQL 	= -1;
+	INT		iError 	= -1;
+	REAL	rCurrVer= 0;
+	REAL	rNewVer	= 4.00;
+
+	hSQL = SQLConnect("DSN=PAGING");
+	IF hSQL <> -1 THEN
+		ErrSet(1);
+		iError = SQLExec(hSQL, "SELECT Version FROM SystemControl");
+		ErrSet(0);
+		IF SQLNext(hSQL) = 0 THEN
+			rCurrVer = StrToReal(SQLGetTrimField(hSQL, "Version"));
+			IF rCurrVer < rNewVer THEN
+				iError = SQLExec( hSQL, "DROP INDEX IndexKey ON PagingAlarms");
+				iError = iError + SQLExec( hSQL, "ALTER TABLE PagingAlarms DROP COLUMN RECNO");
+				iError = iError + SQLExec( hSQL, "ALTER TABLE Pagers DROP COLUMN TxRecNo");
+				iError = iError + SQLExec( hSQL, "ALTER TABLE SystemControl DROP COLUMN EnableXCheck");
+				iError = iError + SQLExec( hSQL, "ALTER TABLE SystemControl DROP COLUMN UniqueTagName");
+				iError = iError + SQLExec( hSQL, "UPDATE SystemControl SET Version='" + rNewVer:#.## + "'");
+				IF iError = 0 THEN
+					SQLDisconnect(hSQL);
+					LogPagingInfo("Fn.Update400. Successfully updated Paging.MDB to Version " + rNewVer:#.##, _OPERATION );
+					ErrSet(0);
+					RETURN 1;
+				ELSE
+					LogPagingInfo("ERROR.Fn.Update400. SQL Error Msg:" + SQLErrMsg(), _ERROR);
+					LogPagingInfo("ERROR.Fn.Update400. Error updating version number", _ERROR );
+					_MessageForm("@(Paging System Update)", "@(Error updating to version) " + rNewVer:#.## + " @(Check ODBC setup or MS-Access Ver no.)");
+					SQLDisconnect(hSQL);
+					ErrSet(0);
+					RETURN -1;
+				END
+			ELSE
+				SQLDisconnect(hSQL);
+				ErrSet(0);
+				RETURN 0;
+			END
+		END
+	END
+END
+
+//
+//	FUNCTION NAME:		_Update401
+//
+//	FUNCTION DESCRIPTION:	A one off update function to update the database schema and version number.
+//
+//	REV	DATE		WHO			DESCRIP
+//	1.0	18/06/08	A.Winter 	See version descriptions below
+//
+//	SOURCE:			To be called from the auto update code
+//
+//	ARGUMENTS:
+//
+//	RETURNED VALUE:		1	If Successfully updated
+//						0	If already updated
+//						-1	If there was an error
+//
+//	NOTES:
+//
+
+PRIVATE
+INT
+FUNCTION
+_Update401()
+	INT		hSQL 	= -1;
+	INT		iError 	= -1;
+	REAL	rCurrVer= 0;
+	REAL	rNewVer	= 4.01;
+
+	hSQL = SQLConnect("DSN=PAGING");
+	IF hSQL <> -1 THEN
+		ErrSet(1);
+		iError = SQLExec(hSQL, "SELECT Version FROM SystemControl");
+		ErrSet(0);
+		IF SQLNext(hSQL) = 0 THEN
+			rCurrVer = StrToReal(SQLGetTrimField(hSQL, "Version"));
+			IF rCurrVer < rNewVer THEN
+				iError = SQLExec( hSQL, "UPDATE SystemControl SET Version='" + rNewVer:#.## + "'");
+				IF iError = 0 THEN
+					SQLDisconnect(hSQL);
+					LogPagingInfo("Fn.Update400. Successfully updated Paging.MDB to Version " + rNewVer:#.##, _OPERATION );
+					ErrSet(0);
+					RETURN 1;
+				ELSE
+					LogPagingInfo("ERROR.Fn.Update400. SQL Error Msg:" + SQLErrMsg(), _ERROR);
+					LogPagingInfo("ERROR.Fn.Update400. Error updating version number", _ERROR );
+					_MessageForm("@(Paging System Update)", "@(Error updating to version) " + rNewVer:#.## + " @(Check ODBC setup or MS-Access Ver no.)");
+					SQLDisconnect(hSQL);
+					ErrSet(0);
+					RETURN -1;
+				END
+			ELSE
+				SQLDisconnect(hSQL);
+				ErrSet(0);
+				RETURN 0;
+			END
+		END
+	END
+END

@@ -1,0 +1,153 @@
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//	
+// 	FILE:	GUT_Basisfunktionen.ci
+//
+//	Beschreibung:
+//
+//		Enthält Funktionen die als Grundlage benötigt werden.
+//		Funktionen mit Version 3. sind freigegeben
+//
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	24.11.17	/	Schneider Electrik GmbH
+//	Version				75.33.11.08
+//
+//	PUBLIC FUNCTIONS:
+//	GUT_PopupNewAt
+//	GUT_GetMousePos_unten
+//	GUT_GetMouseY
+//	GUT_DevOpen_Info
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+
+
+
+//	GUT_PopupNewAt()
+//	Übergabeparameter:	Name des aufzurufenden Fenster, mode
+//                         
+//	Rückgabewert:		---
+//	Beschreibung:		Berechnet die linke obere Kante des Fensters  damit die an die Mausposition kommt.
+//						
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	24.11.17	/	Schneider Electric GmbH
+//	Version				75.33.11.08
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	//	
+
+INT FUNCTION GUT_PopupNewAt(STRING sPage,INT iWmode=giMODE, INT imode=1)
+
+	INT nAN,iHeight,ix,iy,Bottom,Left
+	nAN = KeyGetCursor()
+	DspGetAnExtent(nAN, iy, Left, Bottom, ix);
+	iHeight=PageFileInfo(sPage, 1)
+	PageTransformCoords(WinNumber(), ix, iy, ix, iy, 0);
+	IF iy- iHeight >100 THEN
+		iy=iy- iHeight;
+	END	
+	ix=ix +10;
+	
+
+	RETURN UAG_MM_WinNewAt(sPage,iX,iY,iWmode,imode)
+
+END 
+
+//	GUT_GetMousePos_unten()
+//	Übergabeparameter:	Höhe des aufzurufenden Fenster
+//                         
+//	Rückgabewert:		---
+//	Beschreibung:		Berechnet die linke untere Kante des Fensters  damit die wenn möglich an die Mausposition kommt.
+//						
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	27.11.17	/	Schneider Electric GmbH
+//	Version				75.33.11.08
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	
+//	
+
+FUNCTION GUT_GetMousePos_unten(INT iHeight=0)
+	INT nAN,ix,iy, Left, Bottom
+	nAN = KeyGetCursor()
+	DspGetAnExtent(nAN, iy, Left, Bottom, ix);
+	IF iy- iHeight >100 THEN
+		iy=iy- iHeight;
+	END	
+	ix=ix +10;
+	PageTransformCoords(WinNumber(), ix, iy, ix, iy, 0);
+
+	giPosY = iy;
+	giPosX =ix;
+	
+END 
+
+//	GUT_GetMousePos_unten2()
+//	Übergabeparameter:	Höhe des aufzurufenden Fenster
+//                         
+//	Rückgabewert:		---
+//	Beschreibung:		Berechnet die linke untere Kante des Fensters  damit die an die Mausposition kommt.
+//						
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	29.11.17	/	Schneider Electric GmbH
+//	Version				75.33.11.08
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	
+//	
+
+FUNCTION GUT_GetMousePos_unten2(INT iHeight=0)
+	INT ix,iy, Left, Bottom
+	DspGetMouse(ix, iy)
+	IF iy- iHeight >100 THEN
+		iy=iy- iHeight;
+	END	
+	ix=ix +10;
+	PageTransformCoords(WinNumber(), ix, iy, ix, iy, 0);
+
+	giPosY = iy;
+	giPosX =ix;
+	
+END 
+
+INT FUNCTION GUT_GetMouseY()
+	GUT_GetMousePos_unten2()
+	RETURN giPosY 
+END	
+
+//	GUT_DevOpen_Info()
+//	Übergabeparameter: Dateiname Format	
+//                         
+//	Rückgabewert:		Filehandle 
+//	Beschreibung:		Öffnet ein Device zum Lesen.und gibt die Nummer zurück. Es wird zuerst das Primäre geöfnet. Pfad INFO
+//						
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	04.12.17	/	Schneider Electric GmbH
+//	Version				75.33.11.08
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	
+
+INT FUNCTION
+GUT_DevOpen_Info(STRING sName,STRING sFormat)
+	INT hDev;
+	STRING sPath;
+	sPath=PathToStr("[INFO_P]:" +sName);
+	ErrSet(1);
+	IF FileExist(sPath) THEN
+		DevModify("Scratch",SFormat,"*", sPath,dBASE_DEV);
+		hDev = DevOpen("Scratch",0);
+	ELSE
+		sPath=PathToStr("[INFO_S]:" +sName);
+		DevModify("Scratch",SFormat,"*", sPath,dBASE_DEV);
+		hDev = DevOpen("Scratch",0);
+	END	
+	ErrSet(0);
+	RETURN hDev
+END
+
+

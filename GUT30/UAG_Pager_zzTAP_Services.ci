@@ -1,0 +1,261 @@
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//	
+// 	FILE:	UAG_Pager_zzTAP_Services.ci
+//
+//	Beschreibung:
+//
+//	This file contains the cicode for the TAP based paging services currently supported by
+//	the Citect V3 paging system.
+//
+//		Funktionen mit Version 3.x sind freigegeben
+//
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	10.10.08	/	Schneider Electrik GmbH
+//	Version				73.33.81.02
+//
+//
+//	NOTE:	Variable Prefixes;
+//			h	Local (function) var handle 	(INT data type)
+//			i	Local (function) var integer 	(INT data type)
+//			s	Local (function) var string 	(STRING data type)
+//			r	Local (function) var real 	(REAL data type)
+//
+//			mh	Module (file) var handle type 	(INT data type)
+//			mi	Module (file) var integer type 	(INT data type)
+//			ms	Module (file) var string type 	(STRING data type)
+//			mr	Module (file) var real type 	(REAL data type)
+//
+//			gh	Global (project) var handle type 	(INT data type)
+//			gi	Global (project) var integer type 	(INT data type)
+//			gs	Global (project) var string type 	(STRING data type)
+//			gr	Global (project) var real type 		(REAL data type)
+//
+//			_	Label defined in LABELS.DBF (remaining letters capitalised)
+//
+//			none	All capitalised represent VARIABLE Tags
+//
+//	PUBLIC FUNCTIONS:
+//
+//		Generic_TAP_Send
+//		Cityruf_Send
+//	
+//	FUNCTIONS:
+//		Generic_TAP_Initialise
+//		_PETService
+//			
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)//
+//
+//
+
+
+
+//	MODULE VARS		//
+
+// Parameter values for Generic_TAP protocol
+INT miGeneric_TAP_MsgMax;
+INT miGeneric_TAP_MsgDelay;
+INT miGeneric_TAP_MsgLength;
+
+
+
+//
+//	FUNCTION NAME:		Cityruf_Send
+//
+//	FUNCTION DESCRIPTION:	This will send a message to a Contact paging service.
+//
+//	REV	DATE		WHO		DESCRIP
+//	1.0	11/10/01	W.Steiner		Original (based on code in original '_SendToService')
+//
+//	SOURCE:			Spawned from the _SendToService function in Service.ci
+//
+//	ARGUMENTS:
+//		iServiceNo	= Number of the sevice (handle to service queue)
+//		sServiceName	= Name of the service
+//		sPort		= Citect port name on which service is to run
+//		sPassword	= Service password
+//		sPhoneNumber	= Service phone number
+//
+//	RETURNED VALUE:
+//		0		If OK
+//		-1		If Error
+//
+//	NOTES:
+//	This function relies on the original '_PETService' function.
+//
+
+
+INT FUNCTION
+Cityruf_Send(INT iServiceNo, STRING sServiceName, STRING sPort, STRING sPassword, STRING sPhoneNumber)
+
+	INT	iMsgMax = 20;
+	INT	iMsgDelay = 5;
+	INT	iMsgLength = 80;
+	Server1_AktiverIOServer = IODeviceInfo("257",17)
+	
+	RETURN(_PETService(iServiceNo, sServiceName, iMsgMax, iMsgDelay, iMsgLength, sPhoneNumber, sPassword, sPort));
+END
+
+
+//
+//	FUNCTION NAME:		Generic_TAP_Initialise
+//
+//	FUNCTION DESCRIPTION:	Loads the parameters for this service
+//
+//	REV	DATE		WHO		DESCRIP
+//	1.0	16/10/01	E.Black		Original
+//
+//	SOURCE:			Spawned from the _InitialiseServices() function in Services.ci
+//
+//	ARGUMENTS:
+//		sPort		= Citect port name on which service is to run
+//		sPassword	= Service password
+//		sPhoneNumber	= Service phone number
+//
+//	RETURNED VALUE:		None
+//
+//	NOTES:
+//
+
+FUNCTION
+Generic_TAP_Initialise(STRING sPort, STRING sPassword, STRING sPhoneNumber)
+
+	miGeneric_TAP_MsgMax = StrToInt(ParameterGet("Generic_TAP", "MaxMessages", 20))
+	miGeneric_TAP_MsgDelay = StrToInt(ParameterGet("Generic_TAP", "MessageDelay", 5))
+	miGeneric_TAP_MsgLength = StrToInt(ParameterGet("Generic_TAP", "MessageLength", 220))
+
+	IF (miGeneric_TAP_MsgMax = 0) OR
+	   (miGeneric_TAP_MsgDelay = 0) OR
+	   (miGeneric_TAP_MsgLength = 0) THEN
+		LogPagingInfo("Fn.Generic_TAP_Initialise. @(Invalid [Generic_TAP] Parameter(s))", _OPERATION);
+	END	
+END
+
+
+//
+//	FUNCTION NAME:		_PETService
+//
+//	FUNCTION DESCRIPTION:	This service provides access to the PET paging services. The various PET services allow
+//				a different number of messages per connection. This number is passed in to the function as
+//				iMsgMax.
+//
+//	REV	DATE		WHO		DESCRIP
+//	1.0	17/7/95		A.Winter	Original
+//	2.0	4/8/95		A.Winter	Made Generic for all three PET services. Added MsgMax as an argument
+//
+//	SOURCE:			Called from the _SendToService function
+//
+//	ARGUMENTS:
+//              iServiceNo      The service number used as an index.
+//		sServiceName	The Name of the service as called from _SendToService function
+//		iMsgMax		The maximum number of message allowed to be transmitted before forced disconnection
+//		sPhoneNo	The Phone number to ring the PET service on
+//		sPassword	The PET Logon password
+//		sPort		The Citect port name port used to connect to this service
+//
+//	RETURNED VALUE:
+//		0		If OK
+//		-1		If Error
+//
+//	NOTES:
+//
+
+INT
+FUNCTION
+_PETService( INT iServiceNo, STRING sServiceName, INT iMsgMax, INT iMsgDelay, INT iMsgLength, STRING sPhoneNo, STRING sPassword, STRING sPort)
+	INT	iError;
+	INT	iReturn = 0;
+	INT	iConnectRetry = 5;
+	INT	iInt;
+	INT	iMsgCount = 1;
+	INT	hComPort = -1;
+	INT	hServiceLog = -1;
+	INT	hQueDataFmt = -1;
+	STRING	sQueData;
+	STRING	sPagerNo;
+	STRING	sMessage;
+
+	LogPagingInfo("Fn._PETService. @(Initiating Service) >" + sServiceName + "<", _OPERATION);
+	LogPagingInfo("Fn._PETService. @(Phone No)           >" + sPhoneNo + "<", _OPERATION);
+	LogPagingInfo("Fn._PETService. @(Service Password)   >" + sPassword + "<", _OPERATION);
+	LogPagingInfo("Fn._PETService. @(Citect Port)        >" + sPort + "<", _OPERATION);
+
+	hQueDataFmt = FmtOpen( "ServiceQueDataFmt", gsServiceQueDataFmt, 1);
+
+	WHILE hComPort = -1 AND iConnectRetry > 0 DO
+		hComPort = _ConnectToPort( sPort, hServiceLog);
+		IF hComPort = -1 THEN
+			iConnectRetry = iConnectRetry - 1;
+			LogPagingInfo("Fn._PETService. Port " + sPort + " @(busy for service) "+sServiceName+
+				" @(delaying for 60 seconds.... Retry No) "+iConnectRetry:#, _OPERATION);
+			Sleep( 60);
+		END
+	END
+
+	IF hComPort >= 0 THEN
+		iConnectRetry = 5;
+		WHILE QueLength( ghServiceQue[ iServiceNo]) > 0 AND iConnectRetry >0 DO
+			IF sPhoneNo <> "DIRECT" THEN
+	                        iError = _DialService( hComPort, sPhoneNo, hServiceLog);
+			ELSE
+				iError = 0;
+			END
+			IF iError >= 0  THEN
+				Sleep(1);
+				iError=_PETLogin( hComPort, sPassword, hServiceLog);
+				IF iError >= 0 THEN
+					WHILE QueLength( ghServiceQue[ iServiceNo]) > 0 AND iMsgCount <= iMsgMax AND iError <> -2 DO
+						QueRead( ghServiceQue[ iServiceNo] , iInt, sQueData, 0);
+						StrToFmt( hQueDataFmt, sQueData);
+						sPagerNo = StrTrim( FmtGetField( hQueDataFmt, "PagerNo"));
+						IF sServiceName = "Link_Paging" THEN
+							sPagerNo = StrPad( sPagerNo, "0", -7);
+						END
+						sMessage = StrTrim( FmtGetField( hQueDataFmt, "Message"));
+						IF sPagerNo <> "" AND sMessage <> "" THEN
+                                                        !If the message is too long for the selected service then
+                                                        !truncate it and Log the action
+                                                        IF StrLength(sMessage) > iMsgLength THEN
+                                                                sMessage = StrLeft (sMessage, iMsgLength);
+                                                                LogPagingInfo("ERROR.Fn._PETService. @(Invalid Msg Length For Selected Service, Msg Has Been Truncated)",_PET);
+
+                                                        END
+							iError = _PETSendDataBlock( hComPort, sPagerNo, sMessage, hServiceLog, iMsgDelay);
+							iMsgCount = iMsgCount + 1;
+						END
+					END
+					iMsgCount = 1;
+					IF iError <> 1 THEN  
+						IF sPhoneNo <> "DIRECT" THEN
+							_PETLogout( hComPort, hServiceLog);
+						ELSE
+							_PETLogout( hComPort, hServiceLog, FALSE);
+						END						
+					END
+					IF sPhoneNo <> "DIRECT" THEN
+						_HangupService( hComPort);
+					END
+				ELSE
+					iReturn = -1;
+				END
+			ELSE
+				iReturn = -1;
+				iConnectRetry = iConnectRetry -1;
+				_HangupService( hComPort);
+				Sleep( 15);
+			END
+			Sleep(2);
+		END
+		_DisconnectPort( hComPort, hServiceLog);
+	ELSE
+		iReturn = -1;
+		LogPagingInfo("Fn._PETService. @(Unable to connect to Port) "+sPort+
+					    " @(may be busy. Error) = "+IntToStr(hComPort), _OPERATION);
+	END
+
+	ghServiceTask[ iServiceNo] = -1;
+	FmtClose( hQueDataFmt);
+
+	RETURN(iReturn);
+END

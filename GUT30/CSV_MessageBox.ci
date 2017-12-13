@@ -1,0 +1,190 @@
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//	 Copyright (C) 2002 Schneider Electric (Australia) Pty Ltd
+//
+// 	FILE:	CSV_MessageBox.ci
+//
+//	DESCRIPTION:
+//
+//		Contains functions to display a message box centered on the active monitor.
+//
+//	PUBLIC FUNCTIONS:
+//
+//				CSV_MessageBox()
+//
+// 	NOTES:
+//		
+//
+//			
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//		FUNCTION NAME	
+//						CSV_MessageBox()
+//
+//		REV	DATE		WHO			DESCRIPTION
+//		0	12/08/02	J.Venz		MultiMonitor version of Message function
+//		1	01/05/09	G.Roberts	Changes to support timeouts and other issues
+//									This version requires a MsgBox.ocx with a version >= 2.1
+//
+//		GENERAL DESCRIPTION
+//
+//			Displays a message box centered on the active monitor screen and waits for the user to select a button. 
+//			Can display up to three buttons, as well as a checkbox.  Can disappear after specified timeout.
+//			The maximum timeout is 30s if this is used. If 0 is passed in then no timeout applies.
+//
+//			NOTES:
+//			* Special note on timeouts
+//			With standard buttons:
+//			Message boxes with no Cancel option (eg iMode=2 Abort, Retry, Ignore) do NOT have the Timeout feature.
+//
+//			With 1,2 or 3 custom buttons:
+//			Due to the way the underlying widget works, 1 or 2 button custom popups do NOT have
+//			the Cancel or Timeout Feature. The 3 button version does have Timeout.
+//			It is recommended when using 2 buttons to use this syntax :
+//			"button1", "button2", "Cancel" 
+//			This will allow your 2 button selection to have a timeout feature. In this example
+//			your cicode needs to use the '2' button reply as meaning cancel (299). 
+//
+//			* Return code 512 has been added in REV 1 for expired timeouts.
+//
+//			* Return code 359 has been added in REV 1 for the case where a 2nd popup is requested with the same title.
+//			It should be noted that the location of the message box is the same so multiple popup boxes can be
+//			problematic.
+//
+//		ARGUMENTS:
+//		
+//			sTitle 		message box title
+//			sPrompt		message box prompt
+//			
+//			iMode:
+//				0 OK button only (default) 
+//				1 OK and Cancel buttons 
+//				2 Abort, Retry, and Ignore buttons 
+//				3 Yes, No, and Cancel buttons 
+//				4 Yes and No buttons 
+//				5 Retry and Cancel buttons 
+//				16 Critical message 
+//				32 Warning query 
+//				48 Warning message 
+//				64 Information message 
+//				0 First button is default (default) 
+//				256 Second button is default 
+//				512 Third button is default 
+//				768 Fourth button is default 
+//				0 Application modal message box (default) 
+//				4096 System modal message box 
+//				16384 Adds Help button to the message box 
+//				65536 Specifies the message box window as the foreground window 
+//				524288 Text is right aligned 
+//				1048576 Specifies text should appear as right-to-left reading on Hebrew and Arabic systems 		
+//
+//			iTimeout	number of seconds before message box disappears
+//			sButton1Text	Text for first button
+//			sButton2Text	Text for second button
+//			sButton3Text	Text for third button
+//
+//		RETURNED VALUE: 
+//			
+//			IF sButtonText1 = "" OR All 3 TextBoxes are in use THEN
+//				0 OK button pressed 
+//				299 Cancel button pressed 
+//				3 Abort button pressed 
+//				4 Retry button pressed 
+//				5 Ignore button pressed 
+//				6 Yes button pressed 
+//				7 No button pressed
+//				New in REV 1:
+//				359 A Popup with the same title is already displayed
+//				512 A timeout has occured
+//			ELSE	
+//				0 = First button pressed
+//				1 = second button pressed
+//				2 = third button pressed
+//				New in REV 1:
+//				359 A Popup with the same title is already displayed
+//				512 A timeout has occured
+//
+//			IF sCheckBoxText <> "" Then 1024 is added to the above result.
+//
+//			Note: Should only ONE popup at a time be required, this would best be handled by using a global
+//			variable in the cicode below to vet the call.
+//
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+INT
+FUNCTION
+CSV_MessageBox(STRING sTitle, STRING sPrompt, INT iMode = 0, INT iTimeout = 0, STRING sButton1Text = "",
+		STRING sButton2Text = "", STRING sButton3Text = "", STRING sCheckboxText = "")
+	
+	INT		iResponse = -1;
+	INT		iError;
+	STRING	sObjClass;
+	OBJECT	objMessageBoxEx;
+	INT		iCheckboxResult;
+	INT		iCallError;
+	
+	ErrSet(1);
+	
+	IsError();
+	sObjClass = "MsgBoxEx.Message";
+	objMessageBoxEx = CreateObject(sObjClass);
+	iError = IsError();
+	
+	IF NOT iError THEN
+	
+		iCallError = _ObjectCallMethod(objMessageBoxEx, "MessageBoxEx", sTitle, sPrompt, iMode,
+			iTimeout, sButton1Text, sButton2Text, sButton3Text, sCheckboxText);
+		
+		iError = IsError();		! Call / Argument / OCX registration errors
+		
+		WHILE (iResponse = -1) AND NOT iError AND (iCallError = 0) DO
+			
+			iResponse = _ObjectGetProperty(objMessageBoxEx, "Response");
+			
+			IF iResponse = -1 THEN
+			
+				iError = IsError();
+				SleepMs(200);
+			ELSE
+			
+				IF sCheckboxText <> "" THEN
+					iCheckBoxResult = _ObjectGetProperty(objMessageBoxEx, "Checkbox");
+				END
+			END
+		END
+				
+		! all cases to have these tests applied
+		SELECT CASE iResponse
+		CASE 8
+			iResponse = 299;		! Cancel
+		CASE 9
+			iResponse = 512;		! Timeout
+		END SELECT	
+				
+	ELSE
+		iError = 0;
+		! Display default message box if ActiveX message box not created		
+		iResponse = Message(sTitle, sPrompt, iMode);
+		
+	END	
+	
+	IF iError THEN
+		iResponse = -1;
+	ELSE
+		IF 	iCallError = 10 THEN
+			! Special error which means POPUP already being displayed
+			iResponse = 359;		! Popup already shown
+		END
+		IF iCheckboxResult = 1 THEN
+			iResponse = iResponse + 1024;
+		END
+	END
+	
+	ErrSet(0);
+	
+	RETURN iResponse;
+	
+END

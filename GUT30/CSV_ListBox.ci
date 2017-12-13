@@ -1,0 +1,1489 @@
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//	 Copyright (C) 2002 Citect Pty Limited
+//
+// 	FILE:	CSV_ListBox.ci
+//
+//	DESCRIPTION:
+//
+//		Contains functions to support ListBox objects.
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	14.02.07	/	Schneider Electrik GmbH
+//	Version				74.33.81.02
+//
+//	PUBLIC FUNCTIONS:
+//
+//				CSV_ListBox_Create()
+//				CSV_ListBox_Destroy()
+//				CSV_ListBox_AddItem()
+//				CSV_ListBox_RemoveItem()
+//				CSV_ListBox_Clear()
+//				CSV_ListBox_SetText()
+//				CSV_ListBox_Show()
+//				CSV_ListBox_Hide()
+//				CSV_ListBox_SelectCategories()
+//				CSV_ListBox_GetSelectedItem()
+//				CSV_ListBox_GetSelectedItemID()
+//				CSV_ListBox_GetSelectedItemCategory()
+//				CSV_ListBox_GetItem()
+//				CSV_ListBox_GetItemID()
+//				CSV_ListBox_GetCategory()
+//				CSV_ListBox_Visible()
+//				CSV_ListBox_SelectTags()
+//				CSV_ListBox_SelectTrends()
+//				CSV_ListBox_TagFormat()
+//				CSV_ListBox_GetTagName()
+//				CSV_ListBox_GetTagComment()
+//				CSV_ListBox_GetTagDescFromTag()
+//				CSV_ListBox_GetTrendDescFromTag()
+//
+// 	NOTES:
+//		
+//
+//			
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+// Module Variables associated with ActiveX list object
+STRING	msObjectClass = "CiListBox.ItemListBox";	! Name of ActiveX list box object						
+INT		miListVisible[100];							! Tracks which lists are currently visible
+
+OBJECT  mobjList;
+INT		mbListObjectCreated;
+INT		mhVariableTagList = -1;
+INT		mbDebug = 0;
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//		FUNCTION NAME	
+//						CSV_ListBox_Create()
+//
+//		REV	DATE		WHO			DESCRIPTION
+//		0	16/10/02	J.Venz		Original
+//
+//     	GENERAL DESCRIPTION
+//			
+//			Create ActiveX list object.
+//
+//			Note:
+//				This object displays a form that contains a combobox. 
+//
+//				The form may be displayed or hidden at any time.  Items may be added to 
+//				or removed from the combobox at any time (whether or not the combobox is 
+//				currently being displayed).  The combobox remains in memory until the 
+//				CSV_List_Destroy() function is called for that combobox.
+//	
+//
+// 		ARGUMENTS:
+//
+//     	RETURNED VALUE: 
+//
+//			0 if list box was created successfully, otherwise an error.
+//
+//		PSEUDO CODE:
+//
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+PRIVATE
+INT
+FUNCTION
+_CSV_ListBox_CreateObj()
+
+	STRING	sObjClass;
+	INT		iError;
+	
+	ErrSet(1);
+	IsError();
+		
+	! Create object -> object must always exist in memory
+	mobjList = CreateObject(msObjectClass);
+
+	iError = IsError();
+	
+	ErrSet(0);
+		
+	SleepMS(500);
+		
+	RETURN iError;
+	
+END
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//		FUNCTION NAME	
+//						CSV_ListBox_Create()
+//
+//		REV	DATE		WHO			DESCRIPTION
+//		0	16/10/02	J.Venz		Original
+//
+//     	GENERAL DESCRIPTION
+//			
+//			Create new list.
+//
+// 		ARGUMENTS:
+//
+//     	RETURNED VALUE: 
+//
+//			Handle to the created list if list box was created successfully, otherwise -1.
+//
+//		PSEUDO CODE:
+//
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+INT
+FUNCTION
+CSV_ListBox_Create()
+
+	INT		iError;
+	INT		hList;
+	
+	ErrSet(1);
+	IsError();
+		
+	IF NOT mbListObjectCreated THEN
+		iError = _CSV_ListBox_CreateObj();
+		IF iError = 0 THEN
+			mbListObjectCreated = 1;
+		ELSE
+			RETURN -1
+		END
+	END
+
+	hList = _ObjectCallMethod(mobjList, "CreateList");
+	
+	iError = IsError();
+	
+	IF iError <> 0 THEN
+		
+		hList = -1
+	END
+	
+	ErrSet(0);
+		
+	RETURN hList;
+	
+END
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//		FUNCTION NAME	
+//						CSV_ListBox_Destroy()
+//
+//		REV	DATE		WHO			DESCRIPTION
+//		0	16/10/02	J.Venz		Original
+//
+//     	GENERAL DESCRIPTION
+//			
+//			Destroy ActiveX list object.  
+//
+//			Note:
+//				Call this function if listbox is no longer required to free memory.		
+//
+// 		ARGUMENTS:
+//
+//			hList		- Handle to list object
+//
+//     	RETURNED VALUE: 
+//
+//			0 if successful, otherwise -1
+//
+//		PSEUDO CODE:
+//
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+INT
+FUNCTION
+CSV_ListBox_Destroy(INT hList)
+
+	INT		iError;
+	INT		iSuccess;
+	
+	ErrSet(1);
+	IsError();
+
+	iSuccess = _ObjectCallMethod(mobjList, "DestroyList", hList);
+	
+	iError = IsError();
+	
+	IF iError <> 0 OR iSuccess <> 1 THEN
+		
+		iSuccess = -1;
+	ELSE
+		iSuccess = 0;
+	END
+	
+	ErrSet(0);
+		
+	RETURN iSuccess;
+	
+END
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//		FUNCTION NAME	
+//						CSV_ListBox_AddItem()
+//
+//		REV	DATE		WHO			DESCRIPTION
+//		0	16/10/02	J.Venz		Original
+//		1	22/01/03	J.Venz		Added sItemID argument
+//
+//     	GENERAL DESCRIPTION
+//			
+//			Add item to combo box in ActiveX tag list object.
+//
+// 		ARGUMENTS:
+//
+//			hList		- Handle to list object
+//			sItem		- Item text to add to list.
+//			sCategory	- Category of item (list can be filtered by category)
+//			sItemID		- ID of item (optional, but if used it should be unique for each item)
+//
+//     	RETURNED VALUE: 
+//
+//			0 if successful, otherwise -1
+//
+//		PSEUDO CODE:
+//
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+INT
+FUNCTION
+CSV_ListBox_AddItem(INT hList, STRING sItem, STRING sCategory = "", STRING sItemID = "")
+	
+	INT		iError;
+	INT		iSuccess;
+	
+	ErrSet(1);
+	IsError();
+
+	iSuccess = _ObjectCallMethod(mobjList, "AddItem", hList, sItem, sCategory, sItemID);
+	
+	iError = IsError();
+	
+	IF iError <> 0 OR iSuccess <> 1 THEN
+		
+		iSuccess = -1;
+	ELSE
+		iSuccess = 0;
+	END
+	
+	ErrSet(0);
+		
+	RETURN iSuccess;	
+	
+END
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//		FUNCTION NAME	
+//						CSV_ListBox_RemoveItem()
+//
+//		REV	DATE		WHO			DESCRIPTION
+//		0	16/10/02	J.Venz		Original
+//		1	22/01/03	J.Venz		Added sItemID argument
+//
+//     	GENERAL DESCRIPTION
+//			
+//			Remove item from combo box in ActiveX list object.
+//
+// 		ARGUMENTS:
+//
+//			hList		- Handle to list object
+//			sItem		- Item to remove from list.
+//			sCategory	- Category of item.
+//			sItemID		- ID of item
+//
+//				Note:
+//						Two options:  
+//							1.  Specify both sItem AND sCategory, 
+//						OR 
+//							2.	Set sItem = "", sCategory = "", and specify only sItemID.
+//  
+//     	RETURNED VALUE: 
+//
+//			0 if successful, otherwise -1
+//
+//		PSEUDO CODE:
+//
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+INT
+FUNCTION
+CSV_ListBox_RemoveItem(INT hList, STRING sItem, STRING sCategory, STRING sItemID = "")
+	
+	INT		iError;
+	INT		iSuccess;
+	
+	ErrSet(1);
+	IsError();
+
+	iSuccess = _ObjectCallMethod(mobjList, "RemoveItem", hList, sItem, sCategory, sItemID);
+	
+	iError = IsError();
+	
+	IF iError <> 0 OR iSuccess <> 1 THEN
+		
+		iSuccess = -1;
+	ELSE
+		iSuccess = 0;
+	END
+	
+	ErrSet(0);
+		
+	RETURN iSuccess;		
+	
+END
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//		FUNCTION NAME	
+//						CSV_ListBox_Clear()
+//
+//		REV	DATE		WHO			DESCRIPTION
+//		0	16/10/02	J.Venz		Original
+//
+//     	GENERAL DESCRIPTION
+//			
+//			Clear ActiveX list object.  	
+//
+// 		ARGUMENTS:
+//
+//			hList		- Handle to list object
+//
+//     	RETURNED VALUE: 
+//
+//			0 if successful, otherwise -1
+//
+//		PSEUDO CODE:
+//
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+INT
+FUNCTION
+CSV_ListBox_Clear(INT hList, STRING sCategory = "")
+
+	INT		iError;
+	INT		iSuccess;
+	
+	ErrSet(1);
+	IsError();
+
+	iSuccess = CSV_ListBox_SelectCategories(hList, sCategory);
+	
+	IF iSuccess = 0 THEN
+		iSuccess = _ObjectCallMethod(mobjList, "ClearList", hList);
+	ELSE
+		iSuccess = -1
+	END
+	
+	iError = IsError();
+	
+	IF iError <> 0 OR iSuccess <> 1 THEN
+		
+		iSuccess = -1;
+	ELSE
+		iSuccess = 0;
+	END
+	
+	ErrSet(0);
+		
+	RETURN iSuccess;
+	
+END
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//		FUNCTION NAME	
+//						CSV_ListBox_SetText()
+//
+//		REV	DATE		WHO			DESCRIPTION
+//		0	16/10/02	J.Venz		Original
+//
+//     	GENERAL DESCRIPTION
+//			
+//			Set title, description, OK button, and Cancel button text on ActiveX list object.
+//
+// 		ARGUMENTS:
+//
+//			hList		- Handle to list object
+//			sTitle		- Title appearing on form
+//			sDesc		- Description appearing on form
+//			sOK			- Text displayed on 'OK' button
+//			sCancel		- Text displayed on 'Cancel' button
+//
+//     	RETURNED VALUE: 
+//
+//			0 if successful, otherwise -1
+//
+//		PSEUDO CODE:
+//
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+INT
+FUNCTION
+CSV_ListBox_SetText(INT hList, STRING sTitle, STRING sDesc = "", STRING sOK = " @(OK) ", STRING sCancel = " @(Cancel)")	
+	
+	INT		iError;
+	INT		iSuccess;
+	STRING	sText;
+		
+	ErrSet(1);
+	IsError();
+
+	! Set title, description, ok button, and cancel button text	
+	sText = sTitle + "," + sDesc + "," + sOK + "," + sCancel;
+	
+	iSuccess = _ObjectCallMethod(mobjList, "SetText", hList, sText);
+	
+	iError = IsError();
+	
+	IF iError <> 0 OR iSuccess <> 1 THEN
+		
+		iSuccess = -1;
+	ELSE
+		iSuccess = 0;
+	END
+	
+	ErrSet(0);
+		
+	RETURN iSuccess;		
+		
+END
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//		FUNCTION NAME	
+//						CSV_ListBox_Show()
+//
+//		REV	DATE		WHO			DESCRIPTION
+//		0	16/10/02	J.Venz		Original
+//
+//     	GENERAL DESCRIPTION
+//			
+//			Display list of tags. 
+//
+// 		ARGUMENTS:
+//
+//			hList		- Handle to list object
+//			sTitle		- Title appearing on form
+//			sDesc		- Description appearing on form
+//			sOK			- Text displayed on 'OK' button
+//			sCancel		- Text displayed on 'Cancel' button
+//			iX			- x coordinate of left corner, or -9999 to center horizontally on active monitor
+//			iY			- y coordinate of top corner, or -9999 to center vertically
+//
+//     	RETURNED VALUE: 
+//
+//			Item selected from list (returns empty string if no item selected)
+//
+//		PSEUDO CODE:
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	14.07.15	Steiner		Multimonitor
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+STRING
+FUNCTION
+CSV_ListBox_Show(INT hList, STRING sTitle, STRING sDesc = "", STRING sOK = " @(OK) ", STRING sCancel = " @(Cancel) ",
+					INT iX = -9999, INT iY = -9999, STRING sSetSelection = "")
+	
+	STRING 	sSelection;
+	STRING	sText;
+	INT		iListUpdated;
+	INT		iError;
+	INT		iSuccess;
+
+	ErrSet(1);
+	
+	miListVisible[hList] = 1;
+	giPosX = iX;
+	giPosY = iY;
+	IF giPosX = -9999 THEN
+		UAG_GetMousePos_mitte(560,360);
+//		PageTransformCoords(WinNumber(), giPosX, giPosY, giPosX, giPosY, 0)	
+	END
+	
+	CSV_ListBox_SetText(hList, sTitle, sDesc, sOK, sCancel);
+	
+	IsError();
+	! Show list box
+
+	iSuccess = _ObjectCallMethod(mobjList, "ShowList", hList, giPosX, giPosY);
+	
+	IF iSuccess and sSetSelection <> "" THEN
+		
+		_ObjectCallMethod(mobjList, "SelectItem", hList, sSetSelection);		
+	END
+		
+	iError = IsError();
+	
+	IF NOT iError THEN
+	
+		! Wait for tag to be selected from list
+		WHILE iListUpdated = 0 AND NOT iError DO
+	
+			iListUpdated = _ObjectCallMethod(mobjList, "GetListUpdated", hList);
+			! iListUpdated =  1 if selection has been made
+			! 				 -1 if selection has been cancelled	
+			iError = IsError();	
+	
+			SleepMS(50);
+	
+		END	
+		
+		IF NOT iError THEN
+			sSelection = CSV_ListBox_GetSelectedItem(hList);
+		END
+	END
+
+	miListVisible[hList] = 0;	
+		
+	ErrSet(0);
+
+	RETURN sSelection;	
+		
+END
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//		FUNCTION NAME	
+//						CSV_ListBox_Hide()
+//
+//		REV	DATE		WHO			DESCRIPTION
+//		0	16/10/02	J.Venz		Original
+//
+//     	GENERAL DESCRIPTION
+//			
+//			Hide list.
+//
+// 		ARGUMENTS:
+//
+//			hList		- Handle to list object
+//
+//     	RETURNED VALUE: 
+//
+//			0 if successful, otherwise -1
+//
+//		PSEUDO CODE:
+//
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+INT
+FUNCTION
+CSV_ListBox_Hide(INT hList)
+	
+	INT		iError;
+	INT		iSuccess;
+	
+	ErrSet(1);
+	IsError();
+
+	iSuccess = _ObjectCallMethod(mobjList, "HideList", hList);
+	
+	iError = IsError();
+	
+	IF iError <> 0 OR iSuccess <> 1 THEN
+		
+		iSuccess = -1;
+	ELSE
+		iSuccess = 0;
+	END
+	
+	ErrSet(0);
+		
+	RETURN iSuccess;		
+	
+END
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//		FUNCTION NAME	
+//						CSV_ListBox_GetSelectedItem()
+//
+//		REV	DATE		WHO			DESCRIPTION
+//		0	16/10/02	J.Venz		Original
+//
+//     	GENERAL DESCRIPTION
+//			
+//			Called when list is displayed.
+//			Returns the selected item.
+//
+// 		ARGUMENTS:
+//
+//			hList		- Handle to list object
+//
+//     	RETURNED VALUE: 
+//
+//			Item selected from list.
+//
+//		PSEUDO CODE:
+//
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+STRING
+FUNCTION
+CSV_ListBox_GetSelectedItem(INT hList)
+
+	STRING	sSelection;
+	INT		iListUpdated;
+	INT		iError;
+	
+	ErrSet(1);
+
+	! Get selection	
+	sSelection = _ObjectCallMethod(mobjList, "GetItemSelected", hList);
+	
+	ErrSet(0);
+	
+	RETURN sSelection;
+	
+END
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//		FUNCTION NAME	
+//						CSV_ListBox_GetSelectedItemID()
+//
+//		REV	DATE		WHO			DESCRIPTION
+//		0	22/01/03	J.Venz		Original
+//
+//     	GENERAL DESCRIPTION
+//			
+//			Call after item has been selected from list to retreive its Item ID.
+//
+// 		ARGUMENTS:
+//
+//			hList		- Handle to list object
+//
+//     	RETURNED VALUE: 
+//
+//			ItemID of item selected from list.
+//
+//		PSEUDO CODE:
+//
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+STRING
+FUNCTION
+CSV_ListBox_GetSelectedItemID(INT hList)
+
+	STRING	sItemID;
+	INT		iListUpdated;
+	INT		iError;
+	
+	ErrSet(1);
+
+	! Get selection	
+	sItemID = _ObjectCallMethod(mobjList, "GetItemSelectedID", hList);
+	
+	ErrSet(0);
+	
+	RETURN sItemID;
+	
+END
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//		FUNCTION NAME	
+//						CSV_ListBox_GetSelectedItemCategory()
+//
+//		REV	DATE		WHO			DESCRIPTION
+//		0	16/10/02	J.Venz		Original
+//
+//     	GENERAL DESCRIPTION
+//			
+//			Call after selection has been made from list.
+//			Returns the category of the selected item.
+//
+// 		ARGUMENTS:
+//
+//			hList		- Handle to list object
+//
+//     	RETURNED VALUE: 
+//
+//			Category of item selected from list.
+//
+//		PSEUDO CODE:
+//
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+STRING
+FUNCTION
+CSV_ListBox_GetSelectedItemCategory(INT hList)
+
+	STRING	sCategory;
+	INT		iError;
+	
+	ErrSet(1);
+
+	! Get category	
+	sCategory = _ObjectCallMethod(mobjList, "GetItemSelectedCategory", hList);
+	
+	ErrSet(0);
+	
+	RETURN sCategory;
+	
+END
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//		FUNCTION NAME	
+//						CSV_ListBox_GetItem()
+//
+//		REV	DATE		WHO			DESCRIPTION
+//		0	24/01/03	J.Venz		Original
+//
+//     	GENERAL DESCRIPTION
+//			
+//			Returns the item text associated with a given ItemID.
+//
+// 		ARGUMENTS:
+//
+//			hList		- Handle to list object
+//			sItemID		- ItemID of item
+//
+//     	RETURNED VALUE: 
+//
+//			Item having ItemID = sItemID.
+//
+//		PSEUDO CODE:
+//
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+STRING
+FUNCTION
+CSV_ListBox_GetItem(INT hList, STRING sItemID)
+
+	STRING	sItem;
+	INT		iError;
+	
+	ErrSet(1);
+
+	! Get selection	
+	sItem = _ObjectCallMethod(mobjList, "GetItem", hList, sItemID);
+
+	ErrSet(0);
+	
+	RETURN sItem;
+	
+END
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//		FUNCTION NAME	
+//						CSV_ListBox_GetItem()
+//
+//		REV	DATE		WHO			DESCRIPTION
+//		0	08/07/03	J.Venz		Original
+//
+//     	GENERAL DESCRIPTION
+//			
+//			Returns the item ID associated with a given Item text.
+//
+// 		ARGUMENTS:
+//
+//			hList		- Handle to list object
+//			sItem		- Item text (as it appears in the listbox)
+//
+//     	RETURNED VALUE: 
+//
+//			ItemID
+//
+//		PSEUDO CODE:
+//
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+STRING
+FUNCTION
+CSV_ListBox_GetItemID(INT hList, STRING sItem)
+
+	STRING	sItemID;
+	INT		iError;
+	
+	ErrSet(1);
+
+	! Get selection	
+	sItemID = _ObjectCallMethod(mobjList, "GetID", hList, sItem);
+
+	ErrSet(0);
+	
+	RETURN sItemID;
+	
+END
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//		FUNCTION NAME	
+//						CSV_ListBox_GetCategory()
+//
+//		REV	DATE		WHO			DESCRIPTION
+//		0	16/10/02	J.Venz		Original
+//
+//     	GENERAL DESCRIPTION
+//			
+//			Returns the item category associated with a given ItemID.
+//
+// 		ARGUMENTS:
+//
+//			hList		- Handle to list object
+//			sItemID		- ItemID of item
+//
+//     	RETURNED VALUE: 
+//
+//			Category of item having ItemID = sItemID.
+//
+//		PSEUDO CODE:
+//
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+STRING
+FUNCTION
+CSV_ListBox_GetCategory(INT hList, STRING sItemID)
+
+	STRING	sCategory;
+	INT		iError;
+	
+	ErrSet(1);
+
+	! Get category	
+	sCategory = _ObjectCallMethod(mobjList, "GetCategory", hList, sItemID);
+	
+	ErrSet(0);
+	
+	RETURN sCategory;
+	
+END
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//		FUNCTION NAME	
+//						CSV_ListBox_SelectCategories()
+//
+//		REV	DATE		WHO			DESCRIPTION
+//		0	16/10/02	J.Venz		Original
+//
+//     	GENERAL DESCRIPTION
+//			
+//			Select categories of items to be displayed in list (filters list to display only items having
+//			specified category.  More than one category can be displayed by separating each category with a 
+//			comma (and no spaces between categories).
+//			Categories = "" -> removes category filter.
+//
+// 		ARGUMENTS:
+//
+//			hList		- Handle to list object
+//			sCategories - Categories to filter list for
+//
+//     	RETURNED VALUE: 
+//
+//			0 if successful, otherwise -1
+//
+//		PSEUDO CODE:
+//
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+INT
+FUNCTION
+CSV_ListBox_SelectCategories(INT hList, STRING sCategories = "")	
+	
+	INT		iError;
+	INT		iSuccess;
+	STRING	sText;
+		
+	ErrSet(1);
+	IsError();
+
+	iSuccess = _ObjectCallMethod(mobjList, "SelectCategories", hList, sCategories);
+	
+	iError = IsError();
+	
+	IF iError <> 0 OR iSuccess <> 1 THEN
+		
+		iSuccess = -1;
+	ELSE
+		iSuccess = 0;
+	END
+	
+	ErrSet(0);
+		
+	RETURN iSuccess;		
+		
+END
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//		FUNCTION NAME	
+//						CSV_ListBox_Visible()
+//
+//		REV	DATE		WHO			DESCRIPTION
+//		0	16/10/02	J.Venz		Original
+//
+//     	GENERAL DESCRIPTION
+//			
+//			Check if a ListBox is currently visible.
+//
+// 		ARGUMENTS:
+//
+//			hObject		- Handle to list object
+//
+//     	RETURNED VALUE: 
+//
+//			1 if list is currently visible, otherwise 0
+//
+//		PSEUDO CODE:
+//
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+INT
+FUNCTION
+CSV_ListBox_Visible(INT hList)
+	
+	INT		iVisible;
+
+	IF hList >= 0 AND hList < 100 THEN
+		
+		iVisible = miListVisible[hList];
+	END
+	
+	RETURN iVisible	
+	
+END
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//		FUNCTION NAME	
+//						CSV_ListBox_SelectTags()
+//
+//		REV	DATE		WHO			DESCRIPTION
+//		0	22/10/02	J.Venz		Original
+//
+//     	GENERAL DESCRIPTION
+//			
+//			Creates an ActiveX object which provides a combo box to allow a tag to be selected from a list.
+//			If a tag list object already exists a new instance of it is created.
+//	
+// 		ARGUMENTS:
+//
+//     	RETURNED VALUE: 
+//
+//			Handle to tag list object.
+//
+//		PSEUDO CODE:
+//
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+INT
+FUNCTION
+CSV_ListBox_SelectTags()
+
+	INT		hTagList = -1;
+	INT		hVariableTagList;
+
+	IF mhVariableTagList = -1 THEN
+	
+		hTagList = _CSV_ListBox_CreateTagList();
+		mhVariableTagList = hTagList;
+		
+	ELSE
+		hVariableTagList = mhVariableTagList;
+		hTagList = _ObjectCallMethod(mobjList, "CopyList", hVariableTagList);
+
+	END
+	
+	RETURN hTagList;
+	
+END
+
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//		FUNCTION NAME	
+//						_CSV_ListBox_CreateTagList()
+//
+//		REV	DATE		WHO			DESCRIPTION
+//		0	22/10/02	J.Venz		Original
+//
+//     	GENERAL DESCRIPTION
+//			
+//			Creates an ActiveX object which provides a combo box to allow a variable tag to be selected from a list.
+//			The _Variabl.RDB file is then processed to find all variable tags defined in the system.
+//			These tags are then added to the combo box list.  
+//			
+//			Note:
+//				The ActiveX object remains in memory whilst Citect is running.  This ensures that tags need only to be
+//				added to the list once.  Thereafter, every time the list is displayed all tags will be immediately
+//				available.  Using Citect's 'FormComboBox' function to list tags would require the list to be created
+//				each time the combo box is to be displayed.  The ActiveX object greatly improves performance.
+//				
+// 		ARGUMENTS:
+//
+//     	RETURNED VALUE: 
+//
+//		PSEUDO CODE:
+//
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+INT
+FUNCTION
+_CSV_ListBox_CreateTagList()
+
+	INT		hLocVarRDB		= -1;
+	INT		hVarRDB			= -1;
+	INT		hClustRDB		= -1; 
+	STRING	sTagName;
+	STRING	sTagComment;
+	STRING	sTagType;
+	STRING	sTagTypeNum;
+	INT		hTagList = -1;
+	INT		iSuccess;
+	INT		iTime1, iTime2;
+	INT		nClusters	= 0;
+	STRING	sCluster	= "";
+	
+	hTagList = CSV_ListBox_Create();		! Create ActiveX object to store tags	
+	IF hTagList = -1 THEN
+		
+		RETURN -1;
+	END
+		
+	iTime1 = SysTime();
+
+    hClustRDB = RdbOpen("_CLUSTER");
+    IF hClustRDB >= 0 THEN
+    	nClusters = RdbNoRec(hClustRDB);	
+    	RdbClose(hClustRDB);
+    	hClustRDB = -1;
+	END
+		
+	hVarRDB = RdbOpen ("_Variabl");	! Access run time variable database
+	IF hVarRDB <> -1 THEN	
+		RDBFirstRec(hVarRDB);
+		
+		WHILE NOT RdbEOF (hVarRDB) DO	! For all variables in system	
+			sTagName = RdbGet(hVarRDB, "TAG");	! Get name of variable			
+			IF sTagName <> "" THEN
+		        IF (nClusters > 1) THEN
+                	sCluster = RdbGet(hVarRDB, "Cluster");
+                	sTagName = sCluster + "." + sTagName;	
+                END
+
+				sTagTypeNum = TagGetProperty(sTagName, "Type", 0);	! Get variable type
+				sTagType	= _CSV_ListBox_GetVariableType(sTagTypeNum);
+				sTagName	= CSV_ListBox_GetTagDescFromTag(sTagName);	! Variable name + comment
+			 	
+				CSV_ListBox_AddItem(hTagList, sTagName, sTagType);	! Add tag to list
+	      	END
+
+			RDBNextRec(hVarRDB);
+		END
+			    
+		RdbClose(hVarRDB);
+		hVarRDB = -1;
+	END
+	
+	hLocVarRDB = RdbOpen("_LOCVAR");
+    IF hLocVarRDB >= 0 THEN
+            RdbFirstRec(hLocVarRDB);
+
+			WHILE NOT RdbEOF (hLocVarRDB) DO	! For all variables in system	
+				sTagName = RdbGet(hLocVarRDB, "Name");	! Get name of variable			
+				IF sTagName <> "" THEN
+	
+					sTagTypeNum = TagGetProperty(sTagName, "Type", 0);	! Get variable type
+					sTagType	= _CSV_ListBox_GetVariableType(sTagTypeNum);
+					sTagName	= CSV_ListBox_GetTagDescFromTag(sTagName);	! Variable name + comment
+				 	
+					CSV_ListBox_AddItem(hTagList, sTagName, sTagType);	! Add tag to list
+		      	END
+	
+				RdbNextRec(hLocVarRDB);
+			END
+            
+            RdbClose(hLocVarRDB);
+            hLocVarRDB = -1;
+    END
+
+	iTime2 = SysTime;
+	IF mbDebug THEN
+		TraceMsg("Tag list creation time: " + IntToStr(iTime2 - iTime1));
+	END
+		
+	RETURN hTagList;
+
+END
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//		FUNCTION NAME	
+//			CSV_ListBox_SelectTrends
+//
+//     	GENERAL DESCRIPTION
+//			
+//			Creates an ActiveX object which provides a combo box to allow a trend tag to be selected from a list.
+//			The TrnBrowse interface is used to find all trend tags defined in the system.  These tags are THEN added TO
+//			the combo box list.  The list is created and destructed every call to insure that if any trends have been added,
+//			removed or changed in the system since last time, the information is refreshed.  
+//				
+// 		ARGUMENTS:
+//			none
+//     	RETURNED VALUE:
+//			A handle to the new list box created or -1 if failed. 
+//
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+INT
+FUNCTION
+CSV_ListBox_SelectTrends(STRING sCluster)
+
+	INT		hTrendBrowse	= -1;
+	INT		status			= 0;
+	STRING	sTagName;
+	STRING	sTagComment;
+	STRING	sTagType;
+	STRING	sTagTypeNum;
+	INT		bSPCFlag;
+	INT		hTagList = -1;
+	INT		iSuccess;
+	INT		iTime1, iTime2;
+	
+	hTagList = CSV_ListBox_Create();		! Create ActiveX object to store tags
+	
+	IF hTagList = -1 THEN
+		
+		RETURN -1;
+	END
+		
+	iTime1 = SysTime();
+
+	hTrendBrowse = TrnBrowseOpen("", "NAME, COMMENT, SPCFLAG", sCluster);
+	IF hTrendBrowse <> -1 THEN	
+
+		status = TrnBrowseFirst(hTrendBrowse);
+
+		WHILE status = 0 DO	
+
+			sTagName = TrnBrowseGetField(hTrendBrowse, "NAME");
+			
+			IF sTagName <> "" THEN
+
+				bSPCFlag = StrToInt(TrnBrowseGetField(hTrendBrowse, "SPCFLAG"));	
+				
+				IF bSPCFlag THEN
+				
+					sTagType = "SPC";
+				ELSE
+					IF StrLeft(sTagName,2) = "__" THEN
+				
+						sTagType = "TRENDX";
+					ELSE
+						sTagType = "TREND";
+					END
+				END
+
+				sTagComment = TrnBrowseGetField(hTrendBrowse, "COMMENT");	! Get comment
+												
+				sTagName = CSV_ListBox_TagFormat(sTagName, sTagComment);	! Trend name + comment
+			 	
+				CSV_ListBox_AddItem(hTagList, sTagName, sTagType);	! Add tag to list
+
+	      	END
+
+			status = TrnBrowseNext(hTrendBrowse);
+		END
+		
+		TrnBrowseClose(hTrendBrowse);
+		
+		iTime2 = SysTime;
+		IF mbDebug THEN
+		
+			TraceMsg("Tag list creation time: " + IntToStr(iTime2 - iTime1));
+			
+		END
+		
+	END
+	
+	RETURN hTagList;
+
+END
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//		FUNCTION NAME	
+//						CSV_ListBox_TagFormat()
+//
+//		REV	DATE		WHO			DESCRIPTION
+//		0	22/10/02	J.Venz		Original
+//
+//     	GENERAL DESCRIPTION
+//			
+//			Formats a string to contain the name of the specified variable followed by, in brackets, the comment
+//			associated with the variable.
+//
+//			Called before adding a variable to a drop down list of variables available for trending.  Formats
+//			each item in the drop down list.
+// 
+// 		ARGUMENTS:
+//
+//			sVariable		- Name of variable to be formatted
+//
+//     	RETURNED VALUE: 
+//
+//		PSEUDO CODE:
+//
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+STRING
+FUNCTION
+CSV_ListBox_TagFormat(STRING sVariable, STRING sComment)
+
+	STRING	sItem;
+	
+	sItem = sVariable;
+	
+	IF sComment <> "" THEN
+	
+		sItem = sItem + " ( " + sComment + " )";
+		
+	END
+	
+	
+	RETURN sItem;
+	
+END
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//		FUNCTION NAME	
+//						CSV_ListBox_GetTagName()
+//
+//		REV	DATE		WHO			DESCRIPTION
+//		0	22/10/02	J.Venz		Original
+//
+//     	GENERAL DESCRIPTION
+//			
+//			Extracts the tag name from a string containing the name followed by, in brackets, 
+//			the tag comment. 
+//
+// 		ARGUMENTS:
+//
+//			sItem		- string containing tag name and comment
+//
+//     	RETURNED VALUE: 
+//
+//			Name of tag contained in string sItem
+//
+//		PSEUDO CODE:
+//
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+STRING
+FUNCTION
+CSV_ListBox_GetTagName(STRING sItem)
+
+	STRING	sVariable;
+
+	sVariable = sItem;
+	! Variable is first word of string sItem
+	sVariable = StrWord(sVariable);
+		
+	RETURN sVariable;
+	
+END 
+	
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//		FUNCTION NAME	
+//						CSV_ListBox_GetTagComment()
+//
+//		REV	DATE		WHO			DESCRIPTION
+//		0	22/10/02	J.Venz		Original
+//
+//     	GENERAL DESCRIPTION
+//			
+//			Extracts the tag comment from a string containing the name followed by, in brackets, 
+//			the tag comment. 
+//
+// 		ARGUMENTS:
+//
+//			sItem		- string containing tag name and comment
+//
+//     	RETURNED VALUE: 
+//
+//			Comment of tag contained in string sItem
+//
+//		PSEUDO CODE:
+//
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+STRING
+FUNCTION
+CSV_ListBox_GetTagComment(STRING sItem)
+
+	STRING	sVariable;
+	STRING	sComment;
+	INT		iLen;
+
+	! Variable is first word of string sItem
+	sVariable = StrWord(sItem);
+	
+	iLen = StrLength(sItem);
+
+	IF iLen > 2 THEN
+	
+		sComment = StrTrim(StrMid(sItem, 1, iLen - 2));
+	END
+		
+	RETURN sComment;
+	
+END 
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//		FUNCTION NAME	
+//						CSV_ListBox_GetTagDescFromTag()
+//
+//		REV	DATE		WHO			DESCRIPTION
+//		0	22/10/02	J.Venz		Original
+//
+//     	GENERAL DESCRIPTION
+//			
+//
+// 		ARGUMENTS:
+//
+//			sTrendTag		- Name of tag
+//
+//     	RETURNED VALUE: 
+//
+//			String containing formatted tag name and comment
+//
+//		PSEUDO CODE:
+//
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+STRING 
+FUNCTION 
+CSV_ListBox_GetTagDescFromTag (STRING sTagName)
+
+	STRING	sComment;
+	
+	IF sTagName = "" THEN
+		RETURN "";
+	END
+	
+	sComment = TagGetProperty(sTagName, "Description", 0);
+	sTagName = CSV_ListBox_TagFormat(sTagName, sComment);
+		
+	RETURN sTagName;
+
+END	
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//		FUNCTION NAME	
+//						CSV_ListBox_GetTrendDescFromTag()
+//
+//		REV	DATE		WHO			DESCRIPTION
+//		0	22/10/02	J.Venz		Original
+//
+//     	GENERAL DESCRIPTION
+//			
+//
+// 		ARGUMENTS:
+//
+//			sTrendTag		- Name of trend tag
+//
+//     	RETURNED VALUE: 
+//
+//			String containing formatted trend tag name and comment
+//
+//		PSEUDO CODE:
+//
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+STRING 
+FUNCTION 
+CSV_ListBox_GetTrendDescFromTag (STRING sTrendTag)
+
+	INT		hTrendDev;
+	INT		iError;
+	STRING	sComment;
+	
+	IF sTrendTag = "" THEN 
+		
+		RETURN "" 	
+	END
+	
+	sComment = _FindCommentFromPen(sTrendTag);
+	sTrendTag = CSV_ListBox_TagFormat(sTrendTag, sComment);
+	
+	RETURN sTrendTag;
+
+END	
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//		FUNCTION NAME	
+//						_CSV_ListBox_GetVariableType()
+//
+//		REV	DATE		WHO			DESCRIPTION
+//		0	22/10/02	J.Venz		Original
+//
+//     	GENERAL DESCRIPTION
+//			
+//			Gets a string description of the variable type from the type number stored in the 
+//			_variabl.rdb file.
+//
+// 		ARGUMENTS:
+//
+//			sTypeNum		- type number
+//
+//     	RETURNED VALUE: 
+//
+//			Name of variable type.
+//
+//		PSEUDO CODE:
+//
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+PRIVATE
+STRING
+FUNCTION
+_CSV_ListBox_GetVariableType(STRING sTypeNum)
+
+	STRING	sType;
+	
+	SELECT CASE sTypeNum
+	CASE "0"
+		sType = "DIGITAL";
+	CASE "1"
+		sType = "BYTE";
+	CASE "2"
+		sType = "INT";
+	CASE "3"
+		sType = "UINT";
+	CASE "4"
+		sType = "LONG";	
+	CASE "5"
+		sType = "REAL";
+	CASE "6"
+		sType = "STRING";
+	CASE "7"
+		sType = "ULONG";
+	CASE ELSE
+		sType = ""
+	END SELECT
+	
+	RETURN sType
+	
+END			

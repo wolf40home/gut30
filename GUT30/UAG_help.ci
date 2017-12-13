@@ -1,0 +1,165 @@
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//	
+// 	FILE:	UAG_Help.ci
+//
+//	Beschreibung:
+//
+//		Enthält  Funktionen für die Hilfe und Versionsverwaltung
+//		
+//
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	14.02.07	/	Schneider Electrik GmbH
+//	Version				75.33.11.01
+//
+//	PUBLIC FUNCTIONS:
+//
+//			UAG_HelpOverview()
+//			UAG_VERSION()				abgekündigt
+//			UAG_Help_Project_Version()
+//			UAG_Help_Lib_Version()
+//
+
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+
+// MODULE VARIABLES
+GLOBAL STRING msTag;
+GLOBAL INT miLIB=TRUE;
+INT iInclInitial;
+STRING sProjektNamen[20][2];
+// genutzte AktivX
+STRING	msObjectClass = "CiText.TextBox";		! Name of ActiveX text box object						
+
+
+
+//	UAG_HelpOverview(INT ID)
+//	Übergabeparameter:	Hilfe ID wird im Helpprojekt festgelegt.      
+//                       
+//	Rückgabewert:		
+//	Beschreibung:		Hilfe aufschalten	
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	28.02.07	/	Schneider Electrik GmbH
+//	Version				74.33.81.00
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//  15.10.07 Steiner		alle Hilfefunktionen auf 1 bescgränkt. UAG_Projekt_Version neu
+//	21.02.11	Steiner		Erweitert um den Dateinamen
+
+
+FUNCTION UAG_HelpOverview(INT ID=_UAG_Main_help,STRING sDatei="German UAG Toolbox.chm")
+	IF sDatei = "" THEN
+		sDatei="German UAG Toolbox.chm"
+	END	
+	HtmlHelp(gsUAGHelpPath + "\" +sDatei, 1, ID);
+END
+
+//	UAG_HelpOverview_Main()
+//	Übergabeparameter:	 MAP ID die aufgrufen werden soll     
+//                       
+//	Rückgabewert:		
+//	Beschreibung:	Hilfe aufschalten	Die ID wird aus der Umgebungsvariablen "Hilfe" der jeweiligen Seite geholt.
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	28.10.07	/	SSchneider Electrik GmbH
+//	Version				7.2.3.3
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	19.11.11	Steiner		Erweitert um den Dateinamen
+
+
+FUNCTION UAG_HelpOverview_Main()
+UAG_HelpOverview(StrToInt(DspGetEnv("Hilfe")),DspGetEnv("HilfeDatei"))
+END
+
+
+
+
+//	FUNCTION UAG_Help_Project_Version
+//	Übergabeparameter:	Projektnummer
+//						        
+//                         
+//	Rückgabewert:		---
+//	Beschreibung:		
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	00.11.2007	/	Schneider Electrik GmbH
+//	Version				7.2.0.0
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	22.10.10		Steiner		Anpassung an 7.2
+
+STRING FUNCTION 
+UAG_Help_Project_Version(INT iNr)
+	UAG_Help_Projekt_Include();
+	RETURN StrPad(sProjektNamen[iNr][0]," ",22) +sProjektNamen[iNr][1] 
+END
+PRIVATE INT FUNCTION 
+UAG_Help_Projekt_Include()
+	INT i;
+	IF iInclInitial THEN
+		RETURN 0
+	END
+	FOR i=0 TO 19 DO
+		IF ProjectInfo(i,0)<> "" THEN
+		sProjektNamen[i][0]=ProjectInfo(i,0);
+		sProjektNamen[i][1]= StrPad(", V"+	ProjectInfo(i,2)+"."+ProjectInfo(i,3)," ",13)+" vom: "+ProjectInfo(i,4)
+		END
+	END	
+	iInclInitial=1;
+END
+
+//	FUNCTION UAG_Help_Produkt_Version
+//	Übergabeparameter:	Projektnummer
+//						        
+//                         
+//	Rückgabewert:		---
+//	Beschreibung:		
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	29.07.2013	/	Schneider Electrik GmbH
+//	Version				7.2.33.70.03
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	
+
+STRING FUNCTION 
+UAG_Help_Produkt_Version()
+INT temp;
+	RETURN StrToLines(ProductInfo(4),16,temp) 
+END
+//	FUNCTION UAG_Help_Lib_Version()
+//	Übergabeparameter:	Projektnummer
+//						        
+//                         
+//	Rückgabewert:		---
+//	Beschreibung:		
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	00.11.2007	/	Schneider Electrik GmbH
+//	Version				7.2.0.0
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	22.10.10		Steiner		Anpassung an 7.2
+
+
+STRING FUNCTION UAG_Help_Lib_Version()
+	INT i;
+	STRING stemp;
+	UAG_Help_Projekt_Include();
+	
+	FOR i=0 TO 19 DO
+
+		IF sProjektNamen[i][0]=gsUAG_LIB_NAME THEN
+			RETURN sProjektNamen[i][0]+sProjektNamen[i][1]
+		END
+	END	
+END
+
+

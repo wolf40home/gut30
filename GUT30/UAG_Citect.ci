@@ -1,0 +1,458 @@
+///////////////////////////////////////////////////////////////////////////////////
+//	
+// 	FILE:	UAG_Citect.ci
+//
+//	Beschreibung:
+//
+//		Enhält Funktionen für Netzwerk Diagnose bei Citect 7.1 Achtung muss bei 7.2 überarbeitet werden
+//		
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	23.06.10	/	Schneider Electric GmbH
+//	Version				75.33.11.01
+//
+//	PUBLIC FUNCTIONS:
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	29.04.14	Steiner		Serviceliste angepasst
+
+// Maximum number of inputs/records at Services table (GUT_ServicesTable)
+INT cMAXSERVICES = 95;
+
+// The table that stores all information about services status of Vijeo Citect system
+// It depends on services that have already been discovered through the network.
+// This table contructs repository information "discovered" from the network (via RPC, through the ServerInfoEx function),
+// that later is used by function calls from Genies
+// to display all data at diagnostic system overview created by the user.
+// The fields strored in each row of the matrix:
+//		0: Name of Server node that provides the service
+// 		1: Name of Client node
+//		2: Service
+//		3: Service status
+//		4: User at Client node
+// The number of rows must match with the value of cMAXSERVICES
+GLOBAL STRING GUT_ServicesTable[95][5]
+
+// It stores the type of client licenses
+// The number of rows must macth with the value of cMAXSERVICES
+GLOBAL STRING GUT_ClientTypeTable[95];
+
+// The number maximum of inputs/records at I/O Devices table (GUT_IODevicesNumberTable, IODevicesNameTable and IODeviceTable)
+//INT cMAXIODevice = 75;  
+//
+// It stores the associated number (defined at the I/O devices table) of IO devices at the system
+// The data is filled by calling function at I/O Device Genies (sgc_iodev_10) in page/ screen of diagnostic system
+// The number of rows must match with the value of cMAXIODevice
+//GLOBAL STRING GUT_IODevicesNumberTable[75];
+
+// It stores the name of IO devices at the system
+// The data is filled by data in IODeviceNumberTable and primitive function of IODeviceInfo
+// The number of rows must match with the value of cMAXIODevice
+//GLOBAL STRING IODevicesNameTable[75];
+//
+// The number of rows must match with the value of cMAXIODevice
+//GLOBAL STRING IODeviceTable[75][6];
+//
+// The variables that store the number filled element in previous tables
+GLOBAL INT GUT_NbrDiscoveredServices,GUT_NbrClients;
+
+// Variables utilized to mantain the ongoing queries (FindFirst/FindNex)
+GLOBAL STRING GUT_ServerNodeQuery, GUT_ClientNodeQuery, GUT_ServicesQuery, GUT_StatusServiceQuery, GUT_LoginClientQuery;
+
+// Variables utilized to mantain the ongoing queries (FindFirst/FindNex)
+GLOBAL INT GUT_PointerQuery
+
+// Variables utilized to mantain the ongoing queries (FindFirst/FindNex)
+GLOBAL INT GUT_EOFQuery;
+
+
+STRING msServernamen[4] ="","ALARM","TREND","Report"
+
+///////////////////////////////////////////////////////////////////////////////////////
+// To initialize data tables of the system
+// It must be called from Event "OnPageEntry" of diagnostic system overview
+///////////////////////////////////////////////////////////////////////////////////////
+//FUNCTION
+//uag_InitDiscoverStatus()														
+//	GUT_NbrServers = 0;
+//
+//
+//END
+
+
+///////////////////////////////////////////////////////////////////////////////////////
+// To search the first register in Services table that meets the criterias that set out in searching parameters
+// To set the auxialiary variables that will be needed to make subsequent calls, FindNext. 
+// If any searching parameters is assigned to "", it is considered that any found value is valid
+// Input Parameters:
+//                    ServerNode: Name of Server node
+//					  ClientNode: Name of Client node
+//					  Services: Name of services (as defined at the primitive function of Vijeo Citect)
+//                    StatusService: Service status (as defined at the primitive function of Vijeo Citect)
+//                    LoginClient: Short name of current user at the client node
+// Return:
+//					  0: If it has not found any registes that meets the searching criterias
+//					  1: The register had already been found
+///////////////////////////////////////////////////////////////////////////////////////
+INT FUNCTION
+uag_FindServiceFirst(STRING ServerNode, STRING ClientNode, STRING Services, STRING StatusService, STRING LoginClient)
+		INT Pointer;
+		GUT_PointerQuery=-1;
+		GUT_EOFQuery = 0;
+		GUT_ServerNodeQuery =ServerNode;
+		GUT_ClientNodeQuery = ClientNode;
+		GUT_ServicesQuery =Services;
+		GUT_StatusServiceQuery =StatusService;
+		GUT_LoginClientQuery =LoginClient;
+		FOR Pointer = 0 TO GUT_NbrDiscoveredServices DO   
+			IF ((GUT_ServicesTable[Pointer][0] = GUT_ServerNodeQuery) OR (GUT_ServerNodeQuery = "")) AND 
+				((GUT_ServicesTable[Pointer][1] = GUT_ClientNodeQuery) OR (GUT_ClientNodeQuery = "")) AND
+				((GUT_ServicesTable[Pointer][2] = GUT_ServicesQuery) OR (GUT_ServicesQuery = "")
+					OR (  (GUT_ServicesQuery ="IOServer") 
+						AND	(GUT_ServicesTable[Pointer][2] <> "Alarm")
+						AND (GUT_ServicesTable[Pointer][2] <> "Trend") 
+						AND (GUT_ServicesTable[Pointer][2] <> "Report")
+					   )
+				) AND
+				((GUT_ServicesTable[Pointer][3] = GUT_StatusServiceQuery) OR (GUT_StatusServiceQuery = "")) AND
+				((GUT_ServicesTable[Pointer][4] = GUT_LoginClientQuery) OR (GUT_LoginClientQuery = "")) THEN
+				GUT_PointerQuery = Pointer;
+				RETURN 1;
+			END
+		END
+		GUT_EOFQuery = 1;
+		RETURN 0;
+END
+
+///////////////////////////////////////////////////////////////////////////////////////
+// To search the next register in Services table that meets the criterias
+// that set out in previous call, FindServiceFirst.
+// To set the auxialiary variables that will be needed to make subsequent calls, FindNext.
+// If any searching parameters is assigned to "", it is considered that any found value is valid
+// Return:
+//					  0: If it has not found  any registes that meets the searching criterias
+//					  1: The register had already been found
+///////////////////////////////////////////////////////////////////////////////////////
+INT FUNCTION
+uag_FindServiceNext()
+		INT Pointer;
+		
+		IF GUT_EOFQuery =1 THEN
+			RETURN 0;
+		END
+				
+		FOR Pointer = GUT_PointerQuery+1 TO GUT_NbrDiscoveredServices-1 DO 								
+			IF ((GUT_ServicesTable[Pointer][0] = GUT_ServerNodeQuery) OR (GUT_ServerNodeQuery = "")) AND 
+				((GUT_ServicesTable[Pointer][1] = GUT_ClientNodeQuery) OR (GUT_ClientNodeQuery = "")) AND
+				((GUT_ServicesTable[Pointer][2] = GUT_ServicesQuery) OR (GUT_ServicesQuery = "")
+					OR ( (GUT_ServicesQuery ="IOServer")
+						
+						AND	(GUT_ServicesTable[Pointer][2] <> "Alarm")
+						AND (GUT_ServicesTable[Pointer][2] <> "Trend") 
+						AND (GUT_ServicesTable[Pointer][2] <> "Report")
+					   )
+				) AND
+				((GUT_ServicesTable[Pointer][3] = GUT_StatusServiceQuery) OR (GUT_StatusServiceQuery = "")) AND
+				((GUT_ServicesTable[Pointer][4] = GUT_LoginClientQuery) OR (GUT_LoginClientQuery = "")) THEN
+				GUT_PointerQuery = Pointer;
+				RETURN 1;
+			END
+		END
+		GUT_EOFQuery = 1;
+		RETURN 0;
+END
+
+
+
+////////////////////////////////////////////////////////////////////////////////////////
+// By ServerInfoEx function, it finds Services provided by the indicated Server
+// and processes to insert data found to Services table
+// Input Parameters:
+//                    ServerName: Name of Server node to be discoverd
+///////////////////////////////////////////////////////////////////////////////////////
+INT FUNCTION
+uag_DiscoverServer(STRING ServerName)
+INT iCount, iClients, hServer;
+STRING List, ServiceName, LoginName, ClientName, ClientType;
+STRING ServiceStatus, VersionNumber, ServiceList,ServiceType;
+INT i,x, IndexComaNew, IndexComaOld, IndexDot, IndexDotFirst,IndexDotSecond, LengthServiceName, LengthClusterName;
+STRING TemporaryStringSave, ClusterName, ServiceNameWithoutClusterName;	
+	msServernamen[0] =ServerName;
+
+	hServer =-1;
+	FOR x=0 TO 3 DO
+		hServer = MsgOpen(msServernamen[x], 0,0);
+		IF hServer = -1 THEN                          
+			RETURN 0;
+		END
+			
+		iCount = 1;
+
+		iClients = MsgRPC(hServer,"ServerInfoEx","^"Server^", 1,^"^"",0);
+		
+		VersionNumber = MsgRPC (hServer,"Version",0,0);
+	
+		ServiceList = MsgRPC(hServer,"ServiceGetList","",0);
+		
+		WHILE iCount<= iClients DO
+			ServiceName= MsgRPC(hServer,"ServerInfoEx","^"" + IntToStr(iCount-1) + "^", 0,^"^"", 0);
+			LengthServiceName= StrLength(ServiceName);
+			i=0;
+			IndexComaNew=0;
+			IndexComaOld=0;
+			IndexDot=0;
+			TemporaryStringSave="";
+			
+			WHILE i <> iClients DO
+				IndexComaNew = StrSearch(IndexComaOld,ServiceList,",");
+				IF IndexComaNew <> -1 THEN
+					TemporaryStringSave = StrMid(ServiceList,IndexComaOld,(IndexComaNew-IndexComaOld));
+				ELSE
+					TemporaryStringSave = ServiceList;
+				END	
+				IndexDotFirst= StrSearch(0,TemporaryStringSave,".");
+				
+				IndexDotSecond= StrSearch(IndexDotFirst+1,TemporaryStringSave,".");
+				
+				ClusterName =StrMid(TemporaryStringSave,IndexDotFirst+1,(IndexDotSecond-IndexDotFirst-1));
+				
+				LengthClusterName= StrLength(ClusterName);
+				
+				ServiceNameWithoutClusterName=StrLeft(ServiceName,(LengthServiceName-LengthClusterName));
+				
+				
+				IF StrSearch(0, TemporaryStringSave, ServiceNameWithoutClusterName)<>-1 THEN
+				
+					IndexDot= StrSearch(0, TemporaryStringSave,".");
+					ServiceType = StrLeft(TemporaryStringSave,IndexDot);
+					i=iClients;
+				ELSE
+					i=i+1;
+					IndexComaOld=IndexComaNew+1;
+					
+				END
+			END
+			
+			LoginName =MsgRPC(hServer,"ServerInfoEx","^"" + IntToStr(iCount-1) + "^", 1,^"^"", 0);	
+			ClientName = MsgRPC(hServer,"ServerInfoEx","^"" + IntToStr(iCount-1) + "^", 2,^"^"", 0);
+			ClientType = MsgRPC(hServer,"ServerInfoEx","^"" + IntToStr(iCount-1) + "^", 7,^"^"", 0);
+			ServiceStatus = ""
+			IF (ServiceType = "Alarm") OR (ServiceType = "Report") OR (ServiceType = "Trend")  THEN
+				ServiceStatus = MsgRPC(hServer,"ServerInfoEx","^"" + ServiceType  + "^", 0,^"^"", 0);
+					uag_InsertServices(ServiceNameWithoutClusterName, ClientName, ServiceType, ServiceStatus,LoginName,ClientType);
+			ELSE
+					uag_InsertServices(ServiceNameWithoutClusterName, ClientName, ServiceNameWithoutClusterName, ServiceStatus,LoginName, ClientType);
+			END
+			
+			iCount = iCount + 1;
+		END
+	
+		MsgClose(ServerName, hServer);
+	END	
+	RETURN 1;
+END
+
+
+////////////////////////////////////////////////////////////////////////////////////////
+// To generate one list with all data that meet the criteria at Services table
+// Each item at the list contains the name of Client followed by the current User and the type of license too.
+// This info is displayed at Supergenie of diagnostic
+// Input Parameters:
+//					  ServerName: Server name that will be used to search the data
+//					  Service: Service Name that will be used to search all clients that are using the service
+///////////////////////////////////////////////////////////////////////////////////////
+//
+FUNCTION
+uag_ListClientType(STRING ServerName)
+STRING List;
+STRING ClientNode;
+OBJECT hListBox;
+	hListBox = ObjectByName ("ListBoxCLientType");
+	_ObjectCallMethod(hListBox,"Clear");
+	
+	IF uag_FindServiceFirst(ServerName, "", "Alarm", "", "") =1 THEN
+		List="";
+		WHILE GUT_EOFQuery =0 DO 
+			
+			
+			ClientNode = uag_GetServiceInfo("ClientNode");
+			IF ClientNode ="" THEN
+				ClientNode ="-";
+			END
+			List= List+ ClientNode;
+			List = List +":"+ uag_GetServiceInfo("LoginClient");
+			List = List + ":" +" "+"<"+ uag_GetServiceInfo("ClientType")+ ">^n";
+
+			
+			uag_FindServiceNext();
+		END
+		_ObjectSetProperty(hListBox,"Text", List);
+	ELSE
+		IF uag_FindServiceFirst(ServerName, "", "Report", "", "") =1 THEN
+			List="";
+			WHILE GUT_EOFQuery =0 DO 
+				
+				ClientNode = uag_GetServiceInfo("ClientNode");
+				IF ClientNode ="" THEN
+					ClientNode ="-";
+				END
+				List= List+ ClientNode;
+				List = List +":"+ uag_GetServiceInfo("LoginClient");
+				List = List + ":" +" "+"<"+ uag_GetServiceInfo("ClientType")+ ">^n";
+				_ObjectCallMethod(hListBox, "AddItem", List);
+				uag_FindServiceNext();
+			END
+			_ObjectSetProperty(hListBox,"Text", List);
+		ELSE
+			IF uag_FindServiceFirst(ServerName, "", "Trend", "", "") =1 THEN
+				List="";
+				WHILE GUT_EOFQuery =0 DO 
+					
+					ClientNode = uag_GetServiceInfo("ClientNode");
+					IF ClientNode ="" THEN
+						ClientNode ="-";
+					END
+					List= List+ ClientNode;
+					List = List + uag_GetServiceInfo("LoginClient");
+					List = List + ":" +" "+"<"+ uag_GetServiceInfo("ClientType")+ ">^n";
+					
+					uag_FindServiceNext();
+				END
+				_ObjectSetProperty(hListBox,"Text", List);
+			ELSE	
+				IF uag_FindServiceFirst(ServerName, "", "IOServer", "", "") =1 THEN
+					List="";
+					WHILE GUT_EOFQuery =0 DO
+						 
+						ClientNode = uag_GetServiceInfo("ClientNode");
+						IF ClientNode ="" THEN
+							ClientNode ="-";
+						END
+						List= List+ ClientNode;
+						List = List + uag_GetServiceInfo("LoginClient");
+						List = List + ":" +" "+"<"+ uag_GetServiceInfo("ClientType")+ ">^n";
+						
+						uag_FindServiceNext();
+					END
+					_ObjectSetProperty(hListBox,"Text", List);
+				END
+			END
+		END
+	END
+END
+
+
+//Function to do the shutdown process
+////////////////////////////////////////////////////////////////////////////////////////
+// To restart a node
+// Input Parameters:
+//					  ClientName: Client's name
+//					  iMode: Type of restart
+//							2: To restart Vijeo Citect
+//							Other value: To restart node completely
+///////////////////////////////////////////////////////////////////////////////////////
+FUNCTION
+uag_ShutdownProcess(STRING ClientName, INT iMode)
+STRING sParam;
+STRING sAction;
+STRING List;
+INT hShutdown;
+INT CurrentShutdownStatus;
+STRING ShutdownStatus;	
+	IF iMode = 2 THEN
+		sAction = StrToLocalText("@(Restart Vijeo Citect)");
+	ELSE
+		sAction = StrToLocalText("@(Restart Node)");
+	END
+	
+	IF uag_FindServiceFirst("", ClientName, "", "", "") <>1 THEN
+		
+		PageSetStr (0,StrToLocalText("@(Node cannot be found)"));
+		ShutdownStatus= StrToLocalText("@(Node cannot be found)");
+	ELSE
+		
+		PageSetStr (0, StrToLocalText("@(Processing)")+" "+"...");
+		Sleep(5);
+	
+		CurrentShutdownStatus=Shutdown(ClientName, "", iMode);
+	
+	
+		IF CurrentShutdownStatus = 0 THEN	
+			
+			PageSetStr(0,StrToLocalText("@(OK)"));
+			ShutdownStatus= StrToLocalText("@(OK)");
+		ELSE
+			PageSetStr(0, StrToLocalText("@(Error):")+" "+ IntToStr(CurrentShutdownStatus));
+			ShutdownStatus= StrToLocalText("@(Error):")+" "+ IntToStr(CurrentShutdownStatus);
+		END
+	END
+	// To trace the realized operation
+	sParam = "^"" + Date() + "^",^"" + Time(1) +  "^",^""  + Name() + "^",^"" + FullName() +  "^",^"" + uag_GetComputerName(ClientName) + "^",^"" + sAction + "^",^"" + "-" + "^",^"" + ShutdownStatus + "^"";
+	TaskNew("Logger", sParam, 0);
+END
+
+
+///////////////////////////////////////////////////////////////////////////////////////
+// To get the specific information relating to service in the current register of Services table
+// The pointer to correct register has already been posicionated by the previous functions, FindServiceFirst or FindServiceNext
+// Input Parameters:
+//                    Field: Record that wants to be consulted
+//								"ServerNode": Name of server node that provides the service
+// 								"ClientNode": Name of client node
+//								"Services": Service
+//								"StatusService": Status of service
+//								"LoginClient": Client node user
+//								"ClientType": Licence type of client node
+// Return:
+//					  Data found or Error message
+///////////////////////////////////////////////////////////////////////////////////////
+STRING FUNCTION
+uag_GetServiceInfo(STRING Field)
+STRING ReturnedValue;				
+	
+	IF 	GUT_EOFQuery=1 THEN
+		RETURN StrToLocalText("@(Record not found)");
+	END
+	
+	SELECT CASE (Field)
+		CASE "ServerNode"
+			ReturnedValue = GUT_ServicesTable[GUT_PointerQuery][0];	
+		CASE "ClientNode"
+			ReturnedValue = GUT_ServicesTable[GUT_PointerQuery][1];
+		CASE "Services"
+			ReturnedValue = GUT_ServicesTable[GUT_PointerQuery][2];
+		CASE "StatusService"
+			ReturnedValue = GUT_ServicesTable[GUT_PointerQuery][3];
+		CASE "LoginClient"
+			ReturnedValue = GUT_ServicesTable[GUT_PointerQuery][4];
+		CASE "ClientType"
+			ReturnedValue = GUT_ClientTypeTable[GUT_PointerQuery];
+			SELECT CASE (ReturnedValue)
+				CASE "0"
+					ReturnedValue= "FL";	// Full license
+				CASE "1"
+					ReturnedValue= "MC";	// Manager Client
+				CASE "2"
+					ReturnedValue= "DC";	// Display Client
+				CASE "3"
+					ReturnedValue= "WMC";	// Web Manager Client
+				CASE "4"
+					ReturnedValue= "WDC";	// Web Display Client
+				CASE ELSE
+					ReturnedValue= "??";	
+				END SELECT
+		CASE ELSE
+			ReturnedValue = StrToLocalText("@(Parameter error)");
+	END SELECT		
+		
+	IF ReturnedValue = "" THEN
+		IF Field = "LoginClient" THEN
+			ReturnedValue = StrToLocalText("@(<no user>)");
+		ELSE
+			ReturnedValue = StrToLocalText("@(<standalone>)");
+		END
+	END		
+	RETURN ReturnedValue;
+END
+//
+//
+

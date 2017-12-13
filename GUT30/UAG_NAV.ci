@@ -1,0 +1,1830 @@
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//	
+// 	FILE:	UAG_NAV.ci
+//
+//	Beschreibung:
+//
+//		Enhält Funktionen für die Navigation .
+//		
+//
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	12.01.08	/	Schneider Electrik GmbH
+//	Version				75.33.11.06
+//
+//	PUBLIC FUNCTIONS:
+//
+//				UAG_NAV_Init()
+//				UAG_NAV_Parent()
+//				UAG_Nav_Sub()
+//				UAG_NAV_Home()					abgekündigt			
+//				UAG_NAV_Network()
+//				UAG_NAV_Trend()
+//				UAG_Nav_DTrend()
+//				UAG_NAV_TrendMenu()				abgekündigt
+//				UAG_NAV_TrendGrpMenu()
+//				UAG_NAV_TrendGrpMenu2()
+//				UAG_NAV_Analyst()
+//				UAG_NAV_Report()
+//				UAG_NAV_ReportMenu()			abgekündigt
+//				UAG_NAV_File()					abgekündigt
+//				UAG_NAV_Tools()
+//				UAG_NAV_ToolsMenu()
+//				UAG_NAV_GetEngToolsPriv()
+//				UAG_NAV_Login()
+//				UAG_NAV_LogMenu()
+//				UAG_Nav_PagePrint()
+//				UAG_Nav_Alarms()				abgekündigt
+//				UAG_Nav_AlarmsKF()
+//				UAG_Nav_AlarmsPF()
+//				UAG_Nav_AlarmsALL()
+//				UAG_Nav_Pager()
+//				UAG_NAV_AlarmsHardware()		abgekündigt
+//				UAG_NAV_AlarmsSummary()			abgekündigt
+//				UAG_NAV_AlarmsDisabled()		abgekündigt
+//				UAG_Nav_AlarmHist()
+//				UAG_Nav_Alarmcount()			abgekündigt
+//				UAG_Nav_Datenlog()
+//				UAG_Nav_DB()
+//				UAG_NAV_SNMPTraps()
+//				UAG_NAV_WEB()
+//				UAG_NAV_HTML()
+//				UAG_Nav_BildGruppe()
+//				UAG_Nav_PageExists()			abgekündigt
+//				UAG_Nav_MenuDisable()
+//				UAG_NAV_OperatorLog()			abgekündigt
+//				UAG_NAV_XXXXXXXBtnEnabled()
+
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	21.07.08	Steiner		Funktionen erweitert für Doppelmonitor
+//	12.12.08	Steiner		Struktur überarbeitet
+//	17.07.09	Steiner		Menü auf 2. Bildschirm einschaltbar
+//	21.10.10	Steiner		für neuen Multimonitor unter 7.2 umgebaut.
+//	16.04.14	Steiner		Alle Funktionen auf 7.40 Page Funktionen umgestellt
+//
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+// MODULE VARIABLES
+
+STRING	msPopupMenuAction[200];
+INT		miPopupMenuActionID[200];
+INT		miMenuNumberIndex;
+INT		miMenuActionIndex;
+INT		miEngToolsPrivilege = -1;
+INT		miEngToolsPrivilegeDflt = 8;
+INT		iError;
+
+STRING	msMenuDisable= "";
+STRING	msMenuDisableMM= "";
+
+STRING	msTemplatePageName =			"Template";
+
+
+STRING	mstrPrinter;
+STRING	mstrPrinterDflt =				"LPT1:";
+STRING	mstrPrintPageDflt = 			"";
+STRING	mstrPrintPage;
+
+// ini parameter defaults
+STRING	msHomePageDflt = 				"System_Start";
+STRING	msHomePage;
+INT		miHomeBtnEnabled = FALSE;
+
+STRING	msNetworkPageDflt = 			"Allgemein_Kopplung";
+STRING	msNetworkPage;
+INT		miNetworkBtnEnabled = FALSE;
+
+STRING	msTrendPageDflt = 				"System_Trend";
+STRING	msTrendPage;
+INT		miTrendBtnEnabled = FALSE;
+
+STRING	msTrendxyPageDflt = 			"System_TrendXY";
+STRING	msTrendxyPage;
+INT		miTrendxyBtnEnabled = FALSE;
+
+STRING	msDTrendPageDflt =				"System_DoppelTrend";
+STRING  msDTrendPage;
+INT		miDTrendBtnEnabled = FALSE;
+
+STRING	msAnalystPageDflt = 			"System_Analyst";
+STRING	msAnalystPage;
+INT		miAnalystBtnEnabled = FALSE;
+
+STRING	msReportPageDflt = 				"Report";
+STRING	msReportPage;
+INT		miReportBtnEnabled = FALSE;
+
+STRING	msFilePageDflt = 				"System_File";
+STRING	msFilePage;
+
+STRING	msToolsPageDflt = 				"System_Admintools";
+STRING	msToolsPage;
+INT		miToolsBtnEnabled = FALSE;
+
+STRING	msAlarmPageDflt =				"System_Alarm";
+STRING	msAlarmPage;
+INT		miAlarmBtnEnabled = FALSE;
+
+STRING	msHardwarePageDflt = 			"System_Hardware";
+STRING	msHardwarePage;
+INT		miHardwareBtnEnabled = FALSE;
+
+STRING	msDisabledPageDflt = 			"System_GesperrteAlarme";
+STRING	msDisabledPage;
+INT		miDisabledBtnEnabled = FALSE;
+
+STRING	msSummaryPageDflt = 			"System_AlarmSummary";
+STRING	msSummaryPage;
+INT		miSummaryBtnEnabled = FALSE;
+
+STRING	msAlarmHistPageDflt =			"System_Alarmhist";
+STRING  msAlarmHistPage;
+INT		miAlarmHistBtnEnabled = FALSE;
+
+STRING	msAlarmcountPageDflt = 			"System_Alarmcount";
+STRING	msAlarmcountPage;
+INT		miAlarmcountBtnEnabled = FALSE;
+
+STRING	msPagerPageDflt =				"System_Pager";
+STRING  msPagerPage;
+INT		miPagerBtnEnabled = FALSE;
+
+STRING	msDatenlogPageDflt =			"System_Operlog";
+STRING  msDatenlogPage;
+INT		miDatenlogBtnEnabled = FALSE;
+
+STRING	msDBPageDflt =					"System_DB";
+STRING  msDBPage;
+INT		miDBBtnEnabled = FALSE;
+
+STRING	msWebPageDflt = 				"!p_web";
+STRING	msWebPage;
+
+STRING	msSNMPTrapsPageDflt =			"System_SNMPTraps";
+STRING  msSNMPTrapsPage;
+INT		miSNMPTrapsBtnEnabled = FALSE;
+
+//	menu bar defaults
+INT		miMenuBackColour = Transparent;
+INT		miMenuForeColour = Transparent;
+INT		miMenuXPos = -1;
+INT		miMenuXPosDflt = 2;
+INT		miMenuYPos = -1;
+INT		miMenuYPosDflt = 25;
+
+
+// genutzte AktivX
+STRING	mswebClass = "Shell.Explorer.2";
+STRING 	msTextBoxClass = "CiText.TextBox";
+STRING	msDatabaseClass = "DatabaseExchange.DataManager";
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//		FUNCTION NAME	
+//						UAG_NAV_Init()
+//
+//
+//     	GENERAL DESCRIPTION
+//			
+//			Initialise variables that require blocking functions.  This function is called from _citectbegin 
+//			as it runs to completion without halting before the first page is displayed.  This
+//			way we can get away from calling blocking functions from the foreground thread and risk exhausting timeslice
+//
+// 		ARGUMENTS:
+//
+//     	RETURNED VALUE: 
+//
+//
+//		PSEUDO CODE:
+//
+//	Autor:				P.Drinan
+//	Erstellungsdatum:	07.09.04	/	Schneider Electric GmbH
+//	Version				3.2.0.1
+//
+//	Historie:
+//
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	30.04.08	Steiner		Für UAG abgewandelt mehr Kontrolle über die Seite
+//
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+FUNCTION
+UAG_NAV_Init()
+	
+	INT disabled;
+	// Ignore hardware errors for checking pages
+	ErrSet(1);
+
+	// initialise home page variable
+	IF msHomePage = "" THEN
+		msHomePage = ParameterGet("Page", "HomePage", "");
+	END
+	
+	IF NOT PageExists(msHomePage) THEN
+		msHomePage = ParameterGet("MultiMonitors", "StartupPage1", "");
+	END
+	
+	IF NOT PageExists(msHomePage) THEN
+		msHomePage = ParameterGet("Page", "Startup", msHomePageDflt);
+	END
+	miHomeBtnEnabled = PageExists(msHomePage);
+	
+	// initialise network page name variable and network enabled flag
+	IF miNetworkBtnEnabled = FALSE THEN
+		IF msNetworkPage = "" THEN
+			msNetworkPage = ParameterGet("Navigation", "NetworkPage", msNetworkPageDflt);
+		END
+		
+		miNetworkBtnEnabled = PageExists(msNetworkPage);
+	END
+
+	// initialise trend page name variable and trend enabled flag
+	IF miTrendBtnEnabled = FALSE THEN
+		IF msTrendPage = "" THEN
+			msTrendPage = ParameterGet("Navigation", "TrendPage", msTrendPageDflt);
+		END
+		miTrendBtnEnabled = PageExists(msTrendPage);
+	END
+
+	// initialise trendxy page name variable and trendxy enabled flag
+	IF miTrendxyBtnEnabled = FALSE THEN
+		IF msTrendxyPage = "" THEN
+			msTrendxyPage = ParameterGet("Navigation", "TrendxyPage", msTrendxyPageDflt);
+		END
+		
+		miTrendxyBtnEnabled = PageExists(msTrendxyPage);
+	END
+
+	// initialise dtrend page name variable and dtrend enabled flag
+	IF miDTrendBtnEnabled = FALSE THEN
+		IF msDTrendPage = "" THEN
+			msDTrendPage = ParameterGet("Navigation", "DTrendPage", msDTrendPageDflt);
+		END
+		
+		miDTrendBtnEnabled = PageExists(msDTrendPage);
+	END
+	
+	// initialise report page name variable and report enabled flag
+	IF miReportBtnEnabled = FALSE THEN
+		IF msReportPage = "" THEN
+			msReportPage = ParameterGet("Navigation", "ReportPage", msReportPageDflt);
+		END
+		
+		miReportBtnEnabled = PageExists(msReportPage);
+	END
+
+	// initialise tools page name variable and tools enabled flag
+	IF miToolsBtnEnabled = FALSE THEN
+		IF msToolsPage = "" THEN
+			msToolsPage = ParameterGet("Navigation", "ToolsPage", msToolsPageDflt);
+		END
+		
+		miToolsBtnEnabled = PageExists(msToolsPage);
+	END
+
+	// initialise Alarm page name variable and Alarm enabled flag
+	IF miAlarmBtnEnabled = FALSE THEN
+		IF msAlarmPage = "" THEN
+			msAlarmPage = ParameterGet("Page", "AlarmPage", msAlarmPageDflt);
+		END
+		
+		miAlarmBtnEnabled = PageExists(msAlarmPage);
+	END
+
+	// initialise Alarm page name variable and Alarm enabled flag
+	IF miDisabledBtnEnabled = FALSE THEN
+		IF msDisabledPage = "" THEN
+			msDisabledPage = ParameterGet("Page", "DisabledPage", msDisabledPageDflt);
+		END
+		
+		miDisabledBtnEnabled = PageExists(msDisabledPage);
+	END
+	
+
+	// initialise Pager page name variable and Pager enabled flag
+	IF miPagerBtnEnabled = FALSE THEN
+		IF msPagerPage = "" THEN
+			msPagerPage = ParameterGet("Navigation", "PagerPage", msPagerPageDflt);
+		END
+		
+		miPagerBtnEnabled = PageExists(msPagerPage);
+	END
+	// initialise Hardware page name variable and tools enabled flag
+	IF miHardwareBtnEnabled = FALSE THEN
+		IF msHardwarePage = "" THEN
+			msHardwarePage = ParameterGet("Page", "HardwarePage", msHardwarePageDflt);
+		END
+		
+		miHardwareBtnEnabled = PageExists(msHardwarePage);
+	END
+
+
+	// initialise Summary page name variable and tools enabled flag
+	IF miSummaryBtnEnabled = FALSE THEN
+		IF msSummaryPage = "" THEN
+			msSummaryPage = ParameterGet("Page", "SummaryPage", msSummaryPageDflt);
+		END
+		
+		miSummaryBtnEnabled = PageExists(msSummaryPage);
+	END
+
+	// initialise Alarmcount page name variable and tools enabled flag
+	IF miAlarmcountBtnEnabled = FALSE THEN
+		IF msAlarmcountPage = "" THEN
+			msAlarmcountPage = ParameterGet("Navigation", "AlarmcountPage", msAlarmcountPageDflt);
+		END
+		
+		miAlarmcountBtnEnabled = PageExists(msAlarmcountPage);
+	END	
+	// initialise process analyst page name variable and ProcessAnalystPage button enabled flag
+	IF miAnalystBtnEnabled = FALSE THEN
+		IF msAnalystPage = "" THEN
+			msAnalystPage = ParameterGet("Page", "ProcessAnalystPage", msAnalystPageDflt);
+		END
+		
+		miAnalystBtnEnabled = PageExists(msAnalystPage);
+	END
+
+	// initialise process Datenlog page name variable and DatenlogPage button enabled flag
+	IF miDatenlogBtnEnabled = FALSE THEN
+		IF msDatenlogPage = "" THEN
+			msDatenlogPage = ParameterGet("Navigation", "DatenlogPage", msDatenlogPageDflt);
+		END
+		
+		miDatenlogBtnEnabled = PageExists(msDatenlogPage);
+	END
+	
+	// initialise process DB page name variable and DatenlogPage button enabled flag
+	IF miDBBtnEnabled = FALSE THEN
+		IF msDBPage = "" THEN
+			msDBPage = ParameterGet("Navigation", "DBPage", msDBPageDflt);
+		END
+		
+		miDBBtnEnabled = PageExists(msDBPage);
+	END	
+
+	// initialise process SNMPTraps page name variable and SNMPTrapsPage button enabled flag
+	IF miSNMPTrapsBtnEnabled = FALSE THEN
+		IF msSNMPTrapsPage = "" THEN
+			msSNMPTrapsPage = ParameterGet("Navigation", "SNMPTraps", msSNMPTrapsPageDflt);
+		END
+		
+		miSNMPTrapsBtnEnabled = PageExists(msSNMPTrapsPage);
+	END
+		
+	ErrSet(0);
+	
+
+END
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//		FUNCTION NAME	
+//						UAG_NAV_Parent()
+//
+//     	GENERAL DESCRIPTION
+//			
+//			Displays page configured as ParentPage environment variable for current page, 
+//			or calls function specified by ParentPage.
+//
+//			Note:
+//				To specify a function prefix the function name with "?"
+//
+// 		ARGUMENTS:
+//
+//     	RETURNED VALUE: 
+//
+//			0 if successful, otherwise -1.
+//
+//		PSEUDO CODE:
+//
+//	Autor:				J.Venz
+//	Erstellungsdatum:	11.03.03	/	Schneider Electric GmbH
+//	Version				75.33.11.02
+//
+//	Historie:
+//
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	07.09.16	Steiner		CSV Funktionen entfernt
+//
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+INT FUNCTION
+UAG_NAV_Parent()
+
+	STRING	sParent;
+	INT		iError = -1;
+	
+	sParent = UAG_PageParentGetName();
+	
+	iError = PageDisplay(sParent);
+	
+	RETURN iError;
+END
+
+
+//	FUNCTION UAG_Nav_Sub()
+//	Übergabeparameter:	
+//                         
+//	Rückgabewert:		true oder FALSE 
+//	Beschreibung:		Ruft die über den Parameter SubPage fesgelegte Seite auf
+//						
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	25.04.08	/	Schneider Electric GmbH
+//	Version				75.33.11.02
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	07.09.16	Steiner		CSV Funktionen entfernt
+
+INT FUNCTION 
+UAG_Nav_Sub()
+
+	STRING	sParent;
+	INT		iError = -1;
+	
+	sParent = DspGetEnv("SubPage");
+	
+	iError = PageDisplay(sParent);
+	
+	RETURN iError;
+END
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//		FUNCTION NAME	
+//						UAG_NAV_Network()
+//						UAG_NAV_Trend()
+//						UAG_Nav_DTrend()
+//						UAG_Nav_Trendxy()
+//     	GENERAL DESCRIPTION
+//			
+//			Displays Network page, or calls function defined for network page.
+//
+//			Note:
+//				The Network page is defined by the parameter 
+//					[Navigation] NetworkPage
+//				To specify a function prefix the function name with "?"
+//
+// 		ARGUMENTS:
+//
+//     	RETURNED VALUE: 
+//
+//			0 if successful, otherwise -1.
+//
+//		PSEUDO CODE:
+//
+//	Autor:				J.Venz
+//	Erstellungsdatum:	11.03.03	/	Schneider Electric GmbH
+//	Version				75.33.11.02
+//
+//	Historie:
+//
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//
+//	30.04.08	Steiner		Für UAG abgewandelt mehr Kontrolle über die Seite
+//	13.01.12	Steiner		Font wurde nicht geladen
+//	07.09.16	Steiner		CSV Funktionen entfernt
+//
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+INT FUNCTION
+UAG_NAV_Network(INT idisplay=-1)
+
+	INT		iError;
+		
+	iError = PageDisplay(msNetworkPage);
+
+	
+//	UAG_Server_ClientInfo("Alarm");
+	RETURN iError;
+END
+
+
+INT FUNCTION
+UAG_NAV_Trend(INT idisplay=-1)
+
+	INT		iError;
+	
+	iError = PageDisplay(msTrendPage);
+		
+	RETURN iError;
+END
+
+INT FUNCTION 
+UAG_Nav_DTrend(INT idisplay=-1)
+	INT		iError;
+	
+	iError = PageDisplay(msDTrendPage);
+		
+	RETURN iError;
+END
+
+INT FUNCTION 
+UAG_Nav_Trendxy(INT idisplay=-1)
+	INT		iError;
+	
+	iError = PageDisplay(msTrendxyPage);
+		
+	RETURN iError;
+END
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//	UAG_NAV_TrendGrpMenu()
+//	Übergabeparameter:	 
+//                          
+//	Rückgabewert:		---
+//	Beschreibung:		Liefert aus der TrendGrp ein Menu
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	06.06.08	/	Schneider Electrik GmbH
+//	Version				7.2.0.0
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	01.12.09	Steiner		Erweitert für Analyst
+//
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+INT FUNCTION
+UAG_NAV_TrendGrpMenu(INT iX, INT iY, INT iAN=250,INT iD=0,INT iMon=-1)
+
+	INT		hDev = -1;
+	INT		iRecordNo;
+	INT		iZaehler;
+	INT		nSelection	= 0;
+	STRING	sMenu		= "";
+	STRING	sTrendName,sTrendName2,sTrendArea;
+	STRING	sPens;
+	STRING	sPage;
+	
+	ErrSet(1);
+	hDev = UAG_DevOpen("UAG_TrendP","UAG_TrendS",2);
+	
+	IF hDev = -1 THEN
+		ErrSet(0);
+		RETURN -1;
+	END
+	DevControl(hDev, 1, "");			
+	iZaehler=1
+	WHILE NOT DevEOF(hDev) DO
+
+		
+		sTrendName = DevGetField(hDev, "Desc");
+		sTrendArea = DevGetField(hDev, "Area");
+		IF sTrendArea ="" THEN sTrendArea = "0" END;
+		iRecordNo = DevRecNo(hDev);
+		msPopupMenuAction[iZaehler] = sTrendName;
+		iZaehler = iZaehler +1;
+		! If more than one record with same name only use last record.
+		iError = DevNext(hDev);
+		IF NOT iError THEN
+			iError = DevFind(hDev, sTrendName, "Desc");
+		END
+		
+		DevSeek(hDev,iRecordNo);
+		
+		IF iError THEN	
+			DspPopupMenu(0, sTrendName);
+		END
+		
+		DevNext(hDev);	
+	END
+	
+
+	DspPopupMenu(0, sMenu); 
+	nSelection = DspPopupMenu(-1,"",iX,iY);
+
+	DevFirst(hDev);
+		
+	WHILE NOT DevEOF(hDev) DO
+	
+		sTrendName = DevGetField(hDev, "Desc");
+		IF sTrendName = msPopupMenuAction[nSelection] THEN	
+			sPens = DevGetField(hDev, "Pen1") + "," 
+			+ DevGetField(hDev, "Pen2") + ","
+			+ DevGetField(hDev, "Pen3") + ","
+			+ DevGetField(hDev, "Pen4") + ","
+			+ DevGetField(hDev, "Pen5") + ","
+			+ DevGetField(hDev, "Pen6") + ","
+			+ DevGetField(hDev, "Pen7") + ","
+			+ DevGetField(hDev, "Pen8");
+			sMenu = sTrendName;
+		END
+		iError = DevNext(hDev);
+
+	END
+	SELECT CASE iD
+	CASE    0
+		UAG_Trend_PageGruppe(msTrendPage,sMenu,sPens,iMon,iAN);
+	CASE    1	
+		UAG_Trend_PageGruppe(msDTrendPage,sMenu,sPens,iMon,iAN);
+	CASE    2	
+		UAG_PA_PageGruppe(msAnalystPage,sMenu,sPens,iMon);
+	END	SELECT	
+	
+	DevClose(hDev);
+	ErrSet(0);		
+	RETURN 0;
+END
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//		FUNCTION NAME	
+//						UAG_NAV_Analyst()
+//
+//     	GENERAL DESCRIPTION
+//			
+//			Displays Process Analyst page, or calls function defined for Analyst page.
+//
+//			Note:
+//				The Process Analyst page is defined by the parameter 
+//					[Navigation] ProcessAnalystPage
+//				To specify a function prefix the function name with "?"
+//
+// 		ARGUMENTS:
+//
+//     	RETURNED VALUE: 
+//
+//			0 if successful, otherwise -1.
+//
+//		PSEUDO CODE:
+//
+//	Autor:				D. Wood
+//	Erstellungsdatum:	20.09.04	/	Schneider Electric GmbH
+//	Version				75.33.11.02
+//
+//	Historie:
+//
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//
+//	30.04.08	Steiner		Für UAG abgewandelt mehr Kontrolle über die Seite
+//	03.12.09	Steiner		Speicherort auf dem Server eingeführt.
+//	07.09.16	Steiner		CSV Funktionen entfernt
+//
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+INT FUNCTION
+UAG_NAV_Analyst(INT idisplay=-1)
+
+	INT		iError;
+	OBJECT hAnalyst;
+	iError = PageDisplay(msAnalystPage);
+	hAnalyst = ObjectByName("CSV_PA");
+
+
+//Set the objects primary path property
+_ObjectSetProperty(hAnalyst, "PrimaryPath", PathToStr("[DATA2P]:\Analyst Views"));	
+_ObjectSetProperty(hAnalyst, "SecondaryPath", PathToStr("[DATA2S]:\Analyst Views"));	
+	RETURN iError;
+END
+
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//		FUNCTION NAME	
+//						UAG_NAV_Report()
+//
+//     	GENERAL DESCRIPTION
+//			
+//			Displays Report page, or calls function defined for report page.
+//
+//			Note:
+//				The Network page is defined by the parameter 
+//					[Navigation] ReportPage
+//				To specify a function prefix the function name with "?"
+//
+// 		ARGUMENTS:
+//
+//     	RETURNED VALUE: 
+//
+//			0 if successful, otherwise -1.
+//
+//		PSEUDO CODE:
+//
+//	Autor:				J.Venz
+//	Erstellungsdatum:	11.03.03	/	Schneider Electric GmbH
+//	Version				75.33.11.02
+//
+//	Historie:
+//
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//
+//	30.04.08	Steiner		Für UAG abgewandelt mehr Kontrolle über die Seite
+//	07.09.16	Steiner		CSV Funktionen entfernt
+//
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+INT FUNCTION
+UAG_NAV_Report(INT idisplay=-1)
+
+	INT		iError;
+	
+	iError = PageDisplay(msReportPage);
+	
+	RETURN iError;
+END
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//		FUNCTION NAME	
+//						UAG_NAV_ReportMenu()
+//
+///     	GENERAL DESCRIPTION
+//			
+//			Displays popup menu for Reports.
+//
+//			Note:
+//				Report popup menu is defined by the "Template" page and "Reports" menu in the 
+//				Menu.dbf.
+//
+// 		ARGUMENTS:
+//
+//			iX		- x coordinate of popup menu position
+//			iY		- y coordinate of popup menu position
+//
+//     	RETURNED VALUE: 
+//
+//
+//		PSEUDO CODE:
+//
+//	Autor:				J.Venz
+//	Erstellungsdatum:	11.03.03	/	Schneider Electric GmbH
+//	Version				75.33.11.02
+//
+//	Historie:
+//
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//
+//	30.04.08	Steiner		Für UAG abgewandelt mehr Kontrolle über die Seite
+//	07.09.16	Steiner		Auf Pagemenu umgestellt
+//
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+INT FUNCTION
+UAG_NAV_ReportMenu()
+	INT iX,  iY;
+	DspAnGetPos(KeyGetCursor(), iX, iY);
+
+	UAG_NAV_DisplayPopupMenu( "@(Reports)", iX, iY)
+
+	RETURN 0;
+END
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//		FUNCTION NAME	
+//						UAG_NAV_Tools()
+//
+//     	GENERAL DESCRIPTION
+//			
+//			Displays Tools page
+//
+//			Note:
+//				The Tools page is defined by the parameter 
+//					[Navigation] ToolsPage
+//				
+//
+// 		ARGUMENTS:
+//
+//     	RETURNED VALUE: 
+//
+//			0 if successful, otherwise -1.
+//
+//	Autor:				J.Venz
+//	Erstellungsdatum:	11/03/03/	Schneider Electric GmbH
+//	Version				7.2.33.70.05
+//
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	30.04.08	Steiner		Für UAG abgewandelt mehr Kontrolle über die Seite
+//	27.06.08	Steiner		Funktionsaufruf für Statistik 
+//	09.01.13	Steiner		auf Pagegoto geändert
+//	08.04.14	Steiner		auf UAG_PAgeDisplay geändert.
+//
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+INT FUNCTION
+UAG_NAV_Tools(INT idisplay=-1)
+
+	INT		iError;
+	
+	iError = PageDisplay(msToolsPage);
+//	SleepMS(2000);
+//	UAG_Info_Server_Admin()
+
+	RETURN iError;
+END
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//		FUNCTION NAME	
+//						UAG_NAV_ToolsMenu()
+//
+//     	GENERAL DESCRIPTION
+//			
+//			Displays popup menu for Screen Tools.
+//
+//			Note:
+//				Tools popup menu is defined by the "Template" page and "Tools" menu in the 
+//				Menu.dbf.  If no "Tools" menu has been defined in this section of the Menu.dbf then
+//				a default menu is displayed. 
+//
+// 		ARGUMENTS:
+//
+//     	RETURNED VALUE: 
+//
+//
+//		PSEUDO CODE:
+//
+//	Autor:				J.Venz
+//	Erstellungsdatum:	11.03.03	/	Schneider Electric GmbH
+//	Version				75.33.11.02
+//
+//	Historie:
+//
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//
+//	30.04.08	Steiner		Muss in UAG Nav sein
+//	23.08.12	Steiner		Positon wird nicht mehr angegeben.
+//	07.09.16	Steiner		Auf Pagemenu umgestellt
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+FUNCTION
+UAG_NAV_ToolsMenu()
+
+	INT		iMenuExists;
+	INT		nSelection	= 0;
+	STRING	sDisableEngTools;
+	STRING	sChecked;
+	STRING	sMenu		= "";
+		INT iX,  iY;
+	DspAnGetPos(KeyGetCursor(), iX, iY);
+		
+	iMenuExists = UAG_NAV_DisplayPopupMenu( "@(Tools)", iX, iY);
+
+END
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//		FUNCTION NAME	
+//						UAG_NAV_GetEngToolsPrivilege()
+//
+//     	GENERAL DESCRIPTION
+//			
+//			Check user has privilege level required for engineering tools.
+//
+// 		ARGUMENTS:
+//
+//
+//     	RETURNED VALUE: 
+//
+//			1 if user has required privilege level, otherwise 0.
+//
+//		PSEUDO CODE:
+//
+//	Autor:				J.Venz
+//	Erstellungsdatum:	11.03.03	/	Schneider Electric GmbH
+//	Version				3.0.0.0
+//
+//	Historie:
+//
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+INT FUNCTION
+UAG_NAV_GetEngToolsPrivilege()
+	
+	IF miEngToolsPrivilege = -1 THEN
+		miEngToolsPrivilege = StrToInt(ParameterGet("Privilege", "EngTools", miEngToolsPrivilegeDflt));
+	END	
+
+	RETURN GetPriv(miEngToolsPrivilege,0);	
+END
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//		FUNCTION NAME	
+//						UAG_NAV_LogMenu()
+//
+
+//
+//     	GENERAL DESCRIPTION
+//			
+//			Displays popup menu for Screen Log.
+//
+//			Note:
+//				Logs popup menu is defined by the "Template" page and "Logs" menu in the 
+//				Menu.dbf.  If no "Logs" menu has been defined in this section of the Menu.dbf then
+//				a default menu is displayed. 
+//
+// 		ARGUMENTS:
+//
+//     	RETURNED VALUE: 
+//
+//
+//		PSEUDO CODE:
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	30.04.08	/	Schneider Electrik GmbH
+//	Version				74.33.70.00
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	07.01.09	Steiner		Funktionsaufruf erweitert
+//	23.08.12	Steiner		Pos. wird nicht mehr angegeben	
+//	06.05.14	Steiner		auf neue Pagemenue umgestellt.
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+FUNCTION
+UAG_NAV_LogMenu()
+
+	INT		iMenuExists;
+	INT		nSelection	= 0;
+	STRING	sMenu		= "";
+	INT iX,  iY;
+	DspAnGetPos(KeyGetCursor(), iX, iY);
+		
+	iMenuExists = UAG_NAV_DisplayPopupMenu( "@(Logfiles)", iX, iY);
+	
+END
+
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//		FUNCTION NAME	
+//						UAG_NAV_PagePrint()
+//
+//
+//     	GENERAL DESCRIPTION
+//			
+//			Screen print of active page, or calls function defined for page print.
+//
+//			Note:
+//				The print function is defined by the page environment variable "PrintPage" if it exists,
+//				otherwise by the parameter 
+//					[Navigation] PrintPage
+//				To specify a function prefix the function name with "?"
+//
+//				If no function has been defined then a screen print will be performed.
+//
+// 		ARGUMENTS: -
+//
+//     	RETURNED VALUE: 0
+//
+//	Autor:				J.Venz
+//	Erstellungsdatum:	11.03.03	/	Schneider Electric GmbH
+//	Version				75.33.11.02
+//
+//	Historie:
+//
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//
+//	08/01/08	F.Däbritz	Für UAG abgewandelt (deutscher Text)
+//	07.09.16	Steiner		CSV Funktionen entfernt
+
+
+FUNCTION 
+UAG_Nav_PagePrint()
+
+	STRING	strPrintPage;
+	INT		iError;
+	
+	IF mstrPrintPage = "" THEN
+		mstrPrintPage = ParameterGet("Navigation", "PrintPage", mstrPrintPageDflt);
+	END
+	
+	strPrintPage = DspGetEnv("PrintPage");
+	
+	IF strPrintPage = "" THEN
+		strPrintPage = mstrPrintPage;
+	END
+	
+	IF strPrintPage <> "" THEN
+		iError = PageDisplay(strPrintPage);
+		
+	ELSE	
+		IF mstrPrinter = "" THEN
+			mstrPrinter = ParameterGet("Printer", "Port", mstrPrinterDflt);
+		END
+		IF CSV_MessageBox( StrToLocalText("@(Print...)"), StrToLocalText("@(Print Page)?"), 1+32) = 0 THEN
+			WinPrint(mstrPrinter, 0, 0, 0);
+		END
+	END
+	
+END
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//		FUNCTION NAME	
+//						UAG_Nav_AlarmsKF()
+//
+//     	GENERAL DESCRIPTION
+//			
+//			Displays Alarm page, or calls function defined for alarm page.
+//
+//			Note:
+//				The Network page is defined by the parameter 
+//					[Navigation] AlarmPage
+//				To specify a function prefix the function name with "?"
+//
+// 		ARGUMENTS:
+//
+//     	RETURNED VALUE: 
+//
+//			0 if successful, otherwise -1.
+//
+//		PSEUDO CODE:
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	24.11.08	/	Schneider Electric GmbH
+//	Version				74.33.70.00
+//
+//	Historie:
+//
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//
+//	08.01.09	Steiner		Lastpage Angepast.
+//	01.07.11	Steiner		Erweiterter Filter wird genutzt
+//	08.04.14	Steiner		Lastpage Angepast.
+//
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+INT FUNCTION
+UAG_Nav_AlarmsKF(INT iCat,STRING sText="", INT idisplay=-1)
+	INT		iError;
+
+	iError =UAG_PageDisplay20(msAlarmPage,idisplay);
+	SleepMS(1000);
+	UAG_Alarms_Filter_Cat(iCat,sText);
+	RETURN iError;
+	
+END
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//		FUNCTION NAME	
+//						UAG_Nav_AlarmsPF()
+//
+//     	GENERAL DESCRIPTION
+//			
+//			Displays Alarm page, or calls function defined for alarm page.
+//
+//			Note:
+//				The Network page is defined by the parameter 
+//					[Navigation] AlarmPage
+//				To specify a function prefix the function name with "?"
+//
+// 		ARGUMENTS:
+//
+//     	RETURNED VALUE: 
+//
+//			0 if successful, otherwise -1.
+//
+//		PSEUDO CODE:
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	06.02.09	/	Schneider Electric GmbH
+//	Version				74.33.70.00
+//
+//	Historie:
+//
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	01.07.11	Steiner		Erweiterter Filter wird genutzt
+//	08.04.14	Steiner		Lastpage Angepast.
+//
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+INT FUNCTION
+UAG_Nav_AlarmsPF(INT iPrio, STRING sText, INT idisplay=-1)
+	INT		iError;
+	STRING sParam;
+	sParam=IntToStr(iPrio) +","+sText
+	iError =UAG_PageDisplay20(msAlarmPage,idisplay);
+	SleepMS(1000);
+	UAG_Alarms_Filter_Prio(iPrio,sText);
+	RETURN iError;
+	
+END
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//		FUNCTION NAME	
+//						UAG_Nav_Pager()
+//
+//
+//     	GENERAL DESCRIPTION
+//			
+//			Displays Pager page, or calls function defined for alarm page.
+//
+//			Note:
+//				The Pager page is defined by the parameter 
+//					[Navigation] PagerPage
+//				To specify a function prefix the function name with "?"
+//
+// 		ARGUMENTS:
+//
+//     	RETURNED VALUE: 
+//
+//			0 if successful, otherwise -1.
+//
+//		PSEUDO CODE:
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	10.10.08	/	Schneider Electric GmbH
+//	Version				74.33.70.05
+//
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	08.04.14	Steiner		Lastpage Angepast.
+//	
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+INT FUNCTION
+UAG_Nav_Pager(INT idisplay=-1)
+	INT		iError;
+	iError =PageDisplay(msPagerPage);
+//	UAG_Alarms_FilterZeigen(1);
+//	UAG_Alarms_GroupFilter(250, UAG_Alarms_GetGroupFilterID(1), 1)
+//
+	RETURN iError;
+	
+END
+
+//	int FUNCTION UAG_Nav_AlarmHist()
+//	Übergabeparameter:	keine
+//                         
+//	Rückgabewert:		 
+//	Beschreibung:		Fehlende und Neue Parameter für Nav
+//						
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	28.11.07	/	Schneider Electric GmbH
+//	Version				74.33.70.00
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	07.01.09	Steiner		Erweitert für History DBF
+
+INT FUNCTION 
+UAG_Nav_AlarmHist(STRING sDBName,INT idisplay=-1)
+	INT		iError;
+	iError = PageTask(idisplay,"UAG_Nav_AlarmHist72",sDBName);
+		
+	RETURN iError;
+END
+
+FUNCTION 
+UAG_Nav_AlarmHist72(STRING sDBName)
+	INT		iError;
+	STRING	sPath
+	
+	sPath=UAG_DevTest(sDBName+".dbf");
+	IF msAlarmHistPage = "" THEN
+		msAlarmHistPage = ParameterGet("Navigation" ,"AlarmHistPage" ,msAlarmHistPageDflt);
+	END
+	
+	IF sDBName = "" THEN
+		sDBName= "ALARMLOG"
+	ELSE
+		sDBName=StrTrim(sDBName);
+	END;
+	DevModify("DB_Anzeige","*","*",sPath,-1)
+	iError = PageDisplay(msAlarmHistPage);
+	PageSetStr(5,sDBName);
+	PageSetStr(6,sPath);	
+	PageSetStr(7,"TAG");
+
+END
+
+
+//	int FUNCTION UAG_Nav_Datenlog()
+//	Übergabeparameter:	keine
+//                         
+//	Rückgabewert:		 
+//	Beschreibung:		Fehlende und Neue Parameter für Nav
+//						
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	28.11.07	/	Schneider Electric GmbH
+//	Version				74.33.70.00
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	07.01.2009	Steiner		Anzeige History
+
+INT FUNCTION 
+UAG_Nav_Datenlog(STRING sDBName, INT idisplay=-1)
+	INT		iError;
+	iError = PageTask(idisplay,"UAG_Nav_Datenlog72",sDBName);
+	RETURN iError;
+END
+
+FUNCTION 
+UAG_Nav_Datenlog72(STRING sDBName)
+	INT		iError;
+	STRING sPath;
+	IF sDBName = "" THEN
+		sDBName= "OPERLOG"
+	ELSE
+		sDBName=StrTrim(sDBName);
+	END
+	sPath=UAG_DevTest(sDBName+".dbf");
+	DevModify("DB_Anzeige","*","*",sPath,-1)
+	iError = PageDisplay(msDatenlogPage);
+	PageSetStr(5,sDBName);
+	PageSetStr(6,sPath);	
+	PageSetStr(7,"TAGNAME");
+
+END
+
+//	int FUNCTION UAG_Nav_DB()
+//	Übergabeparameter:	keine
+//                         
+//	Rückgabewert:		 
+//	Beschreibung:		Kann eine Beliebige Datenbank und die History Anzeigen
+//						
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	07.01.09	/	Schneider Electric GmbH
+//	Version				74.33.70.00
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+
+
+INT FUNCTION 
+UAG_Nav_DB(STRING sDBName, STRING sDevName, STRING sFeld, INT idisplay=-1)
+	INT		iError
+	iError = PageTask(idisplay,"UAG_Nav_DB72",sDBName+","+sDevName+","+sFeld);
+	RETURN iError;
+END
+
+FUNCTION 
+UAG_Nav_DB72(STRING sDBName, STRING sDevName, STRING sFeld)
+	INT		iError,hDev;
+	STRING sText,sTmp,sFormat1,sPath;
+	INT I,G,L;
+
+	sPath=UAG_DevTest(sDBName+".dbf");
+	IF sDBName = "" THEN 
+		sDBName= "OPERLOG" 
+	ELSE
+		sDBName=StrTrim(sDBName);
+	END;
+	DevModify("DB_Anzeige","*","*",sPath,-1)
+	iError = PageDisplay(msDBPage);
+	PageSetStr(5,sDBName);
+	PageSetStr(6,sPath);
+	PageSetStr(7,sFeld);
+		
+	hDev = DevOpen(sDevName,16);
+	sFormat1 = StrTrim(DevInfo(hDev, 1));
+	ErrSet(1);
+	FOR I=0 TO StrLength(sFormat1) DO
+		sTmp = CharToStr(StrGetChar(sFormat1,I));
+		IF sTmp = "{" THEN
+			I=I+1;
+			G = StrSearch(I, sFormat1, ",")-I;
+			sTmp =StrMid(sFormat1,I,G);
+			I=I+G+1;
+			G = StrSearch(I, sFormat1, "}")-I;
+			L = StrToInt(StrMid(sFormat1,I,G));
+			I=I+G;
+			sTmp = StrPad(sTmp, " ", L);
+			sText = sText + sTmp;
+		END	
+	END
+	DspStr(511, "UAG_DB", sText);
+	ErrSet(0);	
+//	RETURN iError;
+END
+
+//	int FUNCTION UAG_Nav_SNMPTraps()
+//	Übergabeparameter:	keine
+//                         
+//	Rückgabewert:		 
+//	Beschreibung:		Fehlende und Neue Parameter für Nav
+//						
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	12.12.07	/	Schneider Electric GmbH
+//	Version				75.33.11.02
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	07.09.16	Steiner		CSV Funktionen entfernt
+//
+
+INT FUNCTION 
+UAG_Nav_SNMPTraps(INT idisplay=-1)
+	INT		iError;
+	
+	iError = PageDisplay(msSNMPTrapsPage);
+		
+	RETURN iError;
+END
+
+//	FUNCTION UAG_NAV_WEB(STRING sSPSName)
+//	Übergabeparameter:	SPS Name
+//                         
+//	Rückgabewert:		 
+//	Beschreibung:		für SPS Diagnose über WEB
+//						
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	11.12.07	/	Schneider Electric GmbH
+//	Version				3.0.0.0
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	05.06.08	Steiner		nutzt jetzt UAG_NAV_HTML
+FUNCTION 
+UAG_NAV_WEB(STRING sSPSName)
+	
+	UAG_NAV_HTML( "HTTP://" +sSPSName,"SPS Status: "  + sSPSName+ " - "  );
+END 
+
+//	FUNCTION UAG_NAV_HTML()
+//	Übergabeparameter:	Name der Seite
+//                         
+//	Rückgabewert:		 
+//	Beschreibung:		Anzeige von Webseiten
+//						
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	05.06.08	/	Schneider Electric GmbH
+//	Version				3.0.0.0
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+
+FUNCTION 
+UAG_NAV_HTML(STRING sAdresse,STRING sWintitel)
+	OBJECT WEBView;
+	INT		iError;
+	ErrSet(1);
+	IF msWebPage = "" THEN
+		msWebPage = ParameterGet("Navigation" ,"WebPage" ,msWebPageDflt);
+	END
+
+	Ass(-2,1,"'" + sWintitel + "'",0);
+
+	
+	iError = UAG_MM_WinNewAt(msWebPage,150,150,giMODE,0)
+	
+	IF  iError <> -1 THEN
+		SleepMS(1000);
+		
+		WEBView=DspAnCreateControlObject(250, msWEBClass, 900, - 600);
+		PageSetInt(1,WEBView);
+		SleepMS(200);
+		iError=IsError();
+			
+			_ObjectCallMethod(WEBView,"Navigate",sAdresse);
+
+		iError=IsError();	
+		IF iError <>0 THEN 
+			UAG_SystemInfo("UAG_NAV_WEB", "System","WEB View: ist auf dem Rechner nicht vorhanden","-","-","-",TaskCluster(),_UAG_Fehler)
+	    END
+	END
+	
+	ErrSet(0);
+END 
+
+//	FUNCTION  UAG_Nav_BildGruppe()
+//
+//	Übergabeparameter:	HIM,Bildgruppe,X ,Y
+//	Rückgabewert:		---
+//	Beschreibung:		Es wird die von UAG erzeugte Menu.dbf genutzt.
+//						Anders als die Orginale Funktion wird hier in der Spalte MenuName nach dem 
+//						Namen der HMI gesucht und in der Spalte MenuItem nach dem Namen der Bilder.
+//	Autor:				J.Venz
+//	Erstellungsdatum:	03.11.2003	/	Schneider Electrik GmbH
+//	Version				7.2.3.12
+//
+//	Historie:
+//	geändert 	am	Autor	Kurzbeschreibung der Änderung		Referenz (optional)
+
+//	10.11.07 	Steiner 	angepasst an UAG
+//	28.08.12	Steiner		Pos wird berechnet.
+//	07.09.16	Steiner		auf Pagemenu Umngestellt
+
+INT FUNCTION 
+UAG_Nav_BildGruppe(STRING sHMI, STRING sGruppe)
+	INT	hMenue,iLevel1,iLevel2;
+
+	ErrSet(1);
+
+	hMenue = MenuGetGenericNode(1)
+	iLevel1 = MenuGetChild(hMenue,sHMI)
+	iLevel2 = MenuGetChild(iLevel1,sGruppe)
+	ErrSet(0);
+	
+	RETURN DspPopupConfigMenu(iLevel2)
+END
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//		FUNCTION NAME	
+//						UAG_Nav_DisplayPopupMenu()
+//
+//     	GENERAL DESCRIPTION
+//			
+//			Displays popup menu for specified page and specified menu.
+//			Top left corner of menu is displayed at nominated x,y coordinates.
+//
+// 		ARGUMENTS:
+//
+//			sPageName		-	Name of page
+//			sMenuName		-	Name of menu
+//			iX				- 	x coordinate of top left corner of popup menu
+//			iY				- 	y coordinate of top left corner of popup menu
+//
+//     	RETURNED VALUE: 
+//
+//			0 if successful, otherwise -1.
+//
+//		PSEUDO CODE:
+//
+//	Autor:				J.Venz
+//	Erstellungsdatum:	11.03.03	/	Schneider Electric GmbH
+//	Version				74.33.70.00
+//
+//	Historie:
+//
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//
+//	30.04.08	Steiner		Muss in UAG Nav sein
+//	06.05.14	Steiner		auf neue Pagemenue umgestellt.
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+INT FUNCTION
+UAG_NAV_DisplayPopupMenu( STRING sMenuName, INT iX = -1, INT iY= -1)
+
+	INT specifiedMenuNode = -1;								// Node handle for the specified menuName in the menu config tree
+
+	// find the specific Level 1 menu config node under the specified page
+	specifiedMenuNode = UAG_PageGetConfigMenuHnd( msTemplatePageName, sMenuName);
+	IF (specifiedMenuNode < 0) THEN
+		// specific menu is not found or empty for the specified page, return invalid argument error
+		RETURN 274;
+	END
+
+	// show pop-up in pos. relative to an AN, as command may not be fired from mouse
+	RETURN DspPopupConfigMenu(specifiedMenuNode, 0, iX, iY);
+END
+
+//	int FUNCTION UAG_Nav_MenuDisable()
+//	Übergabeparameter:	keine
+//                         
+//	Rückgabewert:		 0 oder 1 
+//	Beschreibung:		Schaltet die Menueleiste aus. Entweder Global über INI-Parameter
+//						oder Lokal über Parameter im Bild
+//						
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	28.11.07	/	Schneider Electric GmbH
+//	Version				3.1.1.0
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	17.07.09	Steiner		Menü auf 2. Bildschirm wählbar.
+INT FUNCTION UAG_Nav_MenuDisable()
+
+	STRING	sMenuDisable;
+	INT 	iMenuDis,iMenuDisMM;
+		
+	IF msMenuDisable= "" THEN
+		msMenuDisable= ParameterGet("Page", "MenuDisable", "0");
+	END
+	IF msMenuDisableMM= "" THEN
+		msMenuDisableMM= ParameterGet("Page", "MenuDisableMM", "0");
+	END
+	iMenuDisMM=StrToInt(msMenuDisableMM);
+	
+	sMenuDisable= DspGetEnv("MenuDisable");
+	
+	IF sMenuDisable= "" THEN
+		sMenuDisable = msMenuDisable;
+	END
+	
+	IF sMenuDisable <> "" THEN
+		iMenuDis = StrToInt(sMenuDisable); 		
+	ELSE	
+		iMenuDis = FALSE;	
+	END
+	
+	IF iMenuDisMM=1 THEN
+		iMenuDis = iMenuDis OR (WinNumber() = 1 AND UAG_MM_Anzahl > 1);
+	END
+			
+	RETURN iMenuDis
+END
+
+
+//FUNCTION UAG_NAV_OperatorLog()
+//	UAG_NAV_File("Operator Log", "[RUN]:\Client.log", 2 + 4 + 8);
+//END
+
+//	FUNCTION UAG_NAV_XXXXXXXBtnEnabled()
+//	Übergabeparameter:	
+//                         
+//	Rückgabewert:		true oder FALSE 
+//	Beschreibung:		zusammenfassung aller Buttonfunktionen
+//						
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	12.12.08	/	Schneider Electric GmbH
+//	Version				3.1.0.0
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+
+INT FUNCTION
+UAG_NAV_ParentBtnEnabled()
+
+	RETURN (DspGetEnv("ParentPage") <> "");
+	
+END
+
+INT FUNCTION 
+UAG_Nav_SubBtnEnabled()
+
+	RETURN (DspGetEnv("SubPage") <> "");
+	
+END
+
+INT FUNCTION
+UAG_NAV_NetworkBtnEnabled()
+
+	RETURN miNetworkBtnEnabled;
+
+END
+
+INT FUNCTION
+UAG_NAV_HomeBtnEnabled()
+
+	RETURN miHomeBtnEnabled;
+
+END
+
+INT FUNCTION
+UAG_NAV_TrendBtnEnabled()
+
+	RETURN miTrendBtnEnabled;
+END
+
+
+INT FUNCTION
+UAG_NAV_DTrendBtnEnabled()
+
+	RETURN miDTrendBtnEnabled;
+END
+
+INT FUNCTION
+UAG_NAV_AnalystBtnEnabled()
+
+	RETURN miAnalystBtnEnabled;
+END
+
+INT FUNCTION
+UAG_NAV_ReportBtnEnabled()
+
+	RETURN miReportBtnEnabled;
+END
+
+INT FUNCTION
+UAG_NAV_ToolsBtnEnabled()
+
+	RETURN miToolsBtnEnabled;
+END
+
+INT FUNCTION
+UAG_NAV_AlarmsBtnEnabled()
+
+	RETURN miAlarmBtnEnabled;
+END
+
+INT FUNCTION
+UAG_NAV_PagerBtnEnabled()
+
+	RETURN miPagerBtnEnabled;
+END
+
+INT FUNCTION
+UAG_NAV_DisabledBtnEnabled()
+
+	RETURN miDisabledBtnEnabled;
+END
+
+
+INT FUNCTION
+UAG_NAV_HardwareBtnEnabled()
+
+	RETURN miHardwareBtnEnabled;
+END
+
+INT FUNCTION
+UAG_NAV_SummaryBtnEnabled()
+
+	RETURN miSummaryBtnEnabled;
+END
+
+INT FUNCTION
+UAG_NAV_DatenlogBtnEnabled()
+
+	RETURN miDatenlogBtnEnabled;
+END
+
+INT FUNCTION
+UAG_NAV_SNMPTrapsBtnEnabled()
+
+	RETURN miSNMPTrapsBtnEnabled;
+END
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//	UAG_NAV_TrendGrpMenu3()
+//	Übergabeparameter:	
+//						An für Trend =250
+//						id = Typ 0= Trend, 1= Dtrend, 2= Analyst
+//                          
+//	Rückgabewert:		---
+//	Beschreibung:		Liefert aus der TrendGrp ein Menu mit 2 Ebenen. Menü Position wird ermittelt.
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	16.08.12	/	Schneider Electrik GmbH
+//	Version				75.33.11.02
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	
+//	07.09.16	Steiner		Abfrage ob gelöscht werden soll eingefügt.
+//
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+INT FUNCTION
+UAG_NAV_TrendGrpMenu3( INT iAN=250,INT iD=0,INT iMon=WinNumber(),INT iTrendDataSet=0,INT iDel=0);
+	INT iX,  iY;
+	IF iMon = -1 THEN iMon =WinNumber() END
+	DspAnGetPos(KeyGetCursor(), iX, iY);
+	RETURN UAG_NAV_TrendGrpMenu2(iX, iY+10,iAN,iD, iMon,iTrendDataSet,iDel)
+END
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//	UAG_NAV_TrendGrpMenu2()
+//	Übergabeparameter:	 x und x = Menue Pos.
+//						An für Trend =250
+//						id = Typ 0= Trend, 1= Dtrend, 2= Analyst
+//                          
+//	Rückgabewert:		---
+//	Beschreibung:		Liefert aus der TrendGrp ein Menu mit 2 Ebenen
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	07.12.09	/	Schneider Electrik GmbH
+//	Version				75.33.11.02
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	03.12.12	Steiner	Berechtigung wird überprüft.
+//	07.09.16	Steiner		Abfrage ob gelöscht werden soll eingefügt.
+//
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+INT FUNCTION
+UAG_NAV_TrendGrpMenu2(INT iX, INT iY, INT iAN=250,INT iD=0,INT iMon=WinNumber(),INT iTrendDataSet=0,INT iDel=0)
+
+	INT		hDev;
+	INT		nSelection	= 0;
+	INT		iError;
+	INT		iNextMenuItem;
+	INT		iMenuActionIndex;
+	INT		iMenuNumberIndex;
+	INT		iSubMenuItemIndex;
+	INT		iMenuNumberRecent;
+	INT		iReturn;
+	INT		iIndex;
+	INT		iIndex2;
+	INT		iItemEmpty;
+	INT		iActionFound;
+	INT		iOK;
+	STRING	sTrendName;
+	STRING	sPens;
+	STRING	sCurrentMenuItem;
+	STRING	sMenuItem;
+	STRING	sAction;
+	STRING	sNewMenuItem;
+	STRING	sGruppenName;
+	STRING	sArea;
+	ErrSet(1);
+	miMenuNumberIndex = 0;
+	miMenuActionIndex = 0;
+	IF iMon =-1 THEN iMon =WinNumber() END;
+	hDev = UAG_DevOpen("UAG_TrendP","UAG_TrendS",2);
+	
+	IF hDev = -1 THEN
+		ErrSet(0);
+		RETURN -1;
+	END
+	DevControl(hDev, 1, "");
+	DevControl(hDev, 0, "");	
+	iNextMenuItem = 0;	
+	iSubMenuItemIndex = 0;
+	iMenuNumberIndex =0; 
+
+	WHILE NOT DevEOF(hDev) DO
+
+			sCurrentMenuItem = DevGetField(hDev, "Sort");
+			sArea = DevGetField(hDev, "Area")
+			iOK =GetPriv(1, StrToInt(sArea) );
+			IF sCurrentMenuItem ="" THEN 
+				sCurrentMenuItem = "0"
+			END;
+			IF iOK THEN
+				sAction = DevGetField(hDev, "Desc");
+			ELSE
+				sAction = "!" + DevGetField(hDev, "Desc");
+			END	
+			IF sMenuItem <> sCurrentMenuItem THEN
+				iMenuNumberIndex = iMenuNumberIndex + 1;
+				sNewMenuItem = 	sCurrentMenuItem + ">" + IntToStr(iMenuNumberIndex) + ",";
+				DspPopupMenu(0, sNewMenuItem);
+				DspPopupMenu(iMenuNumberIndex, sAction); 
+				iSubMenuItemIndex =1;
+				msPopupMenuAction[iMenuActionIndex] = sAction;
+				miPopupMenuActionID[iMenuActionIndex] = 100 * (iMenuNumberIndex) + iSubMenuItemIndex;
+				iMenuActionIndex = iMenuActionIndex + 1;
+				sMenuItem = sCurrentMenuItem;
+			ELSE
+//				sAction = DevGetField(hDev, "Desc");
+				DspPopupMenu(iMenuNumberIndex, sAction); 
+				msPopupMenuAction[iMenuActionIndex] = sAction;
+				iSubMenuItemIndex =iSubMenuItemIndex +1;
+				miPopupMenuActionID[iMenuActionIndex] = 100 * (iMenuNumberIndex) + iSubMenuItemIndex;
+				iMenuActionIndex = iMenuActionIndex + 1;
+
+			END
+			iError = DevNext(hDev);
+
+	END
+
+	miMenuNumberIndex = iMenuNumberIndex;
+	miMenuActionIndex = iMenuActionIndex;
+
+//	DspPopupMenu(0, sMenu); 
+	nSelection = DspPopupMenu(-1,"",iX,iY);
+	iIndex=0;
+	WHILE NOT (iActionFound OR iIndex >= miMenuActionIndex) DO
+	
+		IF nSelection = miPopupMenuActionID[iIndex] THEN
+			
+			iActionFound = 1;
+			iReturn =iIndex;
+		ELSE
+		
+			iIndex = iIndex + 1;
+		END
+	END
+
+	DevFirst(hDev);
+		
+	WHILE NOT DevEOF(hDev) DO
+	
+		sTrendName = DevGetField(hDev, "Desc");
+		IF sTrendName = msPopupMenuAction[iReturn] THEN	
+			sGruppenName =sTrendName;
+			sPens = DevGetField(hDev, "Pen1") + "," 
+			+ DevGetField(hDev, "Pen2") + ","
+			+ DevGetField(hDev, "Pen3") + ","
+			+ DevGetField(hDev, "Pen4") + ","
+			+ DevGetField(hDev, "Pen5") + ","
+			+ DevGetField(hDev, "Pen6") + ","
+			+ DevGetField(hDev, "Pen7") + ","
+			+ DevGetField(hDev, "Pen8");
+		END
+		iError = DevNext(hDev);
+
+	END
+	IF iActionFound = 1 THEN
+		SELECT CASE iD
+		CASE    0
+			UAG_Trend_PageGruppe(msTrendPage,sGruppenName,sPens,iMon,iAN);
+		CASE    1	
+			UAG_Trend_PageGruppe(msDTrendPage,sGruppenName,sPens,iMon,iAN,iTrendDataSet);
+		CASE    2	
+			UAG_PA_PageGruppe(msAnalystPage,sGruppenName,sPens,iMon,idel);
+		END	SELECT	
+	END
+	DevClose(hDev);
+	ErrSet(0);		
+	RETURN 0;
+END
+
+

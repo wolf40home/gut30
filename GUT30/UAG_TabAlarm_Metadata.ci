@@ -1,0 +1,401 @@
+//-----------------------------------------------------------------------------
+//	Copyright © 2009 Schneider Electric (Australia) Pty Ltd.
+//	All rights reserved.
+//
+// 	FILE:		UAG_UAG_TabAlarm_Metadata.ci
+//
+//	CREATED:	14/09/2009
+//
+//	AUTHOR:		Michael Yip
+//
+//	SUMMARY:
+//
+//		Contains related functions to get metadata (new feature in 7.20) of alarm controls.
+//
+//	PUBLIC FUNCTIONS:
+//
+//		_UAG_TabAlarm_GetIDByAN()
+//		_UAG_TabAlarm_IntMetadata()
+//		_UAG_TabAlarm_StrMetadata()
+//
+//		_UAG_TabAlarm_Col_IntMetadata()
+//		_UAG_TabAlarm_Col_StrMetadata()
+//
+//		_UAG_TabAlarm_Row_IntMetadata()
+//		_UAG_TabAlarm_Row_StrMetadata()
+//				
+// 	REMARKS: 
+//
+//		Replace the array variables (except MasterAN arrays) with metadata stored within the "master"
+//		dynamic object.
+//
+//
+//		The following meta data are used for different types of controls:
+//
+//		UAG_TabAlarm:
+//			MasterAN			- AN that animates the alarm list
+//			ID					- ID of the alarm list
+//			Rows				- Number of rows of alarms to be displayed
+//			ClusterName			- Cluster name
+//			FormatName			- Format name in use to determine column names, width and order
+//			AutoFit				- Whether the column widths are automatically fit upon every refresh
+//			ViewOnly			- Whether the alarm list is view only
+//			Width				- The width of the alarm list in pixels
+//			SelectedCol			- The column ID that is currently selected
+//			DraggedCol			- The column ID that is currently being dragged
+//			DraggedColSep		- The column ID of the column separator that is currently being dragged
+//			SelectedRowStart	- The starting row ID of the rows that are currently selected 
+//			SelectedRowEnd		- The ending row ID of the rows that are currently selected
+//			FilterString		- The filter string indicates whether filter has been applied
+//			SortFieldName		- The alamr field name that is currently being sorted
+//			RefreshEnable		- Flag to indicate whether screen refresh is enabled on the alarm list
+//			RefreshTimer		- Number of page scans remaining that allows screen refresh
+//			RefreshSkip			- Flag to indicate whether screen refresh is skipped
+//			SelectedRecordStart	- The alarm record number of the starting row that is currently selected
+//			SelectedTimeStart	- The timestamp of the alarm of the starting row that is currently selected
+//			SelectedRecordEnd	- The alarm record number of the ending row that is currently selected
+//			SelectedTimeEnd		- The timestamp of the alarm of the ending row that is currently selected
+//			FocusRowAN			- The AN of an alarm row has been selected to show the context menu
+//			FormatString		- The format string to use if FormatName is not defined
+//			Height				- The height of the alarm list including the column heading
+//			Columns				- The number of columns displayed on the alarm list
+//
+//		UAG_TabAlarm.Col:
+//			MasterAN			- Master AN of a column
+//			PosOffset			- The position offset of the columns relative to how it's configured on screen
+//			InitPosX			- The initial X positions of the columns as configured on page
+//			InitPosY			- The initial Y positions of the columns as configured on page
+//			Pos					- The current positions of the columns as displayed on screen
+//			Width				- The current widths of the columns as displayed on screen
+//			ConfigWidth			- The configured widths of the columns as in configuration
+//			FieldName			- The field name of the column texts in full length
+//			LocalText			- The localised text of the column texts in full length
+//			SortDirection		- The sort direction f the column
+//			DragStartPosX		- The X positions of the columns when it has just been selected
+//			DragStartPosY		- The Y positions of the columns when it has just been selected
+//			SepStartPosX		- The X positions of the separator when it has just been selected
+//			TextAN				- The AN for displaying the column text (heading)
+//
+//		UAG_TabAlarm.Row:
+//			MasterAN			- Master AN of a row
+//			Pos					- The current positions of the rows as displayed on screen
+//			CAN					- The AN of text in column ## in a row
+//
+//-----------------------------------------------------------------------------
+
+
+//-----------------------------------------------------------------------------
+//
+//	Constants
+//
+//-----------------------------------------------------------------------------
+
+STRING	c_TABALARM_PVAR_PREFIX			= "_tabalm_";		// The page variable prefix for storing metadata about an alarm list
+STRING	c_TABALARM_PVAR_COL_PREFIX		= "_tabalm_col_";	// The page variable prefix for storing AN of column objects that use metadata
+STRING	c_TABALARM_PVAR_ROW_PREFIX		= "_tabalm_row_";	// The page variable prefix for storing AN of row objects that use metadata
+
+//-----------------------------------------------------------------------------
+//
+//	Module Variables
+//
+//-----------------------------------------------------------------------------
+
+
+//-----------------------------------------------------------------------------
+//
+//	Field Functions Use dyn object metadata to store logical information
+//
+//----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		_UAG_TabAlarm_IntMetadata
+//
+//	SUMMARY:
+//		Get / Set the specific integer metadata of a specific alarm list.
+//			
+//	PARAMS:
+//		listHnd			- A unique number that identifies a particular list
+//		metaField		- Name of a meta field defined in the master dyn object of the alarm list
+//		newValue		- Optional, new value to be set to the metadata, if not specified, metadata is unchanged and returned
+//			
+//	RETURNS: 
+//		The value of the specified metadata or -1 if failed
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION _UAG_TabAlarm_IntMetadata(INT listHnd, STRING metaField, INT newValue = -2147483648)
+	INT MasterAN;
+
+	SELECT CASE metaField
+	CASE "ID"
+		MasterAN = PageGetInt(c_TABALARM_PVAR_PREFIX + IntToStr(listHnd) + "_MasterAN");
+		IF (newValue <> -2147483648) THEN
+			// set value
+			PageSetInt(c_TABALARM_PVAR_PREFIX + IntToStr(listHnd) + "_ID", newValue);
+			PageSetInt(c_TABALARM_PVAR_PREFIX + "AN" + IntToStr(MasterAN) + "_ID", newValue);
+			RETURN newValue;
+		END
+		// get value
+		RETURN PageGetInt(c_TABALARM_PVAR_PREFIX + IntToStr(listHnd) + "_ID");
+
+	// Use named page variables to access the metadata when that feature is implemented in 7.20
+	CASE ELSE
+		IF (newValue <> -2147483648) THEN
+			// set value
+			PageSetInt(c_TABALARM_PVAR_PREFIX + IntToStr(listHnd) + "_" + metaField, newValue);
+			RETURN newValue;
+		END
+		// get value
+		RETURN PageGetInt(c_TABALARM_PVAR_PREFIX + IntToStr(listHnd) + "_" + metaField);
+	END SELECT
+
+	RETURN 0;
+END
+
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		_UAG_TabAlarm_StrMetadata
+//
+//	SUMMARY:
+//		Get / Set the specific string metadata of a specific alarm list.
+//			
+//	PARAMS:
+//		listHnd			- A unique handle number that identifies a particular alarm list
+//		metaField		- Name of a meta field defined in the master dyn object of the alarm list
+//		newValue		- Optional, new value to be set to the metadata, if not specified, metadata is unchanged and returned
+//			
+//	RETURNS: 
+//		The value of the specified metadata or empty string if failed
+//
+//-----------------------------------------------------------------------------
+
+STRING FUNCTION _UAG_TabAlarm_StrMetadata(INT listHnd, STRING metaField, STRING newValue = "N/A")
+	STRING prefix = c_TABALARM_PVAR_PREFIX + IntToStr(listHnd) + "_";
+	// Use named page variables to access the metadata when that feature is implemented in 7.20
+	IF (newValue <> "N/A") THEN
+		// set value
+		PageSetStr(prefix + metaField, newValue);
+		RETURN newValue;
+	END
+	// get value
+	RETURN PageGetStr(prefix + metaField);
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		_UAG_TabAlarm_ResetMetadata
+//
+//	SUMMARY:
+//		Reset the initial values of metadata of a specific alarm list.
+//			
+//	PARAMS:
+//		listHnd			- A unique number that identifies a particular list
+//			
+//	RETURNS: 
+//		0 if run successfully or error if failed
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION _UAG_TabAlarm_ResetMetadata(INT listHnd)
+	STRING prefix = c_TABALARM_PVAR_PREFIX + IntToStr(listHnd) + "_";
+	INT colID;
+
+	PageSetInt(prefix + "SelectedCol", -1);
+	PageSetInt(prefix + "DraggedCol", -1);
+	PageSetInt(prefix + "DraggedColSep", -1);
+	PageSetInt(prefix + "SelectedRowStart", -1);
+	PageSetInt(prefix + "SelectedRowEnd", -1);
+
+	RETURN 0;
+END
+
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		_UAG_TabAlarm_Col_IntMetadata
+//
+//	SUMMARY:
+//		Get / Set the specific integer metadata of a specific column.
+//			
+//	PARAMS:
+//		listHnd			- A unique number that identifies a particular list
+//		colID			- A unique number that identifies a particular column
+//		metaField		- Name of a meta field defined in the master dyn object of the column control
+//		newValue		- Optional, new value to be set to the metadata, if not specified, metadata is unchanged and returned
+//			
+//	RETURNS: 
+//		The value of the specified metadata or -1 if failed
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION _UAG_TabAlarm_Col_IntMetadata(INT listHnd, INT colID, STRING metaField, INT newValue = -2147483648)
+	INT MasterAN = PageGetInt(c_TABALARM_PVAR_COL_PREFIX + IntToStr(listHnd) + "_" + IntToStr(colID) + "_MasterAN");
+
+	SELECT CASE metaField
+	// Use named page variable to store Animation number of objects
+	CASE "MasterAN"
+		IF (newValue <> -2147483648) THEN
+			// set value
+			PageSetInt(c_TABALARM_PVAR_COL_PREFIX + IntToStr(listHnd) + "_" + IntToStr(colID) + "_" + metaField, newValue);
+			RETURN newValue;
+		END
+		// get value
+		RETURN MasterAN;
+
+	CASE ELSE
+		// If failed to find the AN, use page variable instead
+		IF (MasterAN <= 0) THEN
+			IF (newValue <> -2147483648) THEN
+				// set value
+				PageSetInt(c_TABALARM_PVAR_COL_PREFIX + IntToStr(listHnd) + "_" + IntToStr(colID) + "_" + metaField, newValue);
+				RETURN newValue;
+			END
+			// get value
+			RETURN PageGetInt(c_TABALARM_PVAR_COL_PREFIX + IntToStr(listHnd) + "_" + IntToStr(colID) + "_" + metaField);
+		END
+
+		// Use MasterAN to access the metadata when that feature is implemented in 7.20
+		IF (newValue <> -2147483648) THEN
+			// set value
+			DspAnSetMetadata(MasterAN, metaField, newValue);
+			RETURN newValue;
+		END
+		// get value
+		RETURN DspAnGetMetadata(MasterAN, metaField);
+	END SELECT
+	RETURN 0;
+END
+
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		_UAG_TabAlarm_Col_StrMetadata
+//
+//	SUMMARY:
+//		Get / Set the specific string metadata of a specific column.
+//			
+//	PARAMS:
+//		listHnd			- A unique handle number that identifies a particular alarm list
+//		colID			- A unique number that identifies a particular column
+//		metaField		- Name of a meta field defined in the master dyn object of the column control
+//		newValue		- Optional, new value to be set to the metadata, if not specified, metadata is unchanged and returned
+//			
+//	RETURNS: 
+//		The value of the specified metadata or empty string if failed
+//
+//-----------------------------------------------------------------------------
+
+STRING FUNCTION _UAG_TabAlarm_Col_StrMetadata(INT listHnd, INT colID, STRING metaField, STRING newValue = "N/A")
+	INT MasterAN = PageGetInt(c_TABALARM_PVAR_COL_PREFIX + IntToStr(listHnd) + "_" + IntToStr(colID) + "_MasterAN");
+
+	// If failed to find the AN, use page variable instead
+	IF (MasterAN <= 0) THEN
+		IF (newValue <> "N/A") THEN
+			// set value
+			PageSetStr(c_TABALARM_PVAR_COL_PREFIX + IntToStr(listHnd) + "_" + IntToStr(colID) + "_" + metaField, newValue);
+			RETURN newValue;
+		END
+		// get value
+		RETURN PageGetStr(c_TABALARM_PVAR_COL_PREFIX + IntToStr(listHnd) + "_" + IntToStr(colID) + "_" + metaField);
+	END
+
+	// Use MasterAN to access the metadata when that feature is implemented in 7.20
+	IF (newValue <> "N/A") THEN
+		// set value
+		DspAnSetMetadata(MasterAN, metaField, newValue);
+		RETURN newValue;
+	END
+	// get value
+	RETURN DspAnGetMetadata(MasterAN, metaField);
+	RETURN "";
+END
+
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		_UAG_TabAlarm_Row_IntMetadata
+//
+//	SUMMARY:
+//		Get / Set the specific integer metadata of a specific row.
+//			
+//	PARAMS:
+//		listHnd			- A unique handle number that identifies a particular alarm list
+//		rowID			- A unique number that identifies a particular row
+//		metaField		- Name of a meta field defined in the master dyn object of the column control
+//		newValue		- Optional, new value to be set to the metadata, if not specified, metadata is unchanged and returned
+//			
+//	RETURNS: 
+//		The value of the specified metadata or -1 if failed
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION _UAG_TabAlarm_Row_IntMetadata(INT listHnd, INT rowID, STRING metaField, INT newValue = -2147483648)
+	INT MasterAN = PageGetInt(c_TABALARM_PVAR_ROW_PREFIX + IntToStr(listHnd) + "_" + IntToStr(rowID) + "_MasterAN");
+
+	SELECT CASE metaField
+	// User named page variable to store Animation number of objects
+	CASE "MasterAN"
+		IF (newValue <> -2147483648) THEN
+			// set value
+			PageSetInt(c_TABALARM_PVAR_ROW_PREFIX + IntToStr(listHnd) + "_" + IntToStr(rowID) + "_" + metaField, newValue);
+			RETURN newValue;
+		END
+		// get value
+		RETURN MasterAN;
+
+	CASE ELSE
+		// If failed to find the AN, use page variable instead
+		IF (MasterAN <= 0) THEN
+			IF (newValue <> -2147483648) THEN
+				// set value
+				PageSetInt(c_TABALARM_PVAR_ROW_PREFIX + IntToStr(listHnd) + "_" + IntToStr(rowID) + "_" + metaField, newValue);
+				RETURN newValue;
+			END
+			// get value
+			RETURN PageGetInt(c_TABALARM_PVAR_ROW_PREFIX + IntToStr(listHnd) + "_" + IntToStr(rowID) + "_" + metaField);
+		END
+
+		// Use MasterAN to access the metadata when that feature is implemented in 7.20
+		IF (newValue <> -2147483648) THEN
+			// set value
+			DspAnSetMetadata(MasterAN, metaField, newValue);
+			RETURN newValue;
+		END
+		// get value
+		RETURN DspAnGetMetadata(MasterAN, metaField);
+	END SELECT
+	RETURN 0;
+END
+
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		_UAG_TabAlarm_Row_StrMetadata
+//
+//	SUMMARY:
+//		Get / Set the specific string metadata of a specific row.
+//			
+//	PARAMS:
+//		listHnd			- A unique handle number that identifies a particular alarm list
+//		rowID			- A unique number that identifies a particular row
+//		metaField		- Name of a meta field defined in the master dyn object of the tab control
+//		newValue		- Optional, new value to be set to the metadata, if not specified, metadata is unchanged and returned
+//			
+//	RETURNS: 
+//		The value of the specified metadata or empty string if failed
+//
+//-----------------------------------------------------------------------------
+
+STRING FUNCTION _UAG_TabAlarm_Row_StrMetadata(INT listHnd, INT rowID, STRING metaField, STRING newValue = "N/A")
+	RETURN "";
+END
+

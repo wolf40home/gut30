@@ -1,0 +1,484 @@
+///////////////////////////////////////////////////////////////////////////////////
+//	
+// 	FILE:	UAG_Tab_Display.ci
+//
+//	SUMMARY:
+//
+//		Contains related functions to animate tab menu style buttons, and other
+//		display related functions.
+//
+//		The button related functions allow the user TO group multiple graphical
+//		objects to an unique object ID. One of the object will be used as the
+//		master which dictates the input cursor status of the whole object. A
+//		graphical object will have 3 different input states:
+//			- Has no cursor focus
+//			- Has cursor focus and the mouse button is not pressed (button up)
+//			- Has cursor focus and the mouse button is pressed (button down)
+//
+//		
+//	Autor:				Michael Yip
+//	Erstellungsdatum:	29.04.09	/	Schneider Electric GmbH
+//	Version				75.33.11.06
+//
+//	PUBLIC FUNCTIONS:
+//
+//		UAG_DspCursor_MouseUp
+//		UAG_DspCursor_MouseDown
+//
+//		UAG_DspObjectGetCursorUp
+//		UAG_DspObjectGetCursorDown
+//		UAG_DspObjectGetCursor
+//
+//		UAG_DspFixedWidthText
+//
+//		UAG_DspPromptAndKeyEcho
+//
+// 	REMARKS: 
+//
+//		There are limits on the range of object ID that can be assigned to the
+//		Tab menu style buttons.
+//
+//	USAGE:
+//		To use this set of functions for composite objects, one graphical object
+//		will be assigned as the master, while other objects within the group will
+//		be treated as slave which be animated based on the input cursor status of
+//		the master.
+//
+//		To configure, The master object will call:
+//
+//			UAG_DspCursor_MouseUp(0, <object ID>)
+//
+//		at one of the dynamicaly properties that will repeatedly call this fucntion
+//		to monitor whether the master object has cursor focus.
+//
+//		In addition, the master object will also call:
+//
+//			UAG_DspCursor_MouseUp(1, <object ID>) and UAG_DspCursor_MouseDown(1, <object ID>)
+//
+//		at its Command Up and Command Down events respectively. This will set
+//		the input cursor status of the assigned object ID appropriately.
+//
+//		The slave objects will call:
+//
+//			UAG_DspObjectGetCursorUp(<object ID>) or UAG_DspObjectGetCursorDown(<object ID>) to
+//
+//		retrieve the overally input cursor status of the assigned object.
+//
+//-----------------------------------------------------------------------------
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	20.06.17	Steiner		Private Funktion geändert.
+
+//-----------------------------------------------------------------------------
+//
+//	Constants
+//
+//-----------------------------------------------------------------------------
+
+INT		c_WINDOW_MAX	= 20;		// Maximum number of CitectSCADA window supported
+INT		c_OBJECT_MAX	= 750;		// Maximum number of logical object supported on each CitectSCADA window
+INT		c_SPACE_WIDTH	= 4;		// Nonomiated pixel width of a space character in size 10 Arial font, equivalent to Arial,13 by UAG_DspText()
+//-----------------------------------------------------------------------------
+//
+//	Module Variables
+//
+//-----------------------------------------------------------------------------
+
+INT		m_ANMouseDown	[20];		// Each element in the array stores the AN (Animation Number) that is in mouse down state for each window
+INT		m_ObjectMasterAN[20][750];	// Each element in the array stores the AN of the master graphical control for each object in each window
+INT		m_ObjectUsed	[20];		// Each element in the array indicates whether object association is used for each window
+
+INT		m_PromptAN 		= -1;		// The animation number for prompt text
+INT		m_KeyEchoAN 	= -1;		// The animation number for key echo
+STRING	m_PromptText	[20];		// Each element in the array stores the prompt text for each window
+STRING	m_KeyEchoText	[20];		// Each element in the array stores the key echo text for each window
+
+
+//-----------------------------------------------------------------------------
+//
+//	Input Cursor Related Functions
+//
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		UAG_DspCursor_MouseUp
+//
+//	SUMMARY:
+//		Event callback function when the caller has cursor focus and the mouse
+//		select button is not pressed (up or hover over the caller).
+//			
+//	PARAMS:
+//		isCommand		- The fn is called at the Command Up event of a graphical object
+//		objectID		- (Optional) the object ID that the caller belongs to
+//		noHalt			- Do not halt the command even if mouse is outside the clicked object
+//							This only applies when isCommand is TRUE, default value is 0
+//			
+//	RETURNS: 
+//		1 if the caller has cursor focus and the mouse select button is not pressed (up)
+//		or 0 if not
+//
+//	REMARKS:
+//		If an object ID is assigned to this function, the object ID can be used
+//		to retrieve the cursor status of this graphical object by any other objects.
+//
+//	WARNING:
+//		ONLY call this function on the Command field of an object when argument
+//		isCommand is not set to TRUE. When isCommand is true, the calling thread
+//		will be HALTED if the mouse pointer is outside of the clicked object.
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION UAG_DspCursor_MouseUp(INT isCommand = 0, INT objectID = -1, INT noHalt = 0)
+	INT winNo = WinNumber();
+	INT	keyAN = -1
+	INT myAN = -1;
+
+	IF ((winNo >= 0) AND (winNo < c_WINDOW_MAX)) THEN
+		keyAN = KeyGetCursor();
+		IF (isCommand) THEN
+			myAN = keyAN;
+		ELSE
+			myAN = DspGetAnCur();
+		END
+	END
+	IF (myAN <= 0) THEN
+		RETURN 0;
+	END
+
+	IF (objectID > -1) THEN
+		_GUT_ObjectMasterAN(winNo, objectID, myAN);		// store master AN for faster status update from slave object
+		m_ObjectUsed[winNo] = 1;					// indicate whether object is used on this window
+	END
+
+	IF (isCommand) THEN
+		IF (m_ANMouseDown[winNo] = myAN) THEN
+			m_ANMouseDown[winNo] = 0;
+
+			// stop executing subsequent command if mouse pointer is outside clicked object
+			IF (NOT (noHalt OR DspGetMouseOver(myAN))) THEN
+				Halt();
+			END
+		END
+	END
+
+	RETURN ((keyAN = myAN) AND (m_ANMouseDown[winNo] <> keyAN));
+END
+
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		UAG_DspCursor_MouseDown
+//
+//	SUMMARY:
+//		Event callback function when the mouse button is pressed (down).
+//			
+//	PARAMS:
+//		isCommand		- The fn is called at the Command Down event of a graphical object
+//		objectID		- (Optional) the object ID that the caller belongs to
+//			
+//	RETURNS: 
+//		1 if the caller has cursor focus and the mouse select button is pressed (down)
+//		or 0 if not
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION UAG_DspCursor_MouseDown(INT isCommand = 0, INT objectID = -1)
+	INT winNo = WinNumber();
+	INT	keyAN = -1;
+	INT myAN = -1;
+
+	IF ((winNo >= 0) AND (winNo < c_WINDOW_MAX)) THEN
+		keyAN = KeyGetCursor();
+		IF (isCommand) THEN
+			myAN = keyAN;
+		ELSE
+			myAN = DspGetAnCur();
+		END
+	END
+	IF (myAN <= 0) THEN
+		RETURN 0;
+	END
+
+	IF (isCommand) THEN
+		m_ANMouseDown[winNo] = myAN;
+	END
+	RETURN (myAN = m_ANMouseDown[winNo]);
+END
+
+
+//-----------------------------------------------------------------------------
+//
+//	Object Status Related Functions
+//
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		UAG_DspObjectGetCursorUp
+//
+//	SUMMARY:
+//		Check whether the logical object has cursor focus (an object has cursor focus
+//		when one of its component has the cursor focus) and the mouse select button
+//		is not pressed (up).
+//			
+//	PARAMS:
+//		objectID		- The object ID that the caller belongs to
+//			
+//	RETURNS: 
+//		1 if the object has cursor focus and the mouse select button is not pressed (up)
+//		or 0 if not
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION UAG_DspObjectGetCursorUp(INT objectID = -1)
+	INT winNo = WinNumber();
+	INT masterAN;
+
+	IF ((winNo >= 0) AND (winNo < c_WINDOW_MAX)) THEN
+		IF (objectID > -1) THEN
+			masterAN = _GUT_ObjectMasterAN(winNo, objectID);
+			// For faster response, changed code to reflect the status of the master AN directly
+			// rather than waiting for master AN to update cached values which takes another scan cycle to take effect
+			RETURN ((KeyGetCursor() = masterAN) AND (m_ANMouseDown[winNo] <> masterAN));
+		END
+	END
+	RETURN 0;
+END
+
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		UAG_DspObjectGetCursorDown
+//
+//	SUMMARY:
+//		Check whether the logical object has cursor focus (an object has cursor focus
+//		when one of its component has the cursor focus) and the mouse select button
+//		is pressed (down).
+//			
+//	PARAMS:
+//		objectID		- The object ID that the caller belongs to
+//			
+//	RETURNS: 
+//		1 if the object has cursor focus and the mouse select button is pressed (down)
+//		or 0 if not
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION UAG_DspObjectGetCursorDown(INT objectID = -1)
+	INT winNo = WinNumber();
+
+	IF ((winNo >= 0) AND (winNo < c_WINDOW_MAX)) THEN
+		IF (objectID > -1) THEN
+			// For faster response, changed code to reflect the status of the master AN directly
+			// rather than waiting for master AN to update cached values which takes another scan cycle to take effect
+			RETURN (_GUT_ObjectMasterAN(winNo, objectID) = m_ANMouseDown[winNo]);
+		END
+	END
+	RETURN 0;
+END
+
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		UAG_DspObjectGetCursor
+//
+//	SUMMARY:
+//		Check whether the logical object has cursor focus regardless if the mouse
+//		select button is up or down.
+//			
+//	PARAMS:
+//		objectID		- The object ID that the caller belongs to
+//			
+//	RETURNS: 
+//		1 if the object has cursor focus and the mouse select button is not pressed (up)
+//		or 0 if not
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION UAG_DspObjectGetCursor(INT objectID = -1)
+	INT winNo = WinNumber();
+	INT masterAN;
+
+	IF ((winNo >= 0) AND (winNo < c_WINDOW_MAX)) THEN
+		IF (objectID > -1) THEN
+			masterAN = _GUT_ObjectMasterAN(winNo, objectID);
+			// For faster response, changed code to reflect the status of the master AN directly
+			// rather than waiting for master AN to update cached values which takes another scan cycle to take effect
+			RETURN (KeyGetCursor() = masterAN);
+		END
+	END
+	RETURN 0;
+END
+
+
+//-----------------------------------------------------------------------------
+//
+//	Tab menu Text Display Related Functions
+//
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		UAG_DspFixedWidthText
+//
+//	SUMMARY:
+//		Display text at the specified AN and truncated the text to the specified
+//		width in pixels.
+//			
+//	PARAMS:
+//		AN			- The Animation Number for the text to display
+//		value		- The full value of the text
+//		width		- (Optional) the maximum width (in pixels) allowed, -1 for displaying full length
+//		hndFont		- (Optional) The font handle returned by UAG_DspFontHnd(...) or UAG_DspFont(...)
+//		alignment	- (Optional) Default is left (0), 1 = right, 2 = centre (of the animation point)
+//			
+//	RETURNS: 
+//		0 if executed successfully, else error code is returned
+//
+//	Autor:				Michael Yip
+//	Erstellungsdatum:	29/04/2009	/	Schneider Electric GmbH
+//	Version				7.2.3.1
+//
+//	Historie:
+//
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	07.06.11	Steiner		Es werden keine Punkte mehr angehängt
+//
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+INT FUNCTION UAG_DspFixedWidthText(INT AN, STRING value, INT width = -1, INT hndFont = -1, INT alignment = 0)
+	INT status = 0;
+
+	// Checking arguments
+	IF (AN <= 0) THEN
+		RETURN 274;		// invalid argument
+	END
+	IF (hndFont < 0) THEN
+		hndFont = DspFont("Arial", -10, MakeCitectColour(20,43,65), TRANSPARENT);
+	END
+	IF (width = 0) THEN
+		value = "";
+	END
+
+	// Do truncation
+	status = DspText(AN, hndFont, value, width, alignment, 0); // am ende 1 wenn abschneiden mit Punkten gewünscht.
+	IF (StrRight(DspAnInfo(AN, 2), 3) = "...") THEN
+		DspSetTip(AN, value);
+	ELSE
+		DspSetTip(AN, "");
+	END
+	RETURN status;
+END
+
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		UAG_DspPromptAndKeyEcho
+//
+//	SUMMARY:
+//		Display the user prompt and KeyEcho at the same AN specified. Whenever a
+//		new Prompt or new KeyEcho is detected, it will be displayed at the specified
+//		AN until any new Prompt / KeyEcho arrives again. If both arrives at the same
+//		time, the user prompt takes precedence.
+//			
+//	PARAMS:
+//		AN			-	An existing AN on the page to display the message
+//		width		- 	Optional, the pixel width allowed for the message
+//						If this is unspecified (or -1), the full message will be displayed
+//		fontHnd		-	Optional, the font handle for the prompt text
+//						If this is unspecified (or -1), default font is used
+//			
+//	RETURNS: 
+//		0 if run successfully or -1 if failed
+//
+//	REMARKS:
+//		This function is backward compatible with parameters [Page]Prompt and [Page]KeyEcho
+//		which tell which ANs to display the messages. This function simply copies the displayed
+//		texts from these designated ANs to the specified one.
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION UAG_DspPromptAndKeyEcho(INT AN, INT width = -1, INT fontHnd = -1)
+	INT winNo = WinNumber();
+	STRING text;
+
+	IF (AN <= 0) THEN
+		RETURN -1;
+	END
+
+	// Get designated AN numbers
+	IF (m_PromptAN < 0) THEN m_PromptAN = ParameterGet("Page", "Prompt", "2"); END
+	IF (m_KeyEchoAN < 0) THEN m_KeyEchoAN = ParameterGet("Page", "KeyEcho", "1"); END
+
+	text = DspAnInfo(m_PromptAN, 2);
+	IF (m_PromptText[winNo] <> text) THEN
+   		m_PromptText[winNo] = text;
+   		UAG_DspFixedWidthText(AN, text, width, fontHnd);
+   		m_KeyEchoText[winNo] = "";
+   		DspText(m_KeyEchoAN, -1, "");
+	ELSE
+		text = DspAnInfo(m_KeyEchoAN, 2);
+		IF (m_KeyEchoText[winNo] <> text) THEN
+	   		m_KeyEchoText[winNo] = text;
+   			UAG_DspFixedWidthText(AN, text, width, fontHnd);
+	   		m_PromptText[winNo] = "";
+	   		Prompt("");
+		END
+	END
+	RETURN 0;
+END
+
+
+//-----------------------------------------------------------------------------
+//
+//	Private Helper Functions
+//
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		_GUT_ObjectMasterAN
+//
+//	SUMMARY:
+//		Get / set the Animation Number (AN) of the master component within a
+//		logical object.
+//			
+//	PARAMS:
+//		winNo			- The window number of the caller
+//		objectID		- The object ID that the caller belongs to
+//		AN				- The new AN of the master graphical object that belongs
+//						  to this logical object
+//			
+//	RETURNS: 
+//		AN of the master graphical object or -999 if failed
+//
+//-----------------------------------------------------------------------------
+
+PRIVATE
+INT FUNCTION _GUT_ObjectMasterAN(INT winNo, INT objectID, INT AN = -999)
+	INT listID;
+	INT itemID;
+
+	IF ((objectID < 0) OR (objectID >= c_OBJECT_MAX)) THEN
+		RETURN -999;
+	END
+	itemID = objectID;
+	IF (AN > 0) THEN
+		IF (AN <> m_ObjectMasterAN[winNo][itemID]) THEN
+			m_ObjectMasterAN[winNo][itemID] = AN;
+		END
+	ELSE
+		AN = m_ObjectMasterAN[winNo][itemID];
+	END
+	RETURN AN;
+END

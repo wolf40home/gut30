@@ -1,0 +1,2461 @@
+//-----------------------------------------------------------------------------
+//	Copyright © 2015 Schneider Electric (Australia) Pty Ltd.
+//	All rights reserved.
+//
+// 	FILE:		UAG_TabAlmTable.ci
+//
+//	CREATED:	05/02/2012
+//
+//	SUMMARY:
+//
+//		Contains related functions to instantiate alarm list (for tab style
+//		templates) on CitectSCADA windows uisng the alarm table genies provided
+//		in the Library_Controls project.
+//		Templates that use them are:
+//		alarm_equip, disabled_equip, summary_equip and soe_equip.
+//
+//	PUBLIC FUNCTIONS:
+//
+//		UAG_TabAlmTable_InitDsp
+//		UAG_TabAlmTable_InitDspLast
+//		UAG_TabAlmTable_LClick
+//		UAG_TabAlmTable_RClick
+//		UAG_TabAlmTable_Reload
+//
+//		UAG_TabAlmTable_GetAn
+//		UAG_TabAlmTable_GetInfo
+//		UAG_TabAlmTable_SetInfo
+//		UAG_TabAlmTable_Print
+//		UAG_TabAlmTable_SaveConfig
+//		UAG_TabAlmTable_LoadConfig
+//		UAG_TabAlmTable_ResetConfig
+//		UAG_TabAlmTable_AutoFit
+//		UAG_TabAlmTable_Ack
+//		UAG_TabAlmTable_Disable
+//		UAG_TabAlmTable_Enable
+//		UAG_TabAlmTable_ReloadData
+//
+//		UAG_TabAlmTable_Col_Sort
+//		UAG_TabAlmTable_Col_ShowContextMenu
+//
+//		UAG_TabAlmTable_Row_ShowContextMenu
+//		UAG_TabAlmTable_Row_ShowHelp
+//		UAG_TabAlmTable_Row_ShowInfo
+//		UAG_TabAlmTable_Row_AddComment
+//		UAG_TabAlmTable_Row_AddEvent
+//		UAG_TabAlmTable_Row_Ack
+//		UAG_TabAlmTable_Row_Disable
+//		UAG_TabAlmTable_Row_Enable
+//		UAG_TabAlmTable_Row_Clear
+//
+// 	REMARKS: 
+//
+//		This file contains the essential functions that to interact with the
+//		new Library Control Alarm Table (lib_controls.alarmtable) genie.
+//
+//		The alarm table contains geneirc Custom# properties which can be
+//		used for storing custom information. For the templates, the follwoing
+//		properties are used:
+//		- Custom1			alarm (column) format name as in INI [FORMAT]
+//		- Custom2			sort direction of columns
+//		- Custom3			field (Ref) name of the sorted column
+//		- Custom4			Whether to show confirmation for off-screen selection
+//
+//	REMARKS (Backward compatibility):
+//
+//		The alarm table based templates are backward compatible with some
+//		exisitng UAG_TabAlarm_ functions:
+//		On the other hand, the equivalnet versions of these functions
+//		specific to the new templates are also provided.
+//
+//		Existing Version				Version for new templates
+//		----------------				-------------------------
+//		UAG_TabAlarm_GetAn(listID)			UAG_TabAlmTable_GetAn(listID)
+//		UAG_TabAlarm_GetInfo(listID)		UAG_TabAlmTable_GetInfo(listID)
+//		UAG_TabAlarm_SetInfo(listID)		UAG_TabAlmTable_SetInfo(listID)
+//		UAG_TabAlarm_Ack(listID)			UAG_TabAlmTable_Ack(listID)
+//		UAG_TabAlarm_Disable(listID)		UAG_TabAlmTable_Disable(listID)
+//		UAG_TabAlarm_Enable(listID)			UAG_TabAlmTable_Enable(listID)
+//		UAG_TabAlarm_ReloadData(listID)		UAG_TabAlmTable_ReloadData(listID)
+//		UAG_TabAlarm_FilterString(listID)	UAG_TabAlarmFilter_GetString(listAN)
+//		UAG_TabAlarm_FormFilter(listID)		UAG_TabAlarmFilter_ShowForm(listAN)
+//		UAG_TabAlarm_ResetFilter(listID)	UAG_TabAlarmFilter_Reset(listAN)
+//
+//	USAGE:
+//		The lib_controls.alarmtable genie should be pasted on a page.
+//
+//		Multiple alarm tables could be pasted on a page. Each of the tables
+//		within a page should be assigned a unique list ID as its name.
+//
+//		The following functions should be assigned to the corresponding fields
+//		in the genie:
+//		- Initialize:		for normal alarm list:
+//								UAG_TabAlmTable_InitDsp("#Name",#AN) or
+//								UAG_TabAlmTable_InitDsp("#Name",#AN,"<format name>","<offscreen confirm>")
+//							for alarm banner:
+//								UAG_TabAlmTable_InitDspLast("#Name",#AN) or
+//								UAG_TabAlmTable_InitDspLast("#Name",#AN,"<format name>","<offscreen confirm>")
+//		- Left Mouse:		UAG_TabAlmTable_LClick("#Name",#DspRow,#ColIdx)
+//		- Right Mouse:		UAG_TabAlmTable_RClick("#Name",#DspRow,#ColIdx)
+//		- Double clk:		
+//		- Table Reload:		UAG_TabAlmTable_Reload("#Name",#AN)
+//
+//		Up to c_TABALARM_ROW_MAX rows could be pasted on an alarm table. Each
+//		of the rows is represented by the tab_alarms.row_02 genie, and be
+//		assigned a unique row ID. The ID should start from 0, and be incrementd
+//		by 1 for the next row and so on.
+//
+//-----------------------------------------------------------------------------
+
+
+//-----------------------------------------------------------------------------
+//
+//	Constants
+//
+//-----------------------------------------------------------------------------
+
+STRING	c_TABLEPROP_FORMATNAME			= "Custom1";		// table property name for alarm format name
+STRING	c_TABLEPROP_SORTDIRECTION		= "Custom2";		// sort direction of columns
+STRING	c_TABLEPROP_SORTCOLREF			= "Custom3";		// field (Ref) name of the sorted column
+STRING	c_TABLEPROP_COLCOUNT			= "ColCount";		// Number of columns
+STRING	c_TABLEPROP_COLIDXUSED			= "ColIdxUsed";		// Number of columns used for display (visible)
+STRING	c_TABLEPROP_ROWDSPCOUNT			= "RowDspCount";	// Number of displayed rows
+STRING	c_TABLEPROP_SBARVERT			= "SBarVert";		// Name of the vertical scrollbar attached
+
+INT		c_TABALARM_ROW_ACTION_ACK		= 0;			// alarm row acknowledge action
+INT		c_TABALARM_ROW_ACTION_DISABLE	= 1;			// alarm row disable action
+INT		c_TABALARM_ROW_ACTION_ENABLE	= 2;			// alarm row enable action
+INT		c_TABALARM_ROW_ACTION_CLEAR		= 3;			// alarm row clear action
+
+STRING	c_TABALMTABLE_COL_ICON_SORTNONE	= "";
+STRING	c_TABALMTABLE_COL_ICON_SORTDESC	= "tab_base.arrow_02_down";
+STRING	c_TABALMTABLE_COL_ICON_SORTASC	= "tab_base.arrow_02_up";
+STRING	c_TABALMTABLE_COL_ICON_FILTERNONE	= "tab_base.filter_01_none";
+STRING	c_TABALMTABLE_COL_ICON_FILTERDESC	= "tab_base.filter_01_desc";
+STRING	c_TABALMTABLE_COL_ICON_FILTERASC	= "tab_base.filter_01_asc";
+
+
+//-----------------------------------------------------------------------------
+//
+//	Module Variables
+//
+//-----------------------------------------------------------------------------
+
+STRING	m_TabAlmTable_Print_OptAllPages	= "0";			// Field value for All pages option in alarm print form
+STRING	m_TabAlmTable_Print_OptPages	= "1";			// Field value for Pages option in alarm print form
+STRING	m_TabAlmTable_Print_TxtPages	= "1";			// Field value for textbox Pages in alarm print form
+
+INT		m_TabAlmTable_Menu_InUse		= 0;			// Indicate if a control is being clicked
+
+STRING	m_TabAlmTable_Custom_Fn_AlarmGetDsp	= "";		// Custom function for getting alarm field value
+
+
+//-----------------------------------------------------------------------------
+//
+//	UAG_TabAlmTable Public Functions
+//
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		UAG_TabAlmTable_InitDsp
+//
+//	SUMMARY:
+//		Initializes the alarm list of the tab style templates that use the
+//		lib_controls.AlarmTable genie.
+//			
+//	PARAMS:
+//		listID			- The alarm list ID
+//		listAN			- The animation of the alarm list
+//		formatName		- The custom format name defined in INI parameters [Format]
+//							This parameter is optional, only applicable to
+//							alarm templates provided by Tab_Style_Include project
+//
+//							The alarm format needs to be defined in the following convention:
+//
+//							[Format]
+//							<format name> = {<field name>,<pixel width>}...
+//
+//							e.g.
+//							[Format]
+//							Alarm ={Date,69}{Time,69}{Tag,61}{Name,75}{Desc,91}{State,70}{Type,141}
+//			
+//	RETURNS:
+//		The AN of the alarm list or 0 if initialization is unsuccessful
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION UAG_TabAlmTable_InitDsp(STRING listID, INT listAN, STRING formatName = "", STRING offScnConfirm = "FALSE")
+	STRING fontName;
+	INT listHnd;
+
+	// set background color mode
+	UAG_TabAlarm_SetBgColorMode();
+
+	// get header font from INI parameter and apply it to alarm table
+	fontName = ParameterGet("Alarm", "HeadingFont0", ParameterGet("Alarm", "HeadingFont", ""));
+	IF ("" <> fontName) THEN
+		LibTable_SetProperty(listID, "FontHdr", fontName);
+	END
+
+	// set up callback function for filter changed
+	IF (_UAG_TabAlmTable_HasReloadFn(listID)) THEN
+		UAG_TabAlarmFilter_SetCallback(listAN, "UAG_TabAlmTable_FilterChangedLite");
+	ELSE
+		UAG_TabAlarmFilter_SetCallback(listAN, "UAG_TabAlmTable_FilterChanged");
+	END
+	// get the format string form INI parameter and apply it to alarm table
+	UAG_TabAlmTable_LoadConfig(listID, formatName);
+
+	// initialize customization
+	_UAG_TabAlmTable_Custom_Init(listID);
+
+	// Set up AN lookup and others for backward compatibility with some existing
+	// UAG_TabAlarm... Cicode functions, so they also work on the new alarm templates
+	// i.e. UAG_TabAlarm_GetAn(), UAG_TabAlarm_Ack()..., UAG_TabAlarm_FormFilter()... etc.
+	listHnd = _UAG_TabAlarm_GetInstance(listID);
+	IF (listHnd < 0) THEN
+		RETURN listAN;
+	END
+	_UAG_TabAlarm_IntMetadata(listHnd, "MasterAN", listAN);	// MasterAN must be set before ID
+	_UAG_TabAlarm_IntMetadata(listHnd, "ID", listID);		// to allow it to be referred by AN
+
+	RETURN listAN;
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		UAG_TabAlmTable_InitDspLast
+//
+//	SUMMARY:
+//		Initializes the alarm banner (last alarm) list of the tab style templates
+//		that use the lib_controls.AlarmTable genie.
+//
+//	PARAMS:
+//		listID			- The alarm list ID
+//		listAN			- The animation of the alarm list
+//		formatName		- The custom format name defined in INI parameters [Format]
+//							This parameter is optional, only applicable to
+//							alarm templates provided by Tab_Style_Include project
+//
+//							The alarm format needs to be defined in the following convention:
+//
+//							[Format]
+//							<format name> = {<field name>,<pixel width>}...
+//
+//							e.g.
+//							[Format]
+//							Alarm ={Date,69}{Time,69}{Tag,61}{Name,75}{Desc,91}{State,70}{Type,141}
+//			
+//	RETURNS:
+//		The AN of the alarm list or 0 if initialization is unsuccessful
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION UAG_TabAlmTable_InitDspLast(STRING listID, INT listAN, STRING formatName = "")
+	// Check arguments
+	IF ("" = formatName) THEN
+		formatName = "LastAlarm";
+	END
+
+	// Set display attributes
+	IF (PageInfo(7) = "0") THEN
+		_UAG_TabAlarm_DspLast_ApplyParams(listAN);
+		UAG_TabAlarm_SetFormatStringDefault(listAN, _UAG_TabAlarm_DspLast_GetParam("LastAlarmFmt"));
+	END
+
+	RETURN UAG_TabAlmTable_InitDsp(listID, listAN, formatName);
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		UAG_TabAlmTable_LClick
+//
+//	SUMMARY:
+//		Callback function to the left-click event of the lib_controls.AlarmTable
+//		genie used on one of the tab style alarm templates
+//
+//		The function toggles the sorting direction of the current column when
+//		the user clicks	on the column header.
+//			
+//	PARAMS:
+//		listID			- The alarm list ID
+//		tblDspRowID		- The display row ID number, one-indexed
+//							row number zero (0) refers to the column header
+//		tblColIdx		- The column Index number, one-indexed
+//							This is optional, if not specified, the action taken
+//							will be applied to an addition column
+//			
+//	RETURNS: 
+//		0 if executed successful or error if failed
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION UAG_TabAlmTable_LClick(STRING listID, INT tblDspRowID, INT tblColIdx = 0)
+	INT retValue = 274;
+	INT colID = tblColIdx - 1;
+
+	IF (0 = tblDspRowID) THEN
+ 		retValue = UAG_TabAlmTable_Col_Sort(listID, colID);
+ 	ELSE
+ 		retValue = 0;
+ 	END
+
+	RETURN retValue;
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		UAG_TabAlmTable_RClick
+//
+//	SUMMARY:
+//		Callback function to the right-click event of the lib_controls.AlarmTable
+//		genie used on one of the tab style alarm templates
+//
+//		The function pops up the context menu for the selected alarm rows. If the
+//		user invokes the context menu outside of the selected row range, the
+//		existing selected rows will be deselected and the current row will be
+//		automatically selected prior to popping up the context menu.
+//
+//		If the user right-clicks on the column header (table row 0), the context
+//		menu for the column will pop up instead.
+//
+//	PARAMS:
+//		listID			- The alarm list ID
+//		tblDspRowID		- The display row ID number, one-indexed
+//							row number zero (0) refers to the column heading row
+//		tblColIdx		- The column Index number, one-indexed
+//							This is optional, if not specified, the action taken
+//							will be applied to an addition column
+//			
+//	RETURNS: 
+//		0 if executed successfully or error code if failed
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION UAG_TabAlmTable_RClick(STRING listID, INT tblDspRowID, INT tblColIdx = 0)
+	INT retValue = 274;
+	INT rowID = tblDspRowID - 1;
+	INT colID = tblColIdx - 1;
+
+	IF (0 = tblDspRowID) THEN
+		retValue = UAG_TabAlmTable_Col_ShowContextMenu(listID, colID);
+	ELSE
+		retValue = UAG_TabAlmTable_Row_ShowContextMenu(listID, rowID);
+	END
+
+	RETURN retValue;
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		UAG_TabAlmTable_Reload
+//
+//	SUMMARY:
+//		Callback function when alarm table needs redrawn.
+//
+//		It repaints the chromes of the alarm table that needs to be updated
+//		after filter is changed.
+//			
+//	PARAMS:
+//		listID			- The alarm list ID
+//		listAN			- The alarm list Animation Number (AN)
+//			
+//	RETURNS: 
+//		0 if successful or error number if failed
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION UAG_TabAlmTable_Reload(STRING listID, INT listAN)
+											  
+	INT tblColIter;
+	INT sortDirection;
+	STRING arrColSorts;
+	INT filterSession;
+	STRING fieldName;
+
+	IF (listAN < 1 OR "" = listID) THEN
+		RETURN 274;		// Invalid arguments
+	END
+
+	// repaint column icons to indicate sort direction and filter status
+	arrColSorts = LibTable_GetProperty(listID, c_TABLEPROP_SORTDIRECTION);
+	tblColIter = LibTable_GetPropertyInt(listID, c_TABLEPROP_COLCOUNT);
+	filterSession = AlarmFilterEditOpen(listAN, TRUE);
+	WHILE (tblColIter >= 1) DO
+		fieldName = LibTable_GetColRef(listID, tblColIter);
+		sortDirection = _TabAlarm_IsSorted(listAN, fieldName);
+		arrColSorts = _LibControl_StrArray_SetInt(arrColSorts, tblColIter, sortDirection);
+		_UAG_TabAlmTable_Col_SetIcon(listID, tblColIter, sortDirection, filterSession, fieldName);
+		tblColIter = tblColIter - 1;
+	END
+	AlarmFilterEditClose(filterSession);
+	LibTable_SetProperty(listID, c_TABLEPROP_SORTDIRECTION, arrColSorts);
+
+	RETURN 0;
+END
+
+PRIVATE
+INT FUNCTION _UAG_TabAlmTable_HasReloadFn(STRING listID)
+	RETURN (StrLeft(_LibControl_GetStr("_almtbl_" + listID, "ReloadFn"), 19) = "UAG_TabAlmTable_Reload(");
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		UAG_TabAlmTable_FilterChanged
+//
+//	SUMMARY:
+//		Callback function when the UAG_TabAlarmFilter_Apply() function is called.
+//
+//		It repaints the chromes of the alarm table that needs to be updated
+//		after filter is changed.
+//			
+//	PARAMS:
+//		listAN			- The alarm list Animation Number (AN)
+//			
+//	RETURNS: 
+//		0 if successful or error number if failed
+//
+//	NOTES:
+//		The ...Lite() version of the function only clears row selection
+//		as it expects that the repainting of chrome is handled by the
+//		TabAlmTable_Reload() function.
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION UAG_TabAlmTable_FilterChanged(INT listAN)
+	STRING listID = LibAlmTable_GetTable(listAN);
+	INT error = UAG_TabAlmTable_Reload(listID, listAN);
+	IF (0 = error) THEN
+		// clear selected records
+		LibTable_ClearSelected(listID);
+	END
+	RETURN error;
+END
+
+INT FUNCTION UAG_TabAlmTable_FilterChangedLite(INT listAN)
+	STRING listID = LibAlmTable_GetTable(listAN);
+	IF (listAN < 1 OR "" = listID) THEN
+		RETURN 274;		// Invalid arguments
+	END
+	// clear selected records
+	LibTable_ClearSelected(listID);
+
+	RETURN 0;
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		UAG_TabAlmTable_GetAn
+//
+//	SUMMARY:
+//		Returns the Animation Number of the alarm list.
+//			
+//	PARAMS:
+//		listID			- The alarm list ID
+//			
+//	RETURNS: 
+//		The AN of the alarm list or -1 if failed
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION UAG_TabAlmTable_GetAn(STRING listID)
+	INT listAN = LibAlmTable_GetAN(listID);
+	
+	IF (listAN <= 0) THEN
+		RETURN -1;
+	END
+
+	RETURN listAN;
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		UAG_TabAlmTable_GetInfo
+//
+//	SUMMARY:
+//		Returns information about an alarm list. Please refer to built-in fn
+//		AlarmGetInfo() for details.
+//			
+//	PARAMS:
+//		listID			- The alarm list ID
+//		type			- The type of data
+//			
+//	RETURNS: 
+//		information about alarm list or -1 if failed
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION UAG_TabAlmTable_GetInfo(STRING listID, INT type)
+	INT listAN = LibAlmTable_GetAN(listID);
+
+	IF (listAN <= 0) THEN
+		RETURN -1;
+	END
+
+	RETURN AlarmGetInfo(listAN, type);
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		UAG_TabAlmTable_SetInfo
+//
+//	SUMMARY:
+//		Sets display attributes of an alarm list. Please refer to built-in fn
+//		AlarmSetInfo() for details.
+//			
+//	PARAMS:
+//		listID			- The alarm list ID
+//		type			- The type of data
+//		value			- The meaning of value argument depends on the data
+//							type specified in the type argument.
+//							Optional, default to "".
+//			
+//	RETURNS: 
+//		0 if successful or error number if failed
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION UAG_TabAlmTable_SetInfo(STRING listID, INT type, STRING value = "")
+	INT listAN = LibAlmTable_GetAN(listID);
+
+	IF (listAN <= 0) THEN
+		RETURN 274;
+	END
+
+	RETURN AlarmSetInfo(listAN, type, value);
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		UAG_TabAlmTable_Print
+//
+//	SUMMARY:
+//		Pops up a window / dialog for the user to print / export alarm list.
+//			
+//	PARAMS:
+//		listID			- The alarm list ID
+//			
+//	RETURNS: 
+//		0 if successful or error number if failed
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION UAG_TabAlmTable_Print(STRING listID)
+	INT retValue = 274;
+	INT frmHnd;
+	INT fieldHnd;
+	STRING text;
+
+	frmHnd = FormNew("@(Alarm Print) / @(Export)", 45, 6, 1+4+8+16);
+	IF (frmHnd < 0) THEN
+		RETURN retValue;
+	END
+
+	FormRadioButton(0, 0, "@(All Pages)", m_TabAlmTable_Print_OptAllPages);
+	text = StrToLocalText("@(Pages)");
+	FormRadioButton(0, 2, text, m_TabAlmTable_Print_OptPages);
+	FormEdit(5 + StrLength(text), 2, m_TabAlmTable_Print_TxtPages, 8);
+
+	text = _StrPadCenter(StrToLocalText("@(Print)"), 12);
+	fieldHnd = FormButton( 2, 5, text, _UAG_TabAlmTable_Print_ButtonClick, 0);
+	FormSetInst(frmHnd, fieldHnd, 0, listID + " Print");
+
+	text = _StrPadCenter(StrToLocalText("@(Export)"), 12);
+	fieldHnd = FormButton(17, 5, text, _UAG_TabAlmTable_Print_ButtonClick, 0);
+	FormSetInst(frmHnd, fieldHnd, 0, listID + " Export");
+
+	text = _StrPadCenter(StrToLocalText("@(Cancel)"), 12);
+	fieldHnd = FormButton(32, 5, text, 0, 2);
+
+	_UAG_FormCenter(45, 6);
+	retValue = FormRead(1);
+
+	RETURN retValue;
+END
+
+PRIVATE
+STRING FUNCTION _StrPadCenter(STRING text, INT len)
+	INT textLen = StrLength(text);
+	INT pad = Max((len - textLen) / 2, 0);
+	RETURN StrPad("", " ", pad) + StrPad(text, " ", Max(textLen, len - pad));
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		UAG_TabAlmTable_SaveConfig
+//
+//	SUMMARY:
+//		Saves the currently displayed column settings to INI file.
+//			
+//	PARAMS:
+//		listID			- The alarm list ID
+//		formatName		- The name of the alarm format to be saved under.
+//							If not specified or "", it will be defaulted to
+//							the format name currently used for the alarm list
+//			
+//	RETURNS: 
+//		0 if successful or error number if failed
+//
+//
+//	REMARKS:
+//		Please refer to UAG_TabAlarm_LoadConfig() for the explanation about alarm
+//		format parameters.
+//
+//		Please note that this function only save the format string currently
+//		applied to an alarm list. It does not re-save the alarm headings, as
+//		they cannot be changed programmatically at runtime.
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION UAG_TabAlmTable_SaveConfig(STRING listID, STRING formatName = "")
+	INT retValue = 274;
+	INT columns;
+	INT tblColIdx;			// column index based on display order, 1-indexed
+	INT tblCol;				// column ordinal number, 1-indexed
+	STRING fieldName;
+	INT width;
+	STRING fmtString = "";
+	INT fmtStringLen = 0;
+	STRING fmtField;
+	INT fmtFieldLen;
+
+	// check arguments
+	IF ("" = formatName) THEN
+		formatName = LibTable_GetProperty(listID, c_TABLEPROP_FORMATNAME);
+	END
+
+	// determine default format name
+	IF ("" = formatName) THEN
+		formatName = UAG_TabAlarm_GetFormatNameDefault(LibAlmTable_GetAN(listID));
+	END
+
+	columns = LibTable_GetPropertyInt(listID, c_TABLEPROP_COLIDXUSED);
+	tblColIdx = 1;	// table is 1-indexed
+	WHILE (tblColIdx <= columns) DO
+		tblCol = LibTable_GetColByColIdx(listID, tblColIdx);	// get column ordinal number
+		fieldName = LibTable_GetColRef(listID, tblCol);
+		width = LibTable_GetColWidth(listID, tblCol);
+
+		// cap the format string length
+		fmtField = "{" + fieldName + "," + IntToStr(width) + "}";
+		fmtFieldLen = StrLength(fmtField);
+		IF (fmtStringLen + fmtFieldLen < 255) THEN
+			fmtString = fmtString + fmtField;
+			fmtStringLen = fmtStringLen + fmtFieldLen;
+		ELSE
+			// give warning for the unsaved field
+			TaskNew("Message", "^"@(Warning)^",^"@(Unable to save all fields)^n@(First unsaved field): '" + fieldName + "'^",0", 0);
+			tblColIdx = columns;
+		END
+
+		tblColIdx = tblColIdx + 1;
+	END
+	retValue = UAG_TabAlarm_SetFormatStringINI(formatName, fmtString);
+
+	RETURN retValue;
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		UAG_TabAlmTable_LoadConfig
+//
+//	SUMMARY:
+//		Loads the alarm display settings from INI file.
+//			
+//	PARAMS:
+//		listID			- The alarm list ID
+//		formatName		- The name of the alarm format to be loaded.
+//							If not specified or "", it will be defaulted to
+//							the format name currently used for the alarm list
+//			
+//	RETURNS: 
+//		0 if successful or error number if failed
+//
+//	REMARKS:
+//		Alarm format strings are defined as the following project / Citect.ini parameters:
+//
+//		[Format]
+//		formatName = {fieldName,pixelWidth}{fieldName,pixelWidth}...
+//
+//		[AlarmHeading]
+//		fieldName = column heading
+//		fieldName = column heading
+//		...
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION UAG_TabAlmTable_LoadConfig(STRING listID, STRING formatName = "")
+	INT retValue = 274;
+	INT listAN;
+	INT fmtHnd;
+	STRING fmtString;
+	STRING fieldName;
+	STRING displayName;
+	INT columns;
+	INT colID;
+	INT colWidth;
+	INT sortDirection;
+	STRING arrColSorts = "#2";	// initialize the element size of the library control string array
+	INT pageScan;
+	INT filterSession;
+	
+	listAN = LibAlmTable_GetAN(listID);
+
+	// set column format name
+	IF ("" = formatName) THEN
+		formatName = LibTable_GetProperty(listID, c_TABLEPROP_FORMATNAME);
+	ELSE
+		LibTable_SetProperty(listID, c_TABLEPROP_FORMATNAME, formatName);
+	END
+	IF ("" = formatName) THEN
+		formatName = UAG_TabAlarm_GetFormatNameDefault(listAN);
+	END
+
+	// get alarm field format string
+	fmtString = UAG_TabAlarm_GetFormatString(listAN, formatName);
+	IF ("" = fmtString) THEN
+		LibTable_SetProperty(listID, c_TABLEPROP_SORTDIRECTION, arrColSorts);
+		// use default format of the alarm table
+		RETURN 0;
+	END
+
+	// parse format string in the format of {field name,pixel width}
+	// if pixel width is not set or <= 0, assumes auto-fit
+	fmtHnd = FmtOpen("_tabalarm_fmt_" + IntToStr(WinNumber()) + "_" + listID, fmtString, 5);
+
+	IF (fmtHnd > -1) THEN
+		// delete of all existing columns
+		LibTable_Delete(listID, FALSE);
+
+		// add new columns according to the format string
+		columns = Abs(FmtGetFieldCount(fmtHnd));
+		colID = 0;
+		filterSession = AlarmFilterEditOpen(listAN, TRUE);
+		WHILE (colID < columns) DO
+			fieldName = _UAG_TabAlarm_StrCapitalize(FmtGetFieldName(fmtHnd, colID));
+			displayName = UAG_TabAlarm_GetColNameINI(fieldName);
+
+			// get field width (in unit of pixels) instead of default width (i.e. auto width)
+			colWidth = FmtGetFieldWidth(fmtHnd, colID);
+			// when no width is specified, FmtGetFieldWidth() returns the no. of chars of the field name plus the 2 chars for the brackets
+			IF (colWidth = StrLength(fieldName) + 2) THEN
+				colWidth = 0;
+			END
+
+			// add column to table
+			LibTable_AddColumn(listID, displayName, colWidth, fieldName);
+			
+			IF (NOT _UAG_TabAlmTable_HasReloadFn(listID)) THEN
+			// update the sorting & filter status of the column after it's added
+				sortDirection = _UAG_TabAlarm_IsSorted(listAN, fieldName);
+				arrColSorts = _LibControl_StrArray_SetInt(arrColSorts, colID + 1, sortDirection);
+				_UAG_TabAlmTable_Col_SetIcon(listID, colID + 1, sortDirection, filterSession, fieldName);
+			END
+			colID = colID + 1;
+		END
+		AlarmFilterEditClose(filterSession);
+		FmtClose(fmtHnd);
+	END
+	LibTable_SetProperty(listID, c_TABLEPROP_SORTDIRECTION, arrColSorts);
+
+	RETURN 0;
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		UAG_TabAlmTable_ResetConfig
+//
+//	SUMMARY:
+//		Resets the saved display settings in INI file and reload display with the defaults.
+//			
+//	PARAMS:
+//		listID			- The alarm list ID
+//		formatName		- The name of the alarm format to be reset.
+//							If not specified or "", it will be defaulted to
+//							the format name currently used for the alarm list
+//			
+//	RETURNS: 
+//		0 if successful or error number if failed
+//
+//	REMARKS:
+//		Please refer to UAG_TabAlarm_LoadConfig() for the explanation about alarm
+//		format parameters.
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION UAG_TabAlmTable_ResetConfig(STRING listID, STRING formatName = "")
+	INT retValue;
+
+	// check arguments
+	IF ("" = formatName) THEN
+		formatName = LibTable_GetProperty(listID, c_TABLEPROP_FORMATNAME);
+	END
+
+	// determine default format name
+	IF ("" = formatName) THEN
+		formatName = UAG_TabAlarm_GetFormatNameDefault(LibAlmTable_GetAN(listID));
+	END
+
+	retValue = UAG_TabAlarm_SetFormatStringINI(formatName, "");
+	UAG_TabAlmTable_LoadConfig(listID, formatName);
+
+	RETURN retValue;
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		UAG_TabAlmTable_AutoFit
+//
+//	SUMMARY:
+//		Sets the width of all displayed columns to display the full content of the field values.
+//			
+//	PARAMS:
+//		listID			- The alarm list ID
+//			
+//	RETURNS: 
+//		0 if successful or error number if failed
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION UAG_TabAlmTable_AutoFit(STRING listID)
+	RETURN UAG_TabTable_AutoFit(listID);
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		UAG_TabAlmTable_Ack
+//
+//	SUMMARY:
+//		Acknowledges all alarms currently displayed on the alarm list.
+//			
+//	PARAMS:
+//		listID			- The alarm list ID
+//			
+//	RETURNS: 
+//		0 if successful or error number if failed
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION UAG_TabAlmTable_Ack(STRING listID)
+	INT retValue = 274;
+	INT listAN;
+
+	listAN = LibAlmTable_GetAN(listID);
+	IF (listAN <= 0) THEN
+		RETURN retValue;
+	END
+
+	IF UAG_TabAlarm_GetAckPriv(1) THEN
+		_UAG_TabAlarm_TaskCall("UAG_TabAlarmSnd_SilenceOnAck", "");	// Optionally include UAG_TabAlarmSnd.ci if using default alarm sound implementation
+		retValue = AlarmAck(1, listAN);
+	ELSE
+		retValue = 276;
+	END
+
+	RETURN retValue;
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		UAG_TabAlmTable_Disable
+//
+//	SUMMARY:
+//		Disables all alarms currently displayed on the alarm list.
+//			
+//	PARAMS:
+//		listID			- The alarm list ID
+//			
+//	RETURNS: 
+//		0 if successful or error number if failed
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION UAG_TabAlmTable_Disable(STRING listID)
+	INT retValue = 274;
+	INT listAN;
+
+	listAN = LibAlmTable_GetAN(listID);
+	IF (listAN <= 0) THEN
+		RETURN retValue;
+	END
+
+	IF UAG_TabAlarm_GetDisablePriv(1) THEN
+		retValue = AlarmDisable(1, listAN);
+	ELSE
+		retValue = 276;
+	END
+
+	RETURN retValue;
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		UAG_TabAlmTable_Enable
+//
+//	SUMMARY:
+//		Enables all alarms currently displayed on the alarm list.
+//			
+//	PARAMS:
+//		listID			- The alarm list ID
+//			
+//	RETURNS: 
+//		0 if successful or error number if failed
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION UAG_TabAlmTable_Enable(STRING listID)
+	INT retValue = 274;
+	INT listAN;
+
+	listAN = LibAlmTable_GetAN(listID);
+	IF (listAN <= 0) THEN
+		RETURN retValue;
+	END
+
+	IF UAG_TabAlarm_GetDisablePriv(1) THEN
+		retValue = AlarmEnable(1, listAN);
+	END
+
+	RETURN retValue;
+END
+
+//-----------------------------------------------------------------------------
+//
+//		FUNCTION NAME	
+//			UAG_TabAlmTable_ReloadData
+//
+//     	SUMMARY:
+//			Requests the alarm system to refresh the data currently displayed
+//			on the alarm list.
+//
+// 		ARGUMENTS:
+//		listID			- The alarm list ID
+//			
+//     	RETURNS: 
+//			0 (zero) if successful, otherwise an error is returned.
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION UAG_TabAlmTable_ReloadData(STRING listID)
+	INT listAN = LibAlmTable_GetAN(listID);
+	RETURN UAG_TabAlarm_ReloadDataByAN(listAN);
+END
+
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		UAG_TabAlmTable_Col_Sort
+//
+//	SUMMARY:
+//		Switches the sort direction of an alarm column. This function is called
+//		at the ENTER keypress event of the drag box for the column heading.
+//			
+//	PARAMS:
+//		listID			- The alarm list ID
+//		colID			- The column display ID number, zero-indexed
+//			
+//	RETURNS: 
+//		0 if executed successful or error if failed
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION UAG_TabAlmTable_Col_Sort(STRING listID, INT colID)
+	INT retValue = 274;
+	INT listAN;
+	STRING arrColSorts = LibTable_GetProperty(listID, c_TABLEPROP_SORTDIRECTION);
+	INT sortDirection;
+	STRING fieldName;
+	INT tblCol = LibTable_GetColByColIdx(listID, colID + 1);	// get column ordinal number;
+	INT filterSession;
+
+	IF (tblCol < 1) THEN
+		RETURN retValue;
+	END
+
+	listAN = LibAlmTable_GetAN(listID);
+	fieldName = LibTable_GetColRef(listID, tblCol);
+
+	// check if column can be sorted
+	IF (NOT _UAG_TabAlarm_IsSortable(listAN, fieldName)) THEN
+		RETURN retValue;
+	END
+
+	filterSession = AlarmFilterEditOpen(listAN, TRUE);
+
+	// always sort date / time / milli together
+	fieldName = _UAG_TabAlarm_GetSortField(fieldName);
+	sortDirection = _LibControl_StrArray_GetInt(arrColSorts, tblCol);
+	sortDirection = (sortDirection + 1) MOD 3;
+
+	// set the sort direction(s) for all fields
+	STRING fieldNameIter;
+	INT sortDirectionIter;
+	INT tblColIdx = LibTable_GetPropertyInt(listID, c_TABLEPROP_COLIDXUSED);
+	WHILE (tblColIdx >= 1) DO
+		tblCol = LibTable_GetColByColIdx(listID, tblColIdx);	// get column ordinal number
+		fieldNameIter = LibTable_GetColRef(listID, tblCol);
+		IF (fieldName = _TabAlarm_GetSortField(fieldNameIter)) THEN
+			sortDirectionIter = sortDirection;
+		ELSE
+			sortDirectionIter = 0;
+		END
+		arrColSorts = _LibControl_StrArray_SetInt(arrColSorts, tblCol, sortDirectionIter);
+		_UAG_TabAlmTable_Col_SetIcon(listID, tblCol, sortDirectionIter, filterSession, fieldNameIter);
+		tblColIdx = tblColIdx - 1;
+	END
+	LibTable_SetProperty(listID, c_TABLEPROP_SORTDIRECTION, arrColSorts);
+
+	SELECT CASE sortDirection
+	CASE 0
+		// no sort
+		AlarmSetInfo(listAN, 9, 0);
+		AlarmSetInfo(listAN, 10, "");
+	CASE 1
+		// descending order
+		AlarmSetInfo(listAN, 10, "{" + fieldName + ",0}");
+		AlarmSetInfo(listAN, 9, 1);
+	CASE 2
+		// ascending order
+		AlarmSetInfo(listAN, 10, "{" + fieldName + ",1}");
+		AlarmSetInfo(listAN, 9, 1);
+	END SELECT
+	retValue = 0;
+	AlarmFilterEditClose(filterSession);
+
+	RETURN retValue;
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		UAG_TabAlmTable_Col_ShowContextMenu
+//
+//	SUMMARY:
+//		Shows a context menu for column. Currently only allows delete
+//		/ insert column
+//			
+//	PARAMS:
+//		listID			- The alarm list ID
+//		colID			- The column display ID number, zero-indexed
+//							This is optional, if not specified, the action taken
+//							will be applied to an addition column
+//			
+//	RETURNS: 
+//		0 if executed successful or error if failed
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION UAG_TabAlmTable_Col_ShowContextMenu(STRING listID, INT colID = -1)
+	INT retValue = 274;
+	INT x, y;
+	INT insertMenuNo = 0, insertItemOffset = 0;
+	INT selection;
+	STRING fieldName;
+	INT listType;
+	INT listAN;
+	INT tblCol;				// column ordinal number, 1-indexed
+	INT filterSession;
+	INT sortDirection;
+	STRING arrColSorts;
+
+	// do not displayed menu if it is still in progress
+	IF (m_TabAlmTable_Menu_InUse) THEN
+		RETURN retValue;
+	END
+	m_TabAlmTable_Menu_InUse = 1;
+
+	// Get coordinates
+	DspGetMouse(x, y);
+
+	// Show context menu
+	tblCol = LibTable_GetColByColIdx(listID, colID + 1);	// get column ordinal number
+	IF (tblCol > 0) THEN
+		DspPopupMenu(0, StrToLocalText("@(Remove Column)"));
+		DspPopupMenu(0, StrToLocalText("@(Insert Column)") + ">1");
+		insertMenuNo = 1;
+	ELSE
+		DspPopupMenu(0, "!" + StrToLocalText("@(Insert Column)") + ",,");
+		insertItemOffset = 1;
+	END
+	listAN = LibAlmTable_GetAN(listID);
+	listType = AlarmGetInfo(listAN, 3);
+	_UAG_TabAlarm_Col_AddFieldsToMenu(listType, listID, "_UAG_TabAlmTable_Col_IsShown", insertMenuNo);
+	selection = DspPopupMenu(-1, "", x, y);
+	fieldName = _UAG_TabAlarm_Col_GetFieldFromMenu(listType, selection, insertMenuNo, insertItemOffset);
+
+	// re-allow to display menu after selection is made
+	m_TabAlmTable_Menu_InUse = 0;
+
+	SELECT CASE selection
+	CASE 1
+		// delete column
+		LibTable_HideColumn(listID, tblCol);
+		retValue = 0;
+	CASE ELSE
+		// insert column before the specified column
+		IF ("" = fieldName) THEN
+			RETURN retValue;
+		END
+		LibTable_AddColumn(listID, UAG_TabAlarm_GetColNameINI(fieldName), 0, fieldName, colID +  1);
+		// update the sorting & filter status of the column after it's added
+		tblCol = LibTable_GetColByColIdx(listID, colID + 1);
+		sortDirection = _UAG_TabAlarm_IsSorted(listAN, fieldName);
+		filterSession = AlarmFilterEditOpen(listAN, TRUE);
+		_UAG_TabAlmTable_Col_SetIcon(	listID,
+			tblCol,
+			sortDirection,
+			filterSession,
+			fieldName);
+		arrColSorts = LibTable_GetProperty(listID, c_TABLEPROP_SORTDIRECTION);
+		_LibControl_StrArray_SetInt(arrColSorts, tblCol, sortDirection);
+		LibTable_SetProperty(listID, c_TABLEPROP_SORTDIRECTION, arrColSorts);
+		retValue = 0;
+		AlarmFilterEditClose(filterSession);
+	END SELECT
+
+	RETURN retValue;
+END
+
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		UAG_TabAlmTable_Row_ShowContextMenu
+//
+//	SUMMARY:
+//		Pops up the context menu for the selected alarm rows. This function is
+//		called in the right mouse button down event of the dynamic objects that
+//		display the background box of the alarm row. If the user invokes the
+//		context menu outside of the selected row range, the existing selected rows
+//		will be deselected and the current row will be automatically selected
+//		prior to popping up the context menu.
+//			
+//	PARAMS:
+//		listID			- The alarm list ID
+//		rowID			- The row ID number, zero-indexed
+//			
+//	RETURNS: 
+//		0 if executed successfully or error code if failed
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION UAG_TabAlmTable_Row_ShowContextMenu(STRING listID, INT rowID)
+	INT retValue = 274;
+	INT listType;
+	INT selection;
+	INT rowsSelected;
+	INT infoIndex = -1;
+	INT helpIndex = -1;
+	INT ackIndex = -1;
+	INT ackFromSummaryIndex = -1;
+	INT commentIndex = -1;
+	INT disableIndex = -1;
+	INT disableFromSummaryIndex = -1;
+	INT enableIndex = -1;
+	INT enableFromSummaryIndex = -1;
+	INT eventIndex = -1;
+	INT items = 0;
+	INT lastSep = 0;
+	STRING customFn;
+	INT listAN;
+
+	IF (rowID < 0) THEN
+		RETURN retValue;
+	END
+
+	// select the row if it's not already selected
+	IF (NOT LibTable_IsRowDspSelected(listID, rowID + 1)) THEN
+		LibTable_SelectRowDsp(listID, rowID + 1);
+	END
+
+	// Show custom context menu and check for circular ref.
+	customFn = _UAG_TabAlarm_Custom_Get(c_TABALARM_CUSTOM_ALMCONTEXT);
+	IF ((customFn <> "") AND (customFn <> "UAG_TabAlmTable_Row_ShowContextMenu")) THEN
+		retValue = TaskCall(customFn, IntToStr(listID) + "," + IntToStr(rowID));
+		RETURN retValue;
+	END
+
+	// do not displayed menu if it is still in progress
+	IF (m_TabAlmTable_Menu_InUse) THEN
+		RETURN retValue;
+	END
+	m_TabAlmTable_Menu_InUse = 1;
+
+	// Show default context menu
+	listAN = LibAlmTable_GetAN(listID);
+	listType = AlarmGetInfo(listAN, 3);
+	rowsSelected = UAG_TabTable_GetDspSelectedCount(listID);
+
+	// ack
+	SELECT CASE listType
+	CASE 0, 1, 4, 11, 12, 5, 6, 9
+		items = items + 1; ackIndex = items;
+		IF (NOT UAG_TabAlarm_GetAckPriv(1)) THEN
+			DspPopupMenu(0, "!" + StrToLocalText("@(Acknowledge)"));
+		ELSE
+			DspPopupMenu(0,StrToLocalText("@(Acknowledge)"));
+		END
+	END SELECT
+
+	// ack from summary view
+	SELECT CASE listType
+	CASE 10
+		IF (1 = rowsSelected) THEN
+			items = items + 1; ackFromSummaryIndex = items;
+			IF (NOT TabAlarm_GetAckPriv(1)) THEN
+				DspPopupMenu(0, "!" + StrToLocalText("@(Acknowledge)"));
+			ELSE
+				DspPopupMenu(0,StrToLocalText("@(Acknowledge)"));
+			END
+		END
+	END SELECT
+
+	// comment
+	SELECT CASE listType
+	CASE 10, 15, 16
+		IF (1 = rowsSelected) THEN
+			items = items + 1; commentIndex = items;
+			IF (NOT UAG_TabAlarm_GetCommentPriv(listAN + rowID)) THEN
+				DspPopupMenu(0, "!" + StrToLocalText("@(Comment)..."));
+			ELSE
+				DspPopupMenu(0, StrToLocalText("@(Comment)..."));
+			END
+		END
+	END SELECT
+
+	// add event
+	SELECT CASE listType
+	CASE 15, 16
+		IF (1 = rowsSelected) THEN
+			items = items + 1; eventIndex = items;
+			IF (NOT UAG_TabAlarm_GetAckPriv(1)) THEN
+				DspPopupMenu(0, "!" + StrToLocalText("@(Add event)..."));
+			ELSE
+				DspPopupMenu(0, StrToLocalText("@(Add event)..."));
+			END
+		END
+	END SELECT
+
+	// disable
+	SELECT CASE listType
+	CASE 0, 1, 4, 11, 12
+		// separator
+		IF (items > 0) THEN
+			lastSep = items;
+			DspPopupMenu(0, ",");
+		END
+
+		items = items + 1; disableIndex = items;
+		IF (NOT UAG_TabAlarm_GetDisablePriv(1)) THEN
+			DspPopupMenu(0, "!" + StrToLocalText("@(Disable)"));
+		ELSE
+			DspPopupMenu(0, StrToLocalText("@(Disable)"));
+		END
+	END SELECT
+
+	// disable from summary view
+	SELECT CASE listType
+	CASE 10
+		IF (1 = rowsSelected) THEN
+			items = items + 1; disableFromSummaryIndex = items;
+			IF (NOT UAG_TabAlarm_GetDisablePriv(1)) THEN
+				DspPopupMenu(0, "!" + StrToLocalText("@(Disable)"));
+			ELSE
+				DspPopupMenu(0,StrToLocalText("@(Disable)"));
+			END
+		END
+	END SELECT
+
+	// enable
+	SELECT CASE listType
+	CASE 3, 4, 11, 12
+		// separator
+		IF (items > 0) THEN
+			lastSep = items;
+			DspPopupMenu(0, ",");
+		END
+
+		items = items + 1; enableIndex = items;
+		IF (NOT UAG_TabAlarm_GetDisablePriv(1)) THEN
+			DspPopupMenu(0, "!" + StrToLocalText("@(Enable)"));
+		ELSE
+			DspPopupMenu(0, StrToLocalText("@(Enable)"));
+		END
+	END SELECT
+
+	// enable from summary view
+	SELECT CASE listType
+	CASE 10
+		IF (1 = rowsSelected) THEN
+			items = items + 1; enableFromSummaryIndex = items;
+			IF (NOT TabAlarm_GetDisablePriv(1)) THEN
+				DspPopupMenu(0, "!" + StrToLocalText("@(Enable)"));
+			ELSE
+				DspPopupMenu(0,StrToLocalText("@(Enable)"));
+			END
+		END
+	END SELECT
+
+	// view-only items for one alarm
+	IF (1 = rowsSelected AND (listType < 5 OR listType > 9)) THEN
+		// separator
+		IF (items > lastSep) THEN
+			lastSep = items;
+			DspPopupMenu(0, ",");
+		END
+
+		items = items + 1; infoIndex = items;
+		DspPopupMenu(0, StrToLocalText("@(Information)"));
+		IF ("" <> _LibAlmTable_GetDataRow(listID, rowID + 1, "Help")) THEN
+			items = items + 1; helpIndex = items;
+			IF PageInfo(3) = "!p_SOE" THEN
+				DspPopupMenu(0, "!" + StrToLocalText("@(Help)"));
+			ELSE
+				DspPopupMenu(0, StrToLocalText("@(Help)"));
+			END
+		END
+	END
+
+	// display context menu
+	IF (items <= 0) THEN
+		DspPopupMenu(0, "!" + StrToLocalText("@(No options available)"));
+	END
+	selection = DspPopupMenu(-1, "");
+
+	// re-allow to display menu after selection is made
+	m_TabAlmTable_Menu_InUse = 0;
+
+	// re-find the selected row again as it may have changed
+	rowID = _UAG_TabAlmTable_FindSelectedRow(listID);
+
+	// execute selected command
+	IF (selection > 0) THEN
+		SELECT CASE selection
+		CASE ackIndex
+			retValue = UAG_TabAlmTable_Row_Ack(listID, -1);
+		CASE ackFromSummaryIndex
+			retValue = UAG_TabAlmTable_Row_AckByAn(listID, rowID);
+		CASE commentIndex
+			retValue = UAG_TabAlmTable_Row_AddComment(listID, rowID);
+		CASE eventIndex
+			retValue = UAG_TabAlmTable_Row_AddEvent(listID, rowID);
+		CASE disableIndex
+			retValue = UAG_TabAlmTable_Row_Disable(listID, -1);
+		CASE disableFromSummaryIndex
+			retValue = UAG_TabAlmTable_Row_DisableByAn(listID, rowID);
+		CASE enableIndex
+			retValue = UAG_TabAlmTable_Row_Enable(listID, -1);
+		CASE enableFromSummaryIndex
+			retValue = UAG_TabAlmTable_Row_EnableByAn(listID, rowID);				
+		CASE infoIndex
+			retValue = UAG_TabAlmTable_Row_ShowInfo(listID, rowID);
+		CASE helpIndex
+			retValue = UAG_TabAlmTable_Row_ShowHelp(listID, rowID);
+		END SELECT
+	END
+
+	RETURN retValue;
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		UAG_TabAlmTable_Row_ShowHelp
+//
+//	SUMMARY:
+//		Displays the help page of the alarm displayed at the specified row.
+//			
+//	PARAMS:
+//		listID			- The alarm list ID
+//		rowID			- The row ID number, zero-indexed
+//			
+//	RETURNS: 
+//		0 if executed successfully or error code if failed
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION UAG_TabAlmTable_Row_ShowHelp(STRING listID, INT rowID)
+	INT retValue = 274;
+	INT recordAN;
+	STRING helpPage;
+
+	IF (rowID < 0) THEN
+		RETURN retValue;
+	END
+
+	recordAN = LibAlmTable_GetAN(listID) + rowID;
+	IF (AlarmGetDsp(recordAN, "RecNo") = "") THEN
+		RETURN retValue;
+	END
+
+	helpPage = _LibAlmTable_GetDataRow(listID, rowID + 1, "Help");
+	IF (helpPage = "") THEN
+		Message("Info", "@(No help page is defined for the alarm.)", 0);
+		RETURN 0;
+	END
+
+	retValue = PageDisplay(helpPage);
+
+	RETURN retValue;
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		UAG_TabAlmTable_Row_ShowInfo
+//
+//	SUMMARY:
+//		Displays the information page of the alarm displayed at the specified row.
+//			
+//	PARAMS:
+//		listID			- The alarm list ID
+//		rowID			- The row ID number, zero-indexed
+//			
+//	RETURNS: 
+//		0 if executed successfully or error code if failed
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION UAG_TabAlmTable_Row_ShowInfo(STRING listID, INT rowID)
+	INT retValue = 274;
+	INT frmHnd;
+	INT recordAN;
+	INT type;
+	INT nextFormRowNumber = 0;
+	INT formMaxRows = 20;
+	STRING title;
+
+	IF (rowID < 0) THEN
+		RETURN retValue;
+	END
+
+	recordAN = LibAlmTable_GetAN(listID) + rowID;
+	IF (AlarmGetDsp(recordAN, "RecNo") = "") THEN
+		RETURN retValue;
+	END
+
+	type = UAG_TabAlarm_GetInfo(listID, 3);
+	SELECT CASE type
+	CASE 10
+		title = "@(Summary Information)";
+	CASE 15
+		title = "@(Event Information)";
+	CASE ELSE
+		title = "@(Alarm Information)";
+	END SELECT
+
+	frmHnd = FormNew(title, 70, formMaxRows, 1+4+8);
+	IF (frmHnd < 0) THEN
+		RETURN retValue;
+	END
+
+	nextFormRowNumber = _UAG_TabAlarm_AddToInformationForm(nextFormRowNumber, "@(Tag)", _LibAlmTable_GetDataRow(listID, rowID + 1, "Tag"));
+	nextFormRowNumber = _UAG_TabAlarm_AddToInformationForm(nextFormRowNumber, "@(Equipment)", _LibAlmTable_GetDataRow(listID, rowID + 1, "Equipment"));
+	nextFormRowNumber = _UAG_TabAlarm_AddToInformationForm(nextFormRowNumber, "@(Tag Item)", _LibAlmTable_GetDataRow(listID, rowID + 1, "Item"));
+	nextFormRowNumber = _UAG_TabAlarm_AddToInformationForm(nextFormRowNumber, "@(Name)", _LibAlmTable_GetDataRow(listID, rowID + 1, "Name"));
+	nextFormRowNumber = _UAG_TabAlarm_AddToInformationForm(nextFormRowNumber, "@(Description)", _LibAlmTable_GetDataRow(listID, rowID + 1, "Desc"));
+	nextFormRowNumber = _UAG_TabAlarm_AddToInformationForm(nextFormRowNumber, "@(Category)", _LibAlmTable_GetDataRow(listID, rowID + 1, "Category"));
+	nextFormRowNumber = _UAG_TabAlarm_AddToInformationForm(nextFormRowNumber, "@(Priority)", _LibAlmTable_GetDataRow(listID, rowID + 1, "Priority"));
+
+	IF type = 15 THEN // SOE fields are different
+		nextFormRowNumber = _UAG_TabAlarm_AddToInformationForm(nextFormRowNumber, "@(Record Time)", _LibAlmTable_GetDataRow(listID, rowID + 1, "Time"));
+		nextFormRowNumber = _UAG_TabAlarm_AddToInformationForm(nextFormRowNumber, "@(Receipt Time)", _LibAlmTable_GetDataRow(listID, rowID + 1, "ReceiptTime"));
+		nextFormRowNumber = _UAG_TabAlarm_AddToInformationForm(nextFormRowNumber, "@(Comment)", _LibAlmTable_GetDataRow(listID, rowID + 1, "Comment"));
+		nextFormRowNumber = _UAG_TabAlarm_AddToInformationForm(nextFormRowNumber, "@(User Name)", _LibAlmTable_GetDataRow(listID, rowID + 1, "UserName"));
+		nextFormRowNumber = _UAG_TabAlarm_AddToInformationForm(nextFormRowNumber, "@(User Location)", _LibAlmTable_GetDataRow(listID, rowID + 1, "UserLocation"));
+		nextFormRowNumber = _UAG_TabAlarm_AddToInformationForm(nextFormRowNumber, "@(Message)", _LibAlmTable_GetDataRow(listID, rowID + 1, "Message"));
+		nextFormRowNumber = _UAG_TabAlarm_AddToInformationForm(nextFormRowNumber, "@(Classification)", _LibAlmTable_GetDataRow(listID, rowID + 1, "Classification"));
+	ELSE
+		nextFormRowNumber = _UAG_TabAlarm_AddToInformationForm(nextFormRowNumber, "@(On Time)", _LibAlmTable_GetDataRow(listID, rowID + 1, "OnTime"));
+		nextFormRowNumber = _UAG_TabAlarm_AddToInformationForm(nextFormRowNumber, "@(On Date)", _LibAlmTable_GetDataRow(listID, rowID + 1, "OnDate"));
+		nextFormRowNumber = _UAG_TabAlarm_AddToInformationForm(nextFormRowNumber, "@(Off Time)", _LibAlmTable_GetDataRow(listID, rowID + 1, "OffTime"));
+		nextFormRowNumber = _UAG_TabAlarm_AddToInformationForm(nextFormRowNumber, "@(Off Date)", _LibAlmTable_GetDataRow(listID, rowID + 1, "OffDate"));
+		nextFormRowNumber = _UAG_TabAlarm_AddToInformationForm(nextFormRowNumber, "@(Acknowledge Time)", _LibAlmTable_GetDataRow(listID, rowID + 1, "AckTime"));
+		nextFormRowNumber = _UAG_TabAlarm_AddToInformationForm(nextFormRowNumber, "@(Acknowledge Date)", _LibAlmTable_GetDataRow(listID, rowID + 1, "AckDate"));
+		nextFormRowNumber = _UAG_TabAlarm_AddToInformationForm(nextFormRowNumber, "@(Duration)", _LibAlmTable_GetDataRow(listID, rowID + 1, "DeltaTime"));
+	END
+
+	IF (type <> 10) AND (type <> 15) THEN
+		nextFormRowNumber = _UAG_TabAlarm_AddToInformationForm(nextFormRowNumber, "@(Old State Description)", _LibAlmTable_GetDataRow(listID, rowID + 1, "OLD_DESC"));
+		nextFormRowNumber = _UAG_TabAlarm_AddToInformationForm(nextFormRowNumber, "@(State Description)", _LibAlmTable_GetDataRow(listID, rowID + 1, "STATE_DESC"));
+	END
+
+	IF type = 10 THEN
+		nextFormRowNumber = _UAG_TabAlarm_AddToInformationForm(nextFormRowNumber, "@(Summary Type)", _LibAlmTable_GetDataRow(listID, rowID + 1, "SumType"));
+		nextFormRowNumber = _UAG_TabAlarm_AddToInformationForm(nextFormRowNumber, "@(Summary State)", _LibAlmTable_GetDataRow(listID, rowID + 1, "SumState"));
+	ELSE
+		nextFormRowNumber = _UAG_TabAlarm_AddToInformationForm(nextFormRowNumber, "@(Log State)", _LibAlmTable_GetDataRow(listID, rowID + 1, "LogState"));
+		nextFormRowNumber = _UAG_TabAlarm_AddToInformationForm(nextFormRowNumber, "@(State)", _LibAlmTable_GetDataRow(listID, rowID + 1, "State"));
+	END
+
+	nextFormRowNumber = _UAG_TabAlarm_AddToInformationForm(nextFormRowNumber, "@(Cluster)", _LibAlmTable_GetDataRow(listID, rowID + 1, "Cluster"));
+
+	_UAG_FormCenter(70, formMaxRows);
+	retValue = FormRead(1);
+
+	RETURN retValue;
+END
+
+INT
+FUNCTION
+_UAG_TabAlmTable_AddToInformationForm(INT nextRowNumber, STRING property, STRING value)
+	FormPrompt(0, nextRowNumber, property);
+	FormPrompt(30, nextRowNumber, value);
+	RETURN nextRowNumber + 1;
+END
+
+//----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		UAG_TabAlmTable_Row_AddComment
+//
+//	SUMMARY:
+//		Adds comment to the alarm displayed at the specified row.
+//			
+//	PARAMS:
+//		listID			- The alarm list ID
+//		rowID			- The row ID number, zero-indexed
+//			
+//	RETURNS: 
+//		0 if executed successfully or error code if failed
+//
+//----------------------------------------------------------------------------
+INT FUNCTION UAG_TabAlmTable_Row_AddComment(STRING listID, INT rowID)
+	INT retValue = 274;
+	INT listAN;
+	INT listCategory;
+	STRING tag;
+	STRING comment;
+
+	IF (rowID < 0) THEN
+		RETURN retValue;
+	END
+
+	listAn = LibAlmTable_GetAN(listID);
+	IF (listAN <= 0) THEN
+		RETURN retValue;
+	END
+
+	tag = _LibAlmTable_GetDataRow(listID, rowID + 1, "Tag");
+	IsError();
+	comment = Input("@(Comment) [" + tag + "]", "@(Enter Comment):", "");
+
+	listCategory = AlarmGetInfo(listAn, 3);
+	retValue = IsError();
+	IF (retValue = 0) THEN
+		retValue = AlarmComment(comment, listAN + rowID);
+	END
+
+	IF (retValue = 0 AND (listCategory = 15 OR listCategory = 16 )) THEN
+		UAG_TabAlarm_ReloadDataByAN(listAN);
+	END
+	
+	IF (retValue <> 0 AND retValue <> 299) THEN
+		Message("@(Error)", "[" + IntToStr(retValue) + "] " + ErrMsg(retValue), 0);
+	END
+
+	RETURN retValue;
+END
+
+//----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		UAG_TabAlmTable_Row_AddEvent
+//
+//	SUMMARY:
+//		Adds an event to the SOE.
+//			
+//	PARAMS:
+//		listID			- The alarm list ID
+//		rowID			- The row ID number, zero-indexed
+//			
+//	RETURNS: 
+//		0 if executed successfully or error code if failed
+//
+//----------------------------------------------------------------------------
+INT FUNCTION UAG_TabAlmTable_Row_AddEvent(STRING listID, INT rowID)
+	INT retValue = 274;
+	INT listAN;
+	STRING tag;
+	STRING cluster;
+	STRING msg;
+
+	IF (rowID < 0) THEN
+		RETURN retValue;
+	END
+
+	listAn = LibAlmTable_GetAN(listID);
+	IF (listAN <= 0) THEN
+		RETURN retValue;
+	END
+
+	tag = _LibAlmTable_GetDataRow(listID, rowID + 1, "Tag");
+	cluster = _LibAlmTable_GetDataRow(listID, rowID + 1, "Cluster");
+	IsError();
+	msg = Input("@(Message) [" + tag + "]", "@(Enter Message):", "");
+	retValue = IsError();
+	IF (retValue = 0) THEN
+		retValue = SOEEventAdd(TimestampCurrent(), msg, tag, cluster);
+	END
+	IF (retValue = 0) THEN
+		UAG_TabAlarm_ReloadDataByAN(listAN);
+	ELSE IF (retValue <> 299) THEN
+		Message("@(Error)", "[" + IntToStr(retValue) + "] " + ErrMsg(retValue), 0);
+	END END
+
+	RETURN retValue;
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		UAG_TabAlmTable_Row_Ack
+//
+//	SUMMARY:
+//		Acknowledges multiple alarms displayed on the list. If the specified
+//		row is currently selected, all selected rows on display are acted on,
+//		otherwise only the specified row will be affected.
+//			
+//	PARAMS:
+//		listID			- The alarm list ID
+//		rowID			- The row ID number, zero-indexed
+//			
+//	RETURNS: 
+//		0 if executed successfully or error code if failed
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION UAG_TabAlmTable_Row_Ack(STRING listID, INT rowID)
+	INT retValue = 274;
+
+	// check privilege
+	IF (NOT UAG_TabAlarm_GetAckPriv(1)) THEN
+		RETURN 276;
+	END
+
+	_UAG_TabAlarm_TaskCall("UAG_TabAlarmSnd_SilenceOnAck", "");	// Optionally include UAG_TabAlarmSnd.ci if using default alarm sound implementation
+
+	retValue = _UAG_TabAlmTable_Row_Action(listID, rowID, c_TABALARM_ROW_ACTION_ACK);
+
+	RETURN retValue;
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		UAG_TabAlarm_Row_AckByAn
+//
+//	SUMMARY:
+//		Acknowledge alarm displayed on on the current animation object.
+//			
+//	PARAMS:
+//		listID			- The alarm list ID
+//		rowID			- The row ID number, zero-indexed
+//							If this is less than 0, action applies to all selected rows
+//			
+//	RETURNS: 
+//		0 if executed successfully or error code if failed
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION UAG_TabAlmTable_Row_AckByAn(STRING listID, INT rowID)
+	INT retValue = 274;
+	INT listAN;
+	STRING tag;
+
+	IF (rowID < 0) THEN
+		RETURN retValue;
+	END
+
+	listAn = LibAlmTable_GetAN(listID);
+	IF (listAN <= 0) THEN
+		RETURN retValue;
+	END
+
+	tag = _LibAlmTable_GetDataRow(listID, rowID + 1, "Tag");
+	IsError();
+	retValue = AlarmAck(0, listAN + rowID);
+	IF (retValue <> 0 AND retValue <> 299) THEN
+		Message("@(Error)", "[" + IntToStr(retValue) + "] " + ErrMsg(retValue), 0);
+	END
+
+	RETURN retValue;
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		UAG_TabAlarm_Row_Disable
+//
+//	SUMMARY:
+//		Disables multiple alarms displayed on the list. If the specified row is
+//		currently selected, all selected rows on display are acted on, otherwise
+//		only the specified row will be affected.
+//			
+//	PARAMS:
+//		listID			- The alarm list ID
+//		rowID			- The row ID number, zero-indexed
+//							If this is less than 0, action applies to all selected rows
+//			
+//	RETURNS: 
+//		0 if executed successfully or error code if failed
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION UAG_TabAlmTable_Row_Disable(STRING listID, INT rowID)
+	INT retValue = 274;
+
+	// check privilege
+	IF (NOT UAG_TabAlarm_GetDisablePriv(1)) THEN
+		RETURN 276;
+	END
+
+	retValue = _UAG_TabAlmTable_Row_Action(listID, rowID, c_TABALARM_ROW_ACTION_DISABLE);
+
+	RETURN retValue;
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		TabAlarm_Row_DisableByAn
+//
+//	SUMMARY:
+//		Disables alarm displayed on on the current animation object.
+//			
+//	PARAMS:
+//		listID			- The alarm list ID
+//		rowID			- The row ID number, zero-indexed
+//							If this is less than 0, action applies to all selected rows
+//			
+//	RETURNS: 
+//		0 if executed successfully or error code if failed
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION UAG_TabAlmTable_Row_DisableByAn(STRING listID, INT rowID)
+	INT retValue = 274;
+	INT listAN;
+	STRING tag;
+
+	IF (rowID < 0) THEN
+		RETURN retValue;
+	END
+
+	listAn = LibAlmTable_GetAN(listID);
+	IF (listAN <= 0) THEN
+		RETURN retValue;
+	END
+
+	tag = _LibAlmTable_GetDataRow(listID, rowID + 1, "Tag");
+	IsError();
+	retValue = AlarmDisable(0, listAN + rowID);
+	IF (retValue <> 0 AND retValue <> 299) THEN
+		Message("@(Error)", "[" + IntToStr(retValue) + "] " + ErrMsg(retValue), 0);
+	END
+
+	RETURN retValue;
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		UAG_TabAlmTable_Row_Enable
+//
+//	SUMMARY:
+//		Enables multiple alarms displayed on the list. If the specified row is
+//		currently selected, all selected rows on display are acted on, otherwise
+//		only the specified row will be affected.
+//			
+//	PARAMS:
+//		listID			- The alarm list ID
+//		rowID			- The row ID number, zero-indexed
+//							If this is less than 0, action applies to all selected rows
+//			
+//	RETURNS: 
+//		0 if executed successfully or error code if failed
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION UAG_TabAlmTable_Row_Enable(STRING listID, INT rowID = -1)
+	INT retValue = 274;
+
+	// check privilege
+	IF (NOT UAG_TabAlarm_GetDisablePriv(1)) THEN
+		RETURN 276;
+	END
+
+	retValue = _UAG_TabAlmTable_Row_Action(listID, rowID, c_TABALARM_ROW_ACTION_ENABLE);
+
+	RETURN retValue;
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		TabAlarm_Row_EnableByAn
+//
+//	SUMMARY:
+//		Enables alarm displayed on on the current animation object.
+//			
+//	PARAMS:
+//		listID			- The alarm list ID
+//		rowID			- The row ID number, zero-indexed
+//							If this is less than 0, action applies to all selected rows
+//			
+//	RETURNS: 
+//		0 if executed successfully or error code if failed
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION UAG_TabAlmTable_Row_EnableByAn(STRING listID, INT rowID)
+	INT retValue = 274;
+	INT listAN;
+	STRING tag;
+
+	IF (rowID < 0) THEN
+		RETURN retValue;
+	END
+
+	listAn = LibAlmTable_GetAN(listID);
+	IF (listAN <= 0) THEN
+		RETURN retValue;
+	END
+
+	tag = _LibAlmTable_GetDataRow(listID, rowID + 1, "Tag");
+	IsError();
+	retValue = AlarmEnable(0, listAN + rowID);
+	IF (retValue <> 0 AND retValue <> 299) THEN
+		Message("@(Error)", "[" + IntToStr(retValue) + "] " + ErrMsg(retValue), 0);
+	END
+
+	RETURN retValue;
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		UAG_TabAlmTable_Row_Clear
+//
+//	SUMMARY:
+//		Clears multiple alarms displayed on the list. If the specified row is
+//		currently selected, all selected rows on display are acted on, otherwise
+//		only the specified row will be affected.
+//			
+//	PARAMS:
+//		listID			- The alarm list ID
+//		rowID			- The row ID number, zero-indexed
+//							If this is less than 0, action applies to all selected rows
+//			
+//	RETURNS: 
+//		0 if executed successfully or error code if failed
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION UAG_TabAlmTable_Row_Clear(STRING listID, INT rowID = -1)
+	INT retValue = 274;
+
+	// check privilege
+	IF (NOT UAG_TabAlarm_GetAckPriv(1)) THEN
+		RETURN 276;
+	END
+
+	retValue = _UAG_TabAlmTable_Row_Action(listID, rowID, c_TABALARM_ROW_ACTION_CLEAR);
+
+	RETURN retValue;
+END
+
+
+//-----------------------------------------------------------------------------
+//
+//	Private Helper Functions
+//
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		_UAG_TabAlmTable_Print_ButtonClick
+//
+//	SUMMARY:
+//		Callback function for button click event on the alarm print form
+//			
+//	PARAMS:
+//		None
+//			
+//	RETURNS: 
+//		0 if successful or error number if failed
+//
+//-----------------------------------------------------------------------------
+
+PRIVATE
+INT FUNCTION _UAG_TabAlmTable_Print_ButtonClick()
+	INT retValue = 274;
+	INT frmHnd;
+	INT fieldHnd;
+	STRING listID;
+	STRING command;
+	STRING tempFile;
+	STRING outputFile;
+	INT dummy;
+
+	// determine what option has been chosen by user
+	FormCurr(frmHnd, fieldHnd);
+	IF (NOT FormActive(frmHnd)) THEN
+		RETURN retValue;
+	END
+	FormGetCurrInst(dummy, command);
+	listID = StrWord(command);
+	command = StrTrim(command);
+
+	// get data from the form and close it
+	FormGetData(frmHnd);
+	FormDestroy(frmHnd);
+
+	// Generate output file
+	tempFile = _UAG_TabAlmTable_Print_CreateTempFile(listID, m_TabAlmTable_Print_OptAllPages, m_TabAlmTable_Print_TxtPages);
+	IF ("" = tempFile) THEN
+		Message("@(Error)", "@(Print engine failed to create temporary output file.)", 64);
+		RETURN 264;
+	END
+
+	// Send temporary file to printer / output file
+	SELECT CASE command
+	CASE "Print"
+		retValue = Exec("rundll32.exe " + GetEnv("WinDir") + "\System32\mshtml.dll,PrintHTML ^"" + tempFile + "^"", 1);
+		IF (retValue <> 0) THEN
+			Message("@(Error)", "@(Print engine failed to initialize Internet Explorer.)", 64);
+		END
+	CASE "Export"
+		outputFile = FormSaveAsFile(StrToLocalText("@(Alarm Export)"), PathToStr("[Data]:\Alarm Export.html"), "Html Files|*.html|All Files (*.*)|*.*|", "html");
+		IF (StrLength(outputFile) > 0) THEN
+			IF (FileExist(outputFile + ".old")) THEN FileDelete(outputFile + ".old"); END
+			IF (FileExist(outputFile)) THEN FileRename(outputFile, outputFile + ".old"); END
+			FileCopy(tempFile, outputFile, 0);
+		END
+	END SELECT
+
+	RETURN retValue;
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		_UAG_TabAlmTable_Print_CreateTempFile
+//
+//	SUMMARY:
+//		Creates a temporary file listing the contents of the alarm list
+//			
+//	PARAMS:
+//		listID			- The alarm list ID
+//		outAllPages		- output all pages of alarms available in the alarm list
+//		pages			- number of pages in the alarm list starting from current page
+//							to be output
+//			
+//	RETURNS: 
+//		The name of the temporary file created or empty string if failed
+//
+//	REMARKS:
+//		1. recalcuate starting rowCount for next page (i.e. which row we starts from).
+//			as partial scrolling may happen on the last page, thanks to the scrollbar.
+//			In this case, the first row of the new page starts somewhere in the middle
+//			of the page rather than at the top row.
+//
+//-----------------------------------------------------------------------------
+
+PRIVATE
+STRING FUNCTION _UAG_TabAlmTable_Print_CreateTempFile(STRING listID, INT outAllPages, INT pages = -1)
+	STRING retValue = "";
+	INT pageWaitMS = 300;	// wait time in millisecond between going to next page in alarm list
+	INT listAN;
+	INT errLevelOld;
+	INT fileHnd;
+	INT pageCount;
+	INT pageOffsetOld;
+	INT pageNumber;
+	INT pageOffset;
+	INT pageOffsetNew;
+	INT rows;
+	INT rowCount;
+	INT columns;
+	INT colCount;
+	INT maxItems;
+
+	IF (outAllPages) THEN
+		pages = 2000000000;	// no limit for number of pages print
+	ELSE IF (pages < 1) THEN
+		pages = 1;
+	END END
+
+	listAN = LibAlmTable_GetAN(listID);
+	IF (listAN <= 0) THEN
+		RETURN retValue;
+	END
+	rows = LibTable_GetPropertyInt(listID, c_TABLEPROP_ROWDSPCOUNT);
+	columns = LibTable_GetPropertyInt(listID, c_TABLEPROP_COLIDXUSED);
+
+	// enable user error checking to prevent premature exit
+	errLevelOld = ErrSetLevel(1);
+
+	// generate output file by browsing alarm list
+	retValue = GetEnv("Temp") + "\_TabAlarm_Print.html";
+	fileHnd = FileOpen(retValue, "w");
+	IF (fileHnd < 0) THEN
+		ErrSetLevel(errLevelOld);
+		RETURN "";
+	END
+
+	// show feedback dialog
+	_UAG_ProgressMessageShow("@(Alarm Print Progress)", "@(Generating alarm list for printing...)", 50);
+
+	// TODO: freeze alarm list display update
+
+	FileWriteLn(fileHnd, "<HTML>^n<HEAD>^n<TITLE>Alarm Export File</TITLE>^n</HEAD>^n<BODY>");
+	FileWriteLn(fileHnd, "<TABLE BORDER=0 CELLPADDING=2>");
+
+	// print column headings
+	FileWrite(fileHnd, "<TR>");
+	colCount = 0;
+	WHILE (colCount < columns) DO
+		FileWrite(fileHnd, "<TH>");
+		FileWrite(fileHnd, LibTable_GetColName(listID, LibTable_GetColByColIdx(listID, colCount + 1)));
+		FileWrite(fileHnd, "</TH>");
+		colCount = colCount + 1;
+	END
+	FileWriteLn(fileHnd, "</TR>");
+	
+	// print alarm rows
+	pageNumber = AlarmGetInfo(listAN, 0);
+	pageOffset = AlarmGetInfo(listAN, 1);
+	pageOffsetOld = pageOffset;
+	IF (outAllPages) THEN
+		// go to first page if output all pages
+		AlarmSetInfo(listAN, 1, 0);
+		SleepMS(pageWaitMS);
+		pageNumber = AlarmGetInfo(listAN, 0);
+		pageOffset = AlarmGetInfo(listAN, 1);
+	END
+	pageCount = 0;
+	rowCount = 0;
+	WHILE ((pageCount < pages) AND (NOT _UAG_ProgressMessageIsCancelled())) DO
+		WHILE ((rowCount < rows)) DO
+			IF (AlarmGetDsp(listAN + rowCount, "RecNo") = "") THEN
+				// exit loop if row is empty
+				rowCount = rows;
+				pageCount = pages;
+			ELSE
+				// provide feedback to the user while collecting information
+				_UAG_ProgressMessageUpdate(StrToLocalText("@(Collecting alarm records from page)") + " " + IntToStr(pageNumber) + " " + StrToLocalText("@(of the alarm list...)"));
+
+				FileWrite(fileHnd, "<TR>");
+				colCount = 0;
+				WHILE (colCount < columns) DO
+					FileWrite(fileHnd, "<TD>");
+					// use custom function instead of std. AlarmGetDsp() to get formatted field value
+					FileWrite(fileHnd, _LibAlmTable_GetDataRow(listID, rowCount + 1, LibTable_GetColRef(listID, LibTable_GetColByColIdx(listID, colCount + 1))));
+					FileWrite(fileHnd, "</TD>");
+					colCount = colCount + 1;
+				END
+				FileWriteLn(fileHnd, "</TR>");
+			END
+			rowCount = rowCount + 1;
+		END
+
+		// browse to next page
+		pageCount = pageCount + 1;
+		pageNumber = pageNumber + 1;
+		pageOffsetNew = pageOffset + rows;
+		// because the scrollbar would not allow full page scroll on last page
+		// pre-calculate the exact page offset to prevent potential zig-zag
+		maxItems = AlarmCountList(listAN);
+		IF (pageOffsetNew + rows > maxItems) THEN
+			pageOffset = Max(maxItems - rows, 0);
+		ELSE
+			pageOffset = pageOffsetNew;
+		END
+		AlarmSetInfo(listAN, 1, pageOffset);
+
+		// no need to wait between AlarmDspNext() and AlarmGetInfo() as the latter is
+		// a blocked call in 7.30. It only returns after the list is scrolled
+		pageOffset = AlarmGetInfo(listAN, 1);	
+		rowCount = pageOffsetNew - pageOffset;	// remark 1
+		IF (rowCount >= rows) THEN
+			// exit loop as cannot browse further
+			pageCount = pages;
+		END
+	END
+
+	// restore page list for display
+	AlarmSetInfo(listAN, 1, pageOffsetOld);
+
+	FileWriteLn(fileHnd, "</TABLE>");
+	FileWriteLn(fileHnd, "</BODY>^n</HTML>");
+
+	FileClose(fileHnd);
+
+	// close feedback message window
+	_UAG_ProgressMessageClose();
+
+	// TODO: unfreeze alarm list display update
+
+	ErrSetLevel(errLevelOld);
+
+	RETURN retValue;
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		_UAG_TabAlmTable_Col_IsShown
+//
+//	SUMMARY:
+//		Returns whether any column (identified by its ID) is displaying the specified
+//		alarm field.
+//			
+//	PARAMS:
+///		listID			- The alarm list ID
+//		fieldName		- The name of the alarm field
+//			
+//	RETURNS: 
+//		TRUE (1) if the specified alarm field is shown or FALSE (0) if not
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION _UAG_TabAlmTable_Col_IsShown(STRING listID, STRING fieldName)
+	INT tblCol = LibTable_GetColByRef(listID, fieldName);
+
+	IF (tblCol > 0) THEN
+		RETURN (NOT LibTable_IsColHidden(listID, tblCol));
+	END
+	RETURN FALSE;
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		_UAG_TabAlmTable_Col_SetIcon
+//
+//	SUMMARY:
+//		Sets the column icon of the specified column base on its sorting
+//		direction and filter status.
+//			
+//	PARAMS:
+//		listID			- The alarm list ID
+//		tblCol			- The column ordinal used in table, one-indexed
+//		sortDirection	- The sort direction of the column:
+//							0 = no sort
+//							1 = descending
+//							2 = ascending
+//		filterSession	- The filter edit session of alarm list
+//		fieldName		- The alarm field name of the column
+//
+//	RETURNS: 
+//		None
+//
+//-----------------------------------------------------------------------------
+
+PRIVATE
+FUNCTION _UAG_TabAlmTable_Col_SetIcon(STRING listID, INT tblCol, INT sortDirection, INT filterSession, STRING fieldName)
+	fieldName = _UAG_TabAlmTable_GetEquivFieldNames(fieldName);
+	INT isFiltered = AlarmFilterEditHasField(filterSession, fieldName);
+	STRING icon = "";
+
+	SELECT CASE sortDirection
+	CASE 0	// no sort
+		IF (isFiltered) THEN
+			icon = c_TABALMTABLE_COL_ICON_FILTERNONE;
+		ELSE
+			icon = c_TABALMTABLE_COL_ICON_SORTNONE;
+		END
+	CASE 1	// descending
+		IF (isFiltered) THEN
+			icon = c_TABALMTABLE_COL_ICON_FILTERDESC;
+		ELSE
+			icon = c_TABALMTABLE_COL_ICON_SORTDESC;	
+		END
+	CASE 2	// ascending
+		IF (isFiltered) THEN
+			icon = c_TABALMTABLE_COL_ICON_FILTERASC;
+		ELSE
+			icon = c_TABALMTABLE_COL_ICON_SORTASC;
+		END
+	CASE ELSE
+		RETURN;
+	END SELECT
+	LibTable_SetColIcon(listID, tblCol, icon);
+END
+
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		_UAG_TabAlmTable_GetEquivFieldNames
+//
+//	SUMMARY:
+//		Gets all equivalent field names of the specified field name.
+//			
+//	PARAMS:
+//		fieldName		- The alarm field name
+//			
+//	RETURNS: 
+//		All equivalent field names of the specified field name in CSV format.
+//
+//-----------------------------------------------------------------------------
+
+PRIVATE
+STRING FUNCTION _UAG_TabAlmTable_GetEquivFieldNames(STRING fieldName)
+	STRING copy = StrUpper(fieldName);
+	IF (copy = "DELTATIME") THEN
+		RETURN fieldName;
+	ELSE IF (	StrSearch(0, copy, "DATE") > -1
+			OR StrSearch(0, copy, "TIME") > -1
+			OR StrSearch(0, copy, "MILLI") > -1) THEN
+		IF StrLeft(fieldName, 7) = "RECEIPT" THEN
+			RETURN "RECEIPTDATE,RECEIPTTIME,RECEIPTDATEEXT,RECEIPTLOCALTIMEDATE,RECEIPTMILLISEC,RECEIPTTIMEDATE";
+		ELSE IF StrLeft(fieldName, 3) = "OFF" THEN
+			RETURN "OFFDATE,OFFTIME,OFFDATEEXT,OFFTIMEDATE,OFFMILLI";
+		ELSE IF StrLeft(fieldName, 3) = "ACK" THEN
+			RETURN "ACKDATE,ACKTIME,ACKDATEEXT,ACKTIMEDATE,ACKMILLI";
+		ELSE IF StrLeft(fieldName, 2)  = "ON" THEN
+			RETURN "ONDATE,ONTIME,ONDATEEXT,ONTIMEDATE,ONMILLI";
+		ELSE
+			RETURN "DATE,TIME,LOCALTIMEDATE,DATEEXT,MILLISEC";
+		END END END END
+	ELSE IF (copy = "TYPE" OR copy = "SUMTYPE") THEN
+		RETURN copy + ",ACKNOWLEDGED,DISABLED";
+	END END END
+	RETURN fieldName;
+END
+
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		_UAG_TabAlmTable_FindSelectedRow
+//
+//	SUMMARY:
+//		Finds the row ID of the first selected row starting from the specified
+//		row ID.
+//			
+//	PARAMS:
+//		listID			- The alarm list ID
+//		rowID			- The starting row ID number, zero-indexed
+//			
+//	RETURNS: 
+//		0 if executed successfully or error code if failed
+//
+//-----------------------------------------------------------------------------
+
+PRIVATE
+INT FUNCTION _UAG_TabAlmTable_FindSelectedRow(STRING listID, INT startRowID = 0)
+	INT rowCount = LibTable_GetPropertyInt(listID, c_TABLEPROP_ROWDSPCOUNT);
+	INT rowID = Max(startRowID, 0);
+
+	WHILE (rowID < rowCount) DO
+		IF (LibTable_IsRowDspSelected(listID, rowID + 1)) THEN
+			RETURN rowID;
+		END
+		rowID = rowID + 1;
+	END
+	RETURN -1;
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		_UAG_TabAlmTable_Row_Action
+//
+//	SUMMARY:
+//		Executes action on the selected row(s).
+//			
+//	PARAMS:
+//		listID			- The alarm list ID
+//		rowID			- The row ID number, zero-indexed
+//							If this is less than 0, action applies to all selected rows
+//		action			- The action to be applied:
+//							please see _UAG_TabAlmTable_Ref_ActionSingle() for details
+//			
+//	RETURNS: 
+//		0 if executed successfully or error code if failed
+//
+//	REMARKS:
+//		This function should only be called on non-historical alarm lists,
+//		i.e. display type does not equal to 10 (summary) or 15 (soe).
+//
+//-----------------------------------------------------------------------------
+
+PRIVATE
+INT FUNCTION _UAG_TabAlmTable_Row_Action(STRING listID, INT rowID, INT action)
+	INT retValue = 274;	// invalid argument
+	INT listAN = LibAlmTable_GetAN(listID);
+	INT listType = AlarmGetInfo(listAN, 3);
+	STRING title;
+	STRING rowRef;
+	IF (listAN <= 0) THEN
+		RETURN retValue;
+	END
+
+	IF ((rowID > -1) AND (NOT LibTable_IsRowDspSelected(listID, rowID + 1))) THEN
+		// outside selection, work on this row only
+		IF (listType < 5 OR listType > 9) THEN
+			rowRef = AlarmGetDsp(listAN + rowID, "Tag") + " " + AlarmGetDsp(listAN + rowID, "Cluster");
+		ELSE
+			// user row Animation Number as reference for Hardware alarms
+			rowRef = ".Hw" + IntToStr(listAN + rowID - 1);
+		END
+		retValue = _UAG_TabAlmTable_Ref_ActionSingle(rowRef, action);
+	ELSE
+		// act on all visible selected records
+		LibTable_TaskSelectedRows(listID, "_UAG_TabAlmTable_Ref_ActionSingle", "^"#Ref^"," + IntToStr(action), TRUE);
+		retValue = 0;
+	END
+	IF ((retValue = 0) AND (action = c_TABALARM_ROW_ACTION_DISABLE OR action = c_TABALARM_ROW_ACTION_ENABLE)) THEN
+		LibTable_ClearSelected(listID);
+	END
+	RETURN retValue;
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		_UAG_TabAlmTable_Ref_ActionSingle
+//
+//	SUMMARY:
+//		Executes action on a single alarm identified by the Ref string retrieved
+//		from the alarm table.
+//			
+//	PARAMS:
+//		rowRef			- The ref. string that identified an alarm record in fmt of:
+//							<Tag> <Cluster>
+//		action			- The action to be applied:
+//							0 - Acknowledge
+//							1 - Disable
+//							2 - Enable
+//							3 - Clear
+//			
+//	RETURNS: 
+//		0 if executed successfully or error code if failed
+//
+//	REMARKS:
+//		This function is for internal use only. It is deliberately not set to
+//		private scope so that it can be called back by iterator function
+//		LibTable_TaskSelectedRows().
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION _UAG_TabAlmTable_Ref_ActionSingle(STRING rowRef, INT action)
+	STRING tag = rowRef;
+	STRING cluster = "";
+	INT spaceOffset = StrSearch(0, rowRef, " ");
+	INT row = 0;
+	INT refLen = StrLength(rowRef);
+	
+	IF (StrLeft(rowRef, 3) = ".Hw") THEN
+		rowRef = StrMid(rowRef, 3, StrLength(rowRef) - 3);
+		row = StrWord(rowRef);
+		
+		SELECT CASE action
+		CASE c_TABALARM_ROW_ACTION_ACK
+			RETURN AlarmAck(0, row);
+		CASE ELSE
+			RETURN 274;
+		END SELECT
+	END
+
+	IF spaceOffset <> -1 THEN
+		tag = StrTrim(StrMid(rowRef, 0, spaceOffset)); 
+		cluster = StrTrim(StrMid(rowRef, spaceOffset + 1, refLen - (spaceOffset + 1)));
+	END
+
+	SELECT CASE action
+	CASE c_TABALARM_ROW_ACTION_ACK
+		RETURN AlarmAckTag(tag, cluster);
+	CASE c_TABALARM_ROW_ACTION_DISABLE
+		RETURN AlarmDisableTag(tag, cluster);
+	CASE c_TABALARM_ROW_ACTION_ENABLE
+		RETURN AlarmEnableTag(tag, cluster);
+	CASE c_TABALARM_ROW_ACTION_CLEAR
+		RETURN AlarmClearTag(tag, cluster);
+	CASE ELSE
+		RETURN 274;
+	END SELECT
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		_UAG_TabAlmTable_Custom_Init
+//
+//	SUMMARY:
+//		Initialize customization for tab alarm list.
+//			
+//	PARAMS:
+//		listID			- The alarm list ID
+//			
+//	RETURNS: 
+//		None
+//
+//-----------------------------------------------------------------------------
+
+PRIVATE
+FUNCTION _UAG_TabAlmTable_Custom_Init(STRING listID)
+	_UAG_TabAlarm_Custom_Load();
+
+	// customize in per alarm list basis
+	m_TabAlmTable_Custom_Fn_AlarmGetDsp = _UAG_TabAlarm_Custom_Get(c_TABALARM_CUSTOM_ALMGETDSP);
+	IF ("" <> m_TabAlmTable_Custom_Fn_AlarmGetDsp) THEN
+		LibAlmTable_SetGetDspFn(listID, "_UAG_TabAlmTable_AlarmGetDsp");
+	END
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		_UAG_TabAlmTable_AlarmGetDsp
+//
+//	SUMMARY:
+//		Wraps the call of AlarmGetDsp with custom code override.
+//			
+//	PARAMS:
+//		listID	- The ID of the alarm list within a page
+//		AN		- The AN of the alarm record (list AN + row offset)
+//		field	- The name of the alarm field
+//			
+//	RETURNS: 
+//		the value of the specified field of alarm record identified by AN
+//
+//-----------------------------------------------------------------------------
+
+STRING FUNCTION _UAG_TabAlmTable_AlarmGetDsp(STRING listID, INT AN, STRING field)
+	IF (AlarmGetDsp(AN, "RecNo") = "") THEN
+		RETURN "";
+	END
+
+	IF	(field <> "Format") AND
+		(field <> "Font") THEN
+		RETURN TaskCall(m_TabAlmTable_Custom_Fn_AlarmGetDsp, "^"" + listID + "^"" + "," + IntToStr(AN) + ",^"" + field + "^"");
+	ELSE
+		RETURN AlarmGetDsp(AN, field);
+	END
+END
+
+

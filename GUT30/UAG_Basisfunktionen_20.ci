@@ -1,0 +1,2614 @@
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//	
+// 	FILE:	UAG_Basisfunktionen_20.ci
+//
+//	Beschreibung:
+//
+//		Enthält Funktionen die als Grundlage für die neue Oberfläche benötigt werden.
+//		Funktionen mit Version 3. sind freigegeben
+//
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	27.01.09	/	Schneider Electrik GmbH
+//	Version				75.33.11.08
+//
+//	PUBLIC FUNCTIONS:
+//
+//			UAG_Benutzer_Login_20()
+//			UAG_CauseLastStop()
+//			UAG_CodingPatch ()
+//			UAG_Capture_Screen()
+//			UAG_DevOpen_UI()
+//			UAG_DevOpen()
+//			UAG_DevTest()
+//			UAG_Ereignisse_Load()
+//			UAG_FPAGE()
+//			UAG_Interlock_load()
+//			UAG_Initial_uagload()
+//			UAG_Initial_Save()
+//			UAG_EditInterlock()
+//			UAG_LoadUI()
+//			UAG_LoadUIBIT()
+//			UAG_LoadInterlock()
+//			UAG_LoadZT()
+//			UAG_LogWrite()
+//			UAG_Priv()
+//			UAG_PAGE_VERSION()
+//			UAG_PAGE_VERSION_Save()
+//			UAG_PAGE_GetVersion()
+//			UAG_RTCDisplay ()
+//			UAG_SetAnz_20()
+//			UAG_SetAnz2_20()
+//			UAG_SetAnz21_20()
+//			UAG_SetAnz_TextDatei_20()
+//			UAG_TEXT_EINGABE_20()
+//			UAG_TEXT_Anzeige_20
+//			UAG_WinFree()
+//			PagePrev()
+//			UAG_TipText_Ping
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	16.04.14	Steiner		Alle Funktionen auf 7.40 Page Funktionen umgestellt
+
+//-----------------------------------------------------------------------------
+//
+//	Constants
+//
+//-----------------------------------------------------------------------------
+
+STRING	c_FILE_PVAR_AN		= "_templateFileAN";		// Page variable name to store AN of text file display
+STRING LANGUAGE_QUEUE_NAME = "_LanguageQueueName";
+
+// MODULE VARIABLES
+
+STRING	 msTypeOfStop;
+STRING 	msTag,msVer,msText;
+INT 	miFound;
+
+// genutzte AktivX
+STRING	mswebClass = "Shell.Explorer.2";
+
+
+
+
+
+
+//	FUNCTION UAG_SetAnz_20
+//	Übergabeparameter:	Statusnummer as INT, TAG, x, y, modus      
+//                       
+//	Rückgabewert:		---
+//	Beschreibung:		Setzt Parameter und ruft ein Status Faceplatel auf für Rechts und links
+//						Die Texte werden nicht mehr in einem Array Verwaltet sondern in der UIMessag2.dbf im Unterverzeichnis UAGBasis723370P2 und UAGBasis723370P3
+//						iNR 		= Zeilennummer der Datenbank
+//						sTag		= Name des Tag
+//						ix		= X Position
+//						iy		= Y Position
+//
+//						Optionale Parameter:
+//						iMode		= 0 = 16 Bit 1 =32 Bit
+//						sDev		= nur angeben wenn die Texte aus einer anderen Datenbank kommen.
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	20.01.09	/	Schneider Electrik GmbH
+//	Version				74.33.70.00
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	30.10.09	Steiner		änderung für Mutimonitor
+//	15.0.11	Steiner			Erweitert damit auch Texte aus einer Kundendatenbank genutzt werden können
+//	27.03.14	Steiner		Ass 1 geändert
+
+FUNCTION 
+UAG_SetAnz_30(INT iNR,STRING sTag,INT iPos=0 ,INT iMode=0,STRING sDev="UITexte2")
+	giPosX = StrToInt(PageInfo(14));
+	giPosY= StrToInt(PageInfo(15));
+	SELECT CASE iPos
+		CASE 0
+		giPosX = giPosX -305;
+		CASE 1
+		giPosX = giPosX -305;
+		giPosY= giPosY+407;
+		CASE 2
+		giPosX = giPosX +StrToInt(PageInfo(12))+8;
+		
+	END	SELECT
+UAG_SetAnz_20(iNR, sTag,giPosX , giPosY, iMode,sDev)
+END
+
+FUNCTION 
+UAG_SetAnz_20(INT iNR, STRING sTag,INT ix, INT iy,INT iMode=0,STRING sDev="UITexte2")
+
+	Ass(-2,1,"'" + sTag + "'",0);
+	_Ass(-2,6, sTag);
+	Ass(-2,2,"'" + IntToStr(iMode) + "'",0);
+	Ass(-2,3,"'-'",0);
+	Ass(-2,5,"'0'",0);	
+	UAG_LoadUIBIT(iNR, 10,31,sDev)
+	UAG_MM_WinNewAt("!p_anzeig_20",ix,iy,1387,0)
+
+END
+
+//	FUNCTION UAG_SetAnz2_20
+//	Übergabeparameter:	Statusnummer as INT, TAG, x, y, modus      
+//                       
+//	Rückgabewert:		---
+//	Beschreibung:		Setzt Parameter und ruft zwei Statuspannel auf für Rechts und links
+//						Modus 0 = 16 Bit 1 =32 Bit
+//						Die Texte werden nicht mehr in einem Array Verwaltet sondern in der UIMessag2.dbf im Unterverzeichnis UAGBasis723370P2 und UAGBasis723370P3
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	20.01.09	/	Schneider Electrik GmbH
+//	Version				74.33.70.00
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	30.10.09	Steiner		änderung für Mutimonitor
+//	15.0.11	Steiner			Erweitert damit auch Texte aus einer Kundendatenbank genutzt werden können
+//	27.03.14	Steiner		Ass 1 geändert
+
+FUNCTION 
+UAG_SetAnz2_30(INT iNR,INT iNR2,STRING sTag,STRING sTag2,INT iPos=0 ,INT iMode=0,INT iMode2=0,STRING sDev="UITexte2")
+	INT iY2;
+	giPosX = StrToInt(PageInfo(14));
+	giPosY= StrToInt(PageInfo(15));
+	SELECT CASE iPos
+		CASE 0
+		giPosX = giPosX -305;
+		iY2 = giPosY+407;
+		CASE 1
+		giPosX = giPosX -305;
+		giPosY= giPosY+407;
+		iY2 = giPosY+407;
+		CASE 2
+		giPosX = giPosX +StrToInt(PageInfo(12))+8;
+		iY2 = giPosY+407;
+		
+	END	SELECT
+UAG_SetAnz2_20(iNR,iNR2, sTag,sTag2,giPosX, giPosY, iy2, iMode, iMode2,sDev)
+END
+
+FUNCTION 
+UAG_SetAnz2_20(INT iNR, INT iNR2,STRING sTag,STRING sTag2,INT ix, INT iy, INT iy2,INT iMode=0,INT iMode2=0,STRING sDev="UITexte2")
+
+
+	Ass(-2,1,"'" + sTag + "'",0);
+	_Ass(-2,6, sTag);
+	Ass(-2,2,"'" + IntToStr(iMode) + "'",0);
+	Ass(-2,3,"'-'",0);	
+	Ass(-2,5,"'0'",0);	
+	UAG_LoadUIBIT(iNR, 10,31,sDev)
+	UAG_MM_WinNewAt("!p_anzeig_20",ix,iy,1387,0)
+	Ass(-2,1,"'" + sTag2 + "'",0);
+	_Ass(-2,6, sTag2);
+	Ass(-2,2,"'" + IntToStr(iMode2) + "'",0);
+	Ass(-2,3,"'-'",0);	
+	Ass(-2,5,"'0'",0);	
+	UAG_LoadUIBIT(iNR2, 10,31,sDev)
+	UAG_MM_WinNewAt("!p_anzeig_20",ix,iy2,1387,0)
+
+END
+
+//	FUNCTION UAG_SetAnz21_20
+//	Übergabeparameter:	Statusnummer as INT, TAG, x, y, modus      
+//                       
+//	Rückgabewert:		---
+//	Beschreibung:		Setzt Parameter und ruft ein Statuspannel das 2 Int Anzeigen kann auf für Rechts und links
+//						Modus 0 = 16 Bit 1 =32 Bit
+//						Die Texte werden nicht mehr in einem Array Verwaltet sondern in der UIMessag2.dbf im Unterverzeichnis UAGBasis723370P2 und UAGBasis723370P3
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	07.04.09	/	Schneider Electrik GmbH
+//	Version				72.33.70.05
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	15.0.11	Steiner			Erweitert damit auch Texte aus einer Kundendatenbank genutzt werden können
+//	27.03.14	Steiner		Ass 1 geändert
+
+
+FUNCTION
+UAG_SetAnz21_20(INT iNR, INT iNR2,STRING sTag,STRING sTag2,INT ix, INT iy,INT iMode=0,INT iMode2=0,STRING sDev="UITexte2")
+
+	Ass(-2,1,"'" + sTag + "'",0);
+	_Ass(-2,6, sTag);
+	Ass(-2,2,"'0'",0);
+	Ass(-2,3,"'-'",0);
+	UAG_LoadUIBIT(iNR, 10,16,sDev);
+	_Ass(-2,4,sTag2);
+	Ass(-2,5,"'1'",0);
+	UAG_LoadUIBIT(iNR2, 26,16,sDev);
+
+//	UAG_LoadUI( sTag + "KT", 60)
+	UAG_MM_WinNewAt("!p_anzeig_20",ix,iy,1387,0)
+	_WinTitle(sTag +" " +sTag2);
+
+END
+//	FUNCTION UAG_SetAnz_Textdatei_20()
+//	Übergabeparameter:	Dateiname, TAG     
+//                       
+//	Rückgabewert:		---
+//	Beschreibung:		Setzt Parameter und ruft ein Statuspannel auf mit Texten aus einer Datei	
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	27.01.09	/	Schneider Electrik GmbH
+//	Version				75.33.11.08
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	
+//	27.03.14	Steiner		Ass 1 geändert
+
+
+
+FUNCTION UAG_SetAnz_TextDatei_20(STRING sDatei, STRING sTag,INT iBit=16)
+	INT hDev;
+	INT i,iMode;
+	ErrSet(1);
+	iMode = 0;
+	hDev = FileOpen(PathToStr(gsUAGVersionPath)+ sDatei + ".Txt","r");
+	IF iBit > 16 THEN iMode = 1 END;
+	IF hDev >= 0 THEN
+
+		FOR i = 10 TO 41 DO
+			IF FileEOF(hDev) = 0 THEN
+				Ass(-2, i, "'" + FileReadLn(hDev) + "'", 0);
+			ELSE
+				Ass(-2, i, "'-'", 0);
+			END
+		END
+	ELSE
+		DspError(sDatei +" @(can not be opened)");
+		
+	END
+	
+	FileClose(hDev);
+	ErrSet(0);
+	Ass(-2,1,"'" + sTag + "'",0);
+	_Ass(-2,6, sTag);
+	Ass(-2,2,"'" + IntToStr(iMode) + "'",0);
+	Ass(-2,3,"'" +  sDatei +"'",0);
+
+	GUT_PopupNewAt("!p_anzeig_20",1387,0)
+	
+END
+
+
+//	UAG_TEXT_EINGABE_20()
+//	Übergabeparameter:	Text      
+//                       
+//	Rückgabewert:	geänderter Text	
+//	Beschreibung:	Form um Text zu ändern	
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	23.07.07	/	Schneider Electrik GmbH
+//	Version				75.33.11.08
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//
+
+FUNCTION UAG_TEXT_EINGABE_20(STRING TAGNAME)
+
+	Ass(-2,1,"'" +  TAGNAME + "'",0);
+	_Ass(-2,2,  TAGNAME );
+	
+	uag_Textanzeige=TagRead(TAGNAME);
+	GUT_PopupNewAt("!p_inputText_20",1387,0)
+
+END
+
+//	FUNCTION UAG_TEXT_Anzeige_20
+//	Übergabeparameter:	Text      
+//                       
+//	Rückgabewert:		---
+//	Beschreibung:		
+//							
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	20.01.09	/	Schneider Electrik GmbH
+//	Version				75.33.11.08
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//
+
+FUNCTION 
+UAG_TEXT_Anzeige_20(STRING TAGNAME)
+	Ass(-2,1, "'Tagname'",0);
+	uag_Textanzeige = TAGNAME;
+	
+	GUT_PopupNewAt("!p_msgbox_20",1387,0)
+
+END
+
+//	FUNCTION UAG_FPAGE()
+//	Übergabeparameter:	Page Nr. im Faceplate und benötigtes Recht als int
+//                    
+//                         
+//	Rückgabewert:		True oder False
+//	Beschreibung:		Rechteverwaltung für die Neuen Panel
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	23.01.2009	/	Schneider Electrik GmbH
+//	Version				3.1.1.0
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	
+
+INT FUNCTION
+UAG_FPAGE(INT ipage, INT irecht=0)
+	RETURN (PageGetInt(1) <> ipage) OR (NOT GetPriv(irecht, 0))
+END
+
+//	FUNCTION UAG_Priv()
+//	Übergabeparameter:	Page Nr. im Faceplate und benötigtes Recht als in
+//                    
+//                         
+//	Rückgabewert:		True oder False
+//	Beschreibung:		Rechteverwaltung für Tasten oder ähnlich
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	12.03.2009	/	Schneider Electrik GmbH
+//	Version				3.1.1.0
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	
+
+INT FUNCTION
+UAG_Priv( INT iTest, INT irecht=0)
+	RETURN (NOT GetPriv(irecht, 0)) OR iTest
+END
+
+//	FUNCTION UAG_LoadUI()
+//	Übergabeparameter:	
+//                    sTag: Name of tag that indicates if messages must be displayed or not
+//                    AssNumber: Number of first association that must be realized
+//                    MaxAss: Maximum number of association that must be realized
+//                         
+//	Rückgabewert:		---
+//	Beschreibung:		zusatztexte für Tag und Faceplate laden.
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	23.01.2009	/	Schneider Electrik GmbH
+//	Version				72.33.70.4
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	21.11.11	Steiner		geändert um auch Aktuelles fenster zu ändern
+//	11.09.13	Steiner		Anpassung für Equipment
+
+FUNCTION UAG_LoadUI(STRING sTag, INT AssNumber, INT MaxAss=7,INT iMode=-2)
+INT hDev, i;
+
+	// To initialize texts associated to SuperGenie
+	FOR i=AssNumber TO (AssNumber+MaxAss-1) DO
+		Ass(iMode, i, "'-'", 0);
+	END
+	ErrSet(1);
+
+	// To examine if Tag exists at DataBase
+	IF TagInfo(sTag,0) <> "" THEN
+		// If Tag exists, the texts must be searched in configuration file
+
+		hDev = UAG_DevOpen_UI("UIMessag.DBF", "{NAME,79}{SPS,10}{AREA,16}{Bild,31}{ORT,32}{PLAN,32}{HERST,32}{BNR,32}")
+		IF hDev >= 0 THEN
+			DevSeek(hDev, 1);
+			IF DevFind(hDev, sTag, "Name") = 0 THEN
+					Ass(iMode, AssNumber + 0, "'" + DevGetField(hDev, "SPS") + "'", 0);
+					Ass(iMode, AssNumber + 1, "'" + DevGetField(hDev, "AREA") + "'", 0);
+					Ass(iMode, AssNumber + 2, "'" + DevGetField(hDev, "Bild") + "'", 0);
+					Ass(iMode, AssNumber + 3, "'" + DevGetField(hDev, "ORT") + "'", 0);
+					Ass(iMode, AssNumber + 4, "'" + DevGetField(hDev, "PLAN") + "'", 0);
+					Ass(iMode, AssNumber + 5, "'" + DevGetField(hDev, "HERST") + "'", 0);
+					Ass(iMode, AssNumber + 6, "'" + DevGetField(hDev, "BNR") + "'", 0);
+			END
+		END
+		DevClose(hDev);
+	END;
+	ErrSet(0);
+END
+
+
+//	FUNCTION UAG_LoadUIBit()
+//	Übergabeparameter:	
+//                    iNr: Name of tag that indicates if messages must be displayed or not
+//                    AssNumber: Number of first association that must be realized
+//                    MaxAss: Maximum number of association that must be realized
+//                         
+//	Rückgabewert:		---
+//	Beschreibung:		Zusatztexte für Tag je Bit ins Faceplate laden.
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	23.01.2009	/	Schneider Electrik GmbH
+//	Version				7.2.0.1
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	15.0.11	Steiner			Erweitert damit auch Texte aus einer Kundendatenbank genutzt werden können
+
+FUNCTION UAG_LoadUIBIT(INT iNR, INT AssNumber, INT MaxAss=31,STRING sDev="UITexte2")
+	INT hDev, TotalAss, i;
+	STRING sNr;
+	sNR = IntToStr(iNR);
+
+	// To initialize texts associated to SuperGenie
+	FOR i=AssNumber TO (AssNumber+MaxAss) DO
+		Ass(-2, i, "'-'", 0);
+	END
+	ErrSet(1);
+
+	hDev = DevOpen(sDev, 0)
+	IF hDev >= 0 THEN
+		DevSeek(hDev, 1);
+		IF DevFind(hDev, sNR, "NR") = 0 THEN
+			FOR i=0 TO (MaxAss) DO
+				Ass(-2, AssNumber + i, "'" + DevGetField(hDev, "T"+ IntToStr(i)) + "'", 0);
+			END
+		END	
+	END
+	DevClose(hDev);
+
+	ErrSet(0);
+END
+
+
+///////////////////////////////////////////////////////////////////////////////////////
+// For managing the display of RTC for showing the actual RTC or the CPU last stop in format Day, dd/mm/yyyy hh:mm:ss 
+// Input Parameters:
+//					  SEC: the Second value of RTC that is gotten from the value of variable _RTC_ACTSEC or _LASTSTOP_STOPSEC of PLC
+//					  HourMin: the hour and minute of RTC that is gotten from variable _RTC_ACTHOURMIN or _LASTSTOP_STOPHM
+//					  MONTHDAY: the month and date of RTC that is gotten from variable _RTC_ACTMONTHDAY or _LASTSTOP_STOPMD
+//					  YEAR: the year of RTC that is gotten from variable_RTC_ACTYEAR or _LASTSTOP_STOPYEAR
+//					  DAYOFWEEK: the day of week of RTC that is gotten from variable_RTC_ACTDAYOFWEEK or _LASTSTOP_STOPDAY
+//					  TypeRTC: "Actual" or "LastStop". The "Actual" type will be used for displaying actual RTC and "LastStop" for displaying laststop RTC
+//Return Value:
+//					  STRING the value of RTC in the format of Day, dd/mm/yyyy hh:mm:ss
+///////////////////////////////////////////////////////////////////////////////////////
+
+
+//STRING FUNCTION
+//UAG_RTCDisplay (INT SEC, INT HourMin, INT MONTHDAY, INT YEAR, INT DAYOFWEEK, STRING TypeRTC)
+//STRING Second, Hour, Minute, Month, DateRTC, YearRTC, DayNumber, Day, RTC;
+//
+//	
+//	Minute = StrRight((HexToStr(HourMin,4)),2);
+//	Hour = StrLeft((HexToStr(HourMin,4)),2);
+//	DateRTC = StrRight((HexToStr(MONTHDAY,4)),2);
+//	Month = StrLeft((HexToStr(MONTHDAY,4)),2); 
+//	YearRTC = HexToStr(YEAR,4);
+//	
+//	SELECT CASE(TypeRTC)
+//		CASE ("Actual") 
+//			DayNumber = StrRight((HexToStr(DAYOFWEEK,4)),2);
+//			Second = StrLeft((HexToStr(SEC,4)),2);
+//		CASE ("LastStop")
+//			DayNumber = StrLeft((HexToStr(DAYOFWEEK,4)),2);
+//			msTypeOfStop = StrRight((HexToStr(DAYOFWEEK,4)),2);
+//			Second = StrRight((HexToStr(SEC,4)),2);
+//		CASE ELSE
+//			RETURN StrToLocalText("@(The type of RTC is wrong)");
+//	END SELECT
+//	
+//	SELECT CASE (DayNumber)
+//		CASE ("01")
+//			Day= StrToLocalText("Montag");
+//		CASE ("02")
+//			Day =StrToLocalText("Dienstag");
+//		CASE ("03")
+//			Day =StrToLocalText("Mittwoch");	
+//		CASE ("04")
+//			Day =StrToLocalText("Donnerstag");	
+//		CASE ("05")
+//			Day =StrToLocalText("Freitag");
+//		CASE ("06")
+//			Day =StrToLocalText("Samstag");
+//		CASE ("07")
+//			Day =StrToLocalText("Sontag");	
+//		CASE ELSE
+//			Day=StrToLocalText("ungültig");
+//	END SELECT	
+//			
+//	RTC = Day +","+ DateRTC+"."+ Month+"."+ YearRTC+ " "+ hour+":"+ Minute+":"+ Second;
+//	RETURN RTC
+//
+//END
+//
+
+
+///////////////////////////////////////////////////////////////////////////////////////
+// For displaying the cause of CPU last stop. it will get the value of TypeOfStop. 
+// TypeOfStop has value of least significat byte from variable _LASTSTOP_STOPDAY   
+// that indicates the cause of Last stop in hexadecimal
+// Return Value:
+//					  STRING the coding value of Last stop
+///////////////////////////////////////////////////////////////////////////////////////
+
+//STRING FUNCTION
+//UAG_CauseLastStop()
+//STRING CodingCause;
+//	
+//	SELECT CASE (msTypeOfStop)
+//		CASE ("01")
+//			CodingCause =StrToLocalText("@(Change from Run to Stop)");
+//		CASE ("02")
+//			CodingCause =StrToLocalText("@(Stop on software fault)");
+//		CASE ("04")
+//			CodingCause =StrToLocalText("@(Power outage or handling memory card)");
+//		CASE ("05")
+//			CodingCause =StrToLocalText("@(Stop on hardware fault)");
+//		CASE ("06")
+//			CodingCause =StrToLocalText("@(Stop on HALT instruction)");
+//		CASE ELSE
+//			CodingCause=StrToLocalText("@(Can not define the cause)");
+//	END SELECT
+//	RETURN CodingCause;
+//END
+//
+///////////////////////////////////////////////////////////////////////////////////////
+// For coding the patch version 
+// Input Parameters:
+//                    PatchNumber: The value that is gotten from the value of variable _OSINFO_CPUPATCH of PLC
+//Return Value:
+//					  STRING value that indicate of code of patch
+///////////////////////////////////////////////////////////////////////////////////////
+
+STRING FUNCTION
+UAG_CodingPatch (INT PatchNumber)
+STRING PatchCoding, HexPatch;
+	HexPatch = HexToStr(PatchNumber,4);
+
+	SELECT CASE (HexPatch)
+		CASE ("0000")
+			PatchCoding = StrToLocalText("@(no patch)");
+			RETURN PatchCoding;
+		CASE ("0001")
+			PatchCoding = "A";
+			RETURN PatchCoding;
+		CASE ("0002")
+			PatchCoding = "B";
+			RETURN PatchCoding;
+		CASE ("0003")
+			PatchCoding = "C";
+			RETURN PatchCoding;
+		CASE ("0004")
+			PatchCoding = "D";
+			RETURN PatchCoding;
+		CASE ("0005")
+			PatchCoding = "E";
+			RETURN PatchCoding;
+		CASE ("0006")
+			PatchCoding = "F";
+			RETURN PatchCoding;
+		CASE ("0007")
+			PatchCoding = "G";
+			RETURN PatchCoding;
+		CASE ELSE                  
+			RETURN HexPatch;
+	END SELECT
+	
+END
+
+//	FUNCTION UAG_PAGE_VERSION(STRING sTag,INT iLIB=TRUE)  und UAG_PAGE_VERSION_Save()
+//	Übergabeparameter:	Name des Faceplate für das die Version Angezeigt werden soll.
+//						 Kennung ob es eine Seite aus der Toolbox ist.        
+//                         
+//	Rückgabewert:		---
+//	Beschreibung:		Damit kann eine Beschreibung zu einem Bild gemacht werden.
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	16.01.2009	/	Schneider Electrik GmbH
+//	Version				75.11.08
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	09.06.2011	Steiner		Fensternummer kann ab 7.2 auch 0 sein.
+//	05.10.11	Steiner		MS Forms Entfernt.
+
+FUNCTION UAG_PAGE_VERSION(STRING sTag,INT iLIB=TRUE)
+
+	INT		iError,hDev;
+	ErrSet(1);
+	sTag=StrTrim(sTag);
+	msTag= sTag;
+	Ass(-2,1,"'" + sTag + "'",0);
+	Ass(-2,2,"'" + IntToStr (iLIB) + "'",0);
+	iError = UAG_MM_PopUP("!p_version_20")
+
+	IF  iError <>-1 THEN
+		IF iLIB=TRUE THEN
+			hDev = DevOpen("UAG_Version", 0);
+		ELSE
+			hDev=UAG_DevOpen_UI("Version.dbf", "{NAME,32}{DATUM,12}{NR,32}{DESC,254}");
+		END	
+		IF hDev <> -1 THEN
+			iError=DevFind(hDev,sTag,"NAME");
+			IF iError=0 THEN
+				UAG_VNr = DevGetField(hDev, "NR");
+				UAG_VBesch = DevGetField(hDev, "DESC");
+				UAG_VDatum = DevGetField(hDev, "DATUM")
+			ELSE
+				UAG_VNr = "75.11.08";
+				UAG_VBesch = "@(No)";
+			END
+		END
+	END	
+	DevClose(hDev);
+	ErrSet(0);
+END 
+//FUNCTION UAG_PAGE_VERSION(STRING sTag)
+//
+//	INT		iError,nAN;
+//	ErrSet(gbUAGDebugOn);
+//	sTag=StrTrim(sTag);
+//	msTag= sTag;
+//	Ass(-2,1,"'" + sTag + "'",0);
+//	Ass(-2,2,"'" + IntToStr (iLIB) + "'",0);
+//	nAN=KeyGetCursor()
+//	UAG_VNr = DspAnGetMetadata(nAN, "Version");
+//	UAG_VBesch = DspAnGetMetadata(nAN, "Desc");
+//	UAG_VDatum = DspAnGetMetadata(nAN, "Datum");
+//	iError = UAG_MM_PopUP("!p_version_20")
+//	
+//
+//	ErrSet(0);
+//END 
+
+FUNCTION UAG_PAGE_VERSION_Save(INT iLIB=TRUE)
+
+	INT		iError,hDev;
+	
+	ErrSet(1);
+	IF iLIB=TRUE THEN
+		hDev = DevOpen("UAG_Version", 0);
+	ELSE
+		hDev=UAG_DevOpen_UI("Version.dbf", "{NAME,32}{DATUM,12}{NR,32}{DESC,254}");
+	END	
+
+	IF hDev <> -1 THEN
+		iError=DevFind(hDev,msTag,"NAME");
+		IF iError=0 THEN
+				DevSetField(hDev, "NR", UAG_VNr);
+				DevSetField(hDev, "DESC", UAG_VBesch);
+				DevSetField(hDev, "DATUM", Date(2));
+		ELSE
+				DevWrite(hDev,msTag);
+				DevWrite(hDev,Date(2));
+				DevWrite(hDev,UAG_VNr);
+				DevWrite(hDev,UAG_VBesch);
+		END
+	END
+	DevClose(hDev);
+	msVer =UAG_VNr;
+	ErrSet(0);
+END 
+//FUNCTION UAG_PAGE_VERSION_Save(INT iLIB=TRUE)
+//
+//	INT		iError,hDev,nAN;
+//	
+//	ErrSet(gbUAGDebugOn);
+//	nAN=KeyGetCursor()
+//DspAnSetMetadata(nAn, "Version", UAG_VNr)
+//DspAnSetMetadata(nAn, "Desc", UAG_VBesch)
+//DspAnSetMetadata(nAn, "Datum", Date(2))
+
+
+STRING FUNCTION 
+UAG_PAGE_GetVersion(STRING sTag,INT iLIB=TRUE)
+
+	INT		iError,hDev;
+	
+	ErrSet(1);
+	sTag=StrTrim(sTag);
+	IF msTag <> sTag THEN
+		msTag = sTag;
+		IF iLIB=TRUE THEN
+			hDev = DevOpen("UAG_Version", 0);
+		ELSE
+			hDev=UAG_DevOpen_UI("Version.dbf", "{NAME,32}{DATUM,12}{NR,32}{DESC,254}");
+		END	
+		IF hDev <> -1 THEN
+			iError=DevFind(hDev,sTag,"NAME");
+			IF iError=0 THEN
+				msVer = DevGetField(hDev, "NR");
+			ELSE
+				msVer = "??????";
+			END
+		END	
+		DevClose(hDev);
+	END	
+	RETURN 	msVer;
+	ErrSet(0);
+END 
+
+
+////////////////////////////////////////////////////////////////////////////////////////
+// It checks if the name of Client that someone wants to repesent information to, corresponds
+// with the same node which is diplaying in page of diagnostic system
+// This info is utilized at Genie sgc_Client_10
+// Input Parameters:
+//					  ClientName: Name of Client to be checked
+// Return:
+//                    0: Current Client is not indicated at input parameter
+//					  1: Indicated Client is the same with the one that executes this code
+///////////////////////////////////////////////////////////////////////////////////////
+INT FUNCTION
+UAG_TestingLocalComputer(STRING ClientName)
+STRING LocalComputer;
+	LocalComputer = ServerInfoEx("Client",0,"");
+	IF LocalComputer = ClientName THEN
+		RETURN 1;
+	ELSE
+		RETURN 0;
+	END
+END
+
+//	FUNCTION UAG_LoadInterlock()
+//	FUNCTION UAG_EditInterlock()
+//	FUNCTION UAG_Interlock_Save()
+//	Übergabeparameter:	
+//                    sTag: Name of tag that indicates if messages must be displayed or not
+//                    AssNumber: Number of first association that must be realized
+//                    MaxAss: Maximum number of association that must be realized
+//                         
+//	Rückgabewert:		---
+//	Beschreibung:		Interlocktexte für Tag laden Editieren und Speichern
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	23.01.2009	/	Schneider Electrik GmbH
+//	Version				75.33.11.07
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	05.10.11	Steiner		Fehler in Interlock Edit und entfernen von MS Forms
+//	11.09.13	Steiner		Anpassung für Equipment
+//	12.10.16	Steiner		Anpassung für PES
+
+FUNCTION UAG_LoadInterlock(STRING sTag, INT AssNumber, INT MaxAss,INT iMode=-2)
+	INT hDev, MessagesFound, TotalAss, i;
+	STRING sPath;
+	// To initialize texts associated to SuperGenie
+	FOR i=AssNumber TO (AssNumber+MaxAss-1) DO
+		Ass(iMode, i, "'-'", 0);
+	END
+	ErrSet(1);
+
+	MessagesFound = 0;			// It marks if it had discovered messages
+	// To examine if Tag exists at DataBase
+	IF TagInfo(sTag,0) <> "" THEN
+		// If Tag exists, the texts must be searched in configuration file
+	SELECT CASE gbPES
+		CASE 0 !UAG
+			hDev = UAG_DevOpen_UI("UINTERLO.DBF", "{NAME,79}{MCode,10}{Beschr,50}")
+			IF hDev >= 0 THEN
+				DevSeek(hDev, 1);
+				WHILE (NOT DevEOF(hDev)) AND (TotalAss < MaxAss) DO
+					IF DevFind(hDev, sTag, "Name") = 0 THEN
+						FOR TotalAss = 1 TO MaxAss DO
+							i = StrToInt(DevGetField(hDev, "MCode"));
+							IF (i <= MaxAss) AND (DevGetField(hDev, "Name") = sTag) THEN
+								Ass(iMode, AssNumber + i - 1, "'" + DevGetField(hDev, "Beschr") + "'", 0);
+							END
+							DevNext(hDev)
+						END	
+					END
+				END
+			END
+		DevClose(hDev);
+		CASE 1 !PES
+			sPath=PathToStr("[RUN]:UIMessag.DBF");
+			IF FileExist(sPath) THEN
+				DevModify("Scratch","{TAG,79}{MCode,10}{DESC,50}","*", sPath,dBASE_DEV);
+				hDev = DevOpen("Scratch",0);
+			END	
+			IF hDev >= 0 THEN
+				DevSeek(hDev, 1);
+				WHILE (NOT DevEOF(hDev)) AND (TotalAss < MaxAss) DO
+					IF DevFind(hDev, sTag, "TAG") = 0 THEN
+						FOR TotalAss = 1 TO MaxAss DO
+							i = StrToInt(DevGetField(hDev, "MCode"));
+							IF (i <= MaxAss) AND (DevGetField(hDev, "TAG") = sTag) THEN
+								Ass(iMode, AssNumber + i - 1, "'" + DevGetField(hDev, "DESC") + "'", 0);
+							END
+							DevNext(hDev)
+						END	
+					END
+				END
+			END
+		DevClose(hDev);
+		CASE 2 !Equipment
+			DevModify("Scratch","{NAME,79}{MCode,10}{Beschr,50}","*","[RUN]:UINTERLO.DBF",dBASE_DEV);
+			hDev = DevOpen("Scratch",0);
+			IF hDev >= 0 THEN
+				DevSeek(hDev, 1);
+				WHILE (NOT DevEOF(hDev)) AND (TotalAss < MaxAss) DO
+					IF DevFind(hDev, sTag, "Name") = 0 THEN
+						FOR TotalAss = 1 TO MaxAss DO
+							i = StrToInt(DevGetField(hDev, "MCode"));
+							IF (i <= MaxAss) AND (DevGetField(hDev, "Name") = sTag) THEN
+								Ass(iMode, AssNumber + i - 1, "'" + DevGetField(hDev, "Beschr") + "'", 0);
+							END
+							DevNext(hDev)
+						END	
+					END
+				END
+			END
+		DevClose(hDev);
+	END SELECT
+	END
+	ErrSet(0);
+END
+
+
+
+FUNCTION UAG_EditInterlock(STRING sTag, INT AssNumber)
+INT hDev, i;
+	miFound =-1;
+	ErrSet(1);
+	// To examine if Tag exists at DataBase
+	hDev = UAG_DevOpen_UI("UINTERLO.DBF", "{Name,79}{MCode,10}{Beschr,50}")
+
+	UAG_VBesch ="";
+	IF hDev >= 0 THEN
+		DevSeek(hDev, 1);
+		WHILE (NOT DevEOF(hDev)) AND (miFound <0) DO
+			IF DevFind(hDev, sTag+"_MI", "Name") = 0 THEN
+				i = StrToInt (DevGetField(hDev, "MCode"));
+				IF i = AssNumber THEN
+					UAG_VBesch = DevGetField(hDev, "Beschr");
+					miFound =DevRecNo(hDev) ;
+//				ELSE
+//					miFound =AssNumber;	
+				END
+			ELSE
+				miFound =AssNumber;
+			END
+			DevNext(hDev)
+		END	
+		DevClose(hDev);
+		Ass(-2,1,"'" + IntToStr (AssNumber) + "'",0);
+		Ass(-2,2,"'" + sTag + "_MI'",0);
+		UAG_MM_PopUP("!P_Interlock_Edit_20")
+	ErrSet(0);
+	END;
+END
+
+FUNCTION UAG_Interlock_Save(STRING sTag)
+
+	INT		iError,hDev,i,iFound;
+	
+	ErrSet(1);
+	iFound = 0;
+	hDev = UAG_DevOpen_UI("UINTERLO.DBF", "{Name,79}{MCode,10}{Beschr,50}")
+
+	IF hDev <> -1 THEN
+		iError = DevSeek(hDev, 1);
+		IF DevFind(hDev,sTag,"Tag") = 0 THEN
+			FOR i=1 TO 15 DO
+				IF (StrToInt (DevGetField(hDev, "MCode")) = miFound) AND (DevGetField(hDev, "Name") = sTag) THEN
+					DevSetField(hDev, "MCode", IntToStr (miFound));
+					DevSetField(hDev, "Beschr", UAG_VBesch);
+					DevSetField(hDev, "Name", sTag);
+					iFound = 1;
+				END	
+			DevNext(hDev)
+			END	
+		END	
+	END
+	IF IFound = 0 THEN
+		DevAppend(hDev);
+		DevSetField(hDev, "Name",sTag);
+		DevSetField(hDev, "MCode",IntToStr (miFound));
+		DevSetField(hDev, "Beschr", UAG_VBesch);
+	END
+	DevClose(hDev);
+	ErrSet(0);
+END 
+
+//	FUNCTION UAG_Interlock_load()
+//	Übergabeparameter:	
+//                         
+//	Rückgabewert:		---
+//	Beschreibung:		Texte aus UAG übernehmen
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	16.03.2009	/	Schneider Electrik GmbH
+//	Version				74.33.70.00
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	
+
+FUNCTION UAG_Interlock_load()
+
+	INT		iError,hWnd,hDev,hFile,char,i;
+	STRING 	sTemp,sTemp2,sTag,sCode,sTask,sText,sSPS,sAREA,sBild,sORT,sPlan;
+	ErrSet(1);
+	hWnd = WinGetWndHnd(); 
+	CSV_WinUtl_WaitCursor(hWnd);
+// Interlock Texte
+	hFile=FileOpen(PathToStr("[data2P]:" +gsUAG_StationName + "\interlog.csv"),"r");
+	IF hFile <> -1 THEN
+		hDev = UAG_DevOpen_UI("UINTERLO.DBF", "{Name,40}{MCode,10}{Beschr,50}");
+		IF hDev <> -1 THEN
+			DevZap(hDev) ;
+			WHILE (NOT FileEOF(hFile)) DO
+				sTemp = FileReadLn(hFile);
+				sTag = StrTrim(StrWord(sTemp));
+				msText =  StrTrim(sTemp); 
+				sCode = UAG_CSV_Text();
+				sText = msText; 
+				DevAppend(hDev);
+				DevSetField(hDev, "Name",sTag);
+				DevSetField(hDev, "MCode",sCode);
+				DevSetField(hDev, "Beschr",sText);
+			END	
+		END	
+	END	
+	FileClose(hFile) 
+	DevClose(hDev);
+// zusatztexte Panel
+	hFile=FileOpen(PathToStr("[data2P]:" +gsUAG_StationName + "\UI.csv"),"r");
+	IF hFile <> -1 THEN
+		hDev = DevOpen("UITexte", 0);
+		IF hDev <> -1 THEN
+			DevZap(hDev) ;
+			WHILE (NOT FileEOF(hFile)) DO
+				sTemp = FileReadLn(hFile);
+				sTag = StrTrim(StrWord(sTemp));
+				msText =  StrTrim(sTemp); 
+				sSPS = UAG_CSV_Text();
+				sAREA = UAG_CSV_Text();
+				sBild = UAG_CSV_Text();
+				sORT = UAG_CSV_Text();
+				sPlan = msText;
+				DevAppend(hDev);
+				DevSetField(hDev, "Tag",sTag);
+				DevSetField(hDev, "SPS",sSPS);
+				DevSetField(hDev, "AREA",sAREA);
+				DevSetField(hDev, "Bild",sBild);
+				DevSetField(hDev, "ORT",sORT);
+				DevSetField(hDev, "PLAN",sPlan);
+			END	
+		END	
+	END	
+	FileClose(hFile) 
+	DevClose(hDev);
+//HMI Initialwerte	
+	hFile=FileOpen(PathToStr("[data2P]:" +gsUAG_StationName + "\HMIInit.csv"),"r");
+	IF hFile <> -1 THEN
+		hDev=UAG_DevOpen_UI("UHMIInit.DBF", "{Name,40}{MCode,64}{Parent,100}");
+		IF hDev <> -1 THEN
+			DevZap(hDev) ;
+			WHILE (NOT FileEOF(hFile)) DO
+				sTemp = FileReadLn(hFile);
+				sTag = StrTrim(StrWord(sTemp));
+				msText =  StrTrim(sTemp); 
+				sCode = UAG_CSV_Text();
+				FOR i = 0 TO StrLength(sCode) DO
+					char = StrGetChar(sCode, i);
+					IF char = 46 THEN char =44 END
+					StrSetChar(sTemp2, i, char);
+				END
+				StrSetChar(sTemp2, i, 0);
+				sCode = sTemp2 ;
+
+				sText = msText; 
+				DevAppend(hDev);
+				DevSetField(hDev, "Name",sTag);
+				DevSetField(hDev, "MCode",sCode);
+				DevSetField(hDev, "Parent",sText);
+			END	
+		END	
+	END	
+	FileClose(hFile) 
+	DevClose(hDev);
+// Tastentexte
+	STRING  sT1,sT2,sT3,sT4,sT5,sT6,sT7,sT8,sT9,sT10,sT11,sT12,sT13,sT14,sT15;
+	hFile=FileOpen(PathToStr("[data2P]:" +gsUAG_StationName + "\ZT.csv"),"r");
+	IF hFile <> -1 THEN
+		hDev=UAG_DevOpen_UI("UITasten.DBF", "{Name,40}{T1,16}{T2,16}{T3,16}{T4,16}{T5,16}{T6,16}{T7,16}{T8,16}{T9,16}{T10,16}{T11,16}{T12,16}{T13,16}{T14,16}{T15,16}");
+		IF hDev <> -1 THEN
+			DevZap(hDev) ;
+			WHILE (NOT FileEOF(hFile)) DO
+				sTemp = FileReadLn(hFile);
+				sTag = StrTrim(StrWord(sTemp));
+				msText =  StrTrim(sTemp); 
+				sT1 = UAG_CSV_Text();
+				sT2 = UAG_CSV_Text();
+				sT3 = UAG_CSV_Text();
+				sT4 = UAG_CSV_Text();
+				sT5 = UAG_CSV_Text();
+				sT6 = UAG_CSV_Text();
+				sT7 = UAG_CSV_Text();
+				sT8 = UAG_CSV_Text();
+				sT9 = UAG_CSV_Text();
+				sT10 = UAG_CSV_Text();
+				sT11 = UAG_CSV_Text();
+				sT12 = UAG_CSV_Text();
+				sT13 = UAG_CSV_Text();
+				sT14 = UAG_CSV_Text();
+				sT15 = UAG_CSV_Text();
+				DevAppend(hDev);
+				DevSetField(hDev, "Name",sTag);
+				DevSetField(hDev, "T1",sT1);
+				DevSetField(hDev, "T2",sT2);
+				DevSetField(hDev, "T3",sT3);
+				DevSetField(hDev, "T4",sT4);
+				DevSetField(hDev, "T5",sT5);
+				DevSetField(hDev, "T6",sT6);
+				DevSetField(hDev, "T7",sT7);
+				DevSetField(hDev, "T8",sT8);
+				DevSetField(hDev, "T9",sT9);
+				DevSetField(hDev, "T10",sT10);
+				DevSetField(hDev, "T11",sT11);
+				DevSetField(hDev, "T12",sT12);
+				DevSetField(hDev, "T13",sT13);
+				DevSetField(hDev, "T14",sT14);
+				DevSetField(hDev, "T15",sT15);
+			END	
+		END	
+	END	
+	FileClose(hFile) 
+	DevClose(hDev);
+
+// Ereigniss laden
+	hFile=FileOpen(PathToStr("[data2P]:" +gsUAG_StationName + "\Ereigniss.csv"),"r");
+	IF hFile <> -1 THEN
+		hDev=UAG_DevOpen_UI("Uereigni.DBF", "{Name,40}{MCode,64}{MTask,4}{Parent,100}");
+		IF hDev <> -1 THEN
+			DevZap(hDev) ;
+			WHILE (NOT FileEOF(hFile)) DO
+				sTemp = FileReadLn(hFile);
+				sTag = StrTrim(StrWord(sTemp));
+				msText =  StrTrim(sTemp);
+				sCode = UAG_CSV_Text();
+				sTask = UAG_CSV_Text();
+				sText = UAG_CSV_Text(); 
+				DevAppend(hDev);
+				DevSetField(hDev, "Name",sTag);
+				DevSetField(hDev, "MCode",sCode);
+				DevSetField(hDev, "MTask",sTask);
+				DevSetField(hDev, "Parent",sText);
+			END	
+		END	
+	END	
+
+// Zählervariablen  laden
+	hFile=FileOpen(PathToStr("[data2P]:" +gsUAG_StationName + "\BS.csv"),"r");
+	IF hFile <> -1 THEN
+		hDev=UAG_DevOpen_UI("UBSHMI.DBF", "{Name,40}");
+		IF hDev <> -1 THEN
+			DevZap(hDev) ;
+			WHILE (NOT FileEOF(hFile)) DO
+				sTemp = FileReadLn(hFile);
+				sTag = StrTrim(StrWord(sTemp));
+				DevAppend(hDev);
+				DevSetField(hDev, "Name",sTag);
+			END	
+		END	
+	END	
+	FileClose(hFile) 
+	DevClose(hDev);
+
+	CSV_WinUtl_NormalCursor(hWnd)
+	ErrSet(0);
+	
+END
+
+//	FUNCTION UAG_Initial_uagload()
+//	Übergabeparameter:	---
+//                                             
+//	Rückgabewert:		---
+//	Beschreibung:		Läd die Daten aus UAG nach Citect
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	09.02.2009	/	Schneider Electrik GmbH
+//	Version				72.33.70.04
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	24.07.09	Steiner		Erweitert um SPS Namen
+//	11.09.13	Steiner		Anpassung für Equipment
+
+
+FUNCTION UAG_Initial_uagload()
+
+	INT		iError,hWnd,hDev,hFile,char,i;
+	STRING 	sTemp,sTemp2,sTag,sCode,sText,sPlc;
+	ErrSet(1);
+	hWnd = WinGetWndHnd(); 
+	CSV_WinUtl_WaitCursor(hWnd);
+//SPS-HMI Initialwerte
+	hFile=FileOpen(PathToStr("[data2P]:" +gsUAG_StationName + "\Intitial.csv"),"r");
+	IF hFile <> -1 THEN
+		hDev = UAG_DevOpen_UI("UInitial.DBF", "{Name,79}{MCode,64}{Parent,100}{PLC,32}")
+		IF hDev <> -1 THEN
+			DevZap(hDev) ;
+			WHILE (NOT FileEOF(hFile)) DO
+				sTemp = FileReadLn(hFile);
+				sTag = StrTrim(StrWord(sTemp));
+				msText =  StrTrim(sTemp);
+
+				sCode =  UAG_CSV_Text();
+				FOR i = 0 TO StrLength(sCode) DO
+					char = StrGetChar(sCode, i);
+					IF char = 46 THEN char =44 END
+					StrSetChar(sTemp2, i, char);
+				END
+				StrSetChar(sTemp2, i+1, 0);
+				sCode = sTemp2 ;
+
+				sPlc  = UAG_CSV_Text();
+				sText = msText;
+				DevAppend(hDev);
+				DevSetField(hDev, "Name",sTag);
+				DevSetField(hDev, "MCode",sCode);
+				DevSetField(hDev, "Parent",sText);
+				DevSetField(hDev, "PLC",sPlc);
+			END	
+		END	
+	END	
+	FileClose(hFile) 
+	DevClose(hDev);
+	
+	CSV_WinUtl_NormalCursor(hWnd)
+	ErrSet(0);
+END 
+
+INT miMark,miUEX,miUEY
+INT FUNCTION
+UAG_UEMove(INT iAN)
+	IF miMark =-1 THEN
+		DspAnMove(iAN, miUEX + 10, miUEY+ 10);
+		miMark =1;
+	END	 
+	RETURN 0;
+END	
+FUNCTION
+UAG_UEPos(INT iUEX,INT iUEY)
+	miUEY =iUEY;
+	miUEX =iUEX;
+	miMark =-1
+	
+END
+
+
+//	FUNCTION UAG_Initial_Save()
+//	Übergabeparameter:	Tag Name und Nummer Wert als String
+//                                             
+//	Rückgabewert:		---
+//	Beschreibung:		
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	09.02.2009	/	Schneider Electrik GmbH
+//	Version				74.33.70.00
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	22.02.13	Steiner		auf Data 2 geändert
+//	11.09.13	Steiner		Anpassung für Equipment
+
+FUNCTION UAG_Initial_Save(STRING sTag, STRING sWert)
+
+	INT		iError,hDev,iFound;
+	IF giUI_Write=0 THEN
+		RETURN 
+	END	
+	ErrSet(1);
+	iFound = 0;
+	hDev = UAG_DevOpen("UAG_UiniP", "UAG_UiniS")
+	IF hDev <> -1 THEN
+		iError = DevSeek(hDev, 1);
+		IF DevFind(hDev,sTag,"Name") = 0 THEN
+			IF  (DevGetField(hDev, "Name") = sTag) THEN
+				DevSetField(hDev, "MCode", StrTrim (sWert));
+				iFound = 1;
+			END	
+		END	
+	END
+	DevClose(hDev);
+	IF IFound = 0 THEN
+		hDev = DevOpen("InitialWert_Demo", 0);
+		IF hDev <> -1 THEN
+			iError = DevSeek(hDev, 1);
+			IF DevFind(hDev,sTag,"Name") = 0 THEN
+				IF  (DevGetField(hDev, "Name") = sTag) THEN
+					DevSetField(hDev, "MCode", StrTrim (sWert));
+					iFound = 1;
+				END
+			ELSE
+				DevAppend(hDev);
+				DevSetField(hDev, "Name",sTag)
+				DevSetField(hDev, "MCode",StrTrim (sWert))
+			END	
+		END
+		DevClose(hDev);
+	END
+	
+	ErrSet(0);
+END 
+
+//	FUNCTION UAG_Initial_Load()
+//	Übergabeparameter:	Name der SPS oder leer
+//                                             
+//	Rückgabewert:		---
+//	Beschreibung:		Initialwerte neu laden
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	09.02.2009	/	Schneider Electrik GmbH
+//	Version				72.33.81.03
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	11.01.11	Steiner		Filter für einzele SPS eingeführt.
+//	11.09.13	Steiner		Anpassung für Equipment
+//	11.12.15	Steiner		Anpassung für PES
+
+FUNCTION UAG_Initial_Load(STRING sSps="")
+
+	INT		iError,hDev,hWnd;
+	STRING 	sTag,sWert,sTemp;
+	ErrSet(1);
+	hWnd = WinGetWndHnd();
+	INT4=1; 
+	CSV_WinUtl_WaitCursor(hWnd)
+	IF gbPES =0 THEN
+		hDev = UAG_DevOpen_UI("UInitial.DBF", "{Name,79}{MCode,64}{Parent,100}{PLC,32}");
+		IF hDev <> -1 THEN
+			iError = DevSeek(hDev, 1);
+			WHILE NOT DevEOF(hDev) DO
+				sTemp = DevGetField(hDev, "PLC");
+				IF (sSps="" OR sSps= sTemp) THEN
+					sTag =DevGetField(hDev, "Name");
+					sWert =DevGetField(hDev, "MCode");
+					TagWrite(sTag,sWert,0,1);
+				END	
+				DevNext(hDev);
+			END	
+		END
+		DevClose(hDev);
+	END	
+	UAG_SystemInfo("UAG_Initial_Load", "System", "@(Initial values loaded in PLC and Citect)" ,"-","-","-",TaskCluster(),_UAG_Info);
+
+	CSV_WinUtl_NormalCursor(hWnd);
+	INT4=0; 
+	ErrSet(0);
+END 
+
+//	UAG_Initial_Load2()
+//	Übergabeparameter:	Name der SPS oder leer
+//                         
+//	Rückgabewert:		 
+//	Beschreibung:		Initialwerte aus Steuerung lesen. 
+//						
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	11.01.11	/	Schneider Electric GmbH
+//	Version				72.33.70.04
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	11.09.13	Steiner		Anpassung für Equipment
+
+FUNCTION
+
+UAG_Initial_Load2(STRING sSps="")
+
+	INT		iError,hDev,hWnd;
+	STRING 	sTag,sWert,sTemp;
+	ErrSet(1);
+	hWnd = WinGetWndHnd();
+	INT3=1; 
+	CSV_WinUtl_WaitCursor(hWnd)
+
+	hDev=UAG_DevOpen_UI("UInitial.DBF", "{Name,79}{MCode,64}{Parent,100}{PLC,32}");
+	IF hDev <> -1 THEN
+		iError = DevSeek(hDev, 1);
+		WHILE NOT DevEOF(hDev) DO
+			sTemp = DevGetField(hDev, "PLC");
+			IF (sSps="" OR sSps= sTemp) THEN
+				sTag =DevGetField(hDev, "Name");
+				sWert =TagRead(sTag);
+				DevSetField(hDev, "MCode",sWert)
+			END	
+			
+			DevNext(hDev);
+		END	
+	CSV_WinUtl_NormalCursor(hWnd);
+	INT3=0; 
+	
+	END
+	DevClose(hDev);
+	ErrSet(0);
+END
+
+//	FUNCTION UAG_Initial_Load_Demo()
+//	Übergabeparameter:	---
+//                                             
+//	Rückgabewert:		---
+//	Beschreibung:		Initialwerte neu laden
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	09.02.2009	/	Schneider Electrik GmbH
+//	Version				3.1.1.8
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	
+
+FUNCTION UAG_Initial_Load_Demo()
+
+	INT		iError,hDev,hWnd;
+	STRING 	sTag,sWert;
+	ErrSet(1);
+	hWnd = WinGetWndHnd(); 
+	CSV_WinUtl_WaitCursor(hWnd)
+	hDev = DevOpen("InitialWert_Demo", 0);
+	IF hDev <> -1 THEN
+		iError = DevSeek(hDev, 1);
+		WHILE NOT DevEOF(hDev) DO
+			sTag =DevGetField(hDev, "Tag");
+			sWert =DevGetField(hDev, "MCode");
+			TagWrite(sTag,sWert,0,1);
+			DevNext(hDev);
+		END	
+	END
+	DevClose(hDev);
+	UAG_SystemInfo("UAG_Initial_Load", "System", "@(Initial values loaded in PLC and Citect)" ,"-","-","-",TaskCluster(),_UAG_Info);
+
+	CSV_WinUtl_NormalCursor(hWnd)
+	ErrSet(0);
+END 
+
+//	FUNCTION UAG_HMIInitial_Load()
+//	Übergabeparameter:	---
+//                                             
+//	Rückgabewert:		---
+//	Beschreibung:		Initialwerte neu laden
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	11.03.2009	/	Schneider Electrik GmbH
+//	Version				75.33.11.05
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	11.09.13	Steiner		Anpassung für Equipment
+//	11.12.15	Steiner		Anpassung für PES
+
+FUNCTION UAG_HMIInitial_Load()
+
+	INT		iError,hDev,hWnd;
+	STRING 	sTag,sWert;
+	ErrSet(1);
+	hWnd = WinGetWndHnd(); 
+	CSV_WinUtl_WaitCursor(hWnd)
+	SELECT CASE gbPES
+		CASE 0 !UAG
+			hDev=UAG_DevOpen_UI("UHMIInit.DBF", "{Name,79}{MCode,64}{Parent,100}");
+			IF hDev <> -1 THEN
+				iError = DevSeek(hDev, 1);
+				WHILE NOT DevEOF(hDev) DO
+					sTag = DevGetField(hDev, "Name");
+					sWert = DevGetField(hDev, "MCode");
+					TagWrite(sTag,sWert);
+					DevNext(hDev);
+					Sleep(0);
+				END	
+			END
+			DevClose(hDev);
+		CASE 1 !PES
+			hDev=RdbOpen ("_Variabl");
+			RdbFirstRec(hDev);
+
+			WHILE NOT RdbEOF (hDev) DO
+				sTag = RdbGet(hDev, "TAG");	! Get name of variable
+				sWert = RdbGet(hDev, "Custom1");	
+				TagWrite(sTag,sWert);
+				RdbNextRec(hDev);
+				Sleep(0);
+			END
+			RdbClose(hDev);
+		CASE 2 !Equipment
+			DevModify("Scratch","{Name,79}{MCode,64}{Parent,100}","*","[RUN]:UHMIInit.DBF",dBASE_DEV);
+			hDev = DevOpen("Scratch",0);
+			IF hDev <> -1 THEN
+				iError = DevSeek(hDev, 1);
+				WHILE NOT DevEOF(hDev) DO
+					sTag = DevGetField(hDev, "Name");
+					sWert = DevGetField(hDev, "MCode");
+					TagWrite(sTag,sWert);
+					DevNext(hDev);
+					Sleep(0);
+				END	
+			END
+			DevClose(hDev);
+	END	SELECT		
+	
+	UAG_SystemInfo("UAG_Initial_Load", "System", "@(Initial values loaded in Citect)" ,"-","-","-",TaskCluster(),_UAG_Info);
+
+	CSV_WinUtl_NormalCursor(hWnd)
+	ErrSet(0);
+END 
+
+//	FUNCTION UAG_Ereignisse_Load()
+//	Übergabeparameter:	Kennung für Task  C=Client, T=Trend, A= Alarm
+//                                             
+//	Rückgabewert:		---
+//	Beschreibung:		Ereignisse für MSGBox neu laden
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	11.03.2009	/	Schneider Electrik GmbH
+//	Version				75.33.11.06
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	11.11.10	Steiner		Erweitert für alle Task
+//	11.09.13	Steiner		Anpassung für Equipment
+//	17.03.16	Steiner		An PES Angepasst
+
+FUNCTION UAG_Ereignisse_Load(STRING sTask="C")
+
+	INT		iError,hDev,hWnd,iHandle;
+	STRING 	sTag,sWert,sTaskT;
+	ErrSet(1);
+	hWnd = WinGetWndHnd(); 
+//	CSV_WinUtl_WaitCursor(hWnd)
+	SELECT CASE gbPES
+		CASE 0 !UAG
+			hDev=UAG_DevOpen_UI("Uereigni.DBF", "{Name,79}{MCode,64}{MTask,4}{Parent,100}");
+			IF hDev <> -1 THEN
+				iError = DevSeek(hDev, 1);
+				WHILE NOT DevEOF(hDev) DO
+					sTaskT=DevGetField(hDev, "MTask");
+					IF sTaskT = sTask THEN
+						sTag =DevGetField(hDev, "Name");
+						sWert =DevGetField(hDev, "MCode");
+						iHandle =TagSubscribe(sTag , 500, "Raw");
+						SubscriptionAddCallback(iHandle, sWert)
+					END	 
+					DevNext(hDev);
+				END
+			END	
+			DevClose(hDev);
+			
+		CASE 1 !PES
+			hDev=RdbOpen ("_Variabl");
+			RdbFirstRec(hDev);
+			WHILE NOT RdbEOF (hDev) DO
+				sTag = RdbGet(hDev, "TAG");	! Get name of variable
+				IF StrRight(sTag,3) ="_ME" THEN
+					sTaskT= RdbGet(hDev, "Custom2");
+					IF sTaskT = sTask THEN
+						sWert = RdbGet(hDev, "Custom1");
+						iHandle =TagSubscribe(sTag , 500, "Raw");
+						SubscriptionAddCallback(iHandle, sWert)
+					END	 
+				END
+				RdbNextRec(hDev);
+				Sleep(0);
+			END
+			RdbClose(hDev);
+		CASE 2 !Equipment
+			DevModify("Scratch","{Name,79}{MCode,64}{MTask,4}{Parent,100}","*","[RUN]:Uereigni.DBF",dBASE_DEV);
+			hDev = DevOpen("Scratch",0);
+			IF hDev <> -1 THEN
+				iError = DevSeek(hDev, 1);
+				WHILE NOT DevEOF(hDev) DO
+					sTaskT=DevGetField(hDev, "MTask");
+					IF sTaskT = sTask THEN
+						sTag =DevGetField(hDev, "Name");
+						sWert =DevGetField(hDev, "MCode");
+						iHandle =TagSubscribe(sTag , 500, "Raw");
+						SubscriptionAddCallback(iHandle, sWert)
+					END	 
+					DevNext(hDev);
+				END
+			END	
+			DevClose(hDev);
+	END	SELECT		
+				
+
+//	iHandle =TagSubscribe("Server1_ServerME" );
+//	SubscriptionAddCallback(iHandle, "UAG_MSGBOX_SUB_Server");
+	
+	UAG_SystemInfo("UAG_Ereignisse_Load", "System", "@(Tagsubscribe done)" ,"-","-","-",TaskCluster(),_UAG_Info);
+
+//	CSV_WinUtl_NormalCursor(hWnd)
+	ErrSet(0);
+END 
+
+//	FUNCTION UAG_MSGBOX_SUB()
+//	Übergabeparameter:	---
+//                                             
+//	Rückgabewert:		---
+//	Beschreibung:		Ereignis ausgelöst durch MSGBOX20 Baustein
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	11.03.2009	/	Schneider Electrik GmbH
+//	Version				3.1.1.8
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	17.12.09	Steiner		Fenster bleibt auch bei Seitenwechel offen
+
+FUNCTION UAG_MSGBOX_SUB(INT subsHandle)
+
+	STRING sTag,sTemp;
+	ErrSet(1);
+	IF (StrToInt (SubscriptionGetAttribute(subsHandle, "Value")) BITAND Pow(2,0)) =  Pow(2,0) THEN
+		sTemp =SubscriptionGetAttribute(subsHandle, "TagName");
+		sTag = StrLeft (sTemp,StrLength(sTemp) -3);
+		UAG_msgbox_20(sTag,2);
+	END	
+	ErrSet(0);
+END
+
+//	FUNCTION UAG_Initial_Export()
+//	Übergabeparameter:	----
+//                                             
+//	Rückgabewert:		---
+//	Beschreibung:		Citect Initialwerte nach UAG Exportieren (noch nicht Fertig)
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	09.02.2009	/	Schneider Electrik GmbH
+//	Version				72.33.70.04
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	11.09.13	Steiner		Anpassung für Equipment
+//	
+
+FUNCTION UAG_Initial_Export()
+
+	INT		iError,hDev,hWnd,hFile,char,i;
+	STRING 	sTag,sWert,sText,sParent,sTemp2;
+	ErrSet(1);
+	hWnd = WinGetWndHnd(); 
+	CSV_WinUtl_WaitCursor(hWnd)
+	hFile=FileOpen(PathToStr("[data]:" +gsUAG_StationName + "\Intitial.txt"),"w");
+	IF hFile <> -1 THEN
+		hDev = UAG_DevOpen_UI("UInitial.DBF", "{Name,79}{MCode,64}{Parent,100}{PLC,32}");
+		IF hDev <> -1 THEN
+			iError = DevSeek(hDev, 1);
+			WHILE NOT DevEOF(hDev) DO
+				sTag =DevGetField(hDev, "Name");
+				sWert =DevGetField(hDev, "MCode");
+				FOR i = 0 TO StrLength(sWert) DO
+					char = StrGetChar(sWert, i);
+					IF char = 44 THEN char =46 END
+					StrSetChar(sTemp2, i, char);
+				END
+				StrSetChar(sTemp2, i, 0);
+				sWert = sTemp2 ;
+
+				sParent =DevGetField(hDev, "Parent");
+				sText = "INITIALVALUE;"+sTag +";" + sParent +";" +sWert;
+				FileWriteLn(hFile,sText);
+//				TagWrite(sTag,sWert,0,1);
+				DevNext(hDev);
+			END	
+		END
+	END
+	DevClose(hDev);
+	FileClose(hFile);
+	CSV_WinUtl_NormalCursor(hWnd)
+	ErrSet(0);
+END 
+
+
+//	UAG_Benutzer_Login_20()
+//	Übergabeparameter:	 ---     
+//                       
+//	Rückgabewert:		Status
+//	Beschreibung:		Öffnet das Anmeldefenster	
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	09.02.09	/	Schneider Electrik GmbH
+//	Version				75.33.11.02
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	19.06.09	Steiner		Benutzer Superuser hinzugefügt
+//	04.12.09	Steiner		Bildschirmpos Umgestellt.
+//	11.04.14	Steiner		Sprachauswahl Eingefügt	
+//	30.09.15	Steiner		Monitor Position
+
+INT FUNCTION UAG_Benutzer_Login_20()
+	STRING	sName;
+	STRING	sPassword,sRdbLanguage;
+	INT		bDone,i,hLanguageQue;
+	INT		nStatus,nType;
+	INT		hField, hForm,nQueLength;
+	INT		hRDB = -1;
+	STRING User,sTemp,sLanguage;
+	
+	hLanguageQue= QueOpen(LANGUAGE_QUEUE_NAME, 0);
+	IF (hLanguageQue <> -1) THEN
+		nQueLength = QueLength(hLanguageQue);
+	ELSE
+		nQueLength = 0;
+	END
+
+	
+	User = UserInfo(1);
+	IF User ="" THEN 
+		User = "keiner";
+	END
+	UAG_GetMousePos_mitte(210,250);
+	sLanguage = "German(Germany)"
+	ErrSet(1);
+	bDone = FALSE;
+	WHILE bDone = FALSE DO
+	
+		hForm = FormNew("@(Login Form)", 44, 7, 5);
+		PageTransformCoords(WinNumber(), giPosX, giPosY, giPosX, giPosY, 0)	
+		FormPosition( giPosX,giPosY,0);
+		FormPrompt(1, 0, "@(Name)"); 
+		hField = FormComboBox(12, 0,17,4,  sName, 0);
+		CodeSetMode(2, FALSE);
+		hRDB = RdbOpen("_Users");
+		IF hRDB <> -1 THEN
+	
+			RdbFirstRec(hRDB);
+			WHILE NOT RdbEOF(hRDB)	DO
+				sTemp = RdbGet(hRDB, "NAME");
+				IF  sTemp <> "Kernel" AND sTemp <> "SuperUser" THEN FormAddList(RdbGet(hRDB, "Name")) END;
+				RdbNextRec(hRDB)
+			END
+		END
+		RdbClose(hRDB);			
+	
+		FormListSelectText(hForm, hField, "Admin"); 
+		FormPrompt(1, 2, "@(Password)");
+		FormSecurePassword(12, 2, "", sPassword, 31);
+		FormPrompt(1, 4, "@(Language)");
+		FormComboBox(12 ,4, 31, 4, sLanguage, 0);
+
+			// The queue was populated with the entries from _lang.RDB
+			// at startup, and the entries can now be loaded into the 
+			// language combo box.
+			FOR i = 0 TO nQueLength-1 DO
+				nType = i;
+				QuePeek(hLanguageQue, nType, sRdbLanguage, 16);
+				FormAddList(sRdbLanguage);
+			END 
+		FormButton( 1, 6, " @(OK) ", 0, 1);
+		FormButton(19, 6, " @(Cancel) ", 0, 2);
+
+		IF FormRead(0) = 0 THEN
+		
+			IF UserVerify(sName, sPassword) = 0 THEN
+				Logout();
+				UserLogin(sName, sPassword,sLanguage);
+				bDone = TRUE;
+				nStatus = 0;
+			ELSE
+		
+				bDone = TRUE;
+				nStatus = 298;
+			END	
+		ELSE
+			bDone = TRUE;
+		END
+	END
+
+	IF nStatus = 0 THEN
+		UAG_SystemInfo("UAG_Benutzer", "System", "@(User has signed up)" ,"-",User,sName,TaskCluster(),_UAG_Info);
+	ELSE
+		UAG_SystemInfo("UAG_Benutzer", "System", "@(Failed to login)" ,"-",User,sName,TaskCluster(),_UAG_Fehler);
+	END	 
+	CodeSetMode(2, TRUE);
+	ErrSet(0);
+	RETURN nStatus;
+END
+
+//	P_Infotexte(STRING sTag)
+//	Übergabeparameter:	Tagname als String      
+//                       
+//	Rückgabewert:		
+//	Beschreibung:	Infotexte für Meßstelle aufschalten	
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	19.12.08	/	Schneider Electrik GmbH
+//	Version				7.2.3.13
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	23.02.09	Steiner		für P2 auf Datenbank umgestellt
+INT hFmt;
+
+FUNCTION 
+UAG_Infotexte_save_20(STRING sTag)
+
+	INT		iError,hDev,iFound,i;
+	
+	ErrSet(1);
+	iFound = 0;
+
+	hDev=UAG_DevOpen_UIDATA("InfoText.DBF", "{Name,40}{T0,64}{D0,16}{T1,64}{D1,16}{T2,64}{D2,16}");
+	IF hDev <> -1 THEN
+		iError = DevSeek(hDev, 1);
+		IF DevFind(hDev,sTag,"Name") = 0 THEN
+			IF  (DevGetField(hDev, "Name") = sTag) THEN
+				FOR i = 0 TO 2 DO
+					DevSetField(hDev, "T"+IntToStr(i), Infotext[i][0]);
+					DevSetField(hDev, "D"+IntToStr(i), Infotext[i][1]); 
+				END
+
+				iFound = 1;
+			END	
+		END	
+	END
+	IF IFound = 0 THEN
+		DevSetField(hDev, "Name" , sTag);
+		FOR i = 0 TO 2 DO
+			DevSetField(hDev, "T"+IntToStr(i), Infotext[i][0]);
+			DevSetField(hDev, "D"+IntToStr(i), Infotext[i][1])
+
+		END
+	END
+	DevClose(hDev);
+	ErrSet(0);
+	
+END 
+
+FUNCTION 
+UAG_Infotexte_load_20(STRING sTag)
+	INT hDev,i,iError,iFound;
+	
+	ErrSet(1);
+	iFound = 0;
+	hDev=UAG_DevOpen_UIDATA("InfoText.DBF", "{Name,40}{T0,64}{D0,16}{T1,64}{D1,16}{T2,64}{D2,16}");
+	IF hDev <> -1 THEN
+		iError = DevSeek(hDev, 1);
+		IF DevFind(hDev,sTag,"Name") = 0 THEN
+			IF  (DevGetField(hDev, "Name") = sTag) THEN
+				FOR i = 0 TO 2 DO
+					Infotext[i][0] =DevGetField(hDev, "T"+IntToStr(i));
+					Infotext[i][1] =DevGetField(hDev, "D"+IntToStr(i)); 
+				END
+				iFound = 1;
+			END	
+		END	
+	END
+	IF IFound = 0 THEN
+		FOR i = 0 TO 2 DO
+			Infotext[i][0] ="-";
+			Infotext[i][1] ="-"; 
+		END
+	END	
+	DevClose(hDev);
+	ErrSet(0);
+END
+
+
+//	FUNCTION UAG_MELD_ANA()
+//	Übergabeparameter:	Wert, M
+//                                             
+//	Rückgabewert:		Auswertung ob Simulation oder Auserhalb der Spec mit Meldesperre
+//	Beschreibung:		
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	12.03.2009	/	Schneider Electrik GmbH
+//	Version				75.33.11.05
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	20.10.11	Steiner		Alarmspeicher wurde nicht angezeigt
+//	08.12.11	Steiner		Anzeige Leitsperre	
+//	21.11.16	Steiner		Alarmsperre auf 0 gesetzt
+
+INT FUNCTION		
+UAG_MELD_ANA(INT iM,INT AHH=1,INT ALL=1,INT AH=1,INT AL=1)
+
+	IF (iM BITAND Pow(2,15)) THEN  // Meldesperre
+		RETURN 1
+	ELSE
+		IF (HighWord(iM ) BITAND Pow(2,5)) THEN //Alarmsperre enfällt ab P3
+			RETURN 0
+		ELSE
+			IF (iM  BITAND Pow(2,2)) THEN //Leitsperre
+				RETURN 5
+			ELSE
+				IF 	AHH=0 OR AH=0 OR ALL=0 OR AL=0 THEN
+					RETURN 2
+				ELSE
+					IF (HighWord(iM ) BITAND Pow(2,0)) OR (HighWord(iM ) BITAND Pow(2,1)) OR (HighWord(iM ) BITAND Pow(2,2)) OR (HighWord(iM ) BITAND Pow(2,3))OR (HighWord(iM ) BITAND Pow(2,6)) THEN
+						RETURN 4
+					ELSE
+						RETURN 0
+					END		
+				END
+			END
+		END	
+	END			
+END
+
+
+//	FUNCTION UAG_MELD_DOS()
+//	Übergabeparameter:	Wert, M
+//                                             
+//	Rückgabewert:		Auswertung ob Simulation oder Auserhalb der Spec mit Meldesperre
+//	Beschreibung:		
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	11.06.2012	/	Schneider Electrik GmbH
+//	Version				7.23.3.1
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	
+
+INT FUNCTION		
+UAG_MELD_DOS(INT iM,INT AHH,INT ALL=1,INT AH=1,INT AL=1)
+
+	IF (iM BITAND Pow(2,15)) THEN  // Meldesperre
+		RETURN 1
+	ELSE
+		IF (HighWord(iM ) BITAND Pow(2,5)) THEN //Alarmsperre
+			RETURN 3
+		ELSE
+			IF (iM  BITAND Pow(2,2)) THEN //Leitsperre
+				RETURN 5
+			ELSE
+				IF 	AHH=0 OR AH=0 OR ALL=0 OR AL=0 THEN
+					RETURN 2
+				ELSE
+					IF (HighWord(iM ) BITAND Pow(2,0)) OR (HighWord(iM ) BITAND Pow(2,1)) OR (HighWord(iM ) BITAND Pow(2,2)) OR (HighWord(iM ) BITAND Pow(2,3)) THEN
+						RETURN 4
+					ELSE
+						RETURN 0
+					END		
+				END
+			END
+		END	
+	END			
+END
+
+
+//	FUNCTION UAG_MELD_MOT()
+//	Übergabeparameter:	Wert, M
+//                                             
+//	Rückgabewert:		Auswertung ob Simulation oder Auserhalb der Spec mit Meldesperre
+//	Beschreibung:		
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	07.08.2009	/	Schneider Electrik GmbH
+//	Version				7.2.3.3
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	12.12.11	Steiner		Anzeige Leitsperre
+//	
+
+
+INT FUNCTION		
+UAG_MELD_MOT(INT iM,INT AHH,INT ALL,INT AH=1,INT AL=1)
+
+	IF (iM BITAND Pow(2,15)) THEN  // Meldesperre
+		RETURN 1
+	ELSE
+		IF (HighWord(iM ) BITAND Pow(2,5)) THEN //Alarmsperre
+			RETURN 3
+		ELSE
+			IF (iM  BITAND Pow(2,2)) THEN //Leitsperre
+				RETURN 5
+			ELSE
+				IF 	AHH=0 OR AH=0 OR ALL=0 OR AL=0 THEN
+					RETURN 2
+				ELSE
+					IF (HighWord(iM ) BITAND Pow(2,0)) OR (HighWord(iM ) BITAND Pow(2,1)) OR (HighWord(iM ) BITAND Pow(2,2)) OR (HighWord(iM ) BITAND Pow(2,3)) THEN
+						RETURN 4
+					ELSE
+						RETURN 0
+					END	
+				END		
+			END
+		END
+	END			
+END
+
+//	FUNCTION UAG_MELD_Meld()
+//	Übergabeparameter:	Wert, M
+//                                             
+//	Rückgabewert:		Auswertung ob Simulation oder Auserhalb der Spec mit Meldesperre
+//	Beschreibung:		
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	11.08.2009	/	Schneider Electrik GmbH
+//	Version				3.1.1.3
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	
+
+
+INT FUNCTION		
+UAG_MELD_Meld(INT iM,INT AHH,INT ALL=1,INT AH=1,INT AL=1)
+
+	IF (iM BITAND Pow(2,15)) =Pow(2,15) THEN  // Meldesperre
+		RETURN 1
+	ELSE
+		IF (iM  BITAND Pow(2,3)) =Pow(2,3) THEN //Alarmsperre
+			RETURN 3
+		ELSE
+			IF 	AHH=0 OR AH=0 OR ALL=0 OR AL=0 THEN
+				RETURN 2
+			ELSE
+				IF (iM  BITAND Pow(2,14)) =Pow(2,14) THEN
+					RETURN 4
+				ELSE
+					RETURN 0
+				END		
+			END
+		END
+	END			
+END
+
+
+//	FUNCTION UAG_LoadZT()
+//	Übergabeparameter:	
+//                    sTag: Name of tag that indicates if messages must be displayed or not
+//                    AssNumber: Number of first association that must be realized
+//                    MaxAss: Maximum number of association that must be realized
+//                         
+//	Rückgabewert:		---
+//	Beschreibung:		zusatztexte für Tag und Faceplate laden.
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	23.02.2009	/	Schneider Electrik GmbH
+//	Version				75.33.11.05
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	21.11.11	Steiner		Erweitert um auch Aktuelles Fenster zu ändern.
+//	11.09.13	Steiner		Anpassung für Equipment
+//	30.11.15	Steiner		Anpassung für PES
+//	01.05.17	Steienr		Änderungen für Equipment
+
+FUNCTION UAG_LoadZT(STRING sTag, INT AssNumber,INT Maxass=4,INT iMode=-2)
+INT hDev, i;
+;
+STRING sTemp;
+	// To initialize texts associated to SuperGenie
+	FOR i=AssNumber TO (AssNumber+MaxAss-1) DO
+		Ass(iMode, i, "'-'", 0);
+	END
+	ErrSet(1);
+
+	// To examine if Tag exists at DataBase
+	IF TagInfo(sTag,0) <> "" THEN
+	SELECT CASE gbPES
+		CASE 0 !UAG
+			// If Tag exists, the texts must be searched in configuration file
+			hDev=UAG_DevOpen_UI("UITasten.DBF", "{Name,79}{T1,16}{T2,16}{T3,16}{T4,16}{T5,16}{T6,16}{T7,16}{T8,16}{T9,16}{T10,16}{T11,16}{T12,16}{T13,16}{T14,16}{T15,16}");
+			IF hDev >= 0 THEN
+				DevSeek(hDev, 1);
+				IF DevFind(hDev, sTag, "Name") = 0 THEN
+					FOR i=AssNumber TO (AssNumber+MaxAss-1) DO
+						sTemp =DevGetField(hDev, "T"+IntToStr(i-AssNumber+1));
+//						IF sTemp ="-" THEN sTemp ="" END;
+						Ass(iMode, i, "'" + sTemp + "'", 0);
+					END
+				END
+			END
+			DevClose(hDev);
+		CASE 1 !PES
+			FOR i=AssNumber TO (AssNumber+MaxAss-1) DO
+				sTemp =TagGetProperty(sTag,"Custom"+IntToStr(i-AssNumber+2),0);
+				IF sTemp = "" THEN sTemp = "-" END;
+				Ass(iMode, i, "'" + sTemp + "'", 0);
+			END
+		
+		CASE 2 !Equipment
+			DevModify("Scratch","{Name,79}{T1,16}{T2,16}{T3,16}{T4,16}{T5,16}{T6,16}{T7,16}{T8,16}{T9,16}{T10,16}{T11,16}{T12,16}{T13,16}{T14,16}{T15,16}","*","[RUN]:UITasten.DBF",dBASE_DEV);
+			hDev = DevOpen("Scratch",0);
+			IF hDev >= 0 THEN
+				DevSeek(hDev, 1);
+				IF DevFind(hDev, sTag, "Name") = 0 THEN
+					FOR i=AssNumber TO (AssNumber+MaxAss-1) DO
+						sTemp =DevGetField(hDev, "T"+IntToStr(i-AssNumber+1));
+//						IF sTemp ="-" THEN sTemp ="" END;
+						Ass(iMode, i, "'" + sTemp + "'", 0);
+					END
+				END
+			END
+			DevClose(hDev);
+		END	SELECT
+	END;
+	ErrSet(0);
+END
+
+
+
+//	UAG_LogWrite("Anwender" ,sEVNTMSG,sTAGNAME, sOLDVALUE,sVALUE);
+//	Übergabeparameter:	      
+//                      sEVNTYPE
+//						sEVNTMSG 
+//						sTAGNAME 
+//						sOLDVALUE 
+//						sVALUE  
+//						
+//	Rückgabewert:		---
+//	Beschreibung:		Neue Funktion für Systeminfo und Schreiben
+//						 
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	11.03.09	/	Schneider Electrik GmbH
+//	Version				74.33.70.00
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	06.05.14	Steiner		Erweiterung für SOE
+//
+//UAG_LogWrite("Anwender" ,"Leiten: "+PageGetStr(1),_AssInfo(%LWNr%,0), ?%LWNr%?,PageGetInt(%LWNr%));
+//UAG_LogWrite("Anwender" ,"Leiten: %Text%","%TAG%", %TAG%,PageGetInt(%LWNr%));
+FUNCTION UAG_LogWrite(STRING sEVNTYPE = "-" ,STRING sEVNTMSG = "-",	STRING sTAGNAME = "-", STRING sOLDVALUE="-",STRING sVALUE="-",INT iTyp=_UAG_Info)
+	
+	STRING sWer,sCLUSTER;
+	sWer = StrTrim(PageInfo(0));
+	sCLUSTER = TaskCluster();
+	sVALUE= StrTrim(sVALUE);
+	TagWrite(sTAGNAME, sVALUE);
+	UAG_Initial_Save( sTAGNAME,  sVALUE);
+	UAG_SystemInfo(sWER ,sEVNTYPE ,sEVNTMSG,sTAGNAME, sOLDVALUE,sVALUE,sCLUSTER,iTyp,0);
+	
+END	
+
+//	UAG_CSV_Text();
+//	Übergabeparameter:	      
+//                      
+//						
+//	Rückgabewert:		---
+//	Beschreibung:		sucht nach einem durch ; getrennten Text in der Variablem msText
+//						 
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	16.03.09	/	Schneider Electrik GmbH
+//	Version				3.1.1.0
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+
+STRING FUNCTION 
+
+UAG_CSV_Text()
+	INT IFirstS;
+	STRING sTemp;
+	
+	IFirstS = StrSearch(0, msText, ";");
+	sTemp = StrLeft(msText, IFirstS);
+	IF (sTemp ="") THEN sTemp ="-" END;
+	msText = StrRight( msText,StrLength(msText)-IFirstS-1);
+	RETURN sTemp
+END	
+
+
+//	UAG_LoadBS()
+//	Übergabeparameter:	
+//                         
+//	Rückgabewert:		 
+//	Beschreibung:		Betriebsstunden nach Initialwerten sichern. 
+//						
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	08.07.09	/	Schneider Electric GmbH
+//	Version				72.33.70.04
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	11.09.13	Steiner		Anpassung für Equipment
+
+FUNCTION
+
+UAG_LoadBS()
+
+	INT		iError,hDev;
+	STRING 	sTag,sWert;
+
+	hDev=UAG_DevOpen_UI("UBSHMI.DBF", "{Name,79}");
+	IF hDev <> -1 THEN
+		iError = DevSeek(hDev, 1);
+		WHILE NOT DevEOF(hDev) DO
+			sTag =DevGetField(hDev, "Name");
+			sWert =TagRead(sTag);
+			UAG_Initial_Save( sTag, sWert);
+			DevNext(hDev);
+		END	
+	END
+	DevClose(hDev);
+
+END
+
+//	UAG_GET_LT()
+//	Übergabeparameter:	Name des Element
+//						
+//                         
+//	Rückgabewert:		Langtext
+//	Beschreibung:		
+//						
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	05.04.11	/	Schneider Electric GmbH
+//	Version				72.33.70.04
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	11.09.13	Steiner		Anpassung für Equipment
+
+
+STRING FUNCTION
+UAG_GET_LT(STRING sTag)
+	INT		hDev;
+	STRING	sTemp;
+	hDev = UAG_DevOpen_UI("UHMIINIT.DBF", "{Name,79}{MCODE,64}");
+	IF hDev >= 0 THEN
+		DevSeek(hDev, 1);
+		IF DevFind(hDev, sTag+ "_LT", "Name") = 0 THEN
+			sTemp = DevGetField(hDev, "MCODE");
+		END
+	END
+	DevClose(hDev);			
+	RETURN sTemp
+END	
+	
+//	UAG_Path()
+//	Übergabeparameter: Text Nummer	
+//                         
+//	Rückgabewert:		 
+//	Beschreibung:		 
+//						
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	22.06.10	/	Schneider Electric GmbH
+//	Version				7.2.0.2
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+
+STRING FUNCTION
+UAG_Path(INT iNr)
+
+	SELECT CASE iNr
+	CASE 1
+	RETURN gsUAGBildProjektPath
+	CASE 2
+	RETURN	gsUAGVersionLibPath
+	CASE 3
+	RETURN	gsUAGVersionPath
+	END SELECT
+END
+
+
+//	UAG_DevOpen()
+//	Übergabeparameter: DateinameP DateinameS  Modus	
+//                         
+//	Rückgabewert:	Filehandle 	 
+//	Beschreibung:	Öffnet ein Device und gibt die Nummer zurück. Es wird zuerst das Primäre geöfnet.	 
+//						
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	22.07.10	/	Schneider Electric GmbH
+//	Version				74.33.70.00
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+
+
+INT FUNCTION
+UAG_DevOpen(STRING sNameP,STRING sNameS,INT iMode=0)
+	INT hDev;
+	STRING sPath;
+	ErrSet(1);
+	sPath=PathToStr("[DATA2P]:pagemenu.DBF");
+	IF FileExist(sPath) THEN
+		hDev = DevOpen(sNameP,iMode);
+	ELSE
+		hDev = DevOpen(sNameS,iMode);
+	END	
+	ErrSet(0);
+	RETURN hDev
+END
+
+//	UAG_DevOpen_UI()
+//	Übergabeparameter: Dateiname Format	
+//                         
+//	Rückgabewert:		Filehandle 
+//	Beschreibung:		Öffnet ein Device zum Lesen.und gibt die Nummer zurück. Es wird zuerst das Primäre geöfnet. Pfad UI
+//						
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	22.07.10	/	Schneider Electric GmbH
+//	Version				7.2.3.13
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	21.11.12	Steiner		Pfad geändert
+
+INT FUNCTION
+UAG_DevOpen_UI(STRING sName,STRING sFormat)
+	INT hDev;
+	STRING sPath;
+	sPath=PathToStr("[UI_P]:" +sName);
+	ErrSet(1);
+	IF FileExist(sPath) THEN
+		DevModify("Scratch",SFormat,"*", sPath,dBASE_DEV);
+		hDev = DevOpen("Scratch",0);
+	ELSE
+		sPath=PathToStr("[UI_S]:" +sName);
+		DevModify("Scratch",SFormat,"*", sPath,dBASE_DEV);
+		hDev = DevOpen("Scratch",0);
+	END	
+	ErrSet(0);
+	RETURN hDev
+END
+
+//	UAG_DevOpen_UIDATA()
+//	Übergabeparameter: Dateiname Format	
+//                         
+//	Rückgabewert:		Filehandle 
+//	Beschreibung:		Öffnet ein Device zum Lesen.und gibt die Nummer zurück. Es wird zuerst das Primäre geöfnet. Pfad DATA2
+//						
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	22.11.12	/	Schneider Electric GmbH
+//	Version				7.2.3.13
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	
+
+INT FUNCTION
+UAG_DevOpen_UIDATA(STRING sName,STRING sFormat)
+	INT hDev;
+	STRING sPath;
+	sPath=PathToStr("[DATA2P]:" +sName);
+	ErrSet(1);
+	IF FileExist(sPath) THEN
+		DevModify("Scratch",SFormat,"*", sPath,dBASE_DEV);
+		hDev = DevOpen("Scratch",0);
+	ELSE
+		sPath=PathToStr("[DATA2S]:" +sName);
+		DevModify("Scratch",SFormat,"*", sPath,dBASE_DEV);
+		hDev = DevOpen("Scratch",0);
+	END	
+	ErrSet(0);
+	RETURN hDev
+END
+
+
+//	UAG_DevTest()
+//	Übergabeparameter: Dateiname 	
+//                         
+//	Rückgabewert:		Datei und Pfad 
+//	Beschreibung:		Ermittelt welcher Pfad genommen wird. 
+//						
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	22.07.10	/	Schneider Electric GmbH
+//	Version				3.2.0.0
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+
+
+STRING FUNCTION
+UAG_DevTest(STRING sName)
+
+	STRING sPath;
+	IF StrRight(sName,1) ="*" THEN 
+		sName=StrLeft(sName,StrLength(sName)-1) + "dbf"
+	END	
+	sPath=PathToStr("[DATA2P]:" +sName);
+	ErrSet(1);
+	IF FileExist(sPath) THEN
+		ErrSet(0);
+		RETURN sPath
+	ELSE
+		ErrSet(0);
+
+		RETURN 	PathToStr("[DATA2S]:" +sName)
+	END	
+
+END
+
+//	UAG_Capture_Screen()
+//	Übergabeparameter: - 	
+//                         
+//	Rückgabewert:		- 
+//	Beschreibung:		Seite in Datei Speichern 
+//						
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	11.10.10	/	Schneider Electric GmbH
+//	Version				7.2.3.3
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+
+FUNCTION UAG_Capture_Screen()
+INT hDLL;
+STRING sPath;
+	sPath=ParameterGet("Printer","Path","");
+	hDLL  = Exec(PathToStr("[RUN]:")+"prtscreen_a.exe "+ IntToStr (WinNumber()) +" ^"" +sPath+"^"" , 1 );
+	IF (hDLL<>0) THEN
+		Message(PathToStr("[RUN]:") +"PrtScreen","@(PrtScreen_a.EXE not found).^n"+
+			"@(Please copy the file PrtScreen_a.EXE to the directory) " + PathToStr ("[RUN]:") +".",48);
+
+		RETURN;
+	END
+
+END 
+
+
+//	INT FUNCTION UAG_PageDisplay()
+//	Übergabeparameter:	Bildname
+//                         
+//	Rückgabewert:	Windownummer	 
+//	Beschreibung:	Ersatz für _PageDisplay	da die Orginale Funktion den Tootip Font verändert.
+//						
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	16.11.09	/	Schneider Electric GmbH
+//	Version				3.1.1.6
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+
+//INT FUNCTION 
+//UAG_PageDisplay(STRING sName)
+//	INT iError
+//	iError =_PageDisplay(sName)
+//	UAG_FontDefault()
+//	RETURN iError
+//END	
+//	INT FUNCTION UAG_PageDisplay20()
+//	Übergabeparameter:	Bildname Fensternummer
+//                         
+//	Rückgabewert:	Windownummer	 
+//	Beschreibung:	Ersatz für _PageDisplay	da die Orginale Funktion den Tootip Font verändert Zusätzlich kann der Monitor angegeben werden.
+//						
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	05.12.12	/	Schneider Electric GmbH
+//	Version				77.33.70.00
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+
+INT FUNCTION 
+UAG_PageDisplay20(STRING sName,INT iMonitor=WinNumber())
+	INT iError;
+	IF iMonitor = -1 THEN iMonitor= WinNumber() END;
+	iError = WinGoto(iMonitor);
+	IF iError= 0 THEN
+		iError =_PageDisplay(sName)
+		IF iError <>0 THEN
+		
+		UAG_Status("@(Picture) " + sName + " @(can not be opened).",ErrMsg(iError ),"1");
+		END	
+	ELSE
+		iError= UAG_WinNewAt(sName,	WndMonitorInfo(iMonitor, 0),WndMonitorInfo(iMonitor, 1),ParameterGet("PAGE","StartupMode",16))
+		IF iError <> iMonitor THEN
+			UAG_WinNewAt(sName,	WndMonitorInfo(iMonitor, 0),WndMonitorInfo(iMonitor, 1),ParameterGet("PAGE","StartupMode",16))
+			WinGoto(iError);
+			WinFree();
+			iError = iMonitor;
+		END	
+	END
+//	UAG_FontDefault()	
+	RETURN iError
+END	
+
+//	INT FUNCTION UAG_WinNewAt()
+//	Übergabeparameter:	Bildname ,x,y, Mode
+//                         
+//	Rückgabewert:		 
+//	Beschreibung:	Ersatz für WinNewAt	da die Orginale Funktion den Tootip Font verändert.
+//						
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	16.11.09	/	Schneider Electric GmbH
+//	Version				7.2.3.12
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+
+INT FUNCTION 
+UAG_WinNewAt(STRING sPage, INT iX , INT iY,INT iMode)
+
+	INT iError
+	iError = WinNewAt(sPage, iX , iY, iMode)
+	IF iError = -1 THEN
+		UAG_Status("@(Picture) " + sPage + " @(can not be opened)","","1");
+	END	
+	UAG_FontDefault()
+	RETURN iError
+END	
+
+//	INT FUNCTION UAG_Winfree()
+//	Übergabeparameter:	
+//                         
+//	Rückgabewert:		 
+//	Beschreibung:	Ersatz für Winfree	da die Orginale Funktion den Tootip Font verändert.
+//						
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	16.11.09	/	Schneider Electric GmbH
+//	Version				7.2.3.4
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	06.01.12	Steiner		Funktionen aus CSV_MM_Winfree hier eingefügt.
+
+INT FUNCTION 
+UAG_WinFree()
+	INT		iWindowNo;
+	INT		iError;
+	
+	! Get the number of the window to be closed
+	iWindowNo = WinNumber();
+		
+	IF (iWindowNo > UAG_MM_Anzahl) OR  (iWindowNo =0) THEN
+	
+		! Close active window
+		iError = WinFree();
+
+	END
+	UAG_FontDefault()
+	RETURN iError;	
+END
+
+//	INT FUNCTION PageNext()
+//	Übergabeparameter:	
+//                         
+//	Rückgabewert:		 
+//	Beschreibung:	Ersatz für PageNext	da die Orginale Funktion den Tootip Font verändert.
+//						
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	17.08.12	/	Schneider Electric GmbH
+//	Version				7.2.3.12
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	
+
+//INT
+//FUNCTION
+//UAG_PageNext()
+//
+//	INT		iError;
+//	iError = PageNext();
+//	UAG_FontDefault()
+//	RETURN iError;
+//END
+
+//	INT FUNCTION PagePrev()
+//	Übergabeparameter:	
+//                         
+//	Rückgabewert:		 
+//	Beschreibung:	Ersatz für PagePrev	da die Orginale Funktion den Tootip Font verändert.
+//						
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	17.08.12	/	Schneider Electric GmbH
+//	Version				7.2.3.12
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	
+
+//INT
+//FUNCTION
+//UAG_PagePrev()
+//
+//	INT		iError;
+//	iError = PagePrev();
+//	UAG_FontDefault()
+//	RETURN iError;
+//END
+
+
+//	FUNCTION UAG_EditTasten()
+//	FUNCTION UAG_Tasten_Save()
+//	Übergabeparameter:	
+//                    sTag: Name of tag that indicates if messages must be displayed or not
+//                    AssNumber: Number of first association that must be realized
+//                    MaxAss: Maximum number of association that must be realized
+//                         
+//	Rückgabewert:		---
+//	Beschreibung:		Tasten Texte für Tag laden Editieren und Speichern
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	11.01.2011	/	Schneider Electrik GmbH
+//	Version				72.33.70.04
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	11.09.13	Steiner		Anpassung für Equipment
+//	
+
+
+FUNCTION UAG_EditTasten(STRING sTag, INT AssNumber)
+INT hDev, i;
+	miFound =-1;
+	ErrSet(1);
+	// To examine if Tag exists at DataBase
+	IF TagInfo(sTag,0) <> "" THEN
+	// If Tag exists, the texts must be searched in configuration file
+		UAG_VBesch ="";
+		hDev=UAG_DevOpen_UI("UITasten.DBF", "{Name,79}{T1,16}{T2,16}{T3,16}{T4,16}{T5,16}{T6,16}{T7,16}{T8,16}{T9,16}{T10,16}{T11,16}{T12,16}{T13,16}{T14,16}{T15,16}");
+		IF hDev >= 0 THEN
+		
+			DevSeek(hDev, 1);
+			IF DevFind(hDev, sTag, "Name") = 0 THEN
+				UAG_VBesch =DevGetField(hDev, "T"+IntToStr(AssNumber));
+			END
+		END
+
+	DevClose(hDev);
+
+	Ass(-2,1,"'" + IntToStr (AssNumber) + "'",0);
+	Ass(-2,2,"'" + sTag + "'",0);
+	UAG_MM_PopUP("!P_Tasten_Edit_20")
+	ErrSet(0);
+	END;
+END
+
+FUNCTION UAG_Tasten_Save(STRING sTag,STRING sNr)
+
+	INT		iError,hDev,i,iFound;
+	
+	ErrSet(1);
+	hDev=UAG_DevOpen_UI("UITasten.DBF", "{Name,79}{T1,16}{T2,16}{T3,16}{T4,16}{T5,16}{T6,16}{T7,16}{T8,16}{T9,16}{T10,16}{T11,16}{T12,16}{T13,16}{T14,16}{T15,16}");
+	IF hDev >= 0 THEN
+		iError = DevSeek(hDev, 1);
+		IF DevFind(hDev,sTag,"Name") = 0 THEN
+			DevSetField(hDev, "T"+sNr,UAG_VBesch);
+			IFound = 1;
+		END	
+	END
+	IF IFound = 0 THEN
+		DevAppend(hDev);
+		DevSetField(hDev, "Name",sTag);
+		DevSetField(hDev,  "T"+sNr, UAG_VBesch);
+	END
+
+	DevClose(hDev);
+	ErrSet(0);
+END 
+// Set AN name on th page
+// Returns 0 when sucessfull, > 0 on error
+
+INT FUNCTION ANName_Set(STRING sName)
+
+	RETURN (PageSetInt("#AN_"+sName, DspGetAnCur()));
+END
+
+INT FUNCTION ANName_Get(STRING sName)
+
+	RETURN (PageGetInt("#AN_"+sName));
+END
+
+
+FUNCTION UAG_Null()
+UAG_Status("@(Double click does not exist)","","1");
+
+END
+//	UAG_TipText_Ping(STRING)
+//	Übergabeparameter:	TooltipText      
+//                       
+//	Rückgabewert:	0	
+//	Beschreibung:	ändert den Tiptext des Objektes das ihn aufruft kann z.b. bei Sichtbar genutzt werden	
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	09.04.14	/	Schneider Electrik GmbH
+//	Version				72.33.70.05
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	
+
+INT FUNCTION UAG_TipText_Ping(STRING LT)
+	INT 	hAn;
+
+	IF LT ="" THEN 
+		LT ="@(Connection OK)";
+	END	
+	hAn=DspGetAnCur() ;
+	DspSetTip(hAn,LT);
+	RETURN 0
+END
+

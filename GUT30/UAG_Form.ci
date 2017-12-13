@@ -1,0 +1,536 @@
+///////////////////////////////////////////////////////////////////////////////////
+//	
+// 	FILE:	UAG_Form.ci
+//
+//	Beschreibung:
+//
+//		Enhält Funktionen für Speziele Formulare
+//		übernommen aus CSV und angepasst an UAG
+//		
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	29.04.08	/	Schneider Electric GmbH
+//	Version				74.33.81.02
+//
+//	PUBLIC FUNCTIONS:
+//
+//				UAG_Form_UserCreate()
+//				UAG_Form_UserEdit()
+//				UAG_Form_UserPassword()
+//
+// 	NOTES:
+//		
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//			
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+//MODULE VARIABLES
+
+INT		mhNumPadForm = -1;
+INT 	mbNumPadClear = TRUE;
+STRING	msNumPadValue = "";
+STRING	sTimeDel = ":";		/* Time delimiter default value */
+STRING	sDecimalDel = "."; 	/* Decimal delimiter default value */
+STRING	sDateDel = "/";		/* Date delimiter default value */
+
+
+STRING	msUserName;
+STRING	msFullName;
+STRING	msUserType;
+STRING	msOldPassword;
+STRING	msPassword;
+STRING	msRetypePassword;
+
+INT		mhUserRDB = -1;
+INT		mhUserForm = -1;
+
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//		FUNCTION NAME	
+//						UAG_Form_UserCreate()
+//
+//
+//     	GENERAL DESCRIPTION
+//			
+//			Displays a form to create a record for a new user.  A new user of the specified type is created.  
+//			The name of the user must be unique.
+//
+// 		ARGUMENTS:
+//
+//
+//     	RETURNED VALUE: 
+//
+//			0 if new user is created successfully, otherwise an error.
+//
+//		PSEUDO CODE:
+//	Autor:				J.Venz
+//	Erstellungsdatum:	12.08.02	/	Schneider Electrik GmbH
+//	Version				3.1.1.1
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	29.04.09	Steiner		Angepasst an UAG Vorlagen
+//
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+INT FUNCTION
+UAG_Form_UserCreate()
+
+	STRING 	sDummyBuffer;
+	STRING 	sAddType;
+	INT		iError;
+	INT		hWnd;
+	INT		hForm;
+	
+ 	IF (mhUserForm <> -1) THEN
+ 		RETURN 0;
+ 	END
+	
+	msUserName = "";
+	msFullName = "";
+	msUserType = "";
+	msPassword = "";
+	msRetypePassword = "";
+
+	UAG_GetMousePos_mitte(248,295);	
+	
+	hForm = FormNew("@(Create User)", 40, 6, 8);
+
+	FormPosition( giPosX,giPosY,0);
+	FormPrompt(0, 0, "Anmelde Name:");
+	FormField(15, 0, 16, 1, 1, msUserName, "", 0);
+	FormPrompt(0, 1, "Benutzer Name:");
+	FormField(15, 1, 16, 1, 1, msFullName, "", 0);
+	FormPrompt(0, 2, "Type");
+	FormComboBox(15, 2, 16, 5, msUserType);
+	hWnd = FormWndHnd(hForm);
+
+	mhUserRDB = RDBOpen("_Users");
+	IF (mhUserRDB <> -1) THEN
+		iError = RDBFirstRec(mhUserRDB);
+		WHILE (iError <> -1) DO
+			sAddType = RDBGet(mhUserRDB, "TYPE");
+			IF (StrTrim(sAddType) <> "") THEN
+				FormAddList(sAddType);
+			END
+			iError = RDBNextRec(mhUserRDB);
+		END
+		RDBClose(mhUserRDB);
+		mhUserRDB = -1;
+	END
+
+	FormPassword(0, 3, "   @(Enter Password):", msPassword, 16);
+	FormPassword(0, 4, "@(Retype New Password):", msRetypePassword, 16);
+
+	FormField(4, 5, 11, 1, 5, sDummyBuffer, " @(OK) ", 0);
+	FormField(16, 5, 11, 1, 6, sDummyBuffer, " @(Cancel) ", 0);
+
+	IF (FormRead(0) = 0) THEN
+
+		IF (msPassword = msRetypePassword) THEN
+			IF msPassword ="" THEN msPassword ="" END
+			iError = UserCreate(msUserName,msFullName,msPassword,msUserType);
+			IF iError <> 0 THEN
+				UAG_SystemInfo("UAG_Form_UserCreat", "System", "@(Create user failed)" ,"-","-","-",TaskCluster(),_UAG_Fehler)
+				RETURN iError;
+			END
+			RETURN 0;
+		ELSE
+			UAG_Status("UAG_Form_UserCreat","@(Passwords did not match)",3);
+			RETURN 299;
+		END
+	ELSE
+		RETURN 299;
+	END
+
+END
+
+
+PRIVATE INT FUNCTION
+_UAG_Form_UserSetFields()
+
+	IF (mhUserRDB <> -1) AND (mhUserForm <> -1) THEN
+		msUserName = RDBGet(mhUserRDB,"NAME");
+		msFullName = RDBGet(mhUserRDB,"FULL_NAME");
+
+		FormSetData(mhUserForm);
+	END
+
+	RETURN 0;
+END
+
+
+PRIVATE INT FUNCTION
+_UAG_Form_UserPrev()
+
+	INT RecordNo;
+
+	IF mhUserRDB <> -1 THEN
+		RecordNo = RDBPrevRec(mhUserRDB);
+		IF RecordNo = -1 THEN
+			RecordNo = RDBFirstRec(mhUserRDB);
+		END
+
+		IF RecordNo <> -1 THEN
+			_UAG_Form_UserSetFields();
+		END
+	END
+	
+	RETURN 0;
+END
+
+PRIVATE INT FUNCTION
+_UAG_Form_UserNext()
+
+	INT RecordNo;
+
+	IF mhUserRDB <> -1 THEN
+		RecordNo = RDBNextRec(mhUserRDB);
+		IF RecordNo = -1 THEN
+			RecordNo = RDBLastRec(mhUserRDB);
+		END
+
+		IF RecordNo <> -1 THEN
+			_UAG_Form_UserSetFields();
+		END
+	END
+
+	RETURN 0;
+END
+
+//	FUNCTION _UAG_Form_UserChangePassword
+//	Übergabeparameter:	-     
+//                       
+//	Rückgabewert:		---
+//	Beschreibung:		aus CSV übernommen und Angepasst
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	29.04.09	/	Schneider Electrik GmbH
+//	Version				3.1.1.1
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+PRIVATE INT FUNCTION
+_UAG_Form_UserChangePassword()
+
+	INT		iError;
+
+	IF (mhUserForm <> -1) THEN
+		FormGetData(mhUserForm);
+
+		IF (msPassword <> msRetypePassword) THEN
+			UAG_SystemInfo("UAG_Form_UserPassword", "System", "@(Passwords did not match)" ,"-","-",msFullName,TaskCluster(),_UAG_Fehler)
+		ELSE
+			iError = UserPassword(msUserName,msPassword,msOldPassword);
+
+			IF iError <> 0 THEN
+				UAG_SystemInfo("UAG_Form_UserPassword", "System", "@(Change user password failed)" ,"-","-",msFullName,TaskCluster(),_UAG_Fehler);
+			END
+		END
+	END
+
+        RETURN 0;
+END
+
+PRIVATE INT FUNCTION
+_UAG_Form_UserDelete()
+
+	INT		iError;
+
+	IF (mhUserForm <> -1) THEN
+		FormGetData(mhUserForm);
+		iError = UserDelete(msUserName);
+	END
+
+        RETURN iError;
+END
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//		FUNCTION NAME	
+//						UAG_Form_UserEdit()
+//
+//		REV	DATE		WHO			DESCRIPTION
+//		0	12/08/02	J.Venz		MultiMonitor version of UserEditForm function
+//
+//     	GENERAL DESCRIPTION
+//			
+//			Displays a form to allow the user to create or delete any user record in the database.  
+//			This function should have restricted access.  Changes are written to both the Users database 
+//			and the runtime database in memory.
+//
+// 		ARGUMENTS:
+//
+//
+//     	RETURNED VALUE: 
+//
+//			0 if successful, otherwise an error.
+//
+//		PSEUDO CODE:
+//
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+INT FUNCTION
+UAG_Form_UserEdit()
+
+	STRING 	sDummyBuffer;
+	INT		iError;
+	
+	INT		hUserName;
+	INT		hFullName;
+	INT		hOldPassword;
+	INT		hPassword;
+	INT		hRetypePassword;
+	
+	INT		hWnd;
+	
+ 	IF (mhUserForm <> -1) THEN
+ 		RETURN 0;
+ 	END
+	
+	mhUserRDB = RDBOpen("_Users");
+	RDBFirstRec(mhUserRDB);
+	msUserName = RDBGet(mhUserRDB,"NAME");
+	msFullName = RDBGet(mhUserRDB,"FULL_NAME");
+	msOldPassword = "";
+	msPassword = "";
+	msRetypePassword = "";
+
+	UAG_GetMousePos_mitte(313,326);	
+	
+	
+	mhUserForm = FormNew("@(Edit User)", 36, 8, 8);
+
+	FormPosition( giPosX,giPosY,0);
+	FormPrompt(0, 0, "@(User Name)");
+	hUserName = FormField(15, 0, 20, 1, 1, msUserName, "", 0);
+	FormPrompt(0, 1, "@(Full Name)");
+	hFullName = FormField(15, 1, 20, 1, 1, msFullName, "", 0);
+	hOldPassword = FormPassword(0, 2, "@(Enter Old Password)" + " ", msOldPassword, 16);
+	hPassword = FormPassword(0, 3, "@(Enter New Password)" + " ", msPassword, 16);
+	hRetypePassword = FormPassword(0, 4, "@(Retype Password)", msRetypePassword, 16);
+
+	FormField(6, 5, 11, 1, 4, sDummyBuffer, "@(Prev)", _UAG_Form_UserPrev);
+	FormField(18, 5, 11, 1, 4, sDummyBuffer, "@(Next)", _UAG_Form_UserNext);
+	FormButton(6, 6, "   " + "@(Change Password)" + "    ", _UAG_Form_UserChangePassword, 1);
+	FormButton(6, 7, "  " + "@(Delete)" + "  ", _UAG_Form_UserDelete, 1);
+	FormField(18, 7, 11, 1, 6, sDummyBuffer, "@(Cancel)", 0);
+
+	IF (FormRead(0) = 0) THEN
+		RDBClose(mhUserRDB);			
+
+		mhUserRDB = -1;
+		mhUserForm = -1;
+
+		RETURN iError;
+	ELSE
+		RDBClose(mhUserRDB);			
+
+		mhUserRDB = -1;
+		mhUserForm = -1;
+
+		RETURN 299;
+	END
+
+END
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//		FUNCTION NAME	
+//						UAG_Form_UserPassword()
+//
+//		REV	DATE		WHO			DESCRIPTION
+//		0	12/08/02	J.Venz		MultiMonitor version of UserPasswordForm function
+//
+//     	GENERAL DESCRIPTION
+//			
+//			Display a form to allow users to change their own passwords.  
+//			Changes are written to both the Users database and the runtime database in memory.
+//
+// 		ARGUMENTS:
+//
+//
+//     	RETURNED VALUE: 
+//
+//			0 if successful, otherwise an error.
+//
+//		PSEUDO CODE:
+//
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+INT FUNCTION
+UAG_Form_UserPassword()
+
+	INT		iError;
+		
+	msOldPassword = "";
+	msPassword = "";
+	msRetypePassword = "";
+	
+ 	IF (mhUserForm <> -1) THEN
+ 		RETURN 0;
+ 	END
+
+	msFullName = FullName();
+	msUserName = Name();
+
+	mhUserRDB = RDBOpen("_Users");
+	IF mhUserRDB <> -1 THEN
+	
+		RDBFirstRec(mhUserRDB);
+		WHILE msFullName <> RDBGet(mhUserRDB,"FULL_NAME") OR 
+                      msUserName <>RDBGet(mhUserRDB,"NAME")	DO
+			IF RDBNextRec(mhUserRDB) = -1 THEN
+				RDBClose(mhUserRDB);			
+				mhUserRDB = -1;
+				RETURN 276;
+			END
+		END
+
+		RDBClose(mhUserRDB);			
+		mhUserRDB = -1;
+	
+		UAG_GetMousePos_mitte(281,326);		
+		
+		mhUserForm = FormNew("Passwort ändern", 40, 7, 8);
+		FormPosition( giPosX,giPosY,0);
+		FormPrompt(1, 0, ("@(User Name) :  " + msUserName));
+		FormPrompt(1, 1, ("@(Full Name):  " + msFullName));
+
+		FormPassword(1, 2, "   @(Enter Old Password): ", msOldPassword, 16);
+		FormPassword(1, 3, "   @(Enter New Password): ", msPassword, 16);
+		FormPassword(1, 4, "@(Retype Password): ", msRetypePassword, 16);
+
+		FormButton(8, 6, " @(OK) ", 0, 1);
+		FormButton(20, 6, " @(Cancel) " , 0, 2);
+
+		IF FormRead(0) = 0 THEN
+			_UAG_Form_UserChangePassword();
+//			IF iError <> 0 THEN
+//				UAG_SystemInfo("UAG_Form_UserPassword", "System", "Ändern des Passwortes Fehlgeschlagen" ,"-","-",msFullName,TaskCluster(),_UAG_Fehler)
+//			END
+			mhUserForm = -1;
+			RETURN iError;
+		END
+	END
+
+	mhUserForm = -1;
+	
+	RETURN 299;
+
+END
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//		FUNCTION NAME	
+//						CSV_Form_Position()
+//
+//		REV	DATE		WHO			DESCRIPTION
+//		0	12/08/02	J.Venz		Original
+//
+//     	GENERAL DESCRIPTION
+//			
+//			Display a form at specified x,y coordinates, whilst ensuring all of the form is
+//			displayed within the boundaries of the current monitor.  (i.e. x,y coordinates are
+//			automatically adjusted if necessary).  
+//
+// 		ARGUMENTS:
+//
+//			iX		-	desired x position of top left of form
+//			iY		- 	desired y position of top left of form
+//			iFormX	- 	Width of form
+//			iFormY	- 	Height of form
+//
+//     	RETURNED VALUE: 
+//
+//
+//		PSEUDO CODE:
+//
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+FUNCTION
+UAG_Form_Position(INT iX, INT iY, INT iFormX, INT iFormY)
+
+	INT		iMaxX;
+	INT		iMaxY;
+	REAL	iScaleX, iScaleY;
+	INT 	iScreenWidth;
+		
+	iScaleX = StrToReal(PageInfo(16));
+	iScaleY = StrToReal(PageInfo(17));
+	
+	iX = iX * iScaleX + StrToInt(PageInfo(14));
+	iY = iY * iScaleY + StrToInt(PageInfo(15));
+	
+//	! Make sure multi-monitor parameters have been configured
+//	UAG_MM_ConfigInit();
+	
+	IF UAG_MM_Anzahl > 1 THEN
+		
+		iMaxX = WndMonitorInfo(WinNumber()+1, 0);
+	ELSE
+		iMaxX = WndInfo(0);
+	END
+	
+	IF iX > iMaxX - iFormX THEN
+		iX = iMaxX - iFormX;
+	END
+	IF iY > WndInfo(1) - iFormY THEN
+		iY = WndInfo(1) - iFormY;
+	END
+
+	IF iX < 0 THEN iX = 0;	END
+	IF iY < 0 THEN iY = 0;	END
+		
+	FormPosition(iX, iY, 0);
+END
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//		FUNCTION NAME	
+//						CSV_Form_Centre()
+//
+//		REV	DATE		WHO			DESCRIPTION
+//		0	12/08/02	J.Venz		Original
+//
+//     	GENERAL DESCRIPTION
+//			
+//			Display a form in the center of the current monitor screen.
+//
+// 		ARGUMENTS:
+//
+//			iFormX	- 	Width of form
+//			iFormY	- 	Height of form
+//
+//     	RETURNED VALUE: 
+//
+//
+//		PSEUDO CODE:
+//
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+FUNCTION
+UAG_Form_Centre(INT iFormX, INT iFormY)
+
+	INT		iMonitorNo;
+	INT 	iScreenWidth;
+	INT		iScreenHeight;
+	INT		iX;
+	INT		iY;
+	
+		iScreenWidth = WndInfo(0);
+	
+	iScreenHeight = WndInfo(1);
+	
+	iX = (iScreenWidth - iFormX)/2;
+	iY = (iScreenHeight - iFormY)/2;	
+
+	UAG_Form_Position(iX, iY, iFormX, iFormY);
+	
+END
+
+

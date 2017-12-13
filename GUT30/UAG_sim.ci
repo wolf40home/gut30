@@ -1,0 +1,160 @@
+///////////////////////////////////////////////////////////////////////////////////
+// 	---------		PID Loop Simulation	---------------------------
+//	
+// 	FILE:	UAG_Sim.ci
+//
+//	Beschreibung:	This PID function is to provide a realistic look and
+//			feel and is not intended to be used for control of a
+//			process. If you wish to perform PID type control in 
+//			Citect it is better to use package designed for PID
+//			control or alternately write an algorithm written as
+//			a DLL. //	Autor:				Steve Schilg
+//	Erstellungsdatum:	02.04.1996	/	Schneider Electric GmbH
+//	Version				75.33.11.06
+//
+//	PUBLIC FUNCTIONS:
+//
+//			UAG_PID()
+//
+//
+//  	NOTE:		This function should be called only once for each 
+//			tag name and should run until Citect Shuts down.
+//			Use TaskNew as follows to start this 
+//			Function: TaskNew( "PID", "^"LOOP_1^"", 0 );
+//
+//  	sTag		= The Loop tagname as a String - do not include 
+//			the attribute. Tag can be either Real or Integer.
+//
+//	REVISIONS: 	2 Apr 96
+//			Replaced DspInfoField() with TagInfo() function as 
+//			it runs faster.
+//			Removed ReReads as these are not necessary with the
+//			TagRead function.
+//			Used sleepMS(1000) instead of Sleep(1) to provide 
+//			more precise timing
+//			3 Dec 96
+//			Modified timing to execute more deterministically
+
+FUNCTION
+UAG_PID(STRING sTAG,STRING sTAG2)
+	
+	REAL 	Dev,oDev, rGO,rIO,rDO,rZero,rFull,rOZero,rOFull;
+	REAL 	rOP,rPV, rSP, rP,rI,rD,rFeedBack;
+	INT  	iSleepTime;
+	INT  	iStart;
+	ErrSet(1);	
+	rOZero 	= TagGetProperty(sTAG2+"_Y", "EngUnitsLow", 0); 	!Get Output Range
+	rOFull 	= TagGetProperty(sTAG2+"_Y", "EngUnitsHigh", 0);	
+	rZero	= TagGetProperty(sTag+"_X", "EngUnitsLow", 0);		!Get PV Range
+	rFull	= TagGetProperty(sTag+"_X", "EngUnitsHigh", 0);
+	rFeedback	=16000;					!Initialise Feedback value
+		
+	WHILE TRUE DO
+		iStart = SysTime();				!Must Execute once per second for Integral Action to be correct
+		TagWrite(sTAG2+"_W",TagRead(sTAG2+"_WH", 0));
+			!Read Output Mode
+		IF (StrToInt(TagRead(sTAG2+"_M",0)) BITAND Pow(2,14))= 0 THEN				!If in Manual
+			rOP=TagRead(sTAG2+"_Y",0);		!Read Output Value
+			rFeedBack = EngToGeneric(rOP,rOZero,rOFull);	!Set FeedBack = Output	
+		ELSE					
+			rPV=TagRead(sTAG+"_X", 0);		!Read PV
+			rSP=TagRead(sTAG2+"_W", 0);		!Read SP
+						
+			rPV=EngToGeneric(rPV,rZero,rFull);	!Convert PV to Generic
+			rSP=EngToGeneric(rSP,rZero,rFull);	!Convert SP to Generic
+	
+			rP=TagRead(sTAG2+"_KP", 0);		!Read the Gain Constant
+			rI=TagRead(sTAG2+"_TN", 0);		!Read the Integral Constant
+			rD=TagRead(sTAG2+"_TV", 0);		!Read the Derivitive Constant
+
+			Dev = rSP-rPV ;				!Calc Deviation
+			rGO = rP * Dev;				!Calc Gain Output
+			rIO = rI/60 * rGO;			!Calc Integral Output
+			rDO = rD * (Dev-oDev) * 60 ;		!Calc Derivitive Output
+			rOP = rFeedBack + rGO + rIO+rDO;	!Total Output		
+			rFeedBack=rFeedBack+rIO;		!Remember Feedback
+			oDev=Dev;				!Remember deviation
+
+			IF rOP = 0 THEN				!Prevent Divide by Zero
+				rOP= rOZero;			
+			ELSE
+				rOP= (rOP/32000.00) * (rOFull-rOZero) + rOZero;   !Scale for Output
+			END	
+		
+			IF rOP > rOFull THEN			!Output high limit
+				rOP = rOFull;	
+			END
+
+			IF rOP < rOZero THEN			!Output Low limit
+				rOP = rOZero;
+			END
+		
+			TagWrite(sTAG2 + "_Y",RealToStr(rOP,8,3) , 0);	!Write to Ouput
+		END
+		UAG_ProcSim(sTag,rOP,rOZero,rOFull,rZero,rFull);	
+		iSleepTime  = 1000 - SysTimeDelta( iStart);
+		IF iSleepTime < 1 THEN 				!Prevent negative sleep time!
+			iSleepTime =1;
+		END
+		SleepMS( iSleepTime);
+	END
+	ErrSet(0);
+END
+
+
+// 	FUNCTION: 	PIDSim
+//
+//	DESCRIPTION:	This function is designed to run continuously as a 
+//				background Cicode task to simulate a PID SP change
+
+FUNCTION
+UAG_PIDSPSim(STRING sTag)
+
+	REAL	rZero, rFull, rSP;
+
+
+	IF (ParameterGet("DEBUG", "PIDSPSim", "0") <> "1") THEN RETURN; END
+
+	rZero	= TagGetProperty(sTag+"_X", "EngUnitsLow", 0);		!Get PV Range
+	rFull	= TagGetProperty(sTag+"_X", "EngUnitsHigh", 0);
+
+	WHILE TRUE DO
+		rSP=TagRead(sTag+"_W", 0);		!Read SP
+
+		IF (rSP > (((rFull-rZero)/2) + rZero)) THEN
+			rSP = ((rFull-rZero)*0.25) + rZero;
+		ELSE
+			rSP = ((rFull-rZero)*0.8) + rZero;
+		END
+
+		TagWrite(sTag+"_W", RealToStr(rSP,8,3) , 0);	!Write SP
+
+		Sleep(300);
+	END
+END
+
+
+// 	FUNCTION: 	ProcSim
+//
+//	DESCRIPTION:	This function is designed to run continuously as a 
+//				background Cicode task to simulate a Process 
+
+FUNCTION
+UAG_ProcSim(STRING sTag, REAL rOP, REAL rOZero, REAL rOFull, REAL rZero, REAL rFull)
+
+	REAL	rPV;
+	INT	iPV;
+	INT	iOP;
+	INT	iLag = 20;
+
+	rPV = TagRead(sTag+"_X", 0);				! Read PV
+	iPV = EngToGeneric(rPV,rZero,rFull);			! Convert PV to Generic
+	
+	iOP = EngToGeneric(rOP,rOZero,rOFull);
+
+	rPV = rPV + (iOP - iPV)*(rFull - rZero)/32000/iLag;
+
+	TagWrite(sTag + "_X",RealToStr(rPV,8,3) , 0);	! Write to PV
+	
+END
+

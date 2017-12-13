@@ -1,0 +1,633 @@
+//
+//	UAG_Faceplate.ci
+//
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	14.02.07	/	Schneider Electric GmbH
+//	Version:			75.33.11.08
+//	
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//  02.2007     Steiner  	Anpassung an Mpro Vorlagen
+//  07.2007     Steiner  	Erweiterung Meldung
+//  10.2007		Steiner	 	Ueber neu erstellt
+//  10.2007		Däbritz  	Page-/Genie-Namen werden vorher mit Clusternamen verknüpft
+//	15.12.07	Steiner		Kommentierung erweitert und fertige Funktionen auf V3 geändert.
+//	27.11.17	Steiner		Funktionen sind abgekündigt
+//--------------------------------------------------------------------------------------------------
+
+
+//	FUNCTION UAG_MOT01()
+//	Übergabeparameter:	Tagname als String      
+//                       
+//	Rückgabewert:		
+//	Beschreibung:	Unity SPS pannel aufschalten	
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	28.02.07	/	Schneider Electrik GmbH
+//	Version				75.33.11.08
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//
+
+
+// Motor Funktion
+// Liste der Symbole
+
+// 0	Motor
+// 01	Zellenrad
+// 02	Lüfter
+// 03	Motor 05
+// 04	Pumpe LR
+// 05	Pumpe OU
+// 06	Pumpe UO
+// 07	Pumpe RL
+// 08	Ventilator LR
+// 09	Ventilator OU
+// 10	Ventilator RL
+// 11	Ventilator UO
+// 12	Mühle OU
+// 13	Mühle UO
+// 14	Mühle RL
+// 15	Mühle LR
+
+// Ventil Funktion
+// Liste der Symbole
+
+
+// 0	Ventil W und S
+// 1	WO  SL ola
+// 2	WO SL olz
+// 3	WU SR olz
+// 4	WU SR ola
+// 5	WO SL hand
+// 6	WU SR hand
+// 7	WO SL gewicht
+// 8	WU SR membran
+// 9	WO SL membran
+
+FUNCTION UAG_MOT01(STRING sTag,STRING sTagI="", INT imode=0)
+	STRING T;
+	STRING T1;
+	STRING T2;
+	STRING T3;
+	STRING T4;
+	STRING ZT;
+	STRING TextTMP;
+	INT LensTag;
+	INT i;
+	INT postrenn;
+	INT ENDe;
+	
+	ZT=TagRead(sTag + "ZT");
+	FOR i=1 TO 5 DO
+		ZT = StrTrim(ZT);
+		LensTag=StrLength(ZT);
+		postrenn=StrSearch(0,ZT,"/");
+		IF (postrenn = -1) OR (LensTag < 2) THEN
+			IF ende = TRUE THEN
+				TextTMP = "-";
+			ELSE	 
+				TextTMP = ZT;
+			END
+			ENDe = TRUE;
+		ELSE
+			IF (postrenn > 0) THEN
+				TextTMP =StrTrim(StrLeft(ZT,postrenn));
+			END	
+			ZT = StrTrim(StrRight(ZT,LensTag -postrenn-1));
+		END
+		SELECT CASE i
+		CASE 1
+			T =TextTMP;	
+		CASE 2
+			T1 =TextTMP;
+		CASE 3
+			T2 =TextTMP;
+		CASE 4
+			T3 =TextTMP;
+		CASE 5
+			T4 =TextTMP;
+		END	SELECT
+	
+	END
+
+	Ass(-2,1,"'" + sTag + "'",0);
+	_Ass(-2,2,sTag + "M");
+	_Ass(-2,3,sTag + "TYP");
+	_Ass(-2,4,sTag + "LW");			
+	_Ass(-2,5,sTag + "LT");
+	_Ass(-2,6,sTag + "ZT");
+	Ass(-2,7,"'" + T1 + "'",0);
+	Ass(-2,8,"'" + T2 + "'",0);
+	Ass(-2,9,"'" + T3 + "'",0);
+	Ass(-2,10,"'" + T4 + "'",0);
+	Ass(-2,11,T,0);
+	_Ass(-2,12,sTagI + "MI");
+	Ass(-2,13,"'" + sTagI + "'",0);
+	Ass(-2,14,"'" + IntToStr (iMode) + "'",0);
+
+	GUT_PopupNewAt("!p_Motor",giMODE,imode )
+
+END 
+
+//	FUNCTION UAG_Leiten01()
+//	Übergabeparameter:	Branch Leitbefehl  als String    
+//                       
+//	Rückgabewert:		
+//	Beschreibung:	Leitbefehl  aufschalten
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	28.11.07	/	Schneider Electrik GmbH
+//	Version				75.33.11.08
+
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	
+
+FUNCTION UAG_Leiten01(STRING sTag)
+			
+
+	Ass(-2,1,"'" + sTag + "'",0);
+	_Ass(-2,2,sTag + "M");
+	_Ass(-2,4,sTag + "LW");			
+	_Ass(-2,5,sTag + "LT");
+	_Ass(-2,6,sTag + "KT");
+	_Ass(-2,7,sTag + "T1");
+	_Ass(-2,8,sTag + "T2");
+
+	GUT_PopupNewAt("!p_leiten01",giMODE )
+		
+END 
+
+//	FUNCTION UAG_ANA_IN()
+//	Übergabeparameter:	Branch Messung  als String    
+//                       
+//	Rückgabewert:		
+//	Beschreibung:	Messwert  aufschalten
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	28.02.07	/	Schneider Electrik GmbH
+//	Version				75.33.11.08
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	
+
+FUNCTION UAG_ANA_IN(STRING sTag)
+
+
+	Ass(-2,1,"'" + sTag + "'",0);
+	_Ass(-2,2,sTag + "M");
+	_Ass(-2,3,sTag + "TYP");
+	_Ass(-2,4,sTag + "LW");
+	_Ass(-2,5,sTag + "LT");
+	_Ass(-2,6,sTag + "X");			
+	_Ass(-2,7,sTag + "UG");
+	_Ass(-2,8,sTag + "UW");    					
+	_Ass(-2,9,sTag + "US");
+	_Ass(-2,10,sTag + "OG");
+	_Ass(-2,11,sTag + "OW");
+	_Ass(-2,12,sTag + "OS");		
+	_Ass(-2,13,sTag + "HYS");
+
+	GUT_PopupNewAt("!p_ana_in",giMODE )
+
+END 
+
+//	FUNCTION UAG_ANA_IN_OGW()
+//	Übergabeparameter:	Branch Messung  als String    
+//                       
+//	Rückgabewert:		
+//	Beschreibung:	Messwert ohne Grenzwerte aufschalten	
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	28.02.07	/	Schneider Electrik GmbH
+//	Version				75.33.11.08
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//
+
+FUNCTION UAG_ANA_IN_OGW(STRING sTag)
+
+
+	Ass(-2,1,"'" + sTag + "'",0);
+	_Ass(-2,2,sTag + "M");
+	_Ass(-2,3,sTag + "TYP");
+	_Ass(-2,4,sTag + "LW");			
+	_Ass(-2,5,sTag + "LT");	
+	_Ass(-2,6,sTag + "X");
+
+	GUT_PopupNewAt("!p_ana_in_ogw",giMODE )
+
+END 
+
+//	FUNCTION UAG_MELD()
+//	Übergabeparameter:	Branch Meldung  als String      
+//                       
+//	Rückgabewert:		
+//	Beschreibung:	Nothalt aufschalten.	
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	00.05.07	/	Schneider Electrik GmbH
+//	Version				75.33.11.08
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//
+
+FUNCTION UAG_MELD(STRING sTag)
+
+
+	Ass(-2,1,"'" + sTag + "'",0);
+	_Ass(-2,4,sTag + "M");
+	_Ass(-2,3,sTag + "TYP");
+	_Ass(-2,5,sTag + "LW");			
+	_Ass(-2,2,sTag + "LT");
+
+	GUT_PopupNewAt("!meld_Ctrl",giMODE )
+END
+
+//	FUNCTION UAG_MELDNA()
+//	Übergabeparameter:	Branch Nothalt  als String      
+//                       
+//	Rückgabewert:		
+//	Beschreibung:	Nothalt aufschalten.	
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	00.05.07	/	Schneider Electrik GmbH
+//	Version				75.33.11.08
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//
+
+FUNCTION UAG_MELDNA(STRING sTag)
+
+
+	Ass(-2,1,"'" + sTag + "'",0);
+	_Ass(-2,2,sTag + "M");
+	_Ass(-2,3,sTag + "TYP");
+	_Ass(-2,4,sTag + "LW");
+	_Ass(-2,5,sTag + "LT");
+
+
+	GUT_PopupNewAt("!p_meld_na",giMODE )
+END 
+
+//	FUNCTION UAG_REG02()
+//	Übergabeparameter:	Branch Messung  als String      
+//                       
+//	Rückgabewert:		
+//	Beschreibung:	Regler aufschalten. Der Branch von Regler wird aus der Messung abgeleitet.	
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	00.03.07	/	Schneider Electrik GmbH
+//	Version				75.33.11.08
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//
+
+
+FUNCTION UAG_REG02(STRING sTag)
+
+
+	Ass(-2,1,"'" + sTag + "C_'",0);
+	_Ass(-2,2,sTag + "_M");
+//	_Ass(-2,3,sTag + "_TYP");
+	_Ass(-2,4,sTag + "_LW");
+	_Ass(-2,5,sTag + "C_LT");
+	_Ass(-2,6,sTag + "_X");			
+	_Ass(-2,7,sTag + "_UG");
+	_Ass(-2,8,sTag + "_UW");    					
+	_Ass(-2,9,sTag + "_US");
+	_Ass(-2,10,sTag + "_OG");
+	_Ass(-2,11,sTag + "_OW");
+	_Ass(-2,12,sTag + "_OS");		
+	_Ass(-2,13,sTag + "_HYS");	
+
+	_Ass(-2,14,sTag + "C_W");
+	_Ass(-2,15,sTag + "C_Y");
+	_Ass(-2,16,sTag + "C_YMIN");
+	_Ass(-2,17,sTag + "C_YMAX");
+	_Ass(-2,18,sTag + "C_M");
+	_Ass(-2,19,sTag + "C_KP");
+	_Ass(-2,20,sTag + "C_TN");
+	_Ass(-2,21,sTag + "C_TV");
+	_Ass(-2,22,sTag + "C_WH");
+	_Ass(-2,23,sTag + "C_YH");
+	_Ass(-2,24,sTag + "C_LW");
+	_Ass(-2,25,sTag + "C_RMY");
+	_Ass(-2,26,sTag + "C_WHU");
+	_Ass(-2,27,sTag + "C_WHO");
+	_Ass(-2,28,sTag + "C_TYP");
+	_Ass(-2,29,sTag + "_LT");
+	
+	GUT_PopupNewAt("!p_reg02",giMODE )
+
+END 
+
+//	FUNCTION UAG_REG03()
+//	Übergabeparameter:	Branch Messung und Regler  als String      
+//                       
+//	Rückgabewert:		
+//	Beschreibung:	Regler aufschalten	
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	00.11.07	/	Schneider Electrik GmbH
+//	Version				75.33.11.08
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//
+
+FUNCTION UAG_REG03(STRING sAE,STRING sReg)
+
+
+	Ass(-2,1,"'" + sReg + "'",0);
+	_Ass(-2,2,sAE + "M");
+//	_Ass(-2,3,sAE + "TYP");
+	_Ass(-2,4,sAE + "LW");
+	_Ass(-2,5,sReg + "LT");
+	_Ass(-2,6,sAE + "X");			
+	_Ass(-2,7,sAE + "UG");
+	_Ass(-2,8,sAE + "UW");    					
+	_Ass(-2,9,sAE + "US");
+	_Ass(-2,10,sAE + "OG");
+	_Ass(-2,11,sAE + "OW");
+	_Ass(-2,12,sAE + "OS");		
+	_Ass(-2,13,sAE + "HYS");	
+
+	_Ass(-2,14,sReg + "W");
+	_Ass(-2,15,sReg + "Y");
+	_Ass(-2,16,sReg + "YMIN");
+	_Ass(-2,17,sReg + "YMAX");
+	_Ass(-2,18,sReg + "M");
+	_Ass(-2,19,sReg + "KP");
+	_Ass(-2,20,sReg + "TN");
+	_Ass(-2,21,sReg + "TV");
+	_Ass(-2,22,sReg + "WH");
+	_Ass(-2,23,sReg + "YH");
+	_Ass(-2,24,sReg + "LW");
+	_Ass(-2,25,sReg + "RMY");
+	_Ass(-2,26,sReg + "WHU");
+	_Ass(-2,27,sReg + "WHO");
+	_Ass(-2,28,sReg + "TYP");
+	_Ass(-2,29,sAE + "LT");
+	
+	GUT_PopupNewAt("!p_reg02",giMODE )
+
+END 
+
+//	FUNCTION UAG_TREND02()
+//	Übergabeparameter:	3 Tag als String für Trendpopup  
+//                       
+//	Rückgabewert:		
+//	Beschreibung:	Trendpannel aufschalten	
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	28.02.07	/	Schneider Electrik GmbH
+//	Version				3.0.0.0
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	11.12.07	Steiner		ist so flexibler da die Stifte getrennt übergeben werden.
+
+FUNCTION UAG_TREND02(STRING sX,STRING sW,STRING sY)
+
+	GUT_PopupNewAt("!p_reg_trend",giMODE,0 )
+	_WinTitle("@(Controller trend): "  + sY);
+	SleepMS(200);
+	TrnSetPen(86, 1, sX);
+	TrnSetPen(86, 2, sW);
+	TrnSetPen(86, 3, sY);
+
+END
+
+//	FUNCTION FUNCTION UAG_DOS()
+//	Übergabeparameter:	1 Tag 
+//                       
+//	Rückgabewert:		
+//	Beschreibung:	Dosierpannel aufschalten	
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	28.02.07	/	Schneider Electrik GmbH
+//	Version				75.33.11.08
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//
+
+FUNCTION UAG_DOS(STRING sTag)
+
+
+	Ass(-2,1,"'" + sTag + "'",0);
+	_Ass(-2,2,sTag + "M");
+	_Ass(-2,3,sTag + "TYP");
+	_Ass(-2,4,sTag + "LW");
+	_Ass(-2,5,sTag + "LT");
+	_Ass(-2,6,sTag + "X");			
+	_Ass(-2,7,sTag + "UG");
+	_Ass(-2,8,sTag + "UW");    					
+	_Ass(-2,9,sTag + "US");
+	_Ass(-2,10,sTag + "OG");
+	_Ass(-2,11,sTag + "OW");
+	_Ass(-2,12,sTag + "OS");		
+	_Ass(-2,13,sTag + "HYS");
+
+
+	GUT_PopupNewAt("!p_dos01",giMODE )
+
+END 
+
+//	P_Soll(STRING sTag)
+//	Übergabeparameter:	Tagname als String      
+//                       
+//	Rückgabewert:		
+//	Beschreibung:	Sollwertpannel aufschalten	
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	28.02.07	/	Schneider Electrik GmbH
+//	Version				75.33.11.08
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//
+
+FUNCTION UAG_P_Soll(STRING sTag)
+
+	
+	_Ass(-2,1, sTag);
+	GUT_PopupNewAt("!P_sollwert",giMODE)
+END
+
+//	P_Soll2(STRING sTag)
+//	Übergabeparameter:	Tagname als String      
+//                       
+//	Rückgabewert:		
+//	Beschreibung:	Sollwertpannel für SW_LS aufschalten	
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	14.12.07	/	Schneider Electrik GmbH
+//	Version				75.33.11.08
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//
+
+FUNCTION UAG_P_Soll2(STRING sTag)
+
+	Ass(-2,1,"'" + sTag + "'",0);
+	_Ass(-2,2,sTag + "M");
+	_Ass(-2,3,sTag + "TYP");		
+	_Ass(-2,5,sTag + "LT");
+	_Ass(-2,6,sTag + "WH");	
+	_Ass(-2,7,sTag + "WHU");
+	_Ass(-2,8,sTag + "WHO");
+	GUT_PopupNewAt("!P_sw_ls",giMODE)
+END
+
+
+//	FUNCTION UAG_PLC_STAT()
+//	Übergabeparameter:	Tagname und Name der EA als String      
+//                       
+//	Rückgabewert:		
+//	Beschreibung:	Unity SPS pannel aufschalten	
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	28.02.07	/	Schneider Electrik GmbH
+//	Version				75.33.11.08
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	11.12.08	Steiner		Anzeige WDog 
+
+FUNCTION UAG_PLC_STAT(STRING sTag,STRING sEA,STRING sIOName)
+
+	Ass(-2,1,"'" + sTag + "'",0);
+	_Ass(-2,2,sTag + "STAT");
+	_Ass(-2,3,"'" + sTag + "CTRL'");    					// Wird als String übergeben
+	_Ass(-2,4,sTag + "LT");
+	_Ass(-2,8,sTag + "M");		
+	_Ass(-2,9,sTag + "HMISW\4");	
+	_Ass(-2,10,sTag + "HMISW\2");		
+	_Ass(-2,11,sTag + "HMISW\3");	
+	_Ass(-2,12,sTag + "HMISW\5");		
+	_Ass(-2,13,sTag + "HMISW\1");	
+	Ass(-2,14,"'" + sEA + "'",0);
+	Ass(-2,15,"'" + sIOName + "'",0);
+	_Ass(-2,16,sTag + "LZSPS");
+	_Ass(-2,17,sTag + "RUN");
+	_Ass(-2,18,sTag + "WDOG");	
+	_Ass(-2,19,sTag + "HMISW\6");
+			
+	GUT_PopupNewAt("!p_plc_stat",giMODE )
+
+END  
+
+
+//	P_Infotexte(STRING sTag)
+//	Übergabeparameter:	Tagname als String      
+//                       
+//	Rückgabewert:		
+//	Beschreibung:	Infotexte für Meßstelle aufschalten	
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	19.12.08	/	Schneider Electrik GmbH
+//	Version				3.1.0.0
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	
+FUNCTION UAG_Infotexte(STRING sTag)
+	INT i;
+	STRING sTemp;
+	
+	UAG_Infotexte_load(sTag);
+	Ass(-2,1,"'" + sTag + "'",0);
+	_Ass(-2,2,sTag + "LT");		// = ?STRING 2?
+	UAG_LoadUI( sTag+ "KT", 10)
+
+	UAG_MM_PopUP("!p_infotexte")
+
+END 
+
+
+ 
+
+//	UAG_Status_alt()
+//	Übergabeparameter:	--      
+//                       
+//	Rückgabewert:		--      
+//	Beschreibung:		Zeigt die letzten 10 Einträge aus dem Status an.
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	23.11.07	/	Schneider Electrik GmbH
+//	Version				3.1.0.0
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//
+//  
+
+FUNCTION UAG_Status_alt()
+
+UAG_MM_WinNewAt("!p_statusA",10,giScreenHigh-204,128+16+32+64);
+
+END
+
+
+//	FUNCTION UAG_IO_Info_PopUp
+//	Übergabeparameter:	Name IO Gerät     
+//                       
+//	Rückgabewert:		---
+//	Beschreibung:		Statuspannel für IO aufrufen	
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	31.03.08	/	Schneider Electrik GmbH
+//	Version				7.2.3.1
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	11.10.11	Steiner		Funktions aufruf für UAG_Info_Server_IO geändert
+
+FUNCTION UAG_IO_Info_PopUp(STRING sDevice)
+	Ass(-2,1,"'" + sDevice + "'",0);
+	
+	
+	GUT_PopupNewAt("!p_ioInfo",giMODE); 
+	UAG_Info_Server_IO(sDevice);
+		
+END
+
+//	FUNCTION EHBOX2_Quitt01_1T()
+//	Übergabeparameter:	Branch Leitbefehl  als String    
+//                       
+//	Rückgabewert:		
+//	Beschreibung:	Leitbefehl Quittierung aufschalten ( 1 Taste )
+//
+//	Autor:				Wolfgang Jungbluth
+//	Erstellungsdatum:	09.05.08	/	Cegelec AT GmbH & Co.KG
+//	Version				75.33.11.08
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	
+
+FUNCTION UAG_Quitt01_1T(STRING sTag)
+		
+	Ass(-2,1,"'" + sTag + "'",0);
+	_Ass(-2,3,sTag + "STO");
+	_Ass(-2,4,sTag + "LW");			
+	_Ass(-2,5,sTag + "LT");
+	_Ass(-2,6,sTag + "KT");		// = ?STRING 9?		Kurztext MSR-Name
+	_Ass(-2,7,sTag + "TT");		// = ?STRING 10?	Tastenbeschriftung
+		
+	GUT_PopupNewAt("!p_quitt01_1T",giMODE)
+		
+END 
+

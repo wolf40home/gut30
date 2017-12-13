@@ -1,0 +1,687 @@
+//-----------------------------------------------------------------------------
+//	Copyright © 2009 Schneider Electric (Australia) Pty Ltd.
+//	All rights reserved.
+//
+// 	FILE:		UAG_UAG_TabAlarmSnd.ci
+//
+//	CREATED:	10/09/2009
+//
+//	AUTHOR:		Richard Nota
+//
+//	SUMMARY:
+//
+//		Contains Alarm Sound handling functions.
+//
+//	PUBLIC FUNCTIONS:
+//		UAG_TabAlarmSnd_Start()
+//		UAG_TabAlarmSnd_SoundState()
+//		UAG_TabAlarmSnd_SilenceTimeRemaining()
+//		UAG_TabAlarmSnd_GetPriv()
+//		UAG_TabAlarmSnd_ShowContextMenu()
+//		UAG_TabAlarmSnd_Silence()
+//		UAG_TabAlarmSnd_SilenceOnAck()
+//
+//	BACKGROUND TASKS:
+//		_UAG_TabAlarmSnd_CheckAlarm()
+//		_UAG_TabAlarmSnd_PlaySound()
+//		_UAG_TabAlarmSnd_SilenceCountdown()
+//
+// 	REMARKS:
+//		The operations of siliencing alarms are restricted by privilege
+//		set in INI parameter [Privilege] SilenceAlarms = 0 (default)
+//
+//		SilenceTime stands for the date and time when silence stops
+//			-1	- silence indefinitely until all alarms are acknowledged
+//			0	- no silence
+//			> 0	- date and time when silence stops
+//		
+//-----------------------------------------------------------------------------
+
+
+//-----------------------------------------------------------------------------
+//
+//	Constants
+//
+//-----------------------------------------------------------------------------
+
+INT		c_SOUND_INTERVAL_MAX	= 30000;		// Maximum sound interval allowed in milliseconds
+INT		c_SOUND_INTERVAL_MIN	= 250;			// Minimum sound interval allowed in milliseconds
+
+
+//-----------------------------------------------------------------------------
+//
+//	Module Variables
+//
+//-----------------------------------------------------------------------------
+
+INT		m_Active_SoundInterval	= 2000;			// Active sound interval in the units of milliseconds
+INT		m_Active_SoundPriority	= -1;			// Active sound priority
+INT		m_Ack_SoundPriority	= -1;				// Sound priority when alarm was acknowledged
+INT		m_AudibleAlarmsExist	= 0;			// Flag to indicate whether audible alarms exist (are active) in the viewpoint of client
+INT		m_SilenceTime			= 0;			// The expiry date time of the last activated silence, value of zero means no expiry
+INT		m_SilenceCountdown_sec	= 0;			// The number of seconds remaining beforing silence period expires
+STRING	m_SilenceCountdown_Str	= "";			// The silence time remaining for displayed on screen, see UAG_TabAlarmSnd_SilenceTimeRemaining()
+INT		m_SoundTasks_Started	= 0;			// Flag to indicate whether the alarm sound initialisation tasks have started
+INT		m_Priv_SilenceAlarms	= -1;			// Privilege required to silence alarms
+
+INT		m_SilenceTimeoutOnAck	= -1;			// Timeout for automatic silence timeout period upon alarm acknowledgement
+INT		m_SilenceTimeOnAck		= 0;			// The expiry date time of the last activated silence upon alarm acknowledgement
+
+// The elements of the following arrays are associated with alarm priorities.
+INT		m_SoundIntervals	[256];				// Each element holds the configured alarm sound interval for an alarm priority
+STRING	m_PrioritySoundFiles[256];				// Each element holds the configured alarm sound file for an alarm priority
+INT		m_SoundDisabled			= 1;			// Flag to indicate whether alarm sound is enabled
+
+
+//-----------------------------------------------------------------------------
+//
+//	Public Functions
+//
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+//
+//		FUNCTION NAME	
+//			UAG_TabAlarmSnd_Start
+//
+//		REV	DATE		WHO			DESCRIPTION
+//		0	01/10/09	RJN			Original
+//
+//     	GENERAL DESCRIPTION
+//			Called by StartUp function.
+//			Initialises alarm sounds and intervals according to parameters.
+//			Adjusts the intervals if the parameters are outside limits.
+//			Runs other sound tasks, which run forever.
+//
+// 		ARGUMENTS:
+//			None
+//
+//     	RETURNED VALUE: 
+//			0
+//
+//		REMARKS:
+//			Different sounds can be specified for different priorities in the .ini file (or as parameter settings).
+//			eg.
+//				[Alarm]
+//				Sound1 = "[Run]:\urgent.wav"
+//				Sound1Interval = 2000
+//				Sound3 = "[Run]:\nonurgent.wav"
+//				Sound3Interval = 1000
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION UAG_TabAlarmSnd_Start()
+	IF (m_SoundTasks_Started) THEN
+		RETURN 0;
+	END
+	m_SoundTasks_Started = 1;
+	IF ParameterGet("Alarm", "Sound_on","1") ="1" THEN
+		TaskNew("_UAG_TabAlarmSnd_Start", "", 8);
+	END
+	RETURN 0;
+END
+
+INT FUNCTION _UAG_TabAlarmSnd_Start()
+	INT		priority = 0;
+
+	// Initialise Sounds.
+	WHILE (priority <= 255) DO
+		m_PrioritySoundFiles[priority] = PathToStr(ParameterGet("Alarm", "Sound" + IntToStr(priority), ""));
+		IF FileExist(m_PrioritySoundFiles[priority]) = 0 THEN
+			m_PrioritySoundFiles[priority] = "";
+		ELSE
+			m_SoundDisabled = 0;
+		END
+		m_SoundIntervals[priority] = ParameterGet("Alarm", "Sound" + IntToStr(priority) + "Interval", m_Active_SoundInterval);
+		IF m_SoundIntervals[priority] < c_SOUND_INTERVAL_MIN THEN
+			m_SoundIntervals[priority] = c_SOUND_INTERVAL_MIN;
+		END
+		IF m_SoundIntervals[priority] > c_SOUND_INTERVAL_MAX THEN
+			m_SoundIntervals[priority] = c_SOUND_INTERVAL_MAX;
+		END
+		priority = priority + 1;
+	END
+	
+	// Start sound tasks if any sound files have been configured
+	IF ((NOT m_SoundDisabled) AND ProcessIsClient()) THEN
+		TaskNew("_UAG_TabAlarmSnd_CheckAlarm", "", 8);
+		TaskNew("_UAG_TabAlarmSnd_PlaySound", "", 8);
+		TaskNew("_UAG_TabAlarmSnd_SilenceCountdown", "", 8);
+	END
+	
+	RETURN 0;
+END
+
+//-----------------------------------------------------------------------------
+//
+//		FUNCTION NAME	
+//			_UAG_TabAlarmSnd_CheckAlarm
+//
+//		REV	DATE		WHO			DESCRIPTION
+//		0	01/10/09	RJN			Original
+//
+//     	GENERAL DESCRIPTION
+//			Determines highest priority unacknowledged alarm in the system.
+//			Checks whether an audible alarm exists.
+//
+// 		ARGUMENTS:
+//			None.
+//
+//     	RETURNED VALUE: 
+//			None.
+//
+//-----------------------------------------------------------------------------
+
+FUNCTION _UAG_TabAlarmSnd_CheckAlarm()
+	INT		priority;
+	Sleep(60);
+	WHILE (TRUE) DO
+	
+		// If there are no unacknowledged sounded alarms then activate sounds by setting the silence time to 0.
+		// No sounds will play until a new alarm is activated.
+		priority = AlarmActive(2);
+		IF priority = -1 THEN
+			IF (m_SilenceTime = -1) THEN
+				m_SilenceTime = 0;
+			END
+
+			// Automatically cancel silence on ack when no alarms are unacknowledged
+			IF (m_SilenceTimeOnAck <> 0) THEN
+				m_SilenceTimeOnAck = 0;
+				m_Ack_SoundPriority = -1;
+			END
+		ELSE
+			// Cancel silence on ack if higher priority alarm is detected
+			IF (m_SilenceTimeOnAck <> 0) THEN
+				IF (priority > 0) AND
+					((m_Ack_SoundPriority = 0) OR (priority < m_Ack_SoundPriority)) THEN
+					m_SilenceTimeOnAck = 0;
+				END
+			END
+		END
+		
+		// Check whether audible alarms exist
+		IF (priority <> -1) THEN
+			IF (m_PrioritySoundFiles[priority] <> "") THEN
+				m_Active_SoundPriority = priority;
+				m_AudibleAlarmsExist = 1;
+			ELSE
+				m_AudibleAlarmsExist = 0;
+				m_Active_SoundPriority = priority;
+			END
+		ELSE
+			m_AudibleAlarmsExist = 0;
+			m_Active_SoundPriority = priority;
+		END
+
+		SleepMS(1000);
+	END
+END
+
+//-----------------------------------------------------------------------------
+//
+//		FUNCTION NAME	
+//			_UAG_TabAlarmSnd_PlaySound
+//
+//		REV	DATE		WHO			DESCRIPTION
+//		0	01/10/09	RJN			Original
+//
+//     	GENERAL DESCRIPTION
+//			Plays the alarm sound corresponding to the highest priority unacknowledged alarm in the system.
+//			The alarm sound is determined by the value of m_Active_SoundPriority.
+//
+// 		ARGUMENTS:
+//			None.
+//
+//     	RETURNED VALUE: 
+//			None.
+//
+//-----------------------------------------------------------------------------
+
+FUNCTION _UAG_TabAlarmSnd_PlaySound()
+	INT		iSoundIntervalStart;
+	INT		iSoundPrioritySave;
+	INT		iDone;
+	STRING	sSoundFile;
+	
+	WHILE TRUE DO
+	
+		IF (m_AudibleAlarmsExist = 1) THEN
+			
+			sSoundFile = m_PrioritySoundFiles[m_Active_SoundPriority];
+			m_Active_SoundInterval = m_SoundIntervals[m_Active_SoundPriority];
+			IF ((m_SilenceTime = 0) AND (m_SilenceTimeOnAck = 0) AND (sSoundFile <> "")) THEN
+				DspPlaySound(sSoundFile, 0);
+			END
+				
+			// The interval between replaying the sounds is composed of multiple sub-intervals.
+			// The purpose is to allow a long interval to be interrrupted when a new alarm requires a short interval.
+			// It will have the effect of slightly lengthening the total interval time.
+			iDone = FALSE;
+			iSoundIntervalStart = SysTime();
+			WHILE ((iDone = FALSE ) AND (SysTime() - iSoundIntervalStart < m_Active_SoundInterval)) DO
+				IF (iSoundPrioritySave = m_Active_SoundPriority) THEN
+					SleepMS(c_SOUND_INTERVAL_MIN);
+				ELSE
+					iSoundPrioritySave = m_Active_SoundPriority;
+					iDone = TRUE;
+				END
+			END
+
+		ELSE
+		
+			SleepMS(c_SOUND_INTERVAL_MIN);
+		
+		END
+		
+	END
+END
+
+//-----------------------------------------------------------------------------
+//
+//		FUNCTION NAME	
+//			_UAG_TabAlarmSnd_SilenceCountdown
+//
+//		REV	DATE		WHO			DESCRIPTION
+//		0	01/10/09	RJN			Original
+//
+//     	GENERAL DESCRIPTION
+//			Silences alarms for a time determined by the operator.
+//				- Counts down the time to sound alarms again.
+//				- Enables/disables the playing of sounds in function _UAG_TabAlarmSnd_PlaySound() via m_SilenceTime.
+//				- Enables the playing of sounds immediately when all alarms are acknowledged.
+//
+// 		ARGUMENTS:
+//			None.
+//			
+//     	RETURNED VALUE: 
+//			None.
+//
+//-----------------------------------------------------------------------------
+
+FUNCTION _UAG_TabAlarmSnd_SilenceCountdown()
+	INT	iCountdownFrom;
+	INT iSilenceTime;
+
+	WHILE (TRUE) DO	
+		IF (m_SilenceTime <= 0) AND (m_SilenceTimeOnAck <= 0) THEN
+			m_SilenceCountdown_sec = 0;
+			m_SilenceCountdown_str = "";
+		ELSE
+			// Reset Silence (Expiry) Time
+			IF (m_SilenceTime > 0) AND (TimeCurrent() > m_SilenceTime) THEN
+				m_SilenceTime = 0;
+			END
+			IF (m_SilenceTimeOnAck > 0) AND (TimeCurrent() > m_SilenceTimeOnAck) THEN
+				m_SilenceTimeOnAck = 0;
+			END
+
+			// Determine which silence time to use
+			IF (m_SilenceTime <> 0) THEN
+				iSilenceTime = m_SilenceTime;
+			ELSE
+				iSilenceTime = m_SilenceTimeOnAck;
+			END
+
+			// Calculate count down counters
+			IF (iSilenceTime > 0) THEN
+				IF (TimeCurrent() > iSilenceTime) THEN
+					m_SilenceCountdown_sec = 0;
+					m_SilenceCountdown_str = "";
+				ELSE
+					m_SilenceCountdown_sec = iSilenceTime - TimeCurrent();
+					IF (m_SilenceCountdown_sec > 32400) THEN
+						m_SilenceCountdown_str = "+9h";													// greater than 9 hours
+					ELSE IF (m_SilenceCountdown_sec > 3600) THEN
+						m_SilenceCountdown_str = "+" + IntToStr(m_SilenceCountdown_sec / 3600) + "h";	// greater than 1 hour
+					ELSE IF (m_SilenceCountdown_sec > 540) THEN
+						m_SilenceCountdown_str = "+9m";													// greater than 9 minutes
+					ELSE IF (m_SilenceCountdown_sec > 60) THEN
+						m_SilenceCountdown_str = "+" + IntToStr(m_SilenceCountdown_sec / 60) + "m";		// greater than 1 minute
+					ELSE
+						m_SilenceCountdown_str = IntToStr(m_SilenceCountdown_sec);						// seconds
+					END END END END
+				END
+			END
+		END
+		
+		SleepMS(500);
+	END
+END
+
+//-----------------------------------------------------------------------------
+//		FUNCTION NAME	
+//			UAG_TabAlarmSnd_SoundState
+//
+//		REV	DATE		WHO			DESCRIPTION
+//		0	01/10/09	RJN			Original
+//
+//     	GENERAL DESCRIPTION
+//			Determines a return value according to the state of alarm sounds.
+//
+// 		ARGUMENTS:
+//			None
+//
+//     	RETURNED VALUE: 
+//			0 - No audible alarms exist.
+//			1 - Audible alarms exist.
+//			2 - Alarm sounds are suppressed.
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION UAG_TabAlarmSnd_SoundState()
+	INT		retValue = 0;
+
+	// initialise alarm sound tasks
+	UAG_TabAlarmSnd_Start();
+
+	// return silence state over active state
+	IF (m_SilenceTime <> 0) OR (m_SilenceTimeOnAck <> 0) THEN
+		retValue = 2;
+	ELSE
+		IF (m_AudibleAlarmsExist = 1) THEN
+			retValue = 1;
+		END
+	END
+	
+	RETURN retValue;
+END
+
+//-----------------------------------------------------------------------------
+//		FUNCTION NAME	
+//			UAG_TabAlarmSnd_SilenceTimeRemaining
+//
+//		REV	DATE		WHO			DESCRIPTION
+//		0	01/10/09	RJN			Original
+//
+//     	GENERAL DESCRIPTION
+//			Determines the time remaining until alarm sounds will be played.
+//
+// 		ARGUMENTS:
+//			None.
+//
+//     	RETURNED VALUE: 
+//			The time remaining as string for display:
+//				if > 9 hours, it returns "+9h"
+//				if < 9 hours and > 1 hour, it returns "+1h"
+//				if > 9 minutes, it returns "+9m"
+//				if < 9 minutes and > 1 minute, it returns "+1m"
+//				if < 1 minute, it returns the number of seconds remaining
+//				if silence time is not set, it returns empty string
+//
+//-----------------------------------------------------------------------------
+
+STRING FUNCTION UAG_TabAlarmSnd_SilenceTimeRemaining()
+	RETURN m_SilenceCountdown_str;
+END
+
+//-----------------------------------------------------------------------------
+//		FUNCTION NAME
+//			UAG_TabAlarmSnd_GetPriv
+//
+//		REV	DATE		WHO			DESCRIPTION
+//		0	01/10/09	RJN			Original
+//
+//     	GENERAL DESCRIPTION
+//			Check if currently logged on user has privilege to change alarm sound settings.
+//
+// 		ARGUMENTS:
+//			None
+//
+//     	RETURNED VALUE: 
+//			1 if have privilege or 0 if have no privilege
+//
+//		REMARKS:
+//			privilege is defined under INI parameter [Privilege] SilenceAlarms
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION UAG_TabAlarmSnd_GetPriv()
+	IF (m_SoundDisabled) THEN
+		RETURN 0;
+	END
+
+	IF (m_Priv_SilenceAlarms < 0) THEN
+		m_Priv_SilenceAlarms = ParameterGet("Privilege", "SilenceAlarms", "0");
+	END
+	
+	RETURN GetPriv(m_Priv_SilenceAlarms, 0);
+END
+
+//-----------------------------------------------------------------------------
+//
+//		FUNCTION NAME	
+//			UAG_TabAlarmSnd_ShowContextMenu
+//
+//		REV	DATE		WHO			DESCRIPTION
+//		0	01/10/09	RJN			Original
+//
+//     	GENERAL DESCRIPTION
+//			Pops up AlarmSound menu if it is defined under the page name "Template" in the 
+//			Menu Config database.  Otherwise a default menu is displayed.
+//
+// 		ARGUMENTS:
+//			None.
+//			
+//     	RETURNED VALUE: 
+//			0 (zero) if successful, otherwise an error is returned.
+//
+//		REMARKS:
+//			The user can override the default alarm sound context menu by
+//			defining their own menu in the Menu Configuration system database. The
+//			user specified menu must be defined under the page name of "Template"
+//			and the "Level 1" field being set to the keyword "Alarm Sound".
+//
+//			In the Menu Command field of their menu items should call Cicode function
+//			UAG_TabAlarmSnd_Silence() to set different alarm silence time. Please see
+//			comments in function UAG_TabAlarmSnd_Silence() for details.
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION UAG_TabAlarmSnd_ShowContextMenu()
+	INT retValue = 0;
+	INT AN;
+	INT xPos = -1;
+	INT yPos = -1;
+
+	IF (m_SoundDisabled) THEN
+		RETURN 0;
+	END
+
+	// Get menu position from calling AN
+	AN = KeyGetCursor();
+	IF (AN > 0) THEN
+		xPos = DspGetAnLeft(AN);
+		yPos = DspGetAnTop(AN);
+	END
+
+	retValue = UAG_PageDspConfigMenu("Template", "Alarm Sound", xPos, yPos);
+	IF (0 <> retValue) THEN
+		// Only display default menu if no items are defined in specific menu config node
+		IF (UAG_PageGetConfigMenuHnd("Template", "Alarm Sound", 1) < 0) THEN
+			retValue = _UAG_TabAlarmSnd_ShowDefaultMenu(xPos, yPos);
+		END
+	END
+	
+	RETURN retValue;
+END
+
+//-----------------------------------------------------------------------------
+//		FUNCTION NAME	
+//			UAG_TabAlarmSnd_Silence
+//
+//		REV	DATE		WHO			DESCRIPTION
+//		0	01/10/09	RJN			Original
+//
+//     	GENERAL DESCRIPTION
+//			Silence alarm sound indirectly by preventing _UAG_TabAlarmSnd_PlaySound from playing sounds.
+//
+// 		ARGUMENTS:
+//			iSilenceTimeout		- The number of seconds to silence alarm sound for
+//								This parameter is optional. If not specified or negative value, alarm sound is
+//								suppressed indefinitely until all outstanding alarms have been acknowledged.
+//								If silence time is set to zero, alarm sound is re-enabled.
+//
+//     	RETURNED VALUE: 
+//			0 or error code if failed
+//
+//		REMARKS:
+//			Can only silence alarm if the logged in user has sufficient privilege
+//			as defined in parameter [Privilege] SilenceAlarms
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION UAG_TabAlarmSnd_Silence(INT iSilenceTimeout = -1)
+	IF (m_SoundDisabled) THEN
+		RETURN 0;
+	END
+
+	// check privilege
+	IF NOT UAG_TabAlarmSnd_GetPriv() THEN
+		RETURN 276;
+	END
+
+	IF (iSilenceTimeout < 0) THEN
+		m_SilenceTime = -1;
+	ELSE
+		m_SilenceTime = TimeCurrent() + iSilenceTimeout;
+	END
+
+	// explicit silence cancels silence on acknowledgement
+	m_SilenceTimeOnAck = 0;
+	
+	RETURN 0;
+END
+
+
+//-----------------------------------------------------------------------------
+//		FUNCTION NAME	
+//			UAG_TabAlarmSnd_SilenceOnAck
+//
+//		REV	DATE		WHO			DESCRIPTION
+//		0	01/10/09				Original
+//
+//     	GENERAL DESCRIPTION
+//			Silence alarm sound upon Alarm Acknowledgement
+//			indirectly by preventing _UAG_TabAlarmSnd_PlaySound from playing sounds.
+//
+// 		ARGUMENTS:
+//			None
+//
+//     	RETURNED VALUE: 
+//			0 or error code if failed
+//
+//		REMARKS:
+//			This action is initiated from acknowledging alarms therefore privilege
+//			is based on acknowledge instead of silence.
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION UAG_TabAlarmSnd_SilenceOnAck()
+	IF (m_SoundDisabled) THEN
+		RETURN 0;
+	END
+
+	// only silence alarm if it is not already silenced explicitly
+	IF (m_SilenceTime = 0) AND (m_Active_SoundPriority <> -1) THEN
+		IF (m_SilenceTimeoutOnAck < 0) THEN
+			m_SilenceTimeoutOnAck = ParameterGet("Alarm", "SoundSilenceTimeoutOnAck", "0");
+		END
+
+		// silence alarm (until all alarms ack'ed) if ..OnAck parameter is left as default
+		IF (m_SilenceTimeoutOnAck <= 0) THEN
+			m_SilenceTimeOnAck = -1;
+		ELSE
+			m_SilenceTimeOnAck = TimeCurrent() + m_SilenceTimeoutOnAck;
+		END
+		m_Ack_SoundPriority = m_Active_SoundPriority;
+	END
+
+	RETURN 0;
+END
+
+//-----------------------------------------------------------------------------
+//
+//	Private Functions
+//
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+//
+//		FUNCTION NAME	
+//			_UAG_TabAlarmSnd_ShowDefaultMenu
+//
+//		REV	DATE		WHO			DESCRIPTION
+//		0	01/10/09	RJN			Original
+//
+//     	GENERAL DESCRIPTION
+//			Displays default alarm sound menu.
+//			Called by UAG_TabAlarmSnd_ShowContextMenu if AlarmSound is not defined under the page name "Template" in the 
+//			Menu Config database.
+//
+// 		ARGUMENTS:
+//			None.
+//			
+//     	RETURNED VALUE: 
+//			0 (zero) if successful, otherwise an error is returned.
+//
+//-----------------------------------------------------------------------------
+
+PRIVATE
+INT FUNCTION _UAG_TabAlarmSnd_ShowDefaultMenu(INT xPos = -1, INT yPos = -1)
+	INT		retValue = 0;
+	INT		iError = 0;
+	INT		selection = 0;
+	STRING	menuItems = "";
+	STRING	sSilenceAlarmsDisable;
+	STRING	sSpecifyAlarmSilenceTimeDisable;
+	STRING	sSoundAlarmsDisable;
+
+	IF (NOT UAG_TabAlarmSnd_GetPriv()) THEN
+		sSilenceAlarmsDisable = "!";
+		sSpecifyAlarmSilenceTimeDisable = "!";
+		sSoundAlarmsDisable = "!";
+	END
+
+	IF (m_Active_SoundPriority = -1) THEN
+		sSilenceAlarmsDisable = "!";
+	END
+
+	IF (m_SilenceTime = -1) THEN
+		sSilenceAlarmsDisable = "!";
+	ELSE IF (UAG_TabAlarmSnd_SoundState() <> 2) THEN 
+		sSoundAlarmsDisable = "!";
+	END END
+
+	menuItems =                   sSilenceAlarmsDisable           + StrToLocalText("@(Silence Alarms until all are acknowledged)");
+	menuItems = menuItems + "," + sSpecifyAlarmSilenceTimeDisable + StrToLocalText("@(Silence Alarms for limited time)") + ">1";
+	menuItems = menuItems + "," + sSoundAlarmsDisable             + StrToLocalText("@(Re-enable Alarm Sound)");
+	
+	retValue = DspPopupMenu(0, menuItems);
+	DspPopupMenu(1, StrToLocalText("@(30 seconds)"));
+	DspPopupMenu(1, StrToLocalText("@(1 minute)"));
+	DspPopupMenu(1, StrToLocalText("@(2 minutes)"));
+	DspPopupMenu(1, StrToLocalText("@(5 minutes)"));
+	DspPopupMenu(1, StrToLocalText("@(10 minutes)"));
+
+	selection = DspPopupMenu(-1, "", xPos, yPos);
+
+	SELECT CASE selection
+	CASE 1
+		UAG_TabAlarmSnd_Silence();
+	CASE 2
+		UAG_TabAlarmSnd_Silence(0);
+	CASE 101
+		UAG_TabAlarmSnd_Silence(30);
+	CASE 102
+		UAG_TabAlarmSnd_Silence(60);
+	CASE 103
+		UAG_TabAlarmSnd_Silence(120);
+	CASE 104
+		UAG_TabAlarmSnd_Silence(300);
+	CASE 105
+		UAG_TabAlarmSnd_Silence(600);
+	END SELECT
+
+	RETURN retValue;
+END

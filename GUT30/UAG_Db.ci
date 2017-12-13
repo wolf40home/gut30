@@ -1,0 +1,1488 @@
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//	
+// 	FILE:	UAG_Db.ci
+//
+//	Beschreibung:
+//
+//		Enthält  Funktionen für den Datenbankzugriff. aus CSV_Database
+//		Funktionen mit Version 3.1 sind freigegeben
+//
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	30.06.08	/	Schneider Electrik GmbH
+//	Version				3.0.0.0
+//
+//	PUBLIC FUNCTIONS:
+//
+//			UAG_DB_zugriff()
+//			UAG_DB_Execute()
+//			UAG_DB_GetExecuteError()
+//			UAG_DB_StandbyConnectionActive()
+//			UAG_DB_GetFieldCount()
+//			UAG_DB_GetFieldName()
+//			UAG_DB_GetFieldIndex()
+//			UAG_DB_GetFieldText()
+//			UAG_DB_GetRowFieldText()
+//			UAG_DB_GetRowCount()
+//			UAG_DB_GetRowCurrent()
+//			UAG_DB_MoveFirst()
+//			UAG_DB_MoveLast()
+//			UAG_DB_MoveOffset()
+//			UAG_DB_MoveNext()
+//			UAG_DB_MovePrev()
+//			UAG_DB_BOF()
+//			UAG_DB_EOF()
+//			UAG_DB_Close()
+//			UAG_DB_StrToSQL()
+//			
+
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+// MODULE VARIABLES
+
+INT		mbDatabaseInit;
+
+STRING	msDLLPath;
+
+INT 	mhDBExecute	= -1;
+INT 	mhDBGetExecuteError	= -1;
+INT 	mhDBGetFieldCount = -1;
+INT 	mhDBGetFieldName = -1;
+INT 	mhDBGetFieldIndex = -1;
+INT 	mhDBGetFieldText = -1;
+INT	 	mhDBGetRowFieldText	= -1;
+INT 	mhDBGetRowCount	= -1;
+INT 	mhDBGetRowCurrent = -1;
+INT 	mhDBMoveFirst = -1;
+INT 	mhDBMoveLast = -1;
+INT 	mhDBMoveOffset = -1;
+INT 	mhDBMoveNext = -1;
+INT 	mhDBMovePrev = -1;
+INT 	mhDBBOF	= -1;
+INT 	mhDBEOF	= -1;
+INT 	mhDBClose = -1;
+
+INT 	mhGetVersionADOPlusCon	= -1;
+STRING 	msVersionADOPlusCon = "<>";
+INT 	mhDatabaseConActive	= -1;
+INT 	mhGetDatabaseData	= -1;
+
+INT		miMaxConnectionIndex = 475;
+STRING	msPrimaryConnection[475];
+STRING	msPrimaryConnection_[475];	! used when msPrimaryConnection > 127 characters
+STRING	msStandbyConnection[475];
+STRING	msStandbyConnection_[475];	! used when msStandbyConnection > 127 characters
+INT		miPrimaryConnection[475];
+INT		miStandbyConnection[475];
+
+INT		miRecordsetRetryDelay = 10;
+STRING	msPrimaryConnectioni;
+STRING	msPrimaryConnectioni_;
+STRING	msStandbyConnectioni;
+STRING	msStandbyConnectioni_;
+STRING 	msCommand;
+STRING 	msCommand_;
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//		FUNCTION NAME	
+//						_UAG_DB_Init()
+//
+//		REV	DATE		WHO			DESCRIPTION
+//		0	16/04/03	J.Venz		Original
+//
+//     	GENERAL DESCRIPTION
+//			
+//			Initialise database Dll calls (PlusADOCon.Dll).
+//
+// 		ARGUMENTS:
+//
+//
+//     	RETURNED VALUE: 
+//
+//
+//		PSEUDO CODE:
+//
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+PRIVATE INT FUNCTION
+_UAG_DB_Init()
+	
+	ErrSet(1);
+	
+	msDLLPath = PathToStr("[BIN]:PlusADOCon.DLL");	
+	
+	mhDBExecute = DLLOpen(msDLLPath, "Execute", "ICC");
+	mhDBGetExecuteError = DLLOpen(msDLLPath, "GetExecuteError", "CI");
+	mhDBGetFieldCount = DLLOpen(msDLLPath, "GetFieldCount", "JI");
+	mhDBGetFieldName = DLLOpen(msDLLPath, "GetFieldName", "CIJ");
+	mhDBGetFieldIndex = DLLOpen(msDLLPath, "GetFieldIndex", "JIC");
+	mhDBGetRowCount = DLLOpen(msDLLPath, "GetRowCount", "JI");
+	mhDBGetRowCurrent = DLLOpen(msDLLPath, "GetRowCurrent", "JI");
+	mhDBMoveFirst = DLLOpen(msDLLPath, "MoveFirst", "JI");
+	mhDBMoveLast = DLLOpen(msDLLPath, "MoveLast", "JI");
+	mhDBMoveOffset = DLLOpen(msDLLPath, "MoveOffset", "JIJ");
+	mhDBMoveNext = DLLOpen(msDLLPath, "MoveNext", "JI");
+	mhDBMovePrev = DLLOpen(msDLLPath, "MovePrev", "JI");
+	mhDBBOF = DLLOpen(msDLLPath, "BOF", "JI");
+	mhDBEOF = DLLOpen(msDLLPath, "EOF", "JI");
+	mhDBGetFieldText = DLLOpen(msDLLPath, "GetFieldText", "CIJC");
+	mhDBGetRowFieldText = DLLOpen(msDLLPath, "GetRowFieldText", "CIJJC");
+	mhDBClose = DLLOpen(msDLLPath, "Close", "II");
+	mhGetVersionADOPlusCon = DLLOpen(msDLLPath, "GetVersion", "CC");
+	mhDatabaseConActive = DLLOpen(msDLLPath, "IsActive", "II");
+	mhGetDatabaseData = DLLOpen(msDLLPath, "GetData", "CI");
+	
+	miRecordsetRetryDelay = ParameterGet("Database", "RetryDelay", miRecordsetRetryDelay);
+	
+	mbDatabaseInit = 1;
+	
+	ErrSet(0);
+	
+	RETURN 0;
+		
+END
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//		FUNCTION NAME	
+//						UAG_DB_Execute()
+//
+//		REV	DATE		WHO			DESCRIPTION
+//		1	16/04/03	J.Venz		Original
+//      2   16/03/07	R.Watson	Bugid 34157 - "The standby connection fails to work 
+//                                  when the primary connection is lost in UAG_DB_Execute"
+//                                  Standby was never used. The failover/failback algorithm is
+//                                  now defined as: @start make the primary DB the current.
+//                                  Use the current DB until an error occurs on that DB. In that
+//                                  event, make the alternate DB string the current DB and
+//                                  continue using that DB from now on. In a word, the current
+//                                  database state is 'bistable'. 
+//
+//     	GENERAL DESCRIPTION
+//			
+//			Execute a command on a specified database.  A connection string is used to specify how to
+//			connect to the database.  If a standby connection string is specified then the standby path is 
+//			used if the primary path is offline.
+//
+//			The command should be an SQL type command. (eg. "SELECT * FROM MyTable WHERE TimeValue(Time) > #10:00:00#" etc)
+//
+//			Example connection strings:
+//
+//				SQL Server:
+//					"Provider=sqloledb;Data Source=MySQLServerName;Initial Catalog=MyDatabase;User Id=MyUserID;Password=MyPassword;"
+//				Access:		
+//					"Provider=Microsoft.Jet.OLEDB.4.0;Data Source=\somepath\mydb.mdb;User Id=MyUserID;Password=MyPassword;" 
+//				Oracle:
+//					"Provider=OraOLEDB.Oracle;Data Source=MyOracleDB;User Id=MyUserID;Password=MyPassword;" 
+//				Excel:
+//					"Provider=Microsoft.Jet.OLEDB.4.0;Data Source=C:\somepath\MyExcel.xls;Extended Properties=Excel 8.0;HDR=Yes;IMEX=1" 
+//						(where "HDR=Yes;" indicates that the first row contains columnnames, not data
+//						"IMEX=1;" tells the driver to always read "intermixed" data columns as text)
+//				Text:
+//					"Provider=Microsoft.Jet.OLEDB.4.0;Data Source=c:\somepath\MyTxtFilesFolder\;Extended Properties=text;HDR=Yes;FMT=Delimited" 
+//						(where "HDR=Yes;" indicates that the first row contains columnnames, not data)
+//				DBF:	
+//					"Provider=Microsoft.Jet.OLEDB.4.0;Data Source=c:\somepath\MyDbfFolder;Extended Properties=dBASE IV;User ID=Admin;Password="
+//				DSN:
+//					"DSN=MyDsn;Uid=MyUserID;Pwd=MyPassword;"
+//				UDL:		
+//					"File Name=c:\somepath\myDataLink.udl;" 
+//
+// 		ARGUMENTS:
+//
+//			sCommand				- Command to execute
+//			sPrimaryConnection		- Connection string for primary connection path
+//			sStandbyConnection		- Connection string for Standby connection path
+//
+//     	RETURNED VALUE: 
+//
+//			Handle to the resulting recordset if successful, otherwise -1.
+//
+//		PSEUDO CODE:
+//
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+FUNCTION UAG_DB_Execute(STRING sCommand, STRING sPrimaryConnection, STRING sStandbyConnection = "")
+
+	Str2=sCommand;
+	ErrSet(1);
+	msPrimaryConnectioni = sPrimaryConnection;
+	msPrimaryConnectioni_ = StrMid(sPrimaryConnection, 127, 127);
+	msStandbyConnectioni = sStandbyConnection;
+	msStandbyConnectioni_ = StrMid(sStandbyConnection, 127, 127);
+	msCommand=sCommand;
+	msCommand_=StrMid(sCommand, 127, 127)
+	ErrSet(0);	
+	TaskNew( "_UAG_DB_Execute" ,"",8)
+//	_UAG_DB_Execute(sCommand)
+END
+
+INT FUNCTION 
+_UAG_DB_Execute()
+
+	INT		hRecordSet	= -1;
+	STRING	sConnection,sCommand;
+	INT		bStandby;
+	STRING	sStandbyConnection,sPrimaryConnection
+	sCommand=msCommand+msCommand_;
+	IF NOT mbDatabaseInit THEN
+	
+		_UAG_DB_Init();
+	END
+	sPrimaryConnection =msPrimaryConnectioni+msPrimaryConnectioni_;
+	sStandbyConnection=msStandbyConnectioni + msStandbyConnectioni_;
+	IF (mhDBExecute <> -1) THEN
+
+		IF sStandbyConnection <> "" THEN
+
+			bStandby = UAG_DB_StandbyConnectionActive(sPrimaryConnection, sStandbyConnection);
+		END
+		
+		IF bStandby THEN
+					
+			sConnection = sStandbyConnection;
+		ELSE
+			sConnection = sPrimaryConnection;
+		END
+		
+		hRecordSet = StrToInt(DLLCall(mhDBExecute, "^""+sConnection+"^",^""+sCommand+"^""));
+		
+		IF (hRecordSet >= 0) THEN
+		    // Extract result of previous DB transaction
+			hRecordSet = StrToInt(_UAG_DB_GetDLLData(hRecordSet));
+		END
+		
+		IF (hRecordSet > 0) THEN // Successful DB transaction
+			_UAG_DB_SetConnectStatus(sConnection, bStandby, 1); // Current DB still working
+		ELSE
+			_UAG_DB_SetConnectStatus(sConnection, bStandby, 0); // Current failed - use alternate
+			bStandby = NOT bStandby; 
+			IF bStandby THEN
+				sConnection = sStandbyConnection;
+	    	ELSE
+		    	sConnection = sPrimaryConnection;
+	    	END
+	    	// Call second database now - for the same command
+			hRecordSet = StrToInt(DLLCall(mhDBExecute, "^""+sConnection+"^",^""+sCommand+"^""));
+			IF (hRecordSet >= 0) THEN 
+				hRecordSet = StrToInt(_UAG_DB_GetDLLData(hRecordSet));
+			END
+			IF (hRecordSet > 0) THEN // Success
+				_UAG_DB_SetConnectStatus(sConnection, bStandby, 1); // Continue to use this DB
+			ELSE
+				_UAG_DB_SetConnectStatus(sConnection, bStandby, 0); // Alternate DB also failed
+			END
+
+		END
+
+	END
+
+	IF hRecordSet < 1 THEN
+		hRecordSet = -1;
+	END
+	
+	RETURN hRecordSet;
+END
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//		FUNCTION NAME	
+//						UAG_DB_GetExecuteError()
+//
+//		REV	DATE		WHO			DESCRIPTION
+//		0				T.van Wyk	Original
+//		1	16/04/03	J.Venz		Modified and renamed for CSV_Include project
+//
+//     	GENERAL DESCRIPTION
+//			
+//			Returns a description of the error that occurred for the last UAG_DB_Execute command call.
+//
+// 		ARGUMENTS:
+//
+//			nMode		- 
+//
+//     	RETURNED VALUE: 
+//
+//			Error description.
+//
+//		PSEUDO CODE:
+//
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+STRING FUNCTION 
+UAG_DB_GetExecuteError(INT nMode = 0)
+
+	STRING	sError;
+	
+	IF NOT mbDatabaseInit THEN
+	
+		_UAG_DB_Init();
+	END
+
+	IF (mhDBGetExecuteError <> -1) THEN
+		sError = DLLCall(mhDBGetExecuteError, IntToStr(nMode));
+	ELSE
+		sError = "Unable to find " + msDllPath;
+	END
+	
+	RETURN sError;
+	
+END
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//		FUNCTION NAME	
+//						_UAG_DB_SetConnectStatus()
+//
+//		REV	DATE		WHO			DESCRIPTION
+//		1	16/04/03	J.Venz		Original
+//
+//     	GENERAL DESCRIPTION
+//			
+//			Set the last connection state of the specified primary connection/standby connection.
+//
+//
+// 		ARGUMENTS:
+//
+//			sConnection			- Connection string
+//			bStandby			- 1 if connection string is standby connection, otherwise 0
+//			bStatus				- 1 if connection is online, otherwise 0
+//
+//     	RETURNED VALUE: 
+//
+//
+//		PSEUDO CODE:
+//
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+PRIVATE INT FUNCTION
+_UAG_DB_SetConnectStatus(STRING sConnection, INT bStandby, INT bStatus)
+
+	INT		iConnectionIndex;
+	INT		iConnectionFound;
+	INT		iLastConnectionFound
+	STRING	sPrimaryConnection;
+	STRING	sStandbyConnection;
+	
+	SELECT CASE bStandby
+	
+	CASE 0
+	
+		! Set last connection state of primary connection
+		WHILE iConnectionIndex < miMaxConnectionIndex AND NOT (iConnectionFound OR iLastConnectionFound) DO
+		
+			sPrimaryConnection = _msPrimaryConnection_ArrayGet(iConnectionIndex);
+			
+			IF sPrimaryConnection = "" THEN
+			
+				iLastConnectionFound = 1;
+			ELSE
+				IF sPrimaryConnection = sConnection THEN 
+					
+					iConnectionFound = 1;
+				ELSE
+					iConnectionIndex = iConnectionIndex + 1;
+				END
+			END
+			
+		END
+		
+		IF iConnectionFound THEN
+		
+			miPrimaryConnection[iConnectionIndex] = bStatus;
+			
+		ELSE
+		
+			IF iConnectionIndex < miMaxConnectionIndex THEN
+			
+				_msPrimaryConnection_ArraySet(iConnectionIndex, sConnection);
+				miPrimaryConnection[iConnectionIndex] = bStatus;
+			END
+		END
+	
+	CASE ELSE
+	
+		! Set last connection state of Standby connection
+		WHILE iConnectionIndex < miMaxConnectionIndex AND NOT (iConnectionFound OR iLastConnectionFound) DO
+		
+			sStandbyConnection = _msStandbyConnection_ArrayGet(iConnectionIndex);
+			
+			IF sStandbyConnection = "" THEN
+			
+				iLastConnectionFound = 1;
+			ELSE
+				IF sStandbyConnection = sConnection THEN 
+					
+					iConnectionFound = 1;
+				ELSE
+					iConnectionIndex = iConnectionIndex + 1;
+				END
+			END
+			
+		END
+		
+		IF iConnectionFound THEN
+		
+			miStandbyConnection[iConnectionIndex] = bStatus;
+			
+		ELSE
+		
+			IF iConnectionIndex < miMaxConnectionIndex THEN
+			
+				_msStandbyConnection_ArraySet(iConnectionIndex, sConnection);	
+				miStandbyConnection[iConnectionIndex] = bStatus;
+			END
+		END
+	
+	END SELECT
+	
+	RETURN 0;
+END
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//		FUNCTION NAME	
+//						UAG_DB_StandbyConnectionActive()
+//
+//		REV	DATE		WHO			DESCRIPTION
+//		1	16/04/03	J.Venz		Original
+//
+//     	GENERAL DESCRIPTION
+//			
+//			Check the last connection state of the specified primary connection and the specified standby connection.
+//
+//
+// 		ARGUMENTS:
+//
+//			sPrimaryConnection		- Connection string for primary connection path
+//			sStandbyConnection		- Connection string for Standby connection path
+//
+//     	RETURNED VALUE: 
+//
+//			If the primary connection state is offline and the standby connection state is online then
+//			return 1 otherwise return 0.
+//
+//		PSEUDO CODE:
+//
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+INT FUNCTION
+UAG_DB_StandbyConnectionActive(STRING sPrimaryConnection, STRING sStandbyConnection)
+
+	INT		iConnectionIndex;
+	INT		iPrimaryConnectionFound;
+	INT		iStandbyConnectionFound;
+	INT		iLastConnectionFound
+	INT		iStandbyConnectionActive;
+	STRING	sConnection;
+	
+	! Check last connection state of primary connection
+	WHILE iConnectionIndex < miMaxConnectionIndex AND NOT (iPrimaryConnectionFound OR iLastConnectionFound) DO
+	
+		sConnection = _msPrimaryConnection_ArrayGet(iConnectionIndex);
+		IF sConnection = "" THEN
+		
+			iLastConnectionFound = 1;
+		ELSE
+			IF sConnection = sPrimaryConnection THEN 
+				
+				iPrimaryConnectionFound = 1;
+			ELSE
+				iConnectionIndex = iConnectionIndex + 1;
+			END
+		END
+		
+	END
+	
+	IF iPrimaryConnectionFound THEN
+	
+		IF miPrimaryConnection[iConnectionIndex] THEN
+		
+			RETURN 0;	! Primary connection active
+		END
+		
+	ELSE
+	
+		RETURN 0;	! Primary connection has not yet been attempted
+	END
+	
+	iConnectionIndex = 0;
+	iLastConnectionFound = 0;
+
+	! Check last connection state of standby connection	
+	WHILE iConnectionIndex < miMaxConnectionIndex AND NOT (iStandbyConnectionFound OR iLastConnectionFound) DO
+	
+		sConnection = _msStandbyConnection_ArrayGet(iConnectionIndex);
+		IF sConnection = "" THEN
+		
+			iLastConnectionFound = 1;
+		ELSE
+			IF sConnection = sStandbyConnection THEN 
+				
+				iStandbyConnectionFound = 1;
+			ELSE
+				iConnectionIndex = iConnectionIndex + 1;
+			END
+		END
+		
+	END	
+
+	IF iStandbyConnectionFound THEN
+	
+		IF miStandbyConnection[iConnectionIndex] THEN
+		
+			RETURN 1;	! Standby connection active
+		END
+		
+	END
+	
+		
+	RETURN 0;	! Standby connection has not yet been attempted
+	
+END
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//		FUNCTION NAME	
+//						UAG_DB_GetFieldCount()
+//
+//		REV	DATE		WHO			DESCRIPTION
+//		0				T.van Wyk	Original
+//		1	16/04/03	J.Venz		Modified and renamed for CSV_Include project
+//
+//     	GENERAL DESCRIPTION
+//			
+//			Returns the number of fields contained in a specified recordset.
+//
+// 		ARGUMENTS:
+//
+//			hRecordSet		- handle to recordset (as returned from UAG_DB_Execute())
+//
+//     	RETURNED VALUE: 
+//
+//			Number of fields if successful, otherwise -1.
+//
+//		PSEUDO CODE:
+//
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+INT FUNCTION 
+UAG_DB_GetFieldCount(INT hRecordSet)
+
+	INT		iFieldCount = -1;
+	
+	IF NOT mbDatabaseInit THEN
+	
+		_UAG_DB_Init();
+	END
+
+	IF (mhDBGetFieldCount <> -1) THEN
+		iFieldCount =  DLLCall(mhDBGetFieldCount, IntToStr(hRecordSet));
+	END
+
+	RETURN iFieldCount;
+	
+END
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//		FUNCTION NAME	
+//						UAG_DB_GetFieldName()
+//
+//		REV	DATE		WHO			DESCRIPTION
+//		0				T.van Wyk	Original
+//		1	16/04/03	J.Venz		Modified and renamed for CSV_Include project
+//
+//     	GENERAL DESCRIPTION
+//			
+//			Returns the name of a field contained in a specified recordset.  
+//			The field is identified by a field index.
+//
+// 		ARGUMENTS:
+//
+//			hRecordSet		- handle to recordset (as returned from UAG_DB_Execute())
+//			nFieldIndex		- index of field (first field has nFieldIndex = 0)
+//
+//     	RETURNED VALUE: 
+//
+//			Name of fields if successful, otherwise "".
+//
+//		PSEUDO CODE:
+//
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+STRING FUNCTION 
+UAG_DB_GetFieldName(INT hRecordSet, INT nFieldIndex)
+
+	STRING	sFieldName;
+	INT		iError;
+	
+	IF NOT mbDatabaseInit THEN
+	
+		_UAG_DB_Init();
+	END
+
+	IF (mhDBGetFieldName <> -1) THEN
+		IsError();
+		sFieldName = DLLCall(mhDBGetFieldName, IntToStr(hRecordSet)+","+IntToStr(nFieldIndex));
+		iError = IsError();
+	END
+
+	RETURN sFieldName;
+	
+END
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//		FUNCTION NAME	
+//						UAG_DB_GetFieldIndex()
+//
+//		REV	DATE		WHO			DESCRIPTION
+//		1	17/10/03	J.Venz
+//
+//     	GENERAL DESCRIPTION
+//			
+//			Returns the index of a specified field in a specified recordset.
+//
+// 		ARGUMENTS:
+//
+//			hRecordSet		- handle to recordset (as returned from UAG_DB_Execute())
+//			sField			- name of field
+//
+//     	RETURNED VALUE: 
+//
+//			Index of fields if successful, otherwise -1.
+//
+//		PSEUDO CODE:
+//
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+INT FUNCTION 
+UAG_DB_GetFieldIndex(INT hRecordSet, STRING sField)
+
+	INT		iFieldIndex = -1;
+	
+	IF NOT mbDatabaseInit THEN
+	
+		_UAG_DB_Init();
+	END
+
+	IF (mhDBGetFieldCount <> -1) THEN
+		iFieldIndex = StrToInt((DLLCall(mhDBGetFieldIndex, IntToStr(hRecordSet)+",^"" + sField + "^"")));
+	END
+
+	RETURN iFieldIndex;
+	
+END
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//		FUNCTION NAME	
+//						UAG_DB_GetFieldText()
+//
+//		REV	DATE		WHO			DESCRIPTION
+//		0	16/04/03	J.Venz		Original
+//
+//     	GENERAL DESCRIPTION
+//			
+//			Returns the value of a field (as a string) contained in a specified recordset.  
+//			The field is identified by a field index.
+//
+//			Note:
+//				If the value of the field is Null then this function will return the string specified
+//				by the argument sNullValue.
+//
+// 		ARGUMENTS:
+//
+//			hRecordSet		- handle to recordset (as returned from UAG_DB_Execute())
+//			sField			- name of field (leave blank ie. "" if field index is to be used instead)
+//			nFieldIndex		- index of field (first field has nFieldIndex = 0) - used only if sField = ""
+//			sNullValue		- value to return if the field value is Null
+//
+//     	RETURNED VALUE: 
+//
+//			Value of fields if successful, otherwise sNullValue.
+//
+//		PSEUDO CODE:
+//
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+STRING FUNCTION 
+UAG_DB_GetFieldText(INT hRecordSet, STRING sField, INT nFieldIndex = 0, STRING sNullValue = "")
+
+	STRING	sFieldText;
+	INT		iFieldIndexTmp;
+	INT		bFieldFound;
+	INT		bLastFieldFound;
+	STRING	sFieldNameTmp;
+	
+	IF NOT mbDatabaseInit THEN
+	
+		_UAG_DB_Init();
+	END
+
+	sFieldText = sNullValue;
+	
+	IF sField <> "" THEN
+	
+		nFieldIndex = UAG_DB_GetFieldIndex(hRecordset, sField);
+	END
+	
+	IF (mhDBGetFieldText <> -1) AND (nFieldIndex > -1) THEN
+
+		sFieldText = DLLCall(mhDBGetFieldText, IntToStr(hRecordSet)+","+IntToStr(nFieldIndex)+",^""+sNullValue+"^"");
+	END
+
+	RETURN sFieldText;
+	
+END
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//		FUNCTION NAME	
+//						UAG_DB_GetRowFieldText()
+//
+//		REV	DATE		WHO			DESCRIPTION
+//		0				T.van Wyk	Original
+//		1	16/04/03	J.Venz		Modified and renamed for CSV_Include project
+//
+//     	GENERAL DESCRIPTION
+//			
+//			Get the value of a specified field in a specified row of a specified recordset.
+//
+// 		ARGUMENTS:
+//
+//			hRecordSet		- handle to recordset (as returned from UAG_DB_Execute())
+//			nRowOffset		- offset of row (from current position)
+//			sField			- name of field (leave blank ie. "" if field index is to be used instead)
+//			nFieldIndex		- index of field (first field has nFieldIndex = 0) - used only if sField = ""
+//			sNullValue		- value to return if the field value is Null
+//
+//     	RETURNED VALUE: 
+//
+//
+//		PSEUDO CODE:
+//
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+STRING FUNCTION 
+UAG_DB_GetRowFieldText(INT hRecordSet, INT nRowOffset, STRING sField, INT nFieldIndex = 0, STRING sNullValue = "")
+
+	STRING	sRowFieldText;
+	
+	IF NOT mbDatabaseInit THEN
+	
+		_UAG_DB_Init();
+	END
+
+	sRowFieldText = sNullValue;
+
+	IF sField <> "" THEN
+	
+		nFieldIndex = UAG_DB_GetFieldIndex(hRecordset, sField);
+	END
+		
+	IF (mhDBGetRowFieldText <> -1) AND (nFieldIndex > -1) THEN
+	
+		sRowFieldText = DLLCall(mhDBGetRowFieldText, IntToStr(hRecordSet)+","+IntToStr(nRowOffset)+","
+								+IntToStr(nFieldIndex)+",^""+sNullValue+"^"");
+	END
+
+	RETURN sRowFieldText;
+	
+END
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//		FUNCTION NAME	
+//						UAG_DB_GetRowCount()
+//
+//		REV	DATE		WHO			DESCRIPTION
+//		0				T.van Wyk	Original
+//		1	16/04/03	J.Venz		Modified and renamed for CSV_Include project
+//
+//     	GENERAL DESCRIPTION
+//			
+//			Returns the number of rows contained in a specified recordset.
+//
+// 		ARGUMENTS:
+//
+//			hRecordSet		- handle to recordset (as returned from UAG_DB_Execute())
+//
+//     	RETURNED VALUE: 
+//
+//			Number of rows if successful, otherwise -1.
+//
+//		PSEUDO CODE:
+//
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+INT FUNCTION 
+UAG_DB_GetRowCount(INT hRecordSet)
+
+	INT		iRowCount = -1;
+	
+	IF NOT mbDatabaseInit THEN
+	
+		_UAG_DB_Init();
+	END
+
+	IF (mhDBGetRowCount <> -1) THEN
+	
+		iRowCount = DLLCall(mhDBGetRowCount, IntToStr(hRecordSet));
+	END
+
+	RETURN iRowCount;
+	
+END
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//		FUNCTION NAME	
+//						UAG_DB_GetRowCurrent()
+//
+//		REV	DATE		WHO			DESCRIPTION
+//		0				T.van Wyk	Original
+//		1	16/04/03	J.Venz		Modified and renamed for CSV_Include project
+//
+//     	GENERAL DESCRIPTION
+//			
+//			Returns the row number of the current record in a specified recordset.
+//
+// 		ARGUMENTS:
+//
+//			hRecordSet		- handle to recordset (as returned from UAG_DB_Execute())
+//
+//     	RETURNED VALUE: 
+//
+//			Current row number if successful, otherwise -1.
+//
+//		PSEUDO CODE:
+//
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+INT FUNCTION 
+UAG_DB_GetRowCurrent(INT hRecordSet)
+
+	INT		iRowCurrent = -1;
+	
+	IF NOT mbDatabaseInit THEN
+	
+		_UAG_DB_Init();
+	END
+
+	IF (mhDBGetRowCurrent <> -1) THEN
+		iRowCurrent = DLLCall(mhDBGetRowCurrent, IntToStr(hRecordSet));
+	END
+
+	RETURN iRowCurrent;
+	
+END
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//		FUNCTION NAME	
+//						UAG_DB_MoveFirst()
+//
+//		REV	DATE		WHO			DESCRIPTION
+//		0				T.van Wyk	Original
+//		1	16/04/03	J.Venz		Modified and renamed for CSV_Include project
+//
+//     	GENERAL DESCRIPTION
+//			
+//			Finds the first record in a specified recordset.
+//
+// 		ARGUMENTS:
+//
+//			hRecordSet		- handle to recordset (as returned from UAG_DB_Execute())
+//
+//     	RETURNED VALUE: 
+//
+//			First record if successful, otherwise -1.
+//
+//		PSEUDO CODE:
+//
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+INT FUNCTION 
+UAG_DB_MoveFirst(INT hRecordSet)
+
+	INT		iRowIndex = -1;
+	INT		iError;
+	
+	IF NOT mbDatabaseInit THEN
+	
+		_UAG_DB_Init();
+	END
+
+	IF (mhDBMoveFirst <> -1) THEN
+	
+		iRowIndex = DLLCall(mhDBMoveFirst, IntToStr(hRecordSet));
+	END
+
+	IF UAG_DB_EOF(hRecordSet) THEN
+	
+		iRowIndex = -1;
+	END
+	
+	RETURN iRowIndex;
+	
+END
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//		FUNCTION NAME	
+//						UAG_DB_MoveLast()
+//
+//		REV	DATE		WHO			DESCRIPTION
+//		0				T.van Wyk	Original
+//		1	16/04/03	J.Venz		Modified and renamed for CSV_Include project
+//
+//     	GENERAL DESCRIPTION
+//			
+//			Finds the last record in a specified recordset.
+//
+// 		ARGUMENTS:
+//
+//			hRecordSet		- handle to recordset (as returned from UAG_DB_Execute())
+//
+//     	RETURNED VALUE: 
+//
+//			Last record if successful, otherwise -1.
+//
+//		PSEUDO CODE:
+//
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+INT FUNCTION 
+UAG_DB_MoveLast(INT hRecordSet)
+
+	INT		iRowIndex = -1;
+	
+	IF NOT mbDatabaseInit THEN
+	
+		_UAG_DB_Init();
+	END
+
+	IF (mhDBMoveLast <> -1) THEN
+		iRowIndex = DLLCall(mhDBMoveLast, IntToStr(hRecordSet));
+	END
+
+	IF UAG_DB_EOF(hRecordSet) THEN
+	
+		iRowIndex = -1;
+	END
+	
+	RETURN iRowIndex;
+	
+END
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//		FUNCTION NAME	
+//						UAG_DB_MoveOffset()
+//
+//		REV	DATE		WHO			DESCRIPTION
+//		0				T.van Wyk	Original
+//		1	16/04/03	J.Venz		Modified and renamed for CSV_Include project
+//
+//     	GENERAL DESCRIPTION
+//			
+//			Finds the record at a specified offset from the current record in a specified recordset.
+//
+// 		ARGUMENTS:
+//
+//			hRecordSet		- handle to recordset (as returned from UAG_DB_Execute())
+//
+//     	RETURNED VALUE: 
+//
+//			Record at specified offset if successful, otherwise -1.
+//
+//		PSEUDO CODE:
+//
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+INT FUNCTION 
+UAG_DB_MoveOffset(INT hRecordSet, INT nOffset)
+
+	INT		iRowIndex = -1;
+	
+	IF NOT mbDatabaseInit THEN
+	
+		_UAG_DB_Init();
+	END
+
+	IF (mhDBMoveOffset <> -1) THEN
+		iRowIndex = DLLCall(mhDBMoveOffset, IntToStr(hRecordSet)+","+IntToStr(nOffset));
+	END
+
+	IF UAG_DB_EOF(hRecordSet) THEN
+	
+		iRowIndex = -1;
+	END
+	
+	RETURN iRowIndex;
+	
+END
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//		FUNCTION NAME	
+//						UAG_DB_MoveNext()
+//
+//		REV	DATE		WHO			DESCRIPTION
+//		0				T.van Wyk	Original
+//		1	16/04/03	J.Venz		Modified and renamed for CSV_Include project
+//
+//     	GENERAL DESCRIPTION
+//			
+//			Finds the next record in a specified recordset.
+//
+// 		ARGUMENTS:
+//
+//			hRecordSet		- handle to recordset (as returned from UAG_DB_Execute())
+//
+//     	RETURNED VALUE: 
+//
+//			Next record if successful, otherwise -1.
+//
+//		PSEUDO CODE:
+//
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+INT FUNCTION 
+UAG_DB_MoveNext(INT hRecordSet)
+
+	INT		iRowIndex = -1;
+	INT		iError;
+	
+	IF NOT mbDatabaseInit THEN
+	
+		_UAG_DB_Init();
+	END
+
+	IF (mhDBMoveNext <> -1) THEN
+		IsError();
+		iRowIndex = DLLCall(mhDBMoveNext, IntToStr(hRecordSet));
+		iError = IsError();
+	END
+
+	IF UAG_DB_EOF(hRecordSet) THEN
+	
+		iRowIndex = -1;
+	END
+	
+	RETURN iRowIndex;
+	
+END
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//		FUNCTION NAME	
+//						UAG_DB_MovePrev()
+//
+//		REV	DATE		WHO			DESCRIPTION
+//		0				T.van Wyk	Original
+//		1	16/04/03	J.Venz		Modified and renamed for CSV_Include project
+//
+//     	GENERAL DESCRIPTION
+//			
+//			Finds the previous record in a specified recordset.
+//
+// 		ARGUMENTS:
+//
+//			hRecordSet		- handle to recordset (as returned from UAG_DB_Execute())
+//
+//     	RETURNED VALUE: 
+//
+//			Previous record if successful, otherwise -1.
+//
+//		PSEUDO CODE:
+//
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+INT FUNCTION 
+UAG_DB_MovePrev(INT hRecordSet)
+
+	INT		iRowIndex = -1;
+	
+	IF NOT mbDatabaseInit THEN
+	
+		_UAG_DB_Init();
+	END
+
+	IF (mhDBMovePrev <> -1) THEN
+		iRowIndex = DLLCall(mhDBMovePrev, IntToStr(hRecordSet));
+	END
+
+	IF UAG_DB_EOF(hRecordSet) THEN
+	
+		iRowIndex = -1;
+	END
+	
+	RETURN iRowIndex;
+	
+END
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//		FUNCTION NAME	
+//						UAG_DB_BOF()
+//
+//		REV	DATE		WHO			DESCRIPTION
+//		0				T.van Wyk	Original
+//		1	16/04/03	J.Venz		Modified and renamed for CSV_Include project
+//
+//     	GENERAL DESCRIPTION
+//			
+//			Checks for the beginning of file flag for a recordset.
+//
+// 		ARGUMENTS:
+//
+//			hRecordSet		- handle to recordset (as returned from UAG_DB_Execute())
+//
+//     	RETURNED VALUE: 
+//
+//			0 if not at beginning of file.
+//
+//		PSEUDO CODE:
+//
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+INT FUNCTION 
+UAG_DB_BOF(INT hRecordSet)
+
+	INT		iBOF = -1;
+	
+	IF NOT mbDatabaseInit THEN
+	
+		_UAG_DB_Init();
+	END
+
+	IF (mhDBBOF <> -1) THEN
+		iBOF = DLLCall(mhDBBOF, IntToStr(hRecordSet));
+	END
+
+	RETURN iBOF;
+	
+END
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//		FUNCTION NAME	
+//						UAG_DB_EOF()
+//
+//		REV	DATE		WHO			DESCRIPTION
+//		0				T.van Wyk	Original
+//		1	16/04/03	J.Venz		Modified and renamed for CSV_Include project
+//
+//     	GENERAL DESCRIPTION
+//			
+//			Checks for the end of file flag for a recordset.
+//
+// 		ARGUMENTS:
+//
+//			hRecordSet		- handle to recordset (as returned from UAG_DB_Execute())
+//
+//     	RETURNED VALUE: 
+//
+//			0 if not at end of file.
+//
+//		PSEUDO CODE:
+//
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+INT FUNCTION 
+UAG_DB_EOF(INT hRecordSet)
+
+	INT		iEOF = -1;
+	
+	IF NOT mbDatabaseInit THEN
+	
+		_UAG_DB_Init();
+	END
+
+	IF (mhDBEOF <> -1) THEN
+		iEOF = DLLCall(mhDBEOF, IntToStr(hRecordSet));
+	END
+
+	RETURN iEOF;
+	
+END
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//		FUNCTION NAME	
+//						UAG_DB_Close()
+//
+//		REV	DATE		WHO			DESCRIPTION
+//		0				T.van Wyk	Original
+//		1	16/04/03	J.Venz		Modified and renamed for CSV_Include project
+//
+//     	GENERAL DESCRIPTION
+//			
+//			Close a specified recordset.
+//
+// 		ARGUMENTS:
+//
+//			hRecordSet		- handle to recordset (as returned from UAG_DB_Execute())
+//
+//     	RETURNED VALUE: 
+//
+//			0 if successful, otherwise -1.
+//
+//		PSEUDO CODE:
+//
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+INT FUNCTION 
+UAG_DB_Close(INT hRecordSet)
+
+	INT		iError = -1;
+	
+	IF NOT mbDatabaseInit THEN
+	
+		_UAG_DB_Init();
+	END
+
+	IF (mhDBClose <> -1) THEN
+		iError = DLLCall(mhDBClose, IntToStr(hRecordSet));
+	END
+
+	RETURN iError;
+	
+END
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//		FUNCTION NAME	
+//						UAG_DB_StrToSQL()
+//
+//		REV	DATE		WHO			DESCRIPTION
+//		0	16/04/03	J.Venz		Original
+//
+//     	GENERAL DESCRIPTION
+//			
+//			Replaces single quote with two single quotes to ensure SQL interprets single quote as text only.
+//			
+//
+// 		ARGUMENTS:
+//
+//			sText		- text to convert to SQL format
+//
+//     	RETURNED VALUE: 
+//
+//			Converted text.
+//
+//		PSEUDO CODE:
+//
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+STRING FUNCTION
+UAG_DB_StrToSQL(STRING sText)
+
+	STRING sSQLString; 
+	
+	sSQLString = UAG_String_Replace(sText, "'","''")
+
+	RETURN sSQLString;
+	
+END
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//		FUNCTION NAME	
+//						UAG_DB_GetDLLVersion()
+//
+//		REV	DATE		WHO			DESCRIPTION
+//		0				T.van Wyk	Original
+//		1	16/04/03	J.Venz		Modified and renamed for CSV_Include project
+//
+//     	GENERAL DESCRIPTION
+//			
+//			Get the version of the PlusADOCon.dll.
+//
+// 		ARGUMENTS:
+//
+//     	RETURNED VALUE: 
+//
+//		PSEUDO CODE:
+//
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+STRING  FUNCTION 
+UAG_DB_GetDLLVersion()
+
+	IF (msVersionADOPlusCon = "<>") THEN 
+	
+		_UAG_DB_LoadDLLVersion(); 
+	END
+
+	RETURN (msVersionADOPlusCon);
+END
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//		FUNCTION NAME	
+//						_UAG_DB_LoadDLLVersion()
+//
+//		REV	DATE		WHO			DESCRIPTION
+//		0				T.van Wyk	Original
+//		1	16/04/03	J.Venz		Modified and renamed for CSV_Include project
+//
+//     	GENERAL DESCRIPTION			
+//
+// 		ARGUMENTS:
+//
+//     	RETURNED VALUE: 
+//
+//		PSEUDO CODE:
+//
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+PRIVATE FUNCTION
+_UAG_DB_LoadDLLVersion()
+
+	IF NOT mbDatabaseInit THEN
+	
+		_UAG_DB_Init();
+	END
+	
+	msVersionADOPlusCon = "NA";
+
+	IF (mhGetVersionADOPlusCon <> -1) THEN
+
+		msVersionADOPlusCon = DLLCall(mhGetVersionADOPlusCon, "^"" + msDllPath + "^"");
+	END
+	
+END
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                   			
+//                	The following functions are internal functions                     			
+//                	used to handle the DLL function call blocking                      			
+//               	and should not be called directly from user Cicode                 			
+//                                                                                  		 	
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//		FUNCTION NAME	
+//						_UAG_DB_GetDLLData()
+//
+//		REV	DATE		WHO			DESCRIPTION
+//		0				T.van Wyk	Original
+//		1	16/04/03	J.Venz		Modified and renamed for CSV_Include project
+//
+//     	GENERAL DESCRIPTION
+//			
+//			Wait for dll to execute command and return with data.
+//
+// 		ARGUMENTS:
+//
+//			hRecordSet		- handle to recordset (as returned from UAG_DB_Execute())
+//
+//     	RETURNED VALUE: 
+//
+//			Recordset handle.
+//
+//		PSEUDO CODE:
+//
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+STRING FUNCTION 
+_UAG_DB_GetDLLData(INT hRecordSet)
+
+	STRING	sRecordset = "";
+
+	IF NOT mbDatabaseInit THEN
+	
+		_UAG_DB_Init();
+	END
+
+	IF (mhDatabaseConActive <> -1) AND (mhGetDatabaseData <> -1) THEN
+
+		WHILE (DLLCall(mhDatabaseConActive, IntToStr(hRecordSet)) <> "0") DO
+			SleepMS(10);
+		END
+
+		sRecordset = DLLCall(mhGetDatabaseData, IntToStr(hRecordSet));
+	END
+	
+	RETURN (sRecordset);
+	
+END
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//		FUNCTION NAME	
+//						Array Storage/Retrieval functions
+//
+//		REV	DATE		WHO			DESCRIPTION
+//		0	30/04/03	J.Venz		Original
+//
+//     	GENERAL DESCRIPTION
+//			
+//			The following functions enable storing up to 254 characters in global strings (rather than 
+//			the standard 127) by storing the strings across two variables.
+//
+// 		ARGUMENTS:
+//
+//     	RETURNED VALUE: 
+//
+//		PSEUDO CODE:
+//
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+PRIVATE INT FUNCTION
+_msPrimaryConnection_ArraySet(INT iIndex, STRING sValue)
+
+	ErrSet(1);
+	
+	msPrimaryConnection[iIndex] = sValue;
+	msPrimaryConnection_[iIndex] = StrMid(sValue, 127, 127);
+	
+	ErrSet(0);
+	RETURN 0;
+END
+
+PRIVATE STRING FUNCTION
+_msPrimaryConnection_ArrayGet(INT iIndex)
+
+	STRING	sValue;
+	
+	sValue = msPrimaryConnection[iIndex] + msPrimaryConnection_[iIndex];
+
+	RETURN sValue;
+END
+
+PRIVATE INT FUNCTION
+_msStandbyConnection_ArraySet(INT iIndex, STRING sValue)
+
+	ErrSet(1);
+	
+	msStandbyConnection[iIndex] = sValue;
+	msStandbyConnection_[iIndex] = StrMid(sValue, 127, 127);
+	
+	ErrSet(0);
+	RETURN 0;
+END
+
+PRIVATE STRING FUNCTION
+_msStandbyConnection_ArrayGet(INT iIndex)
+	//      16/03/07	R.Watson	Bugid 34157 - "The standby connection fails to work 
+	//                              when the primary connection is lost in UAG_DB_Execute"
+
+
+	STRING	sValue;
+	
+	sValue = msStandbyConnection[iIndex] + msStandbyConnection_[iIndex];
+
+	RETURN sValue;
+END

@@ -1,0 +1,330 @@
+// keypad.ci
+//
+// Displays a popup alpha-numeric keypad and writes the user-entered value to a variable tag.
+//
+// Rev  Date    By                             Comments
+// 2.00 27/2/04 Andrea Minucelli - Panasonic	
+// 2.10         Andrea Minucelli - Panasonic   Added numeric Keypad
+// 2.20 16/3/04 Eric Black - Citect            Made it possible to modify the displayed value using the keyboard
+//                                             Changed password masking to use bullet characters
+//                                             Keypad now shows current value of the tag on startup
+//                                             Fixed v & w keys that were not in alphabetical order on popup
+//                                             Added instruction/test graphic page
+//                                             Replaced Cancel key with backspace symbol
+//                                             Replace Esc key with clear key and added a close button to the titlebar
+//                                             Replaced Cicode objects with a text object and a symbol object to simplify code
+//                                             Popup form now displays at the mouse position
+//                                             Reduced amount of Cicode by having all buttons call the same function
+//                                             Decreased keypad page scan time to increase responsiveness
+// 2.21 6/4/04  Eric Black - Citect            Keypad() now returns the value instead of writing back to the tag. This is consistent
+//                                             with FormNumPad() and allows the value to be passed directly to other functions, like Login()
+//                                             This will require some code changes for existing users. e.g. Keypad("Tag1") would become 
+//                                             Tag1 = Keypad(Tag1)
+// 2.22 12/5/05 Andrea Minucelli & Eric Black  Keypad task now returns properly when the window is closed with the (x) button
+//                                             If the keypad is closed or a keypad was already open the default value is now returned
+//                                             Added option to set window title
+// 2.23 12/5/05 Eric Black                     IsError will now return -299 if keypad is cancelled
+// 2.24 16/6/05 Michael Telford & Eric Black   Combined fixes/enhancements from Michael's v2.22/2.23 with Eric's v2.22/2.23
+//                                             If Keypad() is called multiple times, the first window will display and subsequent keypads
+//                                             will be queued up until the first is closed, instead of simply returning the default value
+//                                             Added KeypadUserPass() function for changing passwords
+// 3.00 30.04.08 Wolfgang Steiner			   Erweitert für Datum/Zeit
+
+// See the Keypad() and KeypadUserPass() functions (below) for instructions to use this feature.
+//
+// Customizing the Keypad -- You can add additional buttons and resize the Keypad page if desired.
+//
+//  Adding an alpha/numeric/symbol key:
+//    Make a copy of one of the existing buttons
+//    Modify the button's command (a polygon object) to pass the lower-case letter/number/symbol
+//      to KeypadPress() 
+//    Modify the text display that's on the button to display the capital and lower-case versions
+//      of the letter
+//
+//  Adding a command key:
+//    Make a copy of one of the existing  buttons
+//    Modify the button command to pass the command name to KeypadPress() 
+
+//    Add a CASE section to the KeypadPress() function to check for the command name and
+//    perform the appropriate action
+
+
+STRING	msValue;               // Value displayed on popup
+INT	mbShift;               // Shift key state (1=capital)
+INT	mbPassword;            // Password masking mode (1=mask)
+INT	mhKeypadTask = -1;     // Handle for the keypad task
+INT	mbCancel;              // Tells keypad fn the operation is cancelled
+INT mbDatum;
+// Display a popup alpha-numeric keypad and write the user-selected
+// value to the specified variable tag.
+//
+// Arguments:  sValue  Default value to display (default = "")
+//             iMode   0  Normal alpha-numeric display (default)
+//                     1  Mask password characters
+//                     2  Numeric only
+//					   4  Numeric für Datum
+//					   8  Numeric für Zeit
+//             sTitle  Text to display in titlebar (default = "Keypad")
+//
+// Return Value: The value entered by the user. The default value is returned if the
+//               window is closed with the [X] button and IsError() will return 299.
+//
+// Note: Modes can be added
+//       Only one keypad can display at a time. Subsequent calls will be queued up
+//
+// Example button command: Tag1 = Keypad(Tag1)
+// Example username & password entry: Login(Keypad(), Keypad("", 1))
+//
+STRING FUNCTION
+Keypad(STRING sValue = "", INT iMode = 0, STRING sTitle = "Keypad",INT iX=-1, INT iY=0)
+	INT x, y;
+	STRING sPage;
+
+	ErrSet(1);
+	
+	AccessCriticalSection("Keypad");
+
+	mbCancel = FALSE;	// Reset cancel mode
+
+	IF (iMode BITAND 1) = 1 THEN	// Password masking mode
+		mbPassword = TRUE;
+	ELSE
+		mbPassword = FALSE;
+	END
+
+	msValue = sValue;
+	
+	IF ((iMode BITAND 2) = 2) OR ((iMode BITAND 4) = 4) THEN	// Numeric keypad
+		IF NOT giP2 THEN
+			sPage = "!p_KeypadN";
+		ELSE
+			sPage = "!p_KeypadN_20";
+		END	
+	ELSE				// Alpha-numeric keypad
+		IF NOT giP2 THEN
+			sPage = "!p_Keypad";
+		ELSE
+			sPage = "!p_Keypad_20";
+		END	
+	END
+	mbDatum =((iMode BITAND 4) = 4);
+	IF iX =-1 THEN 
+		GUT_GetMousePos_unten(226);
+		x=giPosX;
+		y=giPosY
+	ELSE
+		x=iX;
+		y=iY;	
+	END
+	IF  giP2 THEN
+		Ass(-2,1,"'" + sTitle + "'",0);
+	END		
+	
+
+	UAG_MM_WinNewAt(sPage,X,Y,giMODE,0)
+
+	IF mbDatum THEN 
+		PageSetInt(10,1)
+		PageSetInt(11,2)
+	END
+	
+	IF ((iMode BITAND 8) = 8) THEN 
+		PageSetInt(11,1)
+	END
+	IF NOT giP2 THEN
+		_WinTitle(sTitle);
+	END		
+	
+	mhKeypadTask = TaskHnd();
+	TaskSuspend(mhKeypadTask);	// Wait for user to press Enter or close window
+
+	// Clear task handle so calling WinFree can't interfere with this task
+	mhKeypadTask = -1;	
+
+	IF mbCancel = TRUE THEN
+		LeaveCriticalSection("Keypad");
+		ErrSetHw(-1, 299);
+		ErrSet(0);
+		RETURN sValue;
+	ELSE
+		UAG_WinFree();
+		LeaveCriticalSection("Keypad");
+		ErrSet(0);
+		RETURN msValue;
+	END
+END
+
+
+// Gets the currently logged on user, then uses the KeyPad to get the
+// current password and new password.  This info is passed to UserPassword().
+//
+// Arguments:    None
+//
+// Return Value: None
+//
+// Note: 1. Popup messages will display if an error occurs.
+//       2. For Citect 5.41 and above, UserPassword function allows you to specify
+//       the old password for security. To enable that, remove the ! from the beginning
+//       of the 'sOld =' line and enable the other 'iError = UserPassword' line
+//
+FUNCTION KeypadUserPass()
+
+	INT iError = 0;
+	STRING sName;
+	STRING sOld;
+	STRING sNew;
+
+	sName = Name();
+
+	IF sName = "" THEN
+		Message("Error", "@(Must be logged in to change password.)", 48);
+	ELSE
+		// Enable the following line for Citect 5.41 and above:
+!		sOld = Keypad("", 0, "Enter Old Password");
+		IF IsError() = 299 THEN RETURN; END
+		sNew = Keypad("", 0, "@(Enter New Password)");
+   		IF IsError() = 299 THEN RETURN; END
+
+		IF sNew = "" THEN
+			Message("Error", "@(Passwords cannot be empty!)^n@(Password change aborted.)", 48);
+		ELSE
+			iError = UserPassword(sName, sNew, sOld);	// Enable this for Citect 5.41 and above only
+      
+			SELECT CASE iError
+			CASE 0
+				Message("@(Change Password)", "@(Password changed successfully.)", 64);
+			CASE 274
+				Message("@(Change Password)", "@(Incorrect password!)^n@(Password change aborted.)", 48);
+			CASE ELSE
+				Message("@(Change Password)", "@(Could not complete password change!)^n@(Error): " + iError:#, 48);
+			END SELECT
+		END
+	END
+
+END
+
+
+// Handle clicks from the popup keypad
+//
+// Each button on the keypad must call this function and pass a character or command name.
+// If the name is in the SELECT CASE list below, some action will be performed (e.g. Delete, shift).
+// Otherwise, the character(s) will be added to the buffer string. If sKey is ENTER, the buffer
+// string value will be written to the tag and the window will be closed.
+//
+FUNCTION
+KeypadPress(STRING sKey)
+
+	SELECT CASE sKey
+	CASE "CLOSE";
+
+		IF mhKeypadTask <> -1 THEN
+			mbCancel = TRUE;
+			TaskResume(mhKeypadTask);
+		END
+
+	CASE "BACKSPACE";
+
+		IF StrLength(msValue) > 0 THEN
+			msValue = StrLeft(msValue, StrLength(msValue) - 1);
+		END
+
+	CASE "SHIFT"
+
+		Toggle(mbShift);
+
+	CASE "ENTER"
+
+		TaskResume(mhKeypadTask);
+
+	CASE "CLEAR"
+
+		msValue = "";
+	CASE "-"
+		IF mbShift = TRUE THEN
+			msValue = msValue + "_";
+		ELSE
+			msValue = msValue + "-";	
+		END
+	
+	CASE ELSE
+
+		IF mbShift = TRUE THEN
+			sKey = StrUpper(sKey);
+		END
+
+		msValue = msValue + sKey;
+
+	END SELECT
+END
+
+
+// This function is called from the string value display on the popup keypad
+// It returns either the buffer value or a masked value if password mode is enabled.
+STRING FUNCTION
+KeypadValueGet()
+	IF mbPassword = TRUE THEN
+		RETURN StrFill("•", StrLength(msValue));
+	ELSE
+		RETURN msValue;
+	END
+END
+
+
+// Allows the buffer value to be written to directly. Called by the keyboard command
+// on the string value display on the keypad popup.
+FUNCTION KeypadValueSet(STRING sValue)
+	msValue = sValue;
+END
+
+
+// Returns the shift state of the keypad (0 = lower case, 1 = capital)
+INT
+FUNCTION
+KeypadShift()
+	RETURN mbShift;
+END
+
+
+// Checks if the mouse is over the specified AN.
+// Returns TRUE if the mouse is over the specified AN, otherwise returns FALSE
+INT 
+FUNCTION
+DspMouseAnim(INT hAN = -1)
+
+	INT	a,b,c,d, x,y;
+	INT	iAnimAN;
+
+	iAnimAN = KeyGetCursor();
+	IF (hAN = -1) THEN
+		hAN = DspGetAnCur();
+	END
+
+	IF ((hAN > -1) AND (iAnimAN > -1)) THEN
+
+		DspGetAnExtent(hAN, a, b, c, d);
+		DspGetMouse(x, y);
+
+		IF (x > b + 4 AND x < d - 4) AND (y > a + 1 AND y < c - 1) THEN
+			RETURN 1;
+		END
+	END
+
+	RETURN 0;
+END
+
+
+INT 
+FUNCTION 
+AccessCriticalSection(STRING sName)
+    INT hSem;
+    INT iErr;
+
+    hSem = SemOpen(sName, 2);
+    iErr = SemWait(hSem, -1);
+
+    WHILE iErr = 297 DO // Repeat if semaphore owner died 
+          iErr = SemWait(hSem, -1);
+    END
+
+    RETURN iErr;
+END 

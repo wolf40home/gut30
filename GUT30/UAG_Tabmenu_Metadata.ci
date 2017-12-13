@@ -1,0 +1,252 @@
+//-----------------------------------------------------------------------------
+//	Copyright © 2009 Schneider Electric (Australia) Pty Ltd.
+//	All rights reserved.
+//
+// 	FILE:		UAG_Tabmenu_Metadata.ci
+//
+//	CREATED:	14/05/2009
+//
+//	AUTHOR:		Michael Yip
+//
+//	SUMMARY:
+//
+//		Contains related functions to get metadata (new feature in 7.20) of tab menu controls.
+//
+//	PUBLIC FUNCTIONS:
+//
+//		_UAG_Tabmenu_Tab_IntMetadata()
+//		_UAG_Tabmenu_Tab_StrMetadata()
+//
+//		_UAG_Tabmenu_Button_IntMetadata()
+//		_UAG_Tabmenu_Button_StrMetadata()
+//				
+// 	REMARKS: 
+//
+//		<TODO> Replace the array variables (except MasterAN arrays) with metadata stored within the "master"
+//		dynamic object, once that feature is implemented in 7.20, and move the functions back to UAG_Tabmenu.ci.
+//
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+//
+//	Module Variables
+//
+//-----------------------------------------------------------------------------
+
+// UAG_Tabmenu master ANs
+INT		m_UAG_Tabmenu_Tab_MasterAN				[9][25];	// The master AN of the tab objects that store the metadata
+INT		m_UAG_Tabmenu_Button_MasterAN			[9][25];	// The master AN of the button objects that store the metadata
+
+// UAG_Tabmenu Tab data structure, each element represents a tab within a UAG_Tabmenu on each displayed window
+INT		m_UAG_Tabmenu_Tab_InitPos				[9][25];	// The initial positions of the tabs as configured on page
+INT		m_UAG_Tabmenu_Tab_Pos					[9][25];	// The current positions of the tabs as displayed on screen
+INT		m_UAG_Tabmenu_Tab_Width					[9][25];	// The current widths of the tabs as displayed on screen
+STRING	m_UAG_Tabmenu_Tab_LocalText				[9][25];	// The localised text of the tab texts in full length
+INT		m_UAG_Tabmenu_Tab_MenuConfigHandle		[9][25];	// Linkage to menu configuration nodes that contatin configuration properties of the tabs
+
+// UAG_Tabmenu Tab data structure, each element represents a tab within a UAG_Tabmenu on each displayed window
+INT		m_UAG_Tabmenu_Button_InitPos			[9][25];	// The initial positions of the buttons as configured on page
+INT		m_UAG_Tabmenu_Button_Pos				[9][25];	// The current positions of the buttons as displayed on screen
+INT		m_UAG_Tabmenu_Button_Width				[9][25];	// The current widths of the buttons as displayed on screen
+STRING	m_UAG_Tabmenu_Button_LocalText			[9][25];	// The localised text of the button texts in full length
+INT		m_UAG_Tabmenu_Button_MenuConfigHandle	[9][25];	// Linkage to menu configuration nodes that contatin configuration properties of the buttons
+
+
+//-----------------------------------------------------------------------------
+//
+//	Field Functions <TODO> Use dyn object metadata to store logical information
+//
+//----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		_UAG_Tabmenu_Tab_IntMetadata
+//
+//	SUMMARY:
+//		Get / Set the specific integer metadata of a specific tab.
+//			
+//	PARAMS:
+//		UAG_TabmenuID		- A unique number that identifies a particular tab menu
+//		tabID			- A unique number that identifies a particular tab
+//		metaField		- Name of a meta field defined in the master dyn object of the tab control
+//		newValue		- Optional, new value to be set to the metadata, if not specified, metadata is unchanged and returned
+//			
+//	RETURNS: 
+//		The value of the specified metadata or -1 if failed
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION _UAG_Tabmenu_Tab_IntMetadata(INT UAG_TabmenuID, INT tabID, STRING metaField, INT newValue = -1)
+	SELECT CASE metaField
+	CASE "MasterAN"
+		IF (newValue >= 0) THEN
+			// set value
+			m_UAG_Tabmenu_Tab_MasterAN[UAG_TabmenuID][tabID] = newValue;
+		END
+		// get value
+		RETURN m_UAG_Tabmenu_Tab_MasterAN[UAG_TabmenuID][tabID];
+
+	// <TODO> User MasterAN to access the metadata when that feature is implemented in 7.20
+	CASE "InitPos"
+		IF (newValue >= 0) THEN
+			// set value
+			m_UAG_Tabmenu_Tab_InitPos[UAG_TabmenuID][tabID] = newValue;
+		END
+		// get value
+		RETURN m_UAG_Tabmenu_Tab_InitPos[UAG_TabmenuID][tabID];
+	CASE "Pos"
+		IF (newValue >= 0) THEN
+			// set value
+			m_UAG_Tabmenu_Tab_Pos[UAG_TabmenuID][tabID] = newValue;
+		END
+		// get value
+		RETURN m_UAG_Tabmenu_Tab_Pos[UAG_TabmenuID][tabID];
+	CASE "Width"
+		IF (newValue >= 0) THEN
+			// set value
+			m_UAG_Tabmenu_Tab_Width[UAG_TabmenuID][tabID] = newValue;
+		END
+		// get value
+		RETURN m_UAG_Tabmenu_Tab_Width[UAG_TabmenuID][tabID];
+	CASE "MenuConfigHandle"
+		IF (newValue >= 0) THEN
+			// set value
+			m_UAG_Tabmenu_Tab_MenuConfigHandle[UAG_TabmenuID][tabID] = newValue;
+		END
+		// get value
+		RETURN m_UAG_Tabmenu_Tab_MenuConfigHandle[UAG_TabmenuID][tabID];
+	END SELECT
+	RETURN -1;
+END
+
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		_UAG_Tabmenu_Tab_StrMetadata
+//
+//	SUMMARY:
+//		Get / Set the specific string metadata of a specific tab.
+//			
+//	PARAMS:
+//		UAG_TabmenuID		- A unique number that identifies a particular tab menu
+//		tabID			- A unique number that identifies a particular tab
+//		metaField		- Name of a meta field defined in the master dyn object of the tab control
+//		newValue		- Optional, new value to be set to the metadata, if not specified, metadata is unchanged and returned
+//			
+//	RETURNS: 
+//		The value of the specified metadata or empty string if failed
+//
+//-----------------------------------------------------------------------------
+
+STRING FUNCTION _UAG_Tabmenu_Tab_StrMetadata(INT UAG_TabmenuID, INT tabID, STRING metaField, STRING newValue = "N/A")
+	// <TODO> User MasterAN to access the metadata when that feature is implemented in 7.20
+	SELECT CASE metaField
+	CASE "LocalText"
+		IF (newValue <> "N/A") THEN
+			// set value
+			m_UAG_Tabmenu_Tab_LocalText[UAG_TabmenuID][tabID] = newValue;
+		END
+		// get value
+		RETURN m_UAG_Tabmenu_Tab_LocalText[UAG_TabmenuID][tabID];
+	END SELECT
+	RETURN "";
+END
+
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		_UAG_Tabmenu_Button_IntMetadata
+//
+//	SUMMARY:
+//		Get / Set the specific integer metadata of a specific button.
+//			
+//	PARAMS:
+//		UAG_TabmenuID		- A unique number that identifies a particular tab menu
+//		buttonID		- A unique number that identifies a particular button
+//		metaField		- Name of a meta field defined in the master dyn object of the tab control
+//		newValue		- Optional, new value to be set to the metadata, if not specified, metadata is unchanged and returned
+//			
+//	RETURNS: 
+//		The value of the specified metadata or -1 if failed
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION _UAG_Tabmenu_Button_IntMetadata(INT UAG_TabmenuID, INT buttonID, STRING metaField, INT newValue = -1)
+	SELECT CASE metaField
+	CASE "MasterAN"
+		IF (newValue >= 0) THEN
+			// set value
+			m_UAG_Tabmenu_Button_MasterAN[UAG_TabmenuID][buttonID] = newValue;
+		END
+		// get value
+		RETURN m_UAG_Tabmenu_Button_MasterAN[UAG_TabmenuID][buttonID];
+
+	// <TODO> User MasterAN to access the metadata when that feature is implemented in 7.20
+	CASE "InitPos"
+		IF (newValue >= 0) THEN
+			// set value
+			m_UAG_Tabmenu_Button_InitPos[UAG_TabmenuID][buttonID] = newValue;
+		END
+		// get value
+		RETURN m_UAG_Tabmenu_Button_InitPos[UAG_TabmenuID][buttonID];
+	CASE "Pos"
+		IF (newValue >= 0) THEN
+			// set value
+			m_UAG_Tabmenu_Button_Pos[UAG_TabmenuID][buttonID] = newValue;
+		END
+		// get value
+		RETURN m_UAG_Tabmenu_Button_Pos[UAG_TabmenuID][buttonID];
+	CASE "Width"
+		IF (newValue >= 0) THEN
+			// set value
+			m_UAG_Tabmenu_Button_Width[UAG_TabmenuID][buttonID] = newValue;
+		END
+		// get value
+		RETURN m_UAG_Tabmenu_Button_Width[UAG_TabmenuID][buttonID];
+	CASE "MenuConfigHandle"
+		IF (newValue >= 0) THEN
+			// set value
+			m_UAG_Tabmenu_Button_MenuConfigHandle[UAG_TabmenuID][buttonID] = newValue;
+		END
+		// get value
+		RETURN m_UAG_Tabmenu_Button_MenuConfigHandle[UAG_TabmenuID][buttonID];
+	END SELECT
+	RETURN -1;
+END
+
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		_UAG_Tabmenu_Button_StrMetadata
+//
+//	SUMMARY:
+//		Get / Set the specific string metadata of a specific button.
+//			
+//	PARAMS:
+//		UAG_TabmenuID		- A unique number that identifies a particular tab menu
+//		buttonID		- A unique number that identifies a particular button
+//		metaField		- Name of a meta field defined in the master dyn object of the tab control
+//		newValue		- Optional, new value to be set to the metadata, if not specified, metadata is unchanged and returned
+//			
+//	RETURNS: 
+//		The value of the specified metadata or empty string if failed
+//
+//-----------------------------------------------------------------------------
+
+STRING FUNCTION _UAG_Tabmenu_Button_StrMetadata(INT UAG_TabmenuID, INT buttonID, STRING metaField, STRING newValue = "N/A")
+	// <TODO> User MasterAN to access the metadata when that feature is implemented in 7.20
+	SELECT CASE metaField
+	CASE "LocalText"
+		IF (newValue <> "N/A") THEN
+			// set value
+			m_UAG_Tabmenu_Button_LocalText[UAG_TabmenuID][buttonID] = newValue;
+		END
+		// get value
+		RETURN m_UAG_Tabmenu_Button_LocalText[UAG_TabmenuID][buttonID];
+	END SELECT
+	RETURN "";
+END

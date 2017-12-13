@@ -1,0 +1,477 @@
+//-----------------------------------------------------------------------------
+//	Copyright © 2012 Schneider Electric (Australia) Pty Ltd.
+//	All rights reserved.
+//
+// 	FILE:		UAG_TabAlarmFilter.ci
+//
+//	CREATED:	13/02/2012
+//
+//	SUMMARY:
+//
+//		Contains functions related to the filtering for use in the tab style
+//		alarm templates.
+//
+//	PUBLIC FUNCTIONS:
+//
+//		UAG_TabAlarmFilter_GetString
+//		UAG_TabAlarmFilter_ShowForm
+//		UAG_TabAlarmFilter_Apply
+//		UAG_TabAlarmFilter_Reset
+//		UAG_TabAlarmFilter_GetFilter
+//		UAG_TabAlarmFilter_SetCallback
+//
+//-----------------------------------------------------------------------------
+
+
+//-----------------------------------------------------------------------------
+//
+//	Constants
+//
+//-----------------------------------------------------------------------------
+
+STRING	c_UAG_TabAlarm_FILTER_NAME_PART			= "_taf_";
+STRING	c_UAG_TabAlarm_FILTER_PROP_FLTSTR		= "FilterString";
+STRING	c_UAG_TabAlarm_FILTER_FLTSTR_CUSTOM		= "@(Custom Filter)";
+STRING	c_UAG_TabAlarm_FILTER_FLTSTR_APPLIED	= "@(Filter Applied)";
+STRING	c_UAG_TabAlarm_FILTER_FLTSTR_NONE		= "@(No Filter)";
+
+STRING	c_UAG_TabAlarm_QUEMAP_NAME				= "_tabalm_quemap";	// The user queue to be used by the tab alarm as a map to store persisted values
+
+
+//-----------------------------------------------------------------------------
+//
+//	Public Functions
+//
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		UAG_TabAlarmFilter_GetString
+//
+//	SUMMARY:
+//		Returns the currently active filter string for user feedback.
+//			
+//	PARAMS:
+//		listAN			- The Animation Number of the alarm list
+//			
+//	RETURNS: 
+//		the active filter string of an alarm list or "" if failed
+//
+//-----------------------------------------------------------------------------
+
+STRING FUNCTION UAG_TabAlarmFilter_GetString(INT listAN)
+	STRING retValue = "";
+
+	IF (listAN <= 0) THEN
+		RETURN retValue;
+	END
+
+	retValue = StrTrim(_UAG_TabAlarmFilter_GetProperty(listAN, c_UAG_TabAlarm_FILTER_PROP_FLTSTR));
+	IF ("" = retValue) THEN
+		IF (listAN >= 0) THEN
+			// check if alarm list is filtered by category or priority via AlarmSetInfo()
+			IF	(AlarmGetInfo(listAN, 12) BITAND 2) THEN
+				retValue = c_UAG_TabAlarm_FILTER_FLTSTR_CUSTOM;
+			END
+		END
+		IF ("" = retValue) THEN
+			retValue = c_UAG_TabAlarm_FILTER_FLTSTR_NONE;
+		END
+	END
+
+	RETURN retValue;
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		UAG_TabAlarmFilter_ShowForm
+//
+//	SUMMARY:
+//		Pops up an alarm filter form for filtering alarms.
+//			
+//	PARAMS:
+//		listAN			- The Animation Number of the alarm list
+//		bUseLegacyForm	- Use legacy form (default = FALSE)
+//			
+//	RETURNS: 
+//		0 if successful or error number if failed
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION UAG_TabAlarmFilter_ShowForm(INT listAN, INT bUseLegacyForm = FALSE)
+	INT retValue = 274;
+	INT index;
+	INT errLevelOld;
+	STRING formFilterCurr;
+
+	IF (listAN <= 0) THEN
+		RETURN retValue;
+	END
+
+	errLevelOld = ErrSetLevel(1);
+
+	// determine index (type) for filter form
+	SELECT CASE AlarmGetInfo(listAN, 3)
+	CASE 3
+		index = 2;
+	CASE 10
+		index = 1;
+	CASE 15
+		index = 3;
+	CASE ELSE
+		index = 0;
+	END SELECT
+
+	IsError();
+
+	// create a named filter for the form
+	formFilterCurr = UAG_TabAlarmFilter_GetFilter(listAN);
+	AlarmFilterOpen(formFilterCurr, 2);
+
+	IF (bUseLegacyForm) THEN
+		retValue = AlarmFilterForm(index, 0, 0, formFilterCurr);
+	ELSE
+		retValue = LibAlarmFilterForm(index, formFilterCurr);
+	END
+	SELECT CASE retValue
+	CASE 0
+		_UAG_TabAlarmFilter_SetProperty(listAN, c_UAG_TabAlarm_FILTER_PROP_FLTSTR, "");
+	CASE 1
+		_UAG_TabAlarmFilter_SetProperty(listAN, c_UAG_TabAlarm_FILTER_PROP_FLTSTR, c_UAG_TabAlarm_FILTER_FLTSTR_APPLIED);
+	END SELECT
+
+	// merge new filter against existing filter on the alarm list if filter is changed
+	IF (retValue <> -1) THEN
+		UAG_TabAlarmFilter_Apply(listAN);
+	END
+
+	retValue = IsError();
+
+	ErrSetLevel(errLevelOld);
+
+	RETURN retValue;
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		UAG_TabAlarmFilter_Apply
+//
+//	SUMMARY:
+//		Apply alarm filter and optionally combines the form filter with an
+//		extra filter.
+//			
+//	PARAMS:
+//		listAN				- The Animation Number of the alarm list
+//		extraFilter			- The name of an extra filter (Optional)
+//								If an extra filter is specified once, it will be
+//								remembered and applied on subsequent Apply calls.
+//			
+//	RETURNS: 
+//		0 if successful or error number if failed
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION UAG_TabAlarmFilter_Apply(INT listAN, STRING extraFilter = "")
+	STRING formFilterCurr = UAG_TabAlarmFilter_GetFilter(listAN);
+	STRING formFilterTmp;
+	INT retValue;
+
+	IF (extraFilter <> "") THEN
+		PageSetStr("_ta_filter2_" + IntToStr(listAN), extraFilter);
+	ELSE
+		extraFilter = PageGetStr("_ta_filter2_" + IntToStr(listAN));
+	END
+
+	AlarmFilterOpen(formFilterCurr, 2);
+	IF (extraFilter = "") THEN
+		retValue = AlarmFilterCopy(listAN, formFilterCurr);
+	ELSE
+		formFilterTmp = formFilterCurr + "_tmp";
+		AlarmFilterOpen(formFilterTmp, 2);
+		AlarmFilterCopy(formFilterTmp, formFilterCurr);
+		AlarmFilterAppend(formFilterTmp, extraFilter);
+		retValue = AlarmFilterCopy(listAN, formFilterTmp);
+		AlarmFilterClose(formFilterTmp);
+	END
+
+	// fire the callback function after filter is changed
+	_UAG_TabAlarmFilter_OnCallback(listAN);
+
+	RETURN retValue;
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		UAG_TabAlarmFilter_Reset
+//
+//	SUMMARY:
+//		Reset alarm filter.
+//			
+//	PARAMS:
+//		listAN			- The Animation Number of the alarm list
+//			
+//	RETURNS: 
+//		0 if successful or error number if failed
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION UAG_TabAlarmFilter_Reset(INT listAN)
+	INT retValue = 274;
+	INT index;
+	INT errLevelOld;
+	STRING formFilterCurr;
+
+	IF (listAN <= 0) THEN
+		RETURN retValue;
+	END
+
+	errLevelOld = ErrSetLevel(1);
+
+	// determine index (type) for filter form
+	SELECT CASE AlarmGetInfo(listAN, 3)
+	CASE 3
+		index = 2;
+	CASE 10
+		index = 1;
+	CASE 15
+		index = 3;
+	CASE ELSE
+		index = 0;
+	END SELECT
+
+	IsError();
+	// remove filter against existing filter on the alarm list
+	formFilterCurr = UAG_TabAlarmFilter_GetFilter(listAN);
+	AlarmFilterOpen(formFilterCurr, 2);				// create form filter if not already exists
+	AlarmFilterSubtract(listAN, formFilterCurr);
+	retValue = IsError();
+	IF (retValue = 0) THEN
+		AlarmResetQuery(formFilterCurr);
+		ClearFormOptions(index);
+		_UAG_TabAlarmFilter_SetProperty(listAN, c_UAG_TabAlarm_FILTER_PROP_FLTSTR, "");
+	END
+
+	// fire the callback function after filter is changed
+	_UAG_TabAlarmFilter_OnCallback(listAN);
+
+	ErrSetLevel(errLevelOld);
+
+	RETURN retValue;
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		UAG_TabAlarmFilter_GetFilter
+//
+//	SUMMARY:
+//		Gets the name of the alarm filter representing the selection in the
+//		alarm filter form.
+//			
+//	PARAMS:
+//		listAN		- The Animation Number of the alarm list
+//			
+//	RETURNS:
+//		The name of the alarm filter
+//
+//-----------------------------------------------------------------------------
+
+STRING FUNCTION UAG_TabAlarmFilter_GetFilter(INT listAN)
+	RETURN IntToStr(WinNumber()) + "_" + IntToStr(listAN) + "_" + PageInfo(0) + c_UAG_TabAlarm_FILTER_NAME_PART;
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		UAG_TabAlarmFilter_SetCallback
+//
+//	SUMMARY:
+//		Sets the callback function when filter is applied.
+//
+//	PARAMS:
+//		filteredCallbackFn	- The name of the callback function to be invoked after filter is applied
+//								The callback fn takes one arugment (listAN)
+//
+//	RETURNS:
+//		0 if successful or error code if not
+//
+//-----------------------------------------------------------------------------
+
+INT FUNCTION UAG_TabAlarmFilter_SetCallback(INT listAN, STRING filteredCallbackFn)
+	RETURN PageSetStr("_ta_filterfn_" + IntToStr(listAN), filteredCallbackFn);
+END
+
+
+//-----------------------------------------------------------------------------
+//
+//	Private Help Functions
+//
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		UAG_TabAlarmFilter_OnCallback
+//
+//	SUMMARY:
+//		Invokes the callback function. To be called after filter is changed.
+//
+//	PARAMS:
+//		listAN			- The Animation Number of the alarm list
+//
+//	RETURNS:
+//		0 if successful or error code if not
+//
+//-----------------------------------------------------------------------------
+
+PRIVATE
+INT FUNCTION _UAG_TabAlarmFilter_OnCallback(INT listAN)
+	STRING filteredCallbackFn = PageGetStr("_ta_filterfn_" + IntToStr(listAN));
+	IF ("" <> filteredCallbackFn) THEN
+		RETURN TaskNew(filteredCallbackFn, listAN, 0);
+	END
+	RETURN 0;
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		_UAG_TabAlarmFilter_GetProperty
+//
+//	SUMMARY:
+//		Gets the specified property of an alarm filter
+//		(identified by its associated alarm list AN)
+//			
+//	PARAMS:
+//		listAN			- The Animation Number of the alarm list
+//		property		- The alarm filter property including:
+//							FilterString
+//			
+//	RETURNS:
+//		The value of the property
+//
+//-----------------------------------------------------------------------------
+
+PRIVATE
+STRING FUNCTION _UAG_TabAlarmFilter_GetProperty(INT listAN, STRING property)
+	STRING key;
+
+	IF (property = c_UAG_TabAlarm_FILTER_PROP_FLTSTR) THEN
+		// use user que (which only stores integer values) instead of page variable to persist value between pages
+		key = IntToStr(WinNumber()) + "." + PageInfo(0) + "." + IntToStr(listAN) + "." + property;
+		key = _UAG_TabAlarm_Map_GetValue(key);
+		IF ("1" = key) THEN
+			RETURN c_UAG_TabAlarm_FILTER_FLTSTR_APPLIED;
+		ELSE
+			RETURN "";
+		END
+	ELSE
+		RETURN PageGetStr(c_UAG_TabAlarm_FILTER_NAME_PART + IntToStr(listAN), property);
+	END
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		_UAG_TabAlarmFilter_SetProperty
+//
+//	SUMMARY:
+//		Sets the specified property of an alarm filter
+//		(identified by its associated alarm list AN)
+//			
+//	PARAMS:
+//		listAN			- The Animation Number of the alarm list
+//		property		- The alarm filter property including:
+//							FilterString
+//		value			- new value for the property
+//			
+//	RETURNS:
+//		0 if successful or error code if not
+//
+//-----------------------------------------------------------------------------
+
+PRIVATE
+INT FUNCTION _UAG_TabAlarmFilter_SetProperty(INT listAN, STRING property, STRING value)
+	STRING key;
+
+	IF (property = c_UAG_TabAlarm_FILTER_PROP_FLTSTR) THEN
+		key = IntToStr(WinNumber()) + "." + PageInfo(0) + "." + IntToStr(listAN) + "." + property;
+		IF (StrTrim(value) <> "") THEN
+			RETURN _UAG_TabAlarm_Map_SetValue(key, 1);
+		ELSE
+			RETURN _UAG_TabAlarm_Map_SetValue(key, 0);
+		END
+	ELSE
+		RETURN PageSetStr(c_UAG_TabAlarm_FILTER_NAME_PART + IntToStr(listAN), property, value);
+	END
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		_UAG_TabAlarm_Map_SetValue
+//
+//	SUMMARY:
+//		Sets an integer value to a key under the tab alarm map (key table).
+//			
+//	PARAMS:
+//		key				- A unquie string to act as a key for the que map
+//		value			- integer value to be set to the key
+//			
+//	RETURNS: 
+//		0 if value is set successfully or error if failed
+//
+//-----------------------------------------------------------------------------
+
+PRIVATE
+INT FUNCTION _UAG_TabAlarm_Map_SetValue(STRING key, STRING value)
+	INT retValue = 274;
+	INT queHnd = QueOpen(c_UAG_TabAlarm_QUEMAP_NAME, 2);
+	INT valueOld;
+
+	IF (queHnd < 0) THEN
+		RETURN retValue;
+	END
+	// QuePeek mode 4 always returns 0, mode 1 however works as expected
+	QuePeek(queHnd, valueOld, key, 1+8);
+	retValue = QueWrite(queHnd, value, key);
+
+	RETURN retValue;
+END
+
+//-----------------------------------------------------------------------------
+//
+//	FUNCTION NAME:
+//		_UAG_TabAlarm_Map_GetValue
+//
+//	SUMMARY:
+//		Gets an integer value of a key under the tab alarm map (key table).
+//			
+//	PARAMS:
+//		key				- A unquie string to act as a key for the que map
+//			
+//	RETURNS: 
+//		The integer value of the specified key or -1 if failed to find the key
+//
+//-----------------------------------------------------------------------------
+
+PRIVATE
+INT FUNCTION _UAG_TabAlarm_Map_GetValue(STRING key)
+	INT retValue = -1;
+	INT queHnd = QueOpen(c_UAG_TabAlarm_QUEMAP_NAME, 2);
+	INT value;
+
+	IF (queHnd < 0) THEN
+		RETURN retValue;
+	END
+	// QuePeek mode 4 always returns 0, mode 1 however works as expected
+	IF (QuePeek(queHnd, value, key, 1) = 0) THEN
+		retValue = value;
+	END
+
+	RETURN retValue;
+END

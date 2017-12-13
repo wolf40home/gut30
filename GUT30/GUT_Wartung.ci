@@ -1,0 +1,54 @@
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//	
+// 	FILE:	GUT_Wartung.ci
+//
+//	Beschreibung:
+//
+//		Enthält  Funktionen für Wartungstexte
+//		
+//
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	21.11.16	/	Schneider Electrik GmbH
+//	Version				75.11.08
+//
+//	PUBLIC FUNCTIONS:
+//
+//			GUT_Wartung_Text
+//
+
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	19.10.17	Steiner		Pfad geändert
+
+// MODULE VARIABLES
+
+STRING SFile
+
+
+FUNCTION GUT_Wartung_Text(STRING sTAG)
+INT iError
+
+OBJECT objFile;
+	Ass(-2,1,"'" + sTag + "'",0);
+
+	iError = UAG_MM_PopUP("!p_wartung_30")
+	objFile= ObjectByName("AN9")
+		_ObjectSetProperty(objFile, "MultiLine", 1);
+
+	SFile = PathToStr("[INFO_P]:")+sTAG +".txt"
+	_ObjectCallMethod(objFile, "LoadFile", sFile,1);	
+
+
+END
+
+FUNCTION GUT_Wartung_Save(STRING sTAG)
+INT iFile;
+	SFile = PathToStr("[INFO_P]:")+sTAG +".txt"
+	iFile=FileOpen(SFile,"a")
+	FileWrite(iFile, Date(2) +" "+ Time(1)+" - ")
+	FileWriteLn(iFile, GUT_MAINT_TXT)
+	FileClose(iFile)
+	GUT_MAINT_TXT =""
+END
+
