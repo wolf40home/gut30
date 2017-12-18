@@ -799,7 +799,7 @@ END
 //
 //-----------------------------------------------------------------------------
 
-INT FUNCTION UAG_TabAlarm_LoadConfig_alt(INT listID, STRING formatName = "")
+INT FUNCTION UAG_TabAlarm_LoadConfig(INT listID, STRING formatName = "")
 	INT retValue = 274;
 	INT listHnd = _UAG_TabAlarm_GetInstance(listID);
 	INT listAN;
@@ -927,7 +927,7 @@ INT FUNCTION UAG_TabAlarm_ResetConfig_alt(INT listID, STRING formatName = "")
 	END
 
 	retValue = UAG_TabAlarm_SetFormatStringINI(formatName, "");
-	UAG_TabAlarm_LoadConfig_alt(listID, formatName);
+	UAG_TabAlarm_LoadConfig(listID, formatName);
 
 	RETURN retValue;
 END
@@ -3487,7 +3487,7 @@ END
 //
 //-----------------------------------------------------------------------------
 
-INT FUNCTION _UAG_TabAlarm_Dsp_DataChange_alt(INT listAN)
+INT FUNCTION _UAG_TabAlarm_Dsp_DataChange(INT listAN)
 	INT retValue = 0;
 	INT listID = _TabAlarm_GetIDByAN(listAN);
 	INT count;
@@ -3506,7 +3506,7 @@ INT FUNCTION _UAG_TabAlarm_Dsp_DataChange_alt(INT listAN)
 
 	IF (_UAG_TabAlarm_IntMetadata(listHnd, "InitiatingCycle") = c_TABALARM_INITCYCLE_END) THEN
 		IF (_UAG_TabAlarm_IntMetadata(listHnd, "Type") <> AlarmGetInfo(listAN, 3)) THEN
-			UAG_TabAlarm_LoadConfig_alt(listID);
+			UAG_TabAlarm_LoadConfig(listID);
 			RETURN retValue;
 		END
 	END
