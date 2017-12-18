@@ -1,0 +1,383 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<template desc="Equipment template">
+  <param name="type" desc="equipment type parameters">
+    <string name="name">GUT_SNMP</string>
+    <string name="ref">GUT_SNMP</string>
+ </param>
+  <input name="equipment" file="equip.dbf" desc="Equipment Database">
+    <field name="name"></field>
+    <array name="name_list">{Split('{name}','.')}</array>
+    <field name="cluster"></field>
+    <field name="type"></field>
+    <field name="iodevice"></field>
+    <string name="tagprefix">{name_list[0]}</string>
+    <field name="area"></field>
+    <field name="page"></field>
+    <array name="page_list">{Split('{page}',',')}</array>
+    <field name="help"></field>
+    <field name="location"></field>
+    <field name="comment"></field>
+    <field name="scheduled"></field>
+    <field name="defstate"></field>
+    <field name="param"></field>
+    <array name="param_list">{ToProperty('{param}','=',';')}</array>
+    <field name="custom1"></field>
+    <field name="custom2"></field>
+    <field name="custom3"></field>
+    <field name="custom4"></field>
+    <field name="custom5"></field>
+    <field name="custom6"></field>
+    <field name="custom7"></field>
+    <field name="custom8"></field>
+  </input>
+  <output name="VAR.SDESC" file="variable.dbf" filter=" ( '{equipment.type}={type.name}'">
+    <field name="taggenlink" load="true">GUT_SNMP.SDESC</field>
+    <field name="linked">1</field>
+    <field name="editcode">16777215</field>
+    <field name="equip">{equipment.name}</field>
+    <field name="item">SDESC</field>
+    <field name="historian">FALSE</field>
+    <field name="name" key="true">{equipment.tagprefix}_SDESC</field>
+    <field name="type">STRING</field>
+    <field name="unit">{equipment.iodevice}</field>
+    <field name="addr">DA{equipment.custom4}100</field>
+	<field name="comment">sysDescr {equipment.comment}</field>
+    <field name="cluster">{equipment.cluster}</field>
+  </output>
+   <output name="SN.SDESC" file="snmpvars.dbf" filter=" ( '{equipment.type}={type.name}'" desc="Insert text here">
+    <field name="taggenlink" load="true">GUT_SNMP.SDESC</field>
+    <field name="linked">1</field>
+    <field name="equip">{equipment.name}</field>
+    <field name="item">SDESC</field>
+    <field name="index">{equipment.custom4}100</field>
+    <field name="devname">{equipment.iodevice}</field>
+    <field name="tagname" key="true">{equipment.tagprefix}_SDESC</field>
+    <field name="ctype">STRING</field>
+    <field name="snmpname">sysDescr</field>
+    <field name="oid">.1.3.6.1.2.1.1.1.0</field>
+    <field name="snmptype">DA</field>
+	<field name="comment">A textual description of the entity. This value should include the full name and version identification of the system's hardware type,</field>
+ </output> 
+ 
+  <output name="VAR.SNAME" file="variable.dbf" filter=" ( '{equipment.type}={type.name}'" desc="Insert text here">
+    <field name="taggenlink" load="true">GUT_SNMP.SNAME</field>
+    <field name="linked">1</field>
+    <field name="editcode">16777215</field>
+    <field name="equip">{equipment.name}</field>
+    <field name="item">SNAME</field>
+    <field name="historian">FALSE</field>
+    <field name="name" key="true">{equipment.tagprefix}_SNAME</field>
+    <field name="type">STRING</field>
+    <field name="unit">{equipment.iodevice}</field>
+    <field name="addr">DA{equipment.custom4}200</field>
+	<field name="comment">SysName {equipment.comment}</field>
+    <field name="cluster">{equipment.cluster}</field>
+ </output>
+  <output name="SN.SNAME" file="snmpvars.dbf" filter=" ( '{equipment.type}={type.name}'" desc="Insert text here">
+    <field name="taggenlink" load="true">GUT_SNMP.SNAME</field>
+    <field name="linked">1</field>
+    <field name="equip">{equipment.name}</field>
+    <field name="item">SNAME</field>
+    <field name="index">{equipment.custom4}200</field>
+    <field name="devname">{equipment.iodevice}</field>
+    <field name="tagname" key="true">{equipment.tagprefix}_SNAME</field>
+    <field name="ctype">STRING</field>
+    <field name="snmpname">sysName</field>
+    <field name="oid">.1.3.6.1.2.1.1.5.0</field>
+    <field name="snmptype">DA</field>
+	<field name="comment">An administratively-assigned name for this managed node.By convention, this is the node's fully-qualified domain name.</field>
+ </output> 
+ 
+ <output name="VAR.SLOC" file="variable.dbf" filter=" ( '{equipment.type}={type.name}'">
+    <field name="taggenlink" load="true">GUT_SNMP.SLOC</field>
+    <field name="linked">1</field>
+    <field name="editcode">12337151</field>
+    <field name="equip">{equipment.name}</field>
+    <field name="item">SLOC</field>
+    <field name="historian">FALSE</field>
+     <field name="name" key="true">{equipment.tagprefix}_SLOC</field>
+    <field name="type">STRING</field>
+    <field name="unit">{equipment.iodevice}</field>
+    <field name="addr">DA{equipment.custom4}300</field>
+	<field name="comment">Laufzeit in Stunden {equipment.comment}</field>
+    <field name="cluster">{equipment.cluster}</field>
+ </output>
+    <output name="SN.SLOC" file="snmpvars.dbf" filter=" ( '{equipment.type}={type.name}'" desc="Insert text here">
+    <field name="taggenlink" load="true">GUT_SNMP.SLOC</field>
+    <field name="linked">1</field>
+    <field name="equip">{equipment.name}</field>
+    <field name="item">SLOC</field>
+    <field name="index">{equipment.custom4}300</field>
+    <field name="devname">{equipment.iodevice}</field>
+    <field name="tagname" key="true">{equipment.tagprefix}_SLOC</field>
+    <field name="ctype">STRING</field>
+    <field name="snmpname">sysLocation</field>
+    <field name="oid">.1.3.6.1.2.1.1.6.0</field>
+    <field name="snmptype">DA</field>
+	<field name="comment">The physical location of this node (e.g.,`telephone closet, 3rd floor').</field>
+ </output> 
+ 
+ <output name="VAR.SCON" file="variable.dbf" filter=" ( '{equipment.type}={type.name}'">
+    <field name="taggenlink" load="true">GUT_SNMP.SCON</field>
+    <field name="linked">1</field>
+    <field name="editcode">12337151</field>
+    <field name="equip">{equipment.name}</field>
+    <field name="item">SCON</field>
+    <field name="historian">FALSE</field>
+     <field name="name" key="true">{equipment.tagprefix}_SCON</field>
+    <field name="type">STRING</field>
+    <field name="unit">{equipment.iodevice}</field>
+    <field name="addr">DA{equipment.custom4}400</field>
+	<field name="comment">Ansprechpartner {equipment.comment}</field>
+    <field name="cluster">{equipment.cluster}</field>
+ </output>
+    <output name="SN.SCON" file="snmpvars.dbf" filter=" ( '{equipment.type}={type.name}'" desc="Insert text here">
+    <field name="taggenlink" load="true">GUT_SNMP.SCON</field>
+    <field name="linked">1</field>
+    <field name="equip">{equipment.name}</field>
+    <field name="item">SCON</field>
+    <field name="index">{equipment.custom4}400</field>
+    <field name="devname">{equipment.iodevice}</field>
+    <field name="tagname" key="true">{equipment.tagprefix}_SCON</field>
+    <field name="ctype">STRING</field>
+    <field name="snmpname">sysContact</field>
+    <field name="oid">.1.3.6.1.2.1.1.4.0</field>
+    <field name="snmptype">DA</field>
+	<field name="comment">The textual identification of the contact person for this managed node</field>
+ </output>
+ 
+ <output name="VAR.IPIR" file="variable.dbf" filter=" ( '{equipment.type}={type.name}'">
+    <field name="taggenlink" load="true">GUT_SNMP.IPIR</field>
+    <field name="linked">1</field>
+    <field name="editcode">12337151</field>
+    <field name="equip">{equipment.name}</field>
+    <field name="item">IPIR</field>
+    <field name="historian">FALSE</field>
+     <field name="name" key="true">{equipment.tagprefix}_IPIR</field>
+    <field name="type">LONG</field>
+    <field name="unit">{equipment.iodevice}</field>
+    <field name="addr">N{equipment.custom4}001</field>
+    <field name="eng_units"></field>
+    <field name="format">#####EU</field>
+	<field name="comment">Empfangen {equipment.comment}</field>
+    <field name="cluster">{equipment.cluster}</field>
+ </output>
+    <output name="SN.IPIR" file="snmpvars.dbf" filter=" ( '{equipment.type}={type.name}'" desc="Insert text here">
+    <field name="taggenlink" load="true">GUT_SNMP.IPIR</field>
+    <field name="linked">1</field>
+    <field name="equip">{equipment.name}</field>
+    <field name="item">IPIR</field>
+    <field name="index">{equipment.custom4}001</field>
+    <field name="devname">{equipment.iodevice}</field>
+    <field name="tagname" key="true">{equipment.tagprefix}_IPIR</field>
+    <field name="ctype">LONG</field>
+    <field name="snmpname">ipInReceives</field>
+    <field name="oid">.1.3.6.1.2.1.4.3.0</field>
+    <field name="snmptype">N</field>
+	<field name="comment">The total number of input datagrams received from interfaces, including those received in error.</field>
+ </output>
+ 
+ <output name="VAR.IPDTT" file="variable.dbf" filter=" ( '{equipment.type}={type.name}'">
+    <field name="taggenlink" load="true">GUT_SNMP.IPDTT</field>
+    <field name="linked">1</field>
+    <field name="editcode">12337151</field>
+    <field name="equip">{equipment.name}</field>
+    <field name="item">IPDTT</field>
+    <field name="historian">FALSE</field>
+     <field name="name" key="true">{equipment.tagprefix}_IPDTT</field>
+    <field name="type">LONG</field>
+    <field name="unit">{equipment.iodevice}</field>
+    <field name="addr">N{equipment.custom4}002</field>
+    <field name="eng_units"></field>
+    <field name="format">#####EU</field>
+	<field name="comment">Time-To-Live {equipment.comment}</field>
+    <field name="cluster">{equipment.cluster}</field>
+ </output>
+    <output name="SN.IPDTT" file="snmpvars.dbf" filter=" ( '{equipment.type}={type.name}'" desc="Insert text here">
+    <field name="taggenlink" load="true">GUT_SNMP.IPDTT</field>
+    <field name="linked">1</field>
+    <field name="equip">{equipment.name}</field>
+    <field name="item">IPDTT</field>
+    <field name="index">{equipment.custom4}002</field>
+    <field name="devname">{equipment.iodevice}</field>
+    <field name="tagname" key="true">{equipment.tagprefix}_IPDTT</field>
+    <field name="ctype">LONG</field>
+    <field name="snmpname">ipDefaultTTL</field>
+    <field name="oid">.1.3.6.1.2.1.4.2.0</field>
+    <field name="snmptype">N</field>
+	<field name="comment">The default value inserted into the Time-To-Live</field>
+ </output>
+ 
+ <output name="VAR.SUPT" file="variable.dbf" filter=" ( '{equipment.type}={type.name}'">
+    <field name="taggenlink" load="true">GUT_SNMP.SUPT</field>
+    <field name="linked">1</field>
+    <field name="editcode">12337151</field>
+    <field name="equip">{equipment.name}</field>
+    <field name="item">SUPT</field>
+    <field name="historian">FALSE</field>
+     <field name="name" key="true">{equipment.tagprefix}_SUPT</field>
+    <field name="type">LONG</field>
+    <field name="unit">{equipment.iodevice}</field>
+    <field name="addr">N{equipment.custom4}003</field>
+    <field name="eng_units">S</field>
+    <field name="format">###.##EU</field>
+	<field name="comment">Laufzeit in Sekunden {equipment.comment}</field>
+    <field name="cluster">{equipment.cluster}</field>
+ </output>
+    <output name="SN.SUPT" file="snmpvars.dbf" filter=" ( '{equipment.type}={type.name}'" desc="Insert text here">
+    <field name="taggenlink" load="true">GUT_SNMP.SUPT</field>
+    <field name="linked">1</field>
+    <field name="equip">{equipment.name}</field>
+    <field name="item">SUPT</field>
+    <field name="index">{equipment.custom4}003</field>
+    <field name="devname">{equipment.iodevice}</field>
+    <field name="tagname" key="true">{equipment.tagprefix}_SUPT</field>
+    <field name="ctype">LONG</field>
+    <field name="snmpname">sysUpTime</field>
+    <field name="oid">.1.3.6.1.2.1.1.3.0</field>
+    <field name="snmptype">N</field>
+	<field name="comment">The time (in hundredths of a second) since the network management portion of the system was last re-initialized.</field>
+ </output>
+ 
+ <output name="VAR.IPOR" file="variable.dbf" filter=" ( '{equipment.type}={type.name}'">
+    <field name="taggenlink" load="true">GUT_SNMP.IPOR</field>
+    <field name="linked">1</field>
+    <field name="editcode">12337151</field>
+    <field name="equip">{equipment.name}</field>
+    <field name="item">IPOR</field>
+    <field name="historian">FALSE</field>
+     <field name="name" key="true">{equipment.tagprefix}_IPOR</field>
+    <field name="type">LONG</field>
+    <field name="unit">{equipment.iodevice}</field>
+    <field name="addr">N{equipment.custom4}004</field>
+    <field name="eng_units"></field>
+    <field name="format">#####EU</field>
+	<field name="comment">Senden {equipment.comment}</field>
+    <field name="cluster">{equipment.cluster}</field>
+ </output>
+    <output name="SN.IPOR" file="snmpvars.dbf" filter=" ( '{equipment.type}={type.name}'" desc="Insert text here">
+    <field name="taggenlink" load="true">GUT_SNMP.IPOR</field>
+    <field name="linked">1</field>
+    <field name="equip">{equipment.name}</field>
+    <field name="item">IPOR</field>
+    <field name="index">{equipment.custom4}004</field>
+    <field name="devname">{equipment.iodevice}</field>
+    <field name="tagname" key="true">{equipment.tagprefix}_IPOR</field>
+    <field name="ctype">LONG</field>
+    <field name="snmpname">ipOutRequests</field>
+    <field name="oid">.1.3.6.1.2.1.4.10.0</field>
+    <field name="snmptype">N</field>
+	<field name="comment">The total number of IP datagrams which local IP user-protocols (including ICMP) supplied to IP in requests for transmission.</field>
+ </output>
+ 
+<output name="VAR.KT" file="variable.dbf" filter=" ( '{equipment.type}={type.name}'">
+    <field name="taggenlink" load="true">GUT_SNMP.KT</field>
+    <field name="linked">1</field>
+    <field name="editcode">16777215</field>
+    <field name="equip">{equipment.name}</field>
+    <field name="item">KT</field>
+    <field name="historian">FALSE</field>
+     <field name="name" key="true">{equipment.tagprefix}_KT</field>
+    <field name="type">STRING</field>
+    <field name="unit">Intern_DSK</field>
+    <field name="addr">{name}</field>
+	<field name="comment">Kurztext {equipment.comment}</field>
+    <field name="cluster">{equipment.cluster}</field>
+ </output>
+  <output name="VAR.LT" file="variable.dbf" filter=" ( '{equipment.type}={type.name}'">
+    <field name="taggenlink" load="true">GUT_SNMP.LT</field>
+    <field name="linked">1</field>
+    <field name="editcode">16777215</field>
+    <field name="equip">{equipment.name}</field>
+    <field name="item">LT</field>
+    <field name="historian">FALSE</field>
+    <field name="name" key="true">{equipment.tagprefix}_LT</field>
+    <field name="type">STRING</field>
+    <field name="unit">Intern_DSK</field>
+    <field name="addr">{name}</field>
+	<field name="comment">Langtext {equipment.comment}</field>
+    <field name="cluster">{equipment.cluster}</field>
+  </output>
+    <output name="VAR.SOE" file="variable.dbf" filter=" ( '{equipment.type}={type.name}'">
+    <field name="taggenlink" load="true">GUT_SNMP.SOE</field>
+    <field name="linked">1</field>
+    <field name="editcode">16777215</field>
+    <field name="equip">{equipment.name}</field>
+    <field name="item">SOE</field>
+    <field name="historian">FALSE</field>
+    <field name="name" key="true">{equipment.tagprefix}_SOE</field>
+    <field name="type">INT</field>
+    <field name="unit">Intern_DSK</field>
+    <field name="addr">{equipment.tagprefix}_SOE</field>
+	<field name="comment">für SOE Einträge {equipment.comment}</field>
+    <field name="cluster">{equipment.cluster}</field>
+  </output>
+  <output name=" AdAlm.SOE" file="advalm.DBF" filter="'{equipment.type}={type.name}'">
+    <field name="taggenlink" load="true">GUT_SNMP.SOE</field>
+    <field name="linked">1</field>
+    <field name="editcode">536350655</field>
+    <field name="equip">{equipment.name}</field>
+    <field name="item">SOE</field>
+    <field name="historian">FALSE</field>
+    <field name="tag" key="true">{equipment.tagprefix}_SOE_1</field>
+    <field name="name" >{equipment.tagprefix}</field>
+    <field name="desc">Leitsperre {equipment.comment}</field>
+    <field name="expr">{equipment.tagprefix}_SOE = 1</field> 
+    <field name="category">Alarm21</field>
+    <field name="help">{equipment.page_list[0]}</field>
+    <field name="custom1">{equipment.area}</field>
+    <field name="comment">{equipment.tagprefix}_SOE</field>
+    <field name="cluster">{equipment.cluster}</field>
+    <field name="area">{equipment.area}</field>
+ </output>
+  <output name="VAR.RUN" file="variable.dbf" filter=" ( '{equipment.type}={type.name}'">
+    <field name="taggenlink" load="true">GUT_SNMP.RUN</field>
+    <field name="linked">1</field>
+    <field name="editcode">12337151</field>
+    <field name="equip">{equipment.name}</field>
+    <field name="item">RUN</field>
+    <field name="historian">FALSE</field>
+    <field name="name" key="true">{equipment.tagprefix}_RUN</field>
+    <field name="type">INT</field>
+    <field name="unit">Intern_DSK</field>
+    <field name="addr">{name}</field>
+	<field name="comment">SPS Run {equipment.comment}</field>
+    <field name="cluster">{equipment.cluster}</field>
+  </output>
+  <output name=" AdAlm.RUN" file="advalm.DBF" filter="'{equipment.type}={type.name}'">
+    <field name="taggenlink" load="true">GUT_SNMP.RUN</field>
+    <field name="linked">1</field>
+    <field name="editcode">536350655</field>
+    <field name="equip">{equipment.name}</field>
+    <field name="item">RUN</field>
+    <field name="historian">TRUE</field>
+    <field name="tag" key="true">{equipment.tagprefix}_RUN</field>
+    <field name="name" >{equipment.tagprefix}</field>
+    <field name="desc">SNMP Device Run {equipment.comment}</field>
+    <field name="expr">{equipment.tagprefix}_RUN = 0</field> 
+    <field name="category">Alarm01</field>
+    <field name="help">{equipment.page_list[0]}</field>
+    <field name="custom1">{equipment.area}</field>
+    <field name="comment">{equipment.tagprefix}</field>
+    <field name="cluster">{equipment.cluster}</field>
+    <field name="area">{equipment.area}</field>
+ </output>
+  <output name="UI.KT" file="UIMESSAG.dbf" filter=" ( '{equipment.type}={type.name}'">
+    <field name="NAME" key="true">{equipment.tagprefix}_KT</field>
+    <field name="SPS">{equipment.iodevice}</field>
+    <field name="AREA">{equipment.AREA}</field>
+    <field name="BILD">{equipment.page}</field>
+    <field name="ORT">{equipment.location}</field>
+    <field name="taggenlink" load="true">GUT_SNMP.KT</field>
+ </output>
+ <output name="HI.LT" file="UHMIINIT.dbf" filter=" ( '{equipment.type}={type.name}'">
+    <field name="NAME" key="true">{equipment.tagprefix}_LT</field>
+    <field name="MCODE">{equipment.comment}</field>
+    <field name="taggenlink" load="true">GUT_SNMP.LT</field>
+  </output>
+  <output name="HI.KT" file="UHMIINIT.dbf" filter=" ( '{equipment.type}={type.name}'">
+    <field name="NAME" key="true">{equipment.tagprefix}_KT</field>
+    <field name="MCODE">{equipment.tagprefix}</field>
+    <field name="taggenlink" load="true">GUT_SNMP.KT</field>
+  </output>
+</template>
