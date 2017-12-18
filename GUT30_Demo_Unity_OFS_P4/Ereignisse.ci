@@ -37,8 +37,6 @@ FUNCTION UAG_TAG_Event()
 	ErrSet(0);
 END
 
-
-
  // nur als Beispiel wie man eigene Events Verarbeiten kann.
 FUNCTION ANALYSE01(INT subsHandle)
 
@@ -177,7 +175,6 @@ FUNCTION UAG_Parameter_Client()
 		ParameterPut("Path" ,"DATA2S" ,"[RUN]:\DATA2S");  		//Achtung der Pfad muss von allen Rechnern ereichbar sein
 		ParameterPut("Path" ,"UI_P" ,"[RUN]:");  		//Achtung der Pfad muss von allen Rechnern ereichbar sein
 		ParameterPut("Path" ,"UI_S" ,"[RUN]:");  		//Achtung der Pfad muss von allen Rechnern ereichbar sein
-		ParameterPut("Path" ,"INFO_P" ,"[RUN]:\DATA2P\Wartung");  		//Achtung der Pfad muss von allen Rechnern ereichbar sein.
 		ParameterPut("Path","LIBPfad","[USER]:" + gsUAG_LIB_NAME);
 		ParameterPut("Privilege" ,"AckAlarms" ,"1");
 		ParameterPut("Privilege" ,"DisableAlarms" ,"8");

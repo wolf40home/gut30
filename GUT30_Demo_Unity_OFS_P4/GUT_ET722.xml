@@ -202,20 +202,6 @@
 	<field name="comment">Kurztext {equipment.comment}</field>
     <field name="cluster">{equipment.cluster}</field>
  </output>
-  <output name="VAR.LT" file="variable.dbf" filter=" ( '{equipment.type}={type.name}'">
-    <field name="taggenlink" load="true">GUT_ET722.LT</field>
-    <field name="linked">1</field>
-    <field name="editcode">16777215</field>
-    <field name="equip">{equipment.name}</field>
-    <field name="item">LT</field>
-    <field name="historian">FALSE</field>
-   <field name="name" key="true">{equipment.tagprefix}_LT</field>
-    <field name="type">STRING</field>
-    <field name="unit">{equipment.iodevice}_DISK</field>
-    <field name="addr">{equipment.tagprefix}_LT</field>
-	<field name="comment">Langtext {equipment.comment}</field>
-    <field name="cluster">{equipment.cluster}</field>
-  </output>
   <output name="VAR.M" file="variable.dbf" filter=" ( '{equipment.type}={type.name}'">
     <field name="taggenlink" load="true">GUT_ET722.M</field>
     <field name="linked">1</field>
@@ -231,18 +217,13 @@
     <field name="cluster">{equipment.cluster}</field>
   </output>
  <output name="UI.KT" file="UIMESSAG.dbf" filter=" ( '{equipment.type}={type.name}'">
-    <field name="NAME" key="true">{equipment.tagprefix}_KT</field>
+     <field name="NAME" key="true">{equipment.name}.KT</field>
      <field name="taggenlink" load="true">GUT_ET722.KT</field>
    <field name="SPS">{equipment.iodevice}</field>
     <field name="AREA">{equipment.AREA}</field>
     <field name="BILD">{equipment.page}</field>
     <field name="ORT">{equipment.location}</field>
  </output>
-  <output name="HI.LT" file="UHMIINIT.dbf" filter=" ( '{equipment.type}={type.name}'">
-    <field name="NAME" key="true">{equipment.tagprefix}_LT</field>
-    <field name="MCODE">{equipment.comment}</field>
-    <field name="taggenlink" load="true">GUT_ET722.LT</field>
-  </output>
   <output name="HI.KT" file="UHMIINIT.dbf" filter=" ( '{equipment.type}={type.name}'">
     <field name="NAME" key="true">{equipment.tagprefix}_KT</field>
     <field name="MCODE">{equipment.tagprefix}</field>

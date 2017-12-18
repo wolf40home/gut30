@@ -46,7 +46,7 @@
     <field name="cluster">{equipment.cluster}</field>
  </output>
   <output name="UI.KT" file="UIMESSAG.dbf" filter=" ( '{equipment.type}={type.name}'">
-    <field name="NAME" key="true">{equipment.tagprefix}_KT</field>
+    <field name="NAME" key="true">{equipment.name}.KT</field>
     <field name="taggenlink" load="true">GUT_HMI.KT</field>
     <field name="SPS">{equipment.iodevice}</field>
     <field name="AREA">{equipment.AREA}</field>
