@@ -1,6 +1,12 @@
+<<<<<<< HEAD
 ﻿GUT30
 =====
 #Toolbox für Citect 7.50 / 7.60 , UAG, PES und Unity Pro V11.0
+=======
+GUT30
+=====
+Toolbox für Citect 7.50 / 7.60 , UAG, PES und Unity Pro V11.0
+>>>>>>> remotes/origin/master
 ##immer erforderlich
 GUT30
 
@@ -21,4 +27,4 @@ GUT30_Demo_Unity_OFS_P4 für Citect 2015
 GUT30_Bild19P3		Auflösung 1920*1200
 GUT30_Bild19X3		Auflösung 1920*1200
 
-Achtung auf GIT sind die pgdynobj.dbf gezippt. Bitte vor dem Ersten Start von Citect Auspacken.
+***Achtung auf GIT sind die pgdynobj.dbf gezippt. Bitte vor dem Ersten Start von Citect Auspacken.**
