@@ -284,6 +284,30 @@ LW: 	 AssNr: {9   } Bit: {3   }
 Text für Ein	{7                       }
 Text für Aus	{8                       }
 "
+
+FORM "leittaste_klein", "uag_tasten_popup20.leittaste_klein";
+
+1: "TYP", 4,  readwrite;
+2: "Typbit", 3, readwrite;
+3: "LWbit", 3,  readwrite;
+4: "M", 64,  readwrite;
+5: "Mbit", 3,  readwrite;
+6: "einText", 20,  readwrite;
+7: "ausText", 20,  readwrite;
+8: "LWNr", 3,  readwrite;
+9: "TYPbitNL", 3,  readwrite;
+
+
+NORMAL
+"Genie - Leittaste mit Text Rechts
+ für Melde/Leitsperre und ähnliche
+{Line, 100} 
+M: 	 AssNr:	{4   } Bit: {5   }
+TYP:     AssNr: {1   } Bit: {2   } Leitsperre:	{9  }
+LW: 	 AssNr: {8   } Bit: {3   }
+Text für Ein	{6                       }
+Text für Aus	{7                       }
+"
 FORM "leiten_bin1_klein_text", "uag_tasten_popup20.leiten_bin1_klein_text";
 
 
@@ -602,6 +626,34 @@ Farbe:		{9                 }
 z. B. _GWL
 Recht:		{10               } 
 "
+FORM "leittaste_wert_klein_2m", "uag_tasten_popup20.leittaste_wert_klein_2m";
+
+1: "TYPAssNr", 4,  readwrite;
+2: "Typbit", 3, readwrite;
+3: "TYPbitNL", 3,  readwrite;
+4: "MAssNr", 4,  readwrite;
+5: "MbitLS", 3,  readwrite;
+6: "Text", 15,  readwrite;
+7: "WERTAssNr", 4,  readwrite;
+8: "MbitS", 3,  readwrite;
+9: "Farbe", 32, readwrite , "Labels", "EXPR","NAME=_Farbe*";
+10: "GWL", 15,  readwrite_foreign, "Labels", "EXPR","NAME=_Recht*";
+11: "MAssNr2", 4,  readwrite;
+
+NORMAL
+"Genie - Leittaste mit Text
+ für GW mit 2 M und ähnliche 3 Textzeichen
+{Line, 100} 
+Button Text:	{6     }
+M Ass,Meld:	{4   }     {8   }
+M2 Ass,LSP	{11   }    {5   }
+TYP Ass,Bit,LS:	{1   }    {2   }   {3   }
+Wert (Ass Nr.):	{7   }
+Farbe:		{9                 }
+z. B. _GWL
+Recht:		{10               } 
+"
+
 FORM "leittaste_wert_klein_anH", "uag_tasten_popup20.leittaste_wert_klein_anH";
 
 1: "TYPAssNr", 4,  readwrite;

@@ -165,3 +165,5 @@ NORMAL
 "Genie - Kurztext rechts
 {Line, 100} 
 Variable (TAG):	{1                                 }"
+
+

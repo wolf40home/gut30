@@ -14,7 +14,6 @@
 //
 //	PUBLIC FUNCTIONS:
 //
-//			GUT_TipTextEqu
 //			UAG_Status()
 //			UAG_Benutzer()
 //			UAG_Benutzer_Login()		abgekündigt
@@ -357,33 +356,6 @@ INT FUNCTION UAG_TipTextKom(STRING sTag,STRING LT="")
 	ErrSet(0);
 	RETURN 0
 END
-
-//	GUT_TipTextEqu(STRING equipName)
-//	Übergabeparameter:	Equimpent     
-//                       
-//	Rückgabewert:	0	
-//	Beschreibung:	ändert den Tiptext des Objektes das ihn aufruft kann z.b. bei Bewegung genutzt werden
-//					der Text ist der Equipment Kommentar 	
-//
-//	Autor:				Wolfgang Steiner
-//	Erstellungsdatum:	18.10.17	/	Schneider Electrik GmbH
-//	Version				75.11.08
-//
-//	Historie:
-//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
-//	
-
-INT FUNCTION GUT_TipTextEqu(STRING equipName,INT iret=0)
-	INT 	hAn;
-	STRING  LT;
-	ErrSet(1);
-	hAn=DspGetAnCur() ;
-	LT = EquipGetProperty(equipName,"Comment",1)	
-	DspSetTip(hAn,LT);
-
-	ErrSet(0);
-	RETURN iret
-	END
 
 //	UAG_TipTextAss(STRING sAss)
 //	Übergabeparameter:	Tooltip Variable     

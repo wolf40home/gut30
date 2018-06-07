@@ -10,13 +10,14 @@
 //
 //	Autor:				Wolfgang Steiner
 //	Erstellungsdatum:	24.11.17	/	Schneider Electrik GmbH
-//	Version				75.33.11.08
+//	Version				75.33.11.09
 //
 //	PUBLIC FUNCTIONS:
-//	GUT_PopupNewAt
-//	GUT_GetMousePos_unten
-//	GUT_GetMouseY
-//	GUT_DevOpen_Info
+//			GUT_PopupNewAt
+//			GUT_GetMousePos_unten
+//			GUT_GetMouseY
+//			GUT_DevOpen_Info
+//			GUT_TipTextEqu
 //
 //	Historie:
 //	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
@@ -149,5 +150,32 @@ GUT_DevOpen_Info(STRING sName,STRING sFormat)
 	ErrSet(0);
 	RETURN hDev
 END
+
+//	GUT_TipTextEqu(STRING equipName)
+//	Übergabeparameter:	Equimpent     
+//                       
+//	Rückgabewert:	0	
+//	Beschreibung:	ändert den Tiptext des Objektes das ihn aufruft kann z.b. bei Bewegung genutzt werden
+//					der Text ist der Equipment Kommentar 	
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	18.10.17	/	Schneider Electrik GmbH
+//	Version				75.11.08
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	
+
+INT FUNCTION GUT_TipTextEqu(STRING equipName,INT iret=0)
+	INT 	hAn;
+	STRING  LT;
+	ErrSet(1);
+	hAn=DspGetAnCur() ;
+	LT = EquipGetProperty(equipName,"Comment",1)	
+	DspSetTip(hAn,LT);
+
+	ErrSet(0);
+	RETURN iret
+	END
 
 

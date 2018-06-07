@@ -8,7 +8,7 @@
 //
 //	Autor:				Wolfgang Steiner
 //	Erstellungsdatum:	29.08.2017	/	Schneider Electrik GmbH
-//	Version				75.33.11.08
+//	Version				75.33.11.09
 //
 //	Historie:
 //	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
@@ -24,6 +24,12 @@
 //			GUT_Interlock
 //			GUT_Freigabe
 //			GUT_P_Meld_I
+//			GUT_UEBER()
+//			GUT_ANA_IN_31()
+//			GUT_ANA_IN_3c()
+//			GUT_TREND_ANA3c()
+//			GUT_MOT0R
+
 //	Historie:
 //	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
 
@@ -31,6 +37,8 @@
 INT 		miMonitor;
 
 
+// genutzte AktivX
+STRING	mssfcClass = "UnitySFCDiagCtrl.SFCView";
 
 
 //	FUNCTION UAG_ISPY_GWOH_20()
@@ -351,4 +359,320 @@ FUNCTION _GUT_P_Meld_I(STRING sTag,INT iMode=False)
 	_WinTitle(sTag);
 
 END
+//	FUNCTION GUT_UEBER()
+//	Übergabeparameter:	---      
+//                       
+//	Rückgabewert:		---
+//	Beschreibung:	Zeigt das Versionsfenster an.	
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	28.11.07	/	Schneider Electrik GmbH
+//	Version				75.33.11.08
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	
 
+FUNCTION GUT_UEBER()
+//	Ass(-2,1,"'" + UAG_Project_Version() + "'",0);
+	
+	UAG_MM_PopUP("!p_ueber" )
+
+END 
+
+//	FUNCTION GUT_ANA_IN_31()
+//	Übergabeparameter:	Branch Messung  als String    
+//                       
+//	Rückgabewert:		
+//	Beschreibung:	Messwert  aufschalten
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	22.03.2018	/	Schneider Electrik GmbH
+//	Version				75.33.11.09
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	
+//	
+
+
+
+//		Beispiel für Aufruf
+//		TaskNew("GUT_ANA_IN_31", "^"%TAG%^"", 8)
+//		TaskNew("GUT_ANA_IN_31", "^"%TAG%^",2", 8) 
+
+FUNCTION GUT_ANA_IN_31(STRING sTag, INT imode=1)
+
+	miMonitor = GUT_PopupNewAt("!p_ana_in_31",giMODE,imode )
+	IF miMonitor <> -1 THEN
+		Ass(-3,1,"'" + sTag + "'",0);
+		_Ass(-3,2,sTag + "_M");
+		_Ass(-3,3,sTag + "_TYP");
+		_Ass(-3,4,sTag + "_LW");
+		_Ass(-3,5,sTag + "_LT");
+		_Ass(-3,6,sTag + "_X");			
+		_Ass(-3,7,sTag + "_AHH");
+		_Ass(-3,8,sTag + "_AH");
+		_Ass(-3,9,sTag + "_HYS");
+		_Ass(-3,10,sTag + "_AL");    					
+		_Ass(-3,11,sTag + "_ALL");
+		_Ass(-3,12,sTag + "_SH");		
+		_Ass(-3,13,sTag + "_SHH");		
+		_Ass(-3,14,sTag + "_SL");
+		_Ass(-3,15,sTag + "_SLL");
+		_Ass(-3,16,sTag + "_ESIM");
+		UAG_LoadUI( sTag + "_KT", 60,7,-3);
+		PageGoto("!p_ana_in_31");
+		_WinTitle(sTag);
+	ELSE
+		UAG_Status("@(Too many windows open)","","1");	
+	END
+		
+END 
+
+//	FUNCTION GUT_ANA_IN_3c()
+//	Übergabeparameter:	Branch Messung  als String    
+//                       
+//	Rückgabewert:		
+//	Beschreibung:	Messwert  aufschalten 3´oben/unten
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	20.04.2018	/	Schneider Electrik GmbH
+//	Version				75.33.11.09
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	
+//	
+
+
+
+//		Beispiel für Aufruf
+//		TaskNew("GUT_ANA_IN_3c", "^"%TAG%^"", 8)
+//		TaskNew("GUT_ANA_IN_3c", "^"%TAG%^",2", 8) 
+
+FUNCTION GUT_ANA_IN_3c(STRING sTag, INT imode=1)
+
+	miMonitor = GUT_PopupNewAt("!p_ana_in_3c",giMODE,imode )
+	IF miMonitor <> -1 THEN
+		Ass(-3,1,"'" + sTag + "'",0);
+		_Ass(-3,2,sTag + "_M");
+		_Ass(-3,3,sTag + "_TYP");
+		_Ass(-3,4,sTag + "_LW");
+		_Ass(-3,5,sTag + "_LT");
+		_Ass(-3,6,sTag + "_X");			
+		_Ass(-3,7,sTag + "_O2");
+		_Ass(-3,8,sTag + "_O1");
+		_Ass(-3,9,sTag + "_HYS");
+		_Ass(-3,10,sTag + "_U1");    					
+		_Ass(-3,11,sTag + "_U2");
+		_Ass(-3,12,sTag + "_O3");		
+		_Ass(-3,14,sTag + "_U3");
+		_Ass(-3,16,sTag + "_ESIM");
+		_Ass(-3,17,sTag + "_MS");
+		UAG_LoadUI( sTag + "_KT", 60,7,-3);
+		PageGoto("!p_ana_in_3c");
+		_WinTitle(sTag);
+	ELSE
+		UAG_Status("@(Too many windows open)","","1");	
+	END
+		
+END 
+
+//	GUT_TREND_ANA3c()
+//	Übergabeparameter:	 ---     
+//                       
+//	Rückgabewert:		 
+//	Beschreibung:		Prozessanalyst mit x, GW und Alarm aufschalten	
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	24.04.18	/	Schneider Electrik GmbH
+//	Version				75.33.11.09
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	
+
+FUNCTION GUT_TREND_ANA3c(STRING sTag,INT imode=0)
+	STRING sTemp
+
+	Ass(-2,1,"'" +"@(Mess Trend): "  + sTag + "'",0);
+	giPosX =StrToInt(PageInfo(14)) + StrToInt(PageInfo(12) );
+	giPosY= StrToInt(PageInfo(15)); 
+	IF UAG_MM_WinNewAt("!p_reg_trend_21",giPosX,giPosY,giMODE,imode )> 0 THEN
+		SleepMS(200);
+	GUT_PA_ANA3c(sTag)
+
+	END
+
+END
+
+//	FUNCTION GUT_MOTOR_30(STRING sTag,STRING sTagI="",INT ityp=0, INT imode=1,STRING sTagIL="")
+//	Übergabeparameter:	Tagname als String, Interlock Tag,Typ, Modus, 2. Interlock      
+//                       
+//	Rückgabewert:		
+//	Beschreibung:	Typ vorgabe
+//					0 = Motor
+//					1 = Ventil	Vertikal	
+//					2 = Ventil	Horizontal	
+//					3 = Klappe	Vertikal	
+//						
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	27.04.18	/	Schneider Electrik GmbH
+//	Version				75.33.11.09
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+
+// Motor Funktion
+// Liste der Symbole
+
+// 0	Motor
+// 01	Zellenrad
+// 02	Lüfter
+// 03	Motor 05
+// 04	Pumpe LR
+// 05	Pumpe OU
+// 06	Pumpe UO
+// 07	Pumpe RL
+// 08	Ventilator LR
+// 09	Ventilator OU
+// 10	Ventilator RL
+// 11	Ventilator UO
+// 12	Mühle OU
+// 13	Mühle UO
+// 14	Mühle RL
+// 15	Mühle LR
+// 16	Heizung
+
+// Ventil Funktion
+// Liste der Symbole
+
+
+// 0	Ventil W und S
+// 1	WO  SL ola
+// 2	WO SL olz
+// 3	WU SR olz
+// 4	WU SR ola
+// 5	WO SL Hand
+// 6	WO SL Gewicht
+// 7	WU SR Gewicht
+// 8	WO SL Membran
+// 9	WU SR Membran
+// 10	WO SL Motor
+// 11	WU SR Motor
+// 12	WU SR Hand
+// 13	WO SL 3 Weg
+// 14	WU SR 3 Weg
+
+// Klappe Funktion
+// Liste der Symbole
+
+
+// 0	Ventil W und S
+// 1	Klappe
+// 2	klappe_ola
+// 3	klappe_olz
+
+
+
+//		Beispiel für Aufruf
+//		TaskNew("GUT_MOTOR_30", "^"%TAG%^"", 8)
+//		TaskNew("GUT_MOTOR_30", "^"%TAG%^",^"^",0,2", 8)  
+
+FUNCTION GUT_MOT0R(STRING equipName, STRING equipNameIR="",INT ityp=0,INT imode=1, STRING equipNameIL="")
+	STRING	stemp;
+	stemp= "^"" +equipName + "^"," + "^"" +equipNameIR+ "^"," +IntToStr (ityp)+ "," +IntToStr (imode )+ "^"" +equipNameIL+ "^""
+	TaskNew("GUT_MOTOR_30",stemp, 8)
+END
+  
+FUNCTION GUT_MOTOR_30(STRING sTag,STRING sTagI="",INT ityp=0, INT imode=1,STRING sTagIL="")
+	INT i;
+	STRING stag1,sText,sI;
+
+	
+	miMonitor =GUT_PopupNewAt("!p_Motor_30",gimode,imode )
+	IF miMonitor <> -1 THEN
+		Ass(-3,1,"'" + sTag + "'",0);
+		_Ass(-3,2,sTag + "_M");
+		_Ass(-3,3,sTag + "_TYP");
+		_Ass(-3,4,sTag + "_LW");			
+		_Ass(-3,5,sTag + "_LT");
+		_Ass(-3,6,sTag + "_ZT");
+		UAG_LoadZT(	sTag + "_ZT",7,4,-3);
+		_Ass(-3,12,sTagI + "_MI");
+		_Ass(-3,15,sTagI + "_LW");
+		Ass(-3,13,"'" + sTagI + "'",0);
+		Ass(-3,14,"'" + IntToStr (ityp) + "'",0);
+		IF sTagIL <>"" THEN
+			_Ass(-3,16,sTagIL + "_MI");
+			_Ass(-3,19,sTagIL + "_LW");
+			Ass(-3,17,"'" + sTagIL + "'",0);
+		END
+		IF TagInfo(sTag + "_BST",0) <> "" THEN
+			_Ass(-3,20,sTag + "_BST");
+			_Ass(-3,21,sTag + "_BEINS");	
+		END	
+		_Ass(-3,29,sTag + "S_M");
+		FOR i = 30 TO 45 DO
+			sI=IntToStr(i-10);
+			IF StrLength(sI) =1 THEN sI = "0" +sI END;
+			stag1=sTag +"S_M_b" +sI+".DESC";
+			sText =TagRead(stag1)
+			Ass(-3, i, "'" + sText + "'", 0);
+		END
+		UAG_LoadUI( sTag + "_KT", 60,7,-3);
+		PageGoto("!p_Motor_30");	
+		_WinTitle(sTag);
+	ELSE
+		UAG_Status("@(Too many windows open)","","1");	
+	END
+END 
+
+//	FUNCTION UAG_NAV_HTML()
+//	Übergabeparameter:	Name der Seite
+//                         
+//	Rückgabewert:		 
+//	Beschreibung:		Anzeige von Webseiten
+//						
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	05.06.08	/	Schneider Electric GmbH
+//	Version				3.0.0.0
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+
+FUNCTION 
+GUT_SFC_30(STRING sPLC,STRING sSection="", INT imode=1)
+	OBJECT SFCDIAG;
+	INT		iError;
+	INT		sfcOverview=0,sfcDetails=1, sfcDetailsSimple=2
+	ErrSet(1);
+	Ass(-2,1,"'" + sPLC + "'",0);
+
+	miMonitor =GUT_PopupNewAt("!p_sfc_30",gimode,imode )
+
+	
+
+	IF  iError <> -1 THEN
+		SleepMS(1000);
+		
+//		SFCDIAG=DspAnCreateControlObject(250, mssfcClass , 900, - 600);
+		PageSetInt(1,SFCDIAG);
+//		SleepMS(200);
+		iError=IsError();
+			_ObjectSetProperty(SFCDIAG,"UseOPCProject",True);
+			_ObjectSetProperty(SFCDIAG,"UsePLCDiagSystem",False);
+			_ObjectSetProperty(SFCDIAG,"AutomaticProjectReload",True);
+			_ObjectSetProperty(SFCDIAG,"ViewMode",sfcOverview);
+			_ObjectSetProperty(SFCDIAG,"OPCAccessPath",sPLC);
+
+		iError=IsError();	
+		IF iError <>0 THEN 
+			UAG_SystemInfo("GUT_SFC_30", "System","SFC Diag: ist auf dem Rechner nicht vorhanden","-","-","-",TaskCluster(),_UAG_Fehler)
+	    END
+	END
+	
+	ErrSet(0);
+END 

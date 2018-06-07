@@ -2067,6 +2067,61 @@ FUNCTION UAG_PA_ANA(STRING sTag)
 	ErrSet(0);
 END
 
+//	GUT_PA_ANA3c()
+//	Übergabeparameter:	 Tag     
+//                       
+//	Rückgabewert:		 
+//	Beschreibung:		Anzeige von x,GW und Alarmen	
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	24.04.18	/	Schneider Electrik GmbH
+//	Version				75.33.11.09
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	
+//	
+
+FUNCTION GUT_PA_ANA3c(STRING sTag)
+	STRING sTemp;
+	OBJECT hAnalyst	= ObjectByName("UAG_PA1");
+	OBJECT hPanes = _ObjectGetProperty(hAnalyst, "Panes");
+	OBJECT hPane = _ObjectCallMethod(hPanes , "Create", "Analog");
+	_ObjectSetProperty(hPane , "BackgroundColor", PackedRGB(192, 192, 192));
+	ErrSet(1);
+	UAG_PA_Anzeige_Stift(sTag +"_X",1,_UAG_PF_schwarz,-1)
+
+	IF TagInfoEx(sTag +"_O3",0) <> "" THEN UAG_PA_Anzeige_Stifte(sTag +"_O3",1,_UAG_PF_rot) END;
+	IF TagInfoEx(sTag +"_O2",0) <> "" THEN UAG_PA_Anzeige_Stifte(sTag +"_O2",1,_UAG_PF_orange) END;
+	IF TagInfoEx(sTag +"_O1",0) <> "" THEN UAG_PA_Anzeige_Stifte(sTag +"_O1",1,_UAG_PF_gelb) END;
+	IF TagInfoEx(sTag +"_U1",0) <> "" THEN UAG_PA_Anzeige_Stifte(sTag +"_U1",1,_UAG_PF_gelb) END;
+	IF TagInfoEx(sTag +"_U2",0) <> "" THEN UAG_PA_Anzeige_Stifte(sTag +"_U2",1,_UAG_PF_orange) END;
+	IF TagInfoEx(sTag +"_U3",0) <> "" THEN UAG_PA_Anzeige_Stifte(sTag +"_U3",1,_UAG_PF_rot) END;
+	IF TagInfoEx(sTag +"_M_b16.Name",0) <> "" THEN 
+		UAG_PA_Anzeige_Stifte_A(sTag +"_M_b16",1,_UAG_PF_rot)
+		hPane = _ObjectCallMethod(hPanes , "Create", "Alarm");
+		_ObjectSetProperty(hPane , "BackgroundColor", PackedRGB(192, 192, 192));
+ 
+	END;		!A++
+	IF TagInfoEx(sTag +"_M_b17.Name",0) <> "" THEN UAG_PA_Anzeige_Stifte_A(sTag +"_M_b17",1,_UAG_PF_orange) END;		!A+
+	IF TagInfoEx(sTag +"_M_b18.Name",0) <> "" THEN UAG_PA_Anzeige_Stifte_A(sTag +"_M_b18",1,_UAG_PF_orange) END;		!A-
+	IF TagInfoEx(sTag +"_M_b19.Name",0) <> "" THEN UAG_PA_Anzeige_Stifte_A(sTag +"_M_b19",1,_UAG_PF_rot) END;		!A--
+	IF TagInfoEx(sTag +"_M_b11.Name",0) <> "" THEN
+		UAG_PA_Anzeige_Stifte_A(sTag +"_M_b11",1,_UAG_PF_weiss)
+		hPane = _ObjectCallMethod(hPanes , "Create", "Alarm");
+		_ObjectSetProperty(hPane , "BackgroundColor", PackedRGB(192, 192, 192));
+
+	END;	!S++
+	IF TagInfoEx(sTag +"_M_b14.Name",0) <> "" THEN UAG_PA_Anzeige_Stifte_A(sTag +"_M_b14",1,_UAG_PF_weiss) END;	!S--
+	
+	hPane = _ObjectCallMethod(hPanes, "get_ItemByName", "Analog");
+	OBJECT hPens = _ObjectGetProperty(hPane, "Pens");
+	sTemp = sTag + "_X"
+	OBJECT hPen = _ObjectCallMethod(hPens, "get_ItemByName",sTemp );
+	_ObjectSetProperty(hPen, "VerticalAxisAutoscale", -1);
+	_ObjectCallMethod(hPen, "Select");
+	ErrSet(0);
+END
 
 //	UAG_PA_DOS()
 //	Übergabeparameter:	 Tag     

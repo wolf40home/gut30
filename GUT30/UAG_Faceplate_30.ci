@@ -8,12 +8,8 @@
 //
 //	Autor:				Wolfgang Steiner
 //	Erstellungsdatum:	10.03.2014	/	Schneider Electrik GmbH
-//	Version				75.33.11.08
+//	Version				75.33.11.09
 //
-//	Historie:
-//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
-//	16.04.14	Steiner		Alle Funktionen auf 7.40 Page Funktionen umgestellt
-//	
 //
 //	PUBLIC FUNCTIONS:
 //
@@ -26,6 +22,7 @@
 
 //	Historie:
 //	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	16.04.14	Steiner		Alle Funktionen auf 7.40 Page Funktionen umgestellt
 
 // MODULE VARIABLES
 INT 		miMonitor;
@@ -622,24 +619,4 @@ FUNCTION _UAG_SNMP(STRING sTag, INT imode=1)
 		
 END
 
-//	FUNCTION GUT_UEBER()
-//	Übergabeparameter:	---      
-//                       
-//	Rückgabewert:		---
-//	Beschreibung:	Zeigt das Versionsfenster an.	
-//
-//	Autor:				Wolfgang Steiner
-//	Erstellungsdatum:	28.11.07	/	Schneider Electrik GmbH
-//	Version				75.33.11.08
-//
-//	Historie:
-//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
-//	
-
-FUNCTION GUT_UEBER()
-//	Ass(-2,1,"'" + UAG_Project_Version() + "'",0);
-	
-	UAG_MM_PopUP("!p_ueber" )
-
-END 
 

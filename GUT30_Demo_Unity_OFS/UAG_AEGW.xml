@@ -560,7 +560,7 @@
     <field name="stormethod">Floating Point (8-byte samples)</field>
  </output>
  <output name=" AdAlm.M_b02" file="advalm.DBF" filter="'{equipment.type}={type.name}'">
-    <field name="taggenlink" load="true">UAG_AEGW2.M_b02</field>
+    <field name="taggenlink" load="true">UAG_AEGW.M_b02</field>
     <field name="linked">1</field>
     <field name="editcode">536350655</field>
     <field name="equip">{equipment.name}</field>
@@ -650,7 +650,7 @@
     <field name="area">{equipment.area}</field>
  </output>
  <output name=" AdAlm.M_b15" file="advalm.DBF" filter="'{equipment.type}={type.name}'">
-    <field name="taggenlink" load="true">UAG_AEGW2.M_b15</field>
+    <field name="taggenlink" load="true">UAG_AEGW.M_b15</field>
     <field name="linked">1</field>
     <field name="editcode">536350655</field>
     <field name="equip">{equipment.name}</field>
@@ -740,7 +740,7 @@
      <field name="area">{equipment.area}</field>
  </output>
  <output name=" AdAlm.M_b21" file="advalm.DBF" filter="'{equipment.type}={type.name}'">
-    <field name="taggenlink" load="true">UAG_AEGW2.M_b21</field>
+    <field name="taggenlink" load="true">UAG_AEGW.M_b21</field>
     <field name="linked">1</field>
     <field name="editcode">536350655</field>
     <field name="equip">{equipment.name}</field>

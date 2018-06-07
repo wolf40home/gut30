@@ -188,14 +188,17 @@ FORM "kopf", "uag_basis_popup20.kopf";
 4: "BR", 8, readwrite;
 5: "NRM", 8, readwrite;
 6: "BM", 8, readwrite;
+7: "sDev", 32, readwrite;
 NORMAL
 "Genie - Panelkopf
 Es wird immer Links M und LW und Rechts Typ ausgegeben.
 		    Modus 0 = 16 Bit 1 =32 Bit
+   Standard Device ist   UITexte2       
 {Line, 100}
 ID für M:	{1         }  Modus {3         }   
 ID für Typ:	{2         }  Modus {4         }
 ID für LW:	{5         }  Modus {6         }  
+Device: 	{7                           }
 "
 FORM "kopf_oTyp", "uag_basis_popup20.kopf_oTyp";
 1: "NRl", 8, readwrite;
@@ -222,6 +225,30 @@ FORM "kopf_3", "uag_basis_popup20.kopf_3";
 9: "BM", 8, readwrite;
 10: "NRM2", 8, readwrite;
 11: "BM2", 8, readwrite;
+12: "sDev", 32, readwrite;
+NORMAL
+"Genie - Panelkopf z.B. für Regler mit 2 M und 2 LW
+Es wird immer Links M und Rechts Typ und LW ausgegeben.
+			    Modus 0 = 16 Bit 1 =32 Bit
+{Line, 100}
+ID für M:		{1       }  Modus {3       }
+Ass undID für M2:{7   }	{5       }  Modus {6       }    
+ID für Typ:		{2       }  Modus {4       }
+ID für LW1:		{8       }  Modus {9       }
+ID für LW2:		{10      }  Modus {11      } 
+Device: 	{12                           }
+"
+FORM "kopf_2m", "uag_basis_popup20.kopf_2m";
+1: "NRl", 8, readwrite;
+2: "NRr", 8, readwrite;
+3: "bl", 8, readwrite;
+4: "BR", 8, readwrite;
+5: "NRl2", 8, readwrite;
+6: "bl2", 8, readwrite;
+7: "Ass2", 8, readwrite;
+8: "NRM", 8, readwrite;
+9: "BM", 8, readwrite;
+10: "sDev", 32, readwrite;
 NORMAL
 "Genie - Panelkopf z.B. für Regler mit 2 M
 Es wird immer Links M und Rechts Typ und LW ausgegeben.
@@ -231,7 +258,7 @@ ID für M:		{1       }  Modus {3       }
 Ass undID für M2:{7   }	{5       }  Modus {6       }    
 ID für Typ:		{2       }  Modus {4       }
 ID für LW1:		{8       }  Modus {9       }
-ID für LW2:		{10      }  Modus {11      } 
+Device: 	{10                           }
 "
 
 FORM "wert_mit_text", "uag_basis_popup20.wert_mit_text";
@@ -426,3 +453,14 @@ NORMAL
 TAG	 AssNr:	{1   } 
 M 	 AssNr:	{2   }
 LW	 AssNr:	{3   }"
+
+FORM "skalenmarker", "uag_basis_popup20.skalenmarker";
+1: "Teiler", 4, readwrite;
+2: "AssNr", 4, readwrite;
+
+NORMAL
+"Genie - Skala
+{Line, 100} 
+TAG	 AssNr:	{2   }
+Teiler: {1   }
+"

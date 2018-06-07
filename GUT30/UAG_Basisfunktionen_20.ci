@@ -78,7 +78,7 @@ STRING	mswebClass = "Shell.Explorer.2";
 //                       
 //	Rückgabewert:		---
 //	Beschreibung:		Setzt Parameter und ruft ein Status Faceplatel auf für Rechts und links
-//						Die Texte werden nicht mehr in einem Array Verwaltet sondern in der UIMessag2.dbf im Unterverzeichnis UAGBasis723370P2 und UAGBasis723370P3
+//						Die Texte werden nicht mehr in einem Array Verwaltet sondern in der UIMessag.dbf im Unterverzeichnis Include
 //						iNR 		= Zeilennummer der Datenbank
 //						sTag		= Name des Tag
 //						ix		= X Position
@@ -128,13 +128,13 @@ UAG_SetAnz_20(INT iNR, STRING sTag,INT ix, INT iy,INT iMode=0,STRING sDev="UITex
 
 END
 
-//	FUNCTION UAG_SetAnz2_20
+//	FUNCTION UAG_SetAnz2_30
 //	Übergabeparameter:	Statusnummer as INT, TAG, x, y, modus      
 //                       
 //	Rückgabewert:		---
 //	Beschreibung:		Setzt Parameter und ruft zwei Statuspannel auf für Rechts und links
 //						Modus 0 = 16 Bit 1 =32 Bit
-//						Die Texte werden nicht mehr in einem Array Verwaltet sondern in der UIMessag2.dbf im Unterverzeichnis UAGBasis723370P2 und UAGBasis723370P3
+//						Die Texte werden nicht mehr in einem Array Verwaltet sondern in der UIMessag.dbf im Unterverzeichnis Include
 //	Autor:				Wolfgang Steiner
 //	Erstellungsdatum:	20.01.09	/	Schneider Electrik GmbH
 //	Version				74.33.70.00
@@ -193,7 +193,7 @@ END
 //	Rückgabewert:		---
 //	Beschreibung:		Setzt Parameter und ruft ein Statuspannel das 2 Int Anzeigen kann auf für Rechts und links
 //						Modus 0 = 16 Bit 1 =32 Bit
-//						Die Texte werden nicht mehr in einem Array Verwaltet sondern in der UIMessag2.dbf im Unterverzeichnis UAGBasis723370P2 und UAGBasis723370P3
+//						Die Texte werden nicht mehr in einem Array Verwaltet sondern in der UIMessag.dbf im Unterverzeichnis Include
 //	Autor:				Wolfgang Steiner
 //	Erstellungsdatum:	07.04.09	/	Schneider Electrik GmbH
 //	Version				72.33.70.05

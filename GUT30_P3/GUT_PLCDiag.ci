@@ -1,0 +1,140 @@
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//	
+// 	FILE:	GUT_PLCDiag.ci
+//
+//	Beschreibung:
+//
+//		Enthält  Funktionen für Anzeige der SPS Diagnose. 
+//		Funktionen mit Version 3.1 sind freigegeben
+//
+//
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	26.04.2018	/	Schneider Electrik GmbH
+//	Version				75.33.11.09
+//
+//	PUBLIC FUNCTIONS:
+//
+//			GUT_Table_PD_Ini()
+//			GUT_Table_PD_Reload()
+//			GUT_Table_PD_Click()
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+// MODULE VARIABLES
+
+
+//	int FUNCTION UAG_Table_ASB()
+//	Übergabeparameter:	keine
+//                         
+//	Rückgabewert:		 
+//	Beschreibung:		Funktionen zum Anzeiger der SPS Diagnose
+//						
+//	Autor:				Wolfgang Steiner
+//	Erstellungsdatum:	27.04.2017	/	Schneider Electrik GmbH
+//	Version				75.33.11.09
+//
+//	Historie:
+//	geändert am	Autor		Kurzbeschreibung der Änderung		Referenz (optional)
+//	
+INT FUNCTION 
+GUT_Table_PD_Ini(STRING sTable)
+	INT		itemp;
+	STRING sCount
+	
+	ErrSet(1);
+		itemp=1
+
+	LibTable_AddColumn(sTable, "@(Alarm key)", 300);
+	LibTable_AddColumn(sTable, "@(Error ID)", 300);
+	LibTable_AddColumn(sTable, "@(Network Num)", 300);
+	LibTable_AddColumn(sTable, "@(ON Time)", 300);
+	LibTable_AddColumn(sTable, "@(OFF Time)", 300);
+	LibTable_AddColumn(sTable, "@(Ack Time)", 300);
+	LibTable_AddColumn(sTable, "@(Status)", 300);
+	LibTable_AddColumn(sTable, "@(Area)", 300);
+	LibTable_AddColumn(sTable, "@(Fbcomment)", 300);
+	LibTable_AddColumn(sTable, "@(FBInstanceName)", 300);
+	LibTable_AddColumn(sTable, "@(FBPinName)", 300);
+	sCount = IntToStr(itemp);
+	LibTable_SetPropertyInt(sTable,"RowCount",sCount);
+	LibTable_SetDataTask(sTable, "Value", "_GUT_Table_PD", "^"#Name^",#Row,#Col");
+	ErrSet(0);
+	RETURN TRUE;
+
+END
+
+STRING FUNCTION 
+_GUT_Table_PD(STRING sTable,INT nRow,INT nCol)
+	STRING sReturn,sTag
+	INT		hQue,iValue, iTemp 
+	IF (nRow > LibTable_GetPropertyInt(sTable, "RowCount")) THEN
+		RETURN "";
+	END
+	!GetNextEvent()
+	IF 	nRow = 0 THEN
+		SELECT CASE nCol
+			CASE 1
+				sReturn = StrToLocalText("@(Alarm key)")
+			CASE 2
+				sReturn = StrToLocalText("@(Error ID)")
+			CASE 3
+				sReturn = StrToLocalText("@(Network Num)")
+			CASE 4
+				sReturn = StrToLocalText("@(ON Time)")
+			CASE 5
+				sReturn = StrToLocalText("@(OFF Time)")
+			CASE 6
+				sReturn = StrToLocalText("@(Ack Time)")
+			CASE 7
+				sReturn = StrToLocalText("@(Status)")
+			CASE 8
+				sReturn = StrToLocalText("@(Area)")
+			CASE 9
+				sReturn = StrToLocalText("@(Fbcomment)")
+			CASE 10
+				sReturn = StrToLocalText("@(FBInstanceName)")
+			CASE 11
+				sReturn = StrToLocalText("@(FBPinName)")
+		END SELECT
+	ELSE
+		iValue=nRow-1
+		QuePeek(hQue,iValue,sTag,16)
+		iTemp = StrSearch(StrLength(sTag)-4, sTag, "_")
+
+		SELECT CASE nCol 
+		CASE 1
+			sReturn =sTag
+			PageSetStr("PD"+ IntToStr(nRow ),StrLeft(sTag, iTemp ))
+		CASE 2
+			sReturn =TagInfo (sTag,16)		
+		END SELECT
+	END	
+	RETURN sReturn 
+
+END
+
+INT FUNCTION
+GUT_Table_PD_Reload(STRING sTable)
+	STRING sCount
+	INT		hQue,itemp;
+	ErrSet(1);
+	hQue=QueOpen("ASB", 0);
+	itemp=QueLength(hQue)
+	sCount = IntToStr(itemp);
+	LibTable_SetPropertyInt(sTable,"RowCount",sCount);
+	LibTable_SetDataTask(sTable, "Value", "_GUT_Table_PD", "^"#Name^",#Row,#Col");
+	ErrSet(0);
+	RETURN TRUE;
+
+END
+
+FUNCTION
+GUT_Table_PD_Click(STRING sTable, INT nRow)
+STRING 	sTag
+	sTag =PageGetStr("PD" + IntToStr(nRow))
+	UAG_ASB_20(sTag)
+END
+

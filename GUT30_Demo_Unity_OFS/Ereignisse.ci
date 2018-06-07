@@ -273,10 +273,12 @@ FUNCTION UAG_Parameter_Client()
 		Logout()
 	END		
 	WinGoto(1);
+	
 	SleepMS(2000);
 	PageGoto(ParameterGet("Page" ,"HomePage" ,"System_Start"));
 	WinGoto(0);
 	UAG_WinFree();
+
 	UAGUhr = 0;															// Vorbelegung für die Uhr  0 = Analog, 1= Digital
 
 END

@@ -276,7 +276,7 @@
     <field name="stormethod">Floating Point (8-byte samples)</field>
  </output>
   <output name="TRN.AHH" file="trend.dbf" filter="'{equipment.type}={type.name}'">
-    <field name="taggenlink" load="true">UAG_GW22.AHH</field>
+    <field name="taggenlink" load="true">UAG_GW2.AHH</field>
     <field name="equip">{equipment.name}</field>
     <field name="item">AHH</field>
     <field name="linked">1</field>
@@ -299,7 +299,7 @@
     <field name="stormethod">Floating Point (8-byte samples)</field>
  </output>
   <output name="TRN.ALL" file="trend.dbf" filter="'{equipment.type}={type.name}'">
-    <field name="taggenlink" load="true">UAG_GW22.ALL</field>
+    <field name="taggenlink" load="true">UAG_GW2.ALL</field>
     <field name="equip">{equipment.name}</field>
     <field name="item">ALL</field>
     <field name="linked">1</field>
@@ -322,7 +322,7 @@
     <field name="stormethod">Floating Point (8-byte samples)</field>
  </output>
   <output name="TRN.SHH" file="trend.dbf" filter="'{equipment.type}={type.name}'">
-    <field name="taggenlink" load="true">UAG_GW22.SHH</field>
+    <field name="taggenlink" load="true">UAG_GW2.SHH</field>
     <field name="equip">{equipment.name}</field>
     <field name="item">SHH</field>
     <field name="linked">1</field>
@@ -345,7 +345,7 @@
     <field name="stormethod">Floating Point (8-byte samples)</field>
  </output>
   <output name="TRN.SLL" file="trend.dbf" filter="'{equipment.type}={type.name}'">
-    <field name="taggenlink" load="true">UAG_GW22.SLL</field>
+    <field name="taggenlink" load="true">UAG_GW2.SLL</field>
     <field name="equip">{equipment.name}</field>
     <field name="item">SLL</field>
     <field name="linked">1</field>

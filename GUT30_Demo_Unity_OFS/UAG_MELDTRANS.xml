@@ -47,7 +47,7 @@
     <field name="item">TYP</field>
     <field name="historian">FALSE</field>
     <field name="name" key="true">{equipment.tagprefix}_TYP</field>
-    <field name="type">UINT</field>
+    <field name="type">LONG</field>
     <field name="unit">{equipment.iodevice}</field>
     <field name="addr">{equipment.tagprefix}_TYP</field>
 	<field name="comment">Typangabe {equipment.comment}</field>
